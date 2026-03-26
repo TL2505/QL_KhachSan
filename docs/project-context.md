@@ -66,7 +66,7 @@ Hệ thống sử dụng database gồm các bảng chính:
 ## 5. Phân chia PHASE phát triển
 
 ### 🟢 PHASE 1 (BẮT BUỘC - CORE)
-Chỉ sử dụng các bảng: `users`, `roles`, `rooms`, `customers`, `bookings`, `payments`.
+Sử dụng các bảng: `users`, `roles`, `rooms`, `customers`, `bookings`, `payments`.
 
 **Chức năng:**
 - Login / Logout
@@ -77,7 +77,22 @@ Chỉ sử dụng các bảng: `users`, `roles`, `rooms`, `customers`, `bookings
 - Thanh toán cơ bản
 
 ### 🔵 PHASE 2 (NÂNG CAO)
-Thêm các bảng: `room_types`, `services`, `service_usage`, `invoices`, cùng với chức năng `TRIGGER` và `VIEW`.
+Thêm các bảng: `room_types`, `services`, `service_usage`, `invoices`, cùng với chức năng `TRIGGER`.
+
+**Chức năng:**
+- Sơ đồ phòng (Room Grid)
+- Kiểm tra trùng lịch đặt phòng
+- CRM (Lịch sử khách hàng)
+- Housekeeping (Trạng thái phòng)
+- Dịch vụ (Sử dụng dịch vụ)
+- Hóa đơn (Chốt tiền phòng và dịch vụ)
+
+### 🟠 PHASE 3 (LỰA CHỌN THÊM - OPTIONAL)
+Sử dụng thêm tính năng `VIEW` và phân quyền.
+
+**Chức năng:**
+- Báo cáo doanh thu (dựa trên view `view_monthly_revenue`)
+- Phân quyền (Role-based access dựa trên bảng `roles`)
 
 ---
 
@@ -111,15 +126,20 @@ Thêm các bảng: `room_types`, `services`, `service_usage`, `invoices`, cùng 
   - `POST /api/auth/login`
 - **ROOM**
   - `GET /api/rooms`
+  - `PUT /api/rooms/{id}/status`
 - **CUSTOMER**
   - `POST /api/customers`
   - `GET /api/customers`
+  - `GET /api/customers/{id}/bookings`
 - **BOOKING**
   - `POST /api/bookings`
   - `PUT /api/bookings/checkin/{id}`
   - `PUT /api/bookings/checkout/{id}`
-- **PAYMENT**
+- **SERVICE**
+  - `POST /api/service-usage`
+- **PAYMENT & INVOICE**
   - `POST /api/payments`
+  - `GET /api/invoices/{bookingId}`
 
 **Response JSON chuẩn:**
 ```json
