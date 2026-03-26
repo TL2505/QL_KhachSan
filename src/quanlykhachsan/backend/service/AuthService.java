@@ -2,10 +2,11 @@ package quanlykhachsan.backend.service;
 
 import quanlykhachsan.backend.model.User;
 import quanlykhachsan.backend.dao.UserDAO;
+import quanlykhachsan.backend.daoimpl.UserDAOImpl;
 
 public class AuthService {
 
-    private UserDAO userDAO = new UserDAO();
+    private UserDAO userDAO = new UserDAOImpl();
 
     public User login(String username, String password) {
         if (username == null || password == null) return null;
@@ -20,7 +21,7 @@ public class AuthService {
 
     public boolean register(User user) {
         if (userDAO.findByUsername(user.getUsername()) != null) {
-            return false; // trùng username
+            return false;
         }
         return userDAO.insert(user);
     }

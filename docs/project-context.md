@@ -152,11 +152,16 @@ Sử dụng thêm tính năng `VIEW` và phân quyền.
 
 ---
 
-## 9. Quy tắc code
-- Tách package: `controller`, `service`, `dao`, `model`, `utils`, `view`, `api`
-- Code theo **OOP**
-- KHÔNG hardcode SQL trong UI
-- Tên biến: **camelCase**
+## 9. Quy tắc code & Làm việc nhóm (BẮT BUỘC TUÂN THỦ)
+- **Tên Package:** Bắt buộc toàn bộ chữ thường (lowercase). VD: `controller`, `service`, `dao`, `daoimpl`, `model`, `utils`, `view`, `api`.
+- **Tên Class / Interface:** Bắt buộc PascalCase. VD: `Room`, `RoomService`, `UserDAO`. Không đặt kiểu `roomModel`.
+- **Tên Hàm / Biến:** Bắt buộc camelCase. VD: `getRoomById()`, `roomList`.
+- **Tránh Conflict lặp file (Duplicate Class):**
+  - Luôn `git pull` code mới thay vì code mù.
+  - Luôn kiểm tra (Search, Ctrl+N) xem Class đó (đặc biệt là Model và DAO) đã tồn tại chưa trước khi bấm New Class. 
+  - Nếu đã có thì sửa thêm vào chứ không tạo file trùng chức năng (ví dụ `room.java` bên cạnh `Room.java`).
+- Code theo **OOP**.
+- KHÔNG hardcode SQL trong UI.
 
 ---
 

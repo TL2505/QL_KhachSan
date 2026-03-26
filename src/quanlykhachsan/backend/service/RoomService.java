@@ -1,13 +1,14 @@
 package quanlykhachsan.backend.service;
 
 import quanlykhachsan.backend.dao.RoomDAO;
+import quanlykhachsan.backend.daoimpl.RoomDAOImpl;
 import quanlykhachsan.backend.model.Room;
 
 import java.util.List;
 
 public class RoomService {
 
-    private RoomDAO roomDAO = new RoomDAO();
+    private RoomDAO roomDAO = new RoomDAOImpl();
 
     public List<Room> getAllRooms() {
         return roomDAO.findAll();

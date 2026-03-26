@@ -1,13 +1,14 @@
 package quanlykhachsan.backend.service;
 
 import quanlykhachsan.backend.dao.CustomerDAO;
+import quanlykhachsan.backend.daoimpl.CustomerDAOImpl;
 import quanlykhachsan.backend.model.Customer;
 
 import java.util.List;
 
 public class CustomerService {
 
-    private CustomerDAO customerDAO = new CustomerDAO();
+    private CustomerDAO customerDAO = new CustomerDAOImpl();
 
     public List<Customer> getAllCustomers() {
         return customerDAO.findAll();
