@@ -35,4 +35,21 @@ public class BookingService {
     public List<Booking> getBookingsByCustomer(int customerId) {
         return bookingDAO.findByCustomerId(customerId);
     }
+
+    public Booking getBookingById(int id) {
+        for (Booking b : bookingDAO.selectBooking()) {
+            if (b.getId() == id) return b;
+        }
+        return null;
+    }
+
+    public boolean updateBookingStatus(int bookingId, String status) {
+        Booking b = getBookingById(bookingId);
+        if (b != null) {
+            b.setStatus(status);
+            bookingDAO.updateBooking(b);
+            return true;
+        }
+        return false;
+    }
 }
