@@ -1,4 +1,4 @@
-package quanlykhachsan.backend.model;
+package quanlykhachsan.backend.MODEL;
 
 public class Customer {
     private int id;
@@ -8,7 +8,8 @@ public class Customer {
     private String email;
     private String address;
 
-    public Customer() {}
+    public Customer() {
+    }
 
     public Customer(int id, String fullName, String identityCard, String phone, String email, String address) {
         this.id = id;
@@ -19,22 +20,16 @@ public class Customer {
         this.address = address;
     }
 
-    // getter setter
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
-
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
-
     public String getIdentityCard() { return identityCard; }
     public void setIdentityCard(String identityCard) { this.identityCard = identityCard; }
-
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
-
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
-
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 }
