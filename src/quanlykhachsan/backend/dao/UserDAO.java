@@ -1,6 +1,6 @@
-package quanlykhachsan.backend.DAO;
+package quanlykhachsan.backend.dao;
 
-import quanlykhachsan.backend.MODEL.User;
+import quanlykhachsan.backend.model.User;
 import java.util.ArrayList;
 
 public interface UserDAO {
@@ -19,4 +19,6 @@ public interface UserDAO {
 
     public void comboBoxUser();
 
+    public User findByUsername(String username);
+    public boolean insert(User user);
 }

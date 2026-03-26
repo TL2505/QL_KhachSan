@@ -1,4 +1,4 @@
-package quanlykhachsan;
+package quanlykhachsan.backend.utils;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

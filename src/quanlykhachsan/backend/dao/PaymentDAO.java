@@ -1,6 +1,6 @@
-package quanlykhachsan.backend.DAO;
+package quanlykhachsan.backend.dao;
 
-import quanlykhachsan.backend.MODEL.Payment;
+import quanlykhachsan.backend.model.Payment;
 import java.util.ArrayList;
 
 public interface PaymentDAO {

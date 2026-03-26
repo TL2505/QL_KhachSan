@@ -1,6 +1,6 @@
-package quanlykhachsan.backend.DAO;
+package quanlykhachsan.backend.dao;
 
-import quanlykhachsan.backend.MODEL.Role;
+import quanlykhachsan.backend.model.Role;
 import java.util.ArrayList;
 
 public interface RoleDAO {

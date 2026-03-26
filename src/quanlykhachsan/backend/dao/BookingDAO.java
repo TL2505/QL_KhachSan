@@ -1,6 +1,6 @@
-package quanlykhachsan.backend.DAO;
+package quanlykhachsan.backend.dao;
 
-import quanlykhachsan.backend.MODEL.Booking;
+import quanlykhachsan.backend.model.Booking;
 import java.util.ArrayList;
 
 public interface BookingDAO {
@@ -19,4 +19,7 @@ public interface BookingDAO {
 
     public void comboBoxBooking();
 
+    public java.util.List<Booking> findByRoomId(int roomId);
+    public java.util.List<Booking> findByCustomerId(int customerId);
+    public boolean insert(Booking booking);
 }

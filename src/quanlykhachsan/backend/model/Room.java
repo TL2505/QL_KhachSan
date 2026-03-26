@@ -1,4 +1,4 @@
-package quanlykhachsan.backend.MODEL;
+package quanlykhachsan.backend.model;
 
 public class Room {
     private int id;

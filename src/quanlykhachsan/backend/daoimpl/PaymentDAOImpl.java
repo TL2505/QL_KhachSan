@@ -1,12 +1,12 @@
-package quanlykhachsan.backend.DAOimpl;
+package quanlykhachsan.backend.daoimpl;
 
-import quanlykhachsan.backend.DAO.PaymentDAO;
-import quanlykhachsan.backend.MODEL.Payment;
+import quanlykhachsan.backend.dao.PaymentDAO;
+import quanlykhachsan.backend.model.Payment;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import quanlykhachsan.DBconn;
+import quanlykhachsan.backend.utils.DBconn;
 
 public class PaymentDAOImpl implements PaymentDAO {
 

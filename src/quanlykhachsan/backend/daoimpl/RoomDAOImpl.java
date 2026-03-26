@@ -1,12 +1,12 @@
-package quanlykhachsan.backend.DAOimpl;
+package quanlykhachsan.backend.daoimpl;
 
-import quanlykhachsan.backend.DAO.RoomDAO;
-import quanlykhachsan.backend.MODEL.Room;
+import quanlykhachsan.backend.dao.RoomDAO;
+import quanlykhachsan.backend.model.Room;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import quanlykhachsan.DBconn;
+import quanlykhachsan.backend.utils.DBconn;
 
 public class RoomDAOImpl implements RoomDAO {
 
@@ -77,5 +77,32 @@ public class RoomDAOImpl implements RoomDAO {
 
     @Override
     public void comboBoxRoom() {
+    }
+    @Override
+    public java.util.List<Room> findAll() {
+        return selectRoom();
+    }
+
+    @Override
+    public Room findById(int id) {
+        for (Room r : selectRoom()) {
+            if (r.getId() == id) return r;
+        }
+        return null;
+    }
+
+    @Override
+    public boolean updateStatus(int roomId, String status) {
+        try {
+            Room r = findById(roomId);
+            if (r != null) {
+                r.setStatus(status);
+                updateRoom(r);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

@@ -1,12 +1,12 @@
-package quanlykhachsan.backend.DAOimpl;
+package quanlykhachsan.backend.daoimpl;
 
-import quanlykhachsan.backend.DAO.RoleDAO;
-import quanlykhachsan.backend.MODEL.Role;
+import quanlykhachsan.backend.dao.RoleDAO;
+import quanlykhachsan.backend.model.Role;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import quanlykhachsan.DBconn;
+import quanlykhachsan.backend.utils.DBconn;
 
 public class RoleDAOImpl implements RoleDAO {
 

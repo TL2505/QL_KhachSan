@@ -1,12 +1,12 @@
-package quanlykhachsan.backend.DAOimpl;
+package quanlykhachsan.backend.daoimpl;
 
-import quanlykhachsan.backend.DAO.CustomerDAO;
-import quanlykhachsan.backend.MODEL.Customer;
+import quanlykhachsan.backend.dao.CustomerDAO;
+import quanlykhachsan.backend.model.Customer;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import quanlykhachsan.DBconn;
+import quanlykhachsan.backend.utils.DBconn;
 
 public class CustomerDAOImpl implements CustomerDAO {
 
@@ -80,6 +80,28 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public void comboBoxCustomer() {
-        // Để trống như yêu cầu (sẽ triển khai theo nhu cầu UI sau này)
+        // Äá»ƒ trá»‘ng nhÆ° yÃªu cáº§u (sáº½ triá»ƒn khai theo nhu cáº§u UI sau nÃ y)
+    }
+    @Override
+    public java.util.List<Customer> findAll() {
+        return selectCustomer();
+    }
+
+    @Override
+    public Customer findById(int id) {
+        for (Customer c : selectCustomer()) {
+            if (c.getId() == id) return c;
+        }
+        return null;
+    }
+
+    @Override
+    public boolean insert(Customer customer) {
+        try {
+            addCustomer(customer);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

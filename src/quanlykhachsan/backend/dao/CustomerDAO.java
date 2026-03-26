@@ -2,9 +2,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package quanlykhachsan.backend.DAO;
+package quanlykhachsan.backend.dao;
 
-import quanlykhachsan.backend.MODEL.Customer;
+import quanlykhachsan.backend.model.Customer;
 import java.util.ArrayList;
 
 /**
@@ -27,4 +27,7 @@ public interface CustomerDAO {
 
     public void comboBoxCustomer();
 
+    public java.util.List<Customer> findAll();
+    public Customer findById(int id);
+    public boolean insert(Customer customer);
 }

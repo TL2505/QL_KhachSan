@@ -1,12 +1,12 @@
-package quanlykhachsan.backend.DAOimpl;
+package quanlykhachsan.backend.daoimpl;
 
-import quanlykhachsan.backend.DAO.UserDAO;
-import quanlykhachsan.backend.MODEL.User;
+import quanlykhachsan.backend.dao.UserDAO;
+import quanlykhachsan.backend.model.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import quanlykhachsan.DBconn;
+import quanlykhachsan.backend.utils.DBconn;
 
 public class UserDAOImpl implements UserDAO {
 
@@ -77,5 +77,22 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public void comboBoxUser() {
+    }
+    @Override
+    public User findByUsername(String username) {
+        for (User u : selectUser()) {
+            if (u.getUsername().equals(username)) return u;
+        }
+        return null;
+    }
+
+    @Override
+    public boolean insert(User user) {
+        try {
+            addUser(user);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

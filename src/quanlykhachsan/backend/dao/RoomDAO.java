@@ -1,6 +1,6 @@
-package quanlykhachsan.backend.DAO;
+package quanlykhachsan.backend.dao;
 
-import quanlykhachsan.backend.MODEL.Room;
+import quanlykhachsan.backend.model.Room;
 import java.util.ArrayList;
 
 public interface RoomDAO {
@@ -19,4 +19,7 @@ public interface RoomDAO {
 
     public void comboBoxRoom();
 
+    public java.util.List<Room> findAll();
+    public Room findById(int id);
+    public boolean updateStatus(int roomId, String status);
 }

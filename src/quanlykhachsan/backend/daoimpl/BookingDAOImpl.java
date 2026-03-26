@@ -1,12 +1,12 @@
-package quanlykhachsan.backend.DAOimpl;
+package quanlykhachsan.backend.daoimpl;
 
-import quanlykhachsan.backend.DAO.BookingDAO;
-import quanlykhachsan.backend.MODEL.Booking;
+import quanlykhachsan.backend.dao.BookingDAO;
+import quanlykhachsan.backend.model.Booking;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import quanlykhachsan.DBconn;
+import quanlykhachsan.backend.utils.DBconn;
 
 public class BookingDAOImpl implements BookingDAO {
 
@@ -83,5 +83,32 @@ public class BookingDAOImpl implements BookingDAO {
 
     @Override
     public void comboBoxBooking() {
+    }
+    @Override
+    public java.util.List<Booking> findByRoomId(int roomId) {
+        java.util.List<Booking> list = new java.util.ArrayList<>();
+        for (Booking b : selectBooking()) {
+            if (b.getRoomId() == roomId) list.add(b);
+        }
+        return list;
+    }
+
+    @Override
+    public java.util.List<Booking> findByCustomerId(int customerId) {
+        java.util.List<Booking> list = new java.util.ArrayList<>();
+        for (Booking b : selectBooking()) {
+            if (b.getCustomerId() == customerId) list.add(b);
+        }
+        return list;
+    }
+
+    @Override
+    public boolean insert(Booking booking) {
+        try {
+            addBooking(booking);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
