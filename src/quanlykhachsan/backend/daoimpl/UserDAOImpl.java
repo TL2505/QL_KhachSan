@@ -80,8 +80,23 @@ public class UserDAOImpl implements UserDAO {
     }
     @Override
     public User findByUsername(String username) {
-        for (User u : selectUser()) {
-            if (u.getUsername().equals(username)) return u;
+        String query = "SELECT * FROM users WHERE username = ?";
+        try (Connection con = DBconn.getConnection(); 
+             PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    User u = new User();
+                    u.setId(rs.getInt("id"));
+                    u.setUsername(rs.getString("username"));
+                    u.setPassword(rs.getString("password"));
+                    u.setRoleId(rs.getInt("role_id"));
+                    u.setStatus(rs.getString("status"));
+                    return u;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return null;
     }

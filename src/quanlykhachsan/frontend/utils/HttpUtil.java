@@ -1,4 +1,4 @@
-package quanlykhachsan.frontend.api;
+package quanlykhachsan.frontend.utils;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -18,6 +18,7 @@ public class HttpUtil {
         conn.setReadTimeout(5000);
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Accept", "application/json");
+        conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
 
         if (conn.getResponseCode() != 200) {
             throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
@@ -46,6 +47,7 @@ public class HttpUtil {
         conn.setReadTimeout(5000);
         conn.setRequestMethod("DELETE");
         conn.setRequestProperty("Accept", "application/json");
+        conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
 
         int code = conn.getResponseCode();
         BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -69,6 +71,7 @@ public class HttpUtil {
         conn.setRequestMethod(method);
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
         conn.setRequestProperty("Accept", "application/json");
+        conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
 
         if (jsonBody != null && !jsonBody.isEmpty()) {
             try (OutputStream os = conn.getOutputStream()) {

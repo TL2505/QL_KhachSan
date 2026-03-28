@@ -2,6 +2,7 @@ package quanlykhachsan.backend.controller;
 
 import quanlykhachsan.backend.model.Customer;
 import quanlykhachsan.backend.service.CustomerService;
+import quanlykhachsan.backend.utils.SecurityUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
@@ -66,6 +67,7 @@ public class CustomerController implements HttpHandler {
     }
 
     private void handlePost(HttpExchange exchange, Gson gson) throws IOException {
+        if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
         InputStream is = exchange.getRequestBody();
         String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
         JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
@@ -92,6 +94,7 @@ public class CustomerController implements HttpHandler {
     }
 
     private void handlePut(HttpExchange exchange, int id, Gson gson) throws IOException {
+        if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
         InputStream is = exchange.getRequestBody();
         String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
         JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
@@ -118,6 +121,7 @@ public class CustomerController implements HttpHandler {
     }
 
     private void handleDelete(HttpExchange exchange, int id) throws IOException {
+        if (!SecurityUtil.checkAdmin(exchange)) return;
         Customer c = customerService.getCustomerById(id);
         if (c == null) {
             sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy khách hàng ID: " + id + "\"}");
