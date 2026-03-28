@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 public class CustomerController implements HttpHandler {
 
@@ -18,25 +20,18 @@ public class CustomerController implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
 
+        // Xét sử dụng chung Gson
+        Gson gson = new Gson();
+
         // 1. GET /api/customers (Lấy danh sách khách hàng)
         if ("GET".equalsIgnoreCase(method)) {
             List<Customer> customers = customerService.getAllCustomers();
-            StringBuilder json = new StringBuilder("{\n  \"status\": \"success\",\n  \"data\": [\n");
             
-            for (int i = 0; i < customers.size(); i++) {
-                Customer c = customers.get(i);
-                json.append("    {\n");
-                json.append("      \"id\": ").append(c.getId()).append(",\n");
-                json.append("      \"name\": \"").append(c.getFullName()).append("\",\n");
-                json.append("      \"phone\": \"").append(c.getPhone()).append("\",\n");
-                json.append("      \"cccd\": \"").append(c.getIdentityCard()).append("\"\n");
-                json.append("    }");
-                if (i < customers.size() - 1) json.append(",");
-                json.append("\n");
-            }
-            json.append("  ]\n}");
+            JsonObject resObj = new JsonObject();
+            resObj.addProperty("status", "success");
+            resObj.add("data", gson.toJsonTree(customers));
 
-            sendResponse(exchange, 200, json.toString());
+            sendResponse(exchange, 200, gson.toJson(resObj));
 
         } 
         // 2. POST /api/customers (Thêm khách hàng)
@@ -44,10 +39,11 @@ public class CustomerController implements HttpHandler {
             InputStream is = exchange.getRequestBody();
             String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
-            // Bóc tách JSON thủ công (dựa theo Contract)
-            String name = extractJsonValue(requestBody, "name");
-            String phone = extractJsonValue(requestBody, "phone");
-            String cccd = extractJsonValue(requestBody, "cccd");
+            // Bóc tách JSON bằng Gson
+            JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
+            String name = reqObj.has("name") ? reqObj.get("name").getAsString() : null;
+            String phone = reqObj.has("phone") ? reqObj.get("phone").getAsString() : null;
+            String cccd = reqObj.has("cccd") ? reqObj.get("cccd").getAsString() : null;
 
             Customer newCustomer = new Customer();
             newCustomer.setFullName(name);
@@ -85,16 +81,4 @@ public class CustomerController implements HttpHandler {
         os.close();
     }
 
-    private String extractJsonValue(String json, String key) {
-        String searchKey = "\"" + key + "\"";
-        int keyIndex = json.indexOf(searchKey);
-        if (keyIndex == -1) return null;
-        int colonIndex = json.indexOf(":", keyIndex);
-        if (colonIndex == -1) return null;
-        int startQuote = json.indexOf("\"", colonIndex);
-        if (startQuote == -1) return null;
-        int endQuote = json.indexOf("\"", startQuote + 1);
-        if (endQuote == -1) return null;
-        return json.substring(startQuote + 1, endQuote);
-    }
 }

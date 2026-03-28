@@ -14,7 +14,16 @@ public class Quanlykhachsan {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
+        try {
+            // Thiết lập Look and Feel cho mềm mại như bản Native
+            javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ex) {
+            java.util.logging.Logger.getLogger(Quanlykhachsan.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+
+        // Bắt đầu luồng Swing
+        java.awt.EventQueue.invokeLater(() -> {
+            new quanlykhachsan.frontend.view.LoginForm().setVisible(true);
+        });
     }
-    
 }
