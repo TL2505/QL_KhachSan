@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 public class CustomerController implements HttpHandler {
 
@@ -17,61 +19,115 @@ public class CustomerController implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
+        Gson gson = new Gson();
 
-        // 1. GET /api/customers (Lấy danh sách khách hàng)
-        if ("GET".equalsIgnoreCase(method)) {
-            List<Customer> customers = customerService.getAllCustomers();
-            StringBuilder json = new StringBuilder("{\n  \"status\": \"success\",\n  \"data\": [\n");
-            
-            for (int i = 0; i < customers.size(); i++) {
-                Customer c = customers.get(i);
-                json.append("    {\n");
-                json.append("      \"id\": ").append(c.getId()).append(",\n");
-                json.append("      \"name\": \"").append(c.getFullName()).append("\",\n");
-                json.append("      \"phone\": \"").append(c.getPhone()).append("\",\n");
-                json.append("      \"cccd\": \"").append(c.getIdentityCard()).append("\"\n");
-                json.append("    }");
-                if (i < customers.size() - 1) json.append(",");
-                json.append("\n");
+        try {
+            // 1. GET /api/customers
+            if ("GET".equalsIgnoreCase(method)) {
+                List<Customer> customers = customerService.getAllCustomers();
+                JsonObject resObj = new JsonObject();
+                resObj.addProperty("status", "success");
+                resObj.add("data", gson.toJsonTree(customers));
+                sendResponse(exchange, 200, gson.toJson(resObj));
+            } 
+            // 2. POST /api/customers
+            else if ("POST".equalsIgnoreCase(method)) {
+                handlePost(exchange, gson);
             }
-            json.append("  ]\n}");
-
-            sendResponse(exchange, 200, json.toString());
-
-        } 
-        // 2. POST /api/customers (Thêm khách hàng)
-        else if ("POST".equalsIgnoreCase(method)) {
-            InputStream is = exchange.getRequestBody();
-            String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-
-            // Bóc tách JSON thủ công (dựa theo Contract)
-            String name = extractJsonValue(requestBody, "name");
-            String phone = extractJsonValue(requestBody, "phone");
-            String cccd = extractJsonValue(requestBody, "cccd");
-
-            Customer newCustomer = new Customer();
-            newCustomer.setFullName(name);
-            newCustomer.setPhone(phone);
-            newCustomer.setIdentityCard(cccd);
-            
-            // Chặn dữ liệu rỗng
-            if (name == null || phone == null || cccd == null) {
-                sendResponse(exchange, 400, "{\n  \"status\": \"error\",\n  \"message\": \"Thiếu trường thông tin!\",\n  \"data\": null\n}");
-                return;
+            // 3. PUT /api/customers/{id}
+            else if ("PUT".equalsIgnoreCase(method)) {
+                String path = exchange.getRequestURI().getPath();
+                String[] parts = path.split("/");
+                if (parts.length < 4) {
+                    sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu ID khách hàng!\"}");
+                    return;
+                }
+                int id = Integer.parseInt(parts[3]);
+                handlePut(exchange, id, gson);
             }
-
-            boolean success = customerService.addCustomer(newCustomer);
-
-            if (success) {
-                String response = "{\n  \"status\": \"success\",\n  \"message\": \"Thêm khách hàng thành công!\",\n  \"data\": null\n}";
-                sendResponse(exchange, 200, response);
-            } else {
-                String response = "{\n  \"status\": \"error\",\n  \"message\": \"Không thể thêm khách hàng (Có thể trùng CCCD)\",\n  \"data\": null\n}";
-                sendResponse(exchange, 500, response);
+            // 4. DELETE /api/customers/{id}
+            else if ("DELETE".equalsIgnoreCase(method)) {
+                String path = exchange.getRequestURI().getPath();
+                String[] parts = path.split("/");
+                if (parts.length < 4) {
+                    sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu ID khách hàng!\"}");
+                    return;
+                }
+                int id = Integer.parseInt(parts[3]);
+                handleDelete(exchange, id);
             }
+            else {
+                exchange.sendResponseHeaders(405, -1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
 
+    private void handlePost(HttpExchange exchange, Gson gson) throws IOException {
+        InputStream is = exchange.getRequestBody();
+        String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
+        
+        String name = reqObj.has("name") ? reqObj.get("name").getAsString() : null;
+        String phone = reqObj.has("phone") ? reqObj.get("phone").getAsString() : null;
+        String cccd = reqObj.has("cccd") ? reqObj.get("cccd").getAsString() : null;
+
+        if (name == null || phone == null || cccd == null) {
+            sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu thông tin!\"}");
+            return;
+        }
+
+        Customer c = new Customer();
+        c.setFullName(name);
+        c.setPhone(phone);
+        c.setIdentityCard(cccd);
+
+        if (customerService.addCustomer(c)) {
+            sendResponse(exchange, 200, "{\"status\": \"success\", \"message\": \"Thêm khách hàng thành công!\"}");
         } else {
-            exchange.sendResponseHeaders(405, -1);
+            sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"Không thể thêm khách hàng!\"}");
+        }
+    }
+
+    private void handlePut(HttpExchange exchange, int id, Gson gson) throws IOException {
+        InputStream is = exchange.getRequestBody();
+        String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
+        
+        String name = reqObj.has("name") ? reqObj.get("name").getAsString() : null;
+        String phone = reqObj.has("phone") ? reqObj.get("phone").getAsString() : null;
+        String cccd = reqObj.has("cccd") ? reqObj.get("cccd").getAsString() : null;
+
+        Customer c = customerService.getCustomerById(id);
+        if (c == null) {
+            sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy ID: " + id + "\"}");
+            return;
+        }
+
+        if (name != null) c.setFullName(name);
+        if (phone != null) c.setPhone(phone);
+        if (cccd != null) c.setIdentityCard(cccd);
+
+        if (customerService.updateCustomer(c)) {
+            sendResponse(exchange, 200, "{\"status\": \"success\", \"message\": \"Cập nhật thành công!\"}");
+        } else {
+            sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"Cập nhật thất bại!\"}");
+        }
+    }
+
+    private void handleDelete(HttpExchange exchange, int id) throws IOException {
+        Customer c = customerService.getCustomerById(id);
+        if (c == null) {
+            sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy khách hàng ID: " + id + "\"}");
+            return;
+        }
+
+        if (customerService.deleteCustomer(id)) {
+            sendResponse(exchange, 200, "{\"status\": \"success\", \"message\": \"Xóa khách hàng thành công!\"}");
+        } else {
+            sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"Không thể xóa khách hàng này (Có thể do đang có lịch sử đặt phòng)\"}");
         }
     }
 
@@ -83,18 +139,5 @@ public class CustomerController implements HttpHandler {
         OutputStream os = exchange.getResponseBody();
         os.write(bytes);
         os.close();
-    }
-
-    private String extractJsonValue(String json, String key) {
-        String searchKey = "\"" + key + "\"";
-        int keyIndex = json.indexOf(searchKey);
-        if (keyIndex == -1) return null;
-        int colonIndex = json.indexOf(":", keyIndex);
-        if (colonIndex == -1) return null;
-        int startQuote = json.indexOf("\"", colonIndex);
-        if (startQuote == -1) return null;
-        int endQuote = json.indexOf("\"", startQuote + 1);
-        if (endQuote == -1) return null;
-        return json.substring(startQuote + 1, endQuote);
     }
 }

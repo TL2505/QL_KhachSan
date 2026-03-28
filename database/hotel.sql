@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS rooms (
   room_number VARCHAR(20) NOT NULL UNIQUE,
   room_type_id INT NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
-  status ENUM('available', 'booked', 'occupied', 'maintenance') DEFAULT 'available',
+  status ENUM('available', 'booked', 'occupied', 'maintenance', 'cleaning', 'out_of_service') DEFAULT 'available',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   -- RESTRICT: Không cho xóa loại phòng nếu có phòng đang cấu hình loại này

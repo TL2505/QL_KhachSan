@@ -11,6 +11,8 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 public class BookingController implements HttpHandler {
 
@@ -24,15 +26,28 @@ public class BookingController implements HttpHandler {
         String path = exchange.getRequestURI().getPath();
 
         try {
+            // 0. GET /api/bookings (Lấy danh sách booking)
+            if ("GET".equalsIgnoreCase(method) && "/api/bookings".equals(path)) {
+                Gson gson = new Gson();
+                JsonObject resObj = new JsonObject();
+                resObj.addProperty("status", "success");
+                resObj.add("data", gson.toJsonTree(bookingService.getAllBookings()));
+                sendResponse(exchange, 200, gson.toJson(resObj));
+                return;
+            }
+
             // 1. POST /api/bookings (Đặt phòng)
             if ("POST".equalsIgnoreCase(method) && "/api/bookings".equals(path)) {
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
-                String customerIdStr = extractJsonValue(requestBody, "customerId");
-                String roomIdStr = extractJsonValue(requestBody, "roomId");
-                String checkInStr = extractJsonValue(requestBody, "checkInDate");
-                String checkOutStr = extractJsonValue(requestBody, "checkOutDate");
+                Gson gson = new Gson();
+                JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
+
+                String customerIdStr = reqObj.has("customerId") ? reqObj.get("customerId").getAsString() : null;
+                String roomIdStr = reqObj.has("roomId") ? reqObj.get("roomId").getAsString() : null;
+                String checkInStr = reqObj.has("checkInDate") ? reqObj.get("checkInDate").getAsString() : null;
+                String checkOutStr = reqObj.has("checkOutDate") ? reqObj.get("checkOutDate").getAsString() : null;
 
                 if (customerIdStr == null || roomIdStr == null || checkInStr == null || checkOutStr == null) {
                     sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu trường thông tin!\"}");
@@ -123,24 +138,4 @@ public class BookingController implements HttpHandler {
         os.close();
     }
 
-    // Hàm lấy giá trị số hoặc chuỗi từ JSON đơn giản (bỏ qua dấu ngoặc kép nếu có)
-    private String extractJsonValue(String json, String key) {
-        String searchKey = "\"" + key + "\"";
-        int keyIndex = json.indexOf(searchKey);
-        if (keyIndex == -1) return null;
-        int colonIndex = json.indexOf(":", keyIndex);
-        if (colonIndex == -1) return null;
-        
-        // Cắt từ vị trí dấu phẩy hoặc ngoặc nhọn kết thúc
-        int endIndex = json.indexOf(",", colonIndex);
-        if (endIndex == -1) endIndex = json.indexOf("}", colonIndex);
-        if (endIndex == -1) return null;
-
-        String value = json.substring(colonIndex + 1, endIndex).trim();
-        // Xóa dấu nháy kép nếu có
-        if (value.startsWith("\"") && value.endsWith("\"")) {
-            value = value.substring(1, value.length() - 1);
-        }
-        return value;
-    }
 }

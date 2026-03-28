@@ -6,8 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import quanlykhachsan.backend.service.BookingService;
 
 public class PaymentController implements HttpHandler {
+
+    private BookingService bookingService = new BookingService();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -20,31 +25,37 @@ public class PaymentController implements HttpHandler {
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
-                String bookingIdStr = extractJsonValue(requestBody, "bookingId");
-                String amountStr = extractJsonValue(requestBody, "amount");
-                String paymentMethod = extractJsonValue(requestBody, "paymentMethod");
+                Gson gson = new Gson();
+                JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
+
+                String bookingIdStr = reqObj.has("bookingId") ? reqObj.get("bookingId").getAsString() : null;
+                String amountStr = reqObj.has("amount") ? reqObj.get("amount").getAsString() : null;
+                String paymentMethod = reqObj.has("paymentMethod") ? reqObj.get("paymentMethod").getAsString() : null;
 
                 if (bookingIdStr == null || amountStr == null || paymentMethod == null) {
                     sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu thông tin thanh toán!\"}");
                     return;
                 }
 
-                // Phase 1: Tạo Mock Transaction thay vì Record vào DB vì chưa có module Invoice
-                String transactionId = "TXN-" + System.currentTimeMillis();
-                
-                String jsonResponse = "{\n" +
-                        "  \"status\": \"success\",\n" +
-                        "  \"message\": \"Thanh toán thành công\",\n" +
-                        "  \"data\": {\n" +
-                        "    \"transactionId\": \"" + transactionId + "\",\n" +
-                        "    \"bookingId\": " + bookingIdStr + ",\n" +
-                        "    \"amount\": " + amountStr + ",\n" +
-                        "    \"paymentMethod\": \"" + paymentMethod + "\",\n" +
-                        "    \"status\": \"paid\"\n" +
-                        "  }\n" +
-                        "}";
+                int bookingId = Integer.parseInt(bookingIdStr);
+                double amount = Double.parseDouble(amountStr);
+                boolean success = bookingService.processPayment(bookingId, amount, paymentMethod);
 
-                sendResponse(exchange, 200, jsonResponse);
+                if (success) {
+                    JsonObject resObj = new JsonObject();
+                    resObj.addProperty("status", "success");
+                    resObj.addProperty("message", "Thanh toán thành công! Phòng đang được dọn dẹp.");
+                    
+                    JsonObject dataObj = new JsonObject();
+                    dataObj.addProperty("bookingId", bookingId);
+                    dataObj.addProperty("amount", Double.parseDouble(amountStr));
+                    dataObj.addProperty("status", "completed");
+                    resObj.add("data", dataObj);
+
+                    sendResponse(exchange, 200, gson.toJson(resObj));
+                } else {
+                    sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy đơn đặt phòng ID: " + bookingId + "\"}");
+                }
 
             } else {
                 exchange.sendResponseHeaders(405, -1);
@@ -66,21 +77,4 @@ public class PaymentController implements HttpHandler {
         os.close();
     }
 
-    private String extractJsonValue(String json, String key) {
-        String searchKey = "\"" + key + "\"";
-        int keyIndex = json.indexOf(searchKey);
-        if (keyIndex == -1) return null;
-        int colonIndex = json.indexOf(":", keyIndex);
-        if (colonIndex == -1) return null;
-        
-        int endIndex = json.indexOf(",", colonIndex);
-        if (endIndex == -1) endIndex = json.indexOf("}", colonIndex);
-        if (endIndex == -1) return null;
-
-        String value = json.substring(colonIndex + 1, endIndex).trim();
-        if (value.startsWith("\"") && value.endsWith("\"")) {
-            value = value.substring(1, value.length() - 1);
-        }
-        return value;
-    }
 }

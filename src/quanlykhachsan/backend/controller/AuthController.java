@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 public class AuthController implements HttpHandler {
 
@@ -18,44 +20,44 @@ public class AuthController implements HttpHandler {
         // Chỉ xử lý method POST cho /api/auth/login
         if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
             
-            // 1. Đọc body của request (chứa username, password Json)
+            // 1. Đọc body của request
             InputStream is = exchange.getRequestBody();
             String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             
-            // Hàm phân tích chuỗi JSON đơn giản (Do project chưa cài thư viện Gson/Jackson)
-            String username = extractJsonValue(requestBody, "username");
-            String password = extractJsonValue(requestBody, "password");
+            // Dùng Gson để parse
+            Gson gson = new Gson();
+            JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
+            
+            String username = reqObj.has("username") ? reqObj.get("username").getAsString() : null;
+            String password = reqObj.has("password") ? reqObj.get("password").getAsString() : null;
 
             // 2. Xử lý logic gọi xuống tầng Service
             User user = authService.login(username, password);
 
             // 3. Chuẩn bị dữ liệu trả về (Response JSON)
-            String responseStr = "";
+            JsonObject resObj = new JsonObject();
             int statusCode = 200;
 
             if (user != null) {
-                // Đăng nhập thành công -> Trả JSON đúng API Contract
-                // Sửa tạm role dựa trên roleId để phù hợp contract (Ví dụ: roleId 1 là ADMIN, 2 là RES...)
                 String roleStr = (user.getRoleId() == 1) ? "ADMIN" : "USER";
                 
-                responseStr = "{\n" +
-                        "  \"status\": \"success\",\n" +
-                        "  \"message\": \"Đăng nhập thành công\",\n" +
-                        "  \"data\": {\n" +
-                        "    \"userId\": " + user.getId() + ",\n" +
-                        "    \"username\": \"" + user.getUsername() + "\",\n" +
-                        "    \"role\": \"" + roleStr + "\"\n" +
-                        "  }\n" +
-                        "}";
+                resObj.addProperty("status", "success");
+                resObj.addProperty("message", "Đăng nhập thành công");
+                
+                JsonObject dataObj = new JsonObject();
+                dataObj.addProperty("userId", user.getId());
+                dataObj.addProperty("username", user.getUsername());
+                dataObj.addProperty("role", roleStr);
+                
+                resObj.add("data", dataObj);
             } else {
-                // Đăng nhập thất bại
                 statusCode = 401; // Unauthorized
-                responseStr = "{\n" +
-                        "  \"status\": \"error\",\n" +
-                        "  \"message\": \"Sai tên đăng nhập hoặc mật khẩu\",\n" +
-                        "  \"data\": null\n" +
-                        "}";
+                resObj.addProperty("status", "error");
+                resObj.addProperty("message", "Sai tên đăng nhập hoặc mật khẩu");
+                resObj.add("data", null);
             }
+            
+            String responseStr = gson.toJson(resObj);
 
             // 4. Gửi Response về cho Frontend
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
@@ -76,24 +78,4 @@ public class AuthController implements HttpHandler {
         }
     }
 
-    /**
-     * Hàm tiện ích giúp parse JSON chuỗi gốc để lấy value nhanh (vì không dùng thư viện)
-     * Ví dụ JSON: { "username" : "admin" } -> Trả về: admin
-     */
-    private String extractJsonValue(String json, String key) {
-        String searchKey = "\"" + key + "\"";
-        int keyIndex = json.indexOf(searchKey);
-        if (keyIndex == -1) return null;
-
-        int colonIndex = json.indexOf(":", keyIndex);
-        if (colonIndex == -1) return null;
-
-        int startQuote = json.indexOf("\"", colonIndex);
-        if (startQuote == -1) return null;
-
-        int endQuote = json.indexOf("\"", startQuote + 1);
-        if (endQuote == -1) return null;
-
-        return json.substring(startQuote + 1, endQuote);
-    }
 }
