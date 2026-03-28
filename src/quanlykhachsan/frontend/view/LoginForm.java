@@ -13,19 +13,20 @@ public class LoginForm extends JFrame {
 
     private JTextField txtUsername;
     private JPasswordField txtPassword;
+    private JCheckBox chkShowPassword;
     private JButton btnLogin;
     private JLabel lblError;
     private JLabel lblLoading;
 
     private static final Color PRIMARY_COLOR = new Color(37, 99, 235);
     private static final Color PRIMARY_HOVER = new Color(29, 78, 216);
-    private static final Color BG_COLOR      = new Color(245, 247, 250);
-    private static final Color CARD_COLOR    = Color.WHITE;
-    private static final Color TEXT_MAIN     = new Color(17, 24, 39);
-    private static final Color TEXT_MUTED    = new Color(107, 114, 128);
-    private static final Color ERROR_COLOR   = new Color(220, 38, 38);
-    private static final Color BORDER_COLOR  = new Color(209, 213, 219);
-    private static final Color BORDER_FOCUS  = new Color(37, 99, 235);
+    private static final Color BG_COLOR = new Color(245, 247, 250);
+    private static final Color CARD_COLOR = Color.WHITE;
+    private static final Color TEXT_MAIN = new Color(17, 24, 39);
+    private static final Color TEXT_MUTED = new Color(107, 114, 128);
+    private static final Color ERROR_COLOR = new Color(220, 38, 38);
+    private static final Color BORDER_COLOR = new Color(209, 213, 219);
+    private static final Color BORDER_FOCUS = new Color(37, 99, 235);
 
     public LoginForm() {
         setTitle("Đăng nhập - Hệ thống Quản lý Khách sạn");
@@ -59,7 +60,8 @@ public class LoginForm extends JFrame {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gp = new GradientPaint(0, 0, PRIMARY_COLOR, getWidth(), getHeight(), new Color(99, 102, 241));
+                GradientPaint gp = new GradientPaint(0, 0, PRIMARY_COLOR, getWidth(), getHeight(),
+                        new Color(99, 102, 241));
                 g2.setPaint(gp);
                 g2.fillRect(0, 0, getWidth(), getHeight());
             }
@@ -91,8 +93,8 @@ public class LoginForm extends JFrame {
         headerContent.add(Box.createVerticalStrut(3));
         headerContent.add(subLabel);
 
-        JButton btnClose = new JButton("\u2715");
-        btnClose.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        JButton btnClose = new JButton("x");
+        btnClose.setFont(new Font("Arial", Font.BOLD, 18));
         btnClose.setForeground(new Color(191, 219, 254));
         btnClose.setContentAreaFilled(false);
         btnClose.setBorderPainted(false);
@@ -107,8 +109,14 @@ public class LoginForm extends JFrame {
 
         MouseAdapter mover = new MouseAdapter() {
             Point start;
-            @Override public void mousePressed(MouseEvent e) { start = e.getPoint(); }
-            @Override public void mouseDragged(MouseEvent e) {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                start = e.getPoint();
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
                 Point loc = getLocation();
                 setLocation(loc.x + e.getX() - start.x, loc.y + e.getY() - start.y);
             }
@@ -174,6 +182,21 @@ public class LoginForm extends JFrame {
         txtPassword.setAlignmentX(LEFT_ALIGNMENT);
         txtPassword.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
+        chkShowPassword = new JCheckBox("Hiển thị mật khẩu");
+        chkShowPassword.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        chkShowPassword.setForeground(TEXT_MUTED);
+        chkShowPassword.setOpaque(false);
+        chkShowPassword.setFocusPainted(false);
+        chkShowPassword.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        chkShowPassword.setAlignmentX(LEFT_ALIGNMENT);
+        chkShowPassword.addActionListener(e -> {
+            if (chkShowPassword.isSelected()) {
+                txtPassword.setEchoChar((char) 0);
+            } else {
+                txtPassword.setEchoChar('\u2022'); // Standard bullet character
+            }
+        });
+
         lblLoading = new JLabel(" ");
         lblLoading.setFont(new Font("Segoe UI", Font.ITALIC, 12));
         lblLoading.setForeground(TEXT_MUTED);
@@ -212,6 +235,8 @@ public class LoginForm extends JFrame {
         card.add(lblPassword);
         card.add(Box.createVerticalStrut(6));
         card.add(txtPassword);
+        card.add(Box.createVerticalStrut(4));
+        card.add(chkShowPassword);
         card.add(Box.createVerticalStrut(6));
         card.add(lblLoading);
         card.add(Box.createVerticalStrut(14));
@@ -247,18 +272,20 @@ public class LoginForm extends JFrame {
         field.setForeground(TEXT_MAIN);
         field.setBackground(new Color(249, 250, 251));
         field.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(BORDER_COLOR, 1, true),
-            new EmptyBorder(6, 12, 6, 12)
-        ));
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(6, 12, 6, 12)));
         field.addFocusListener(new FocusAdapter() {
-            @Override public void focusGained(FocusEvent e) {
+            @Override
+            public void focusGained(FocusEvent e) {
                 field.setBorder(BorderFactory.createCompoundBorder(
-                    new LineBorder(BORDER_FOCUS, 2, true), new EmptyBorder(5, 11, 5, 11)));
+                        new LineBorder(BORDER_FOCUS, 2, true), new EmptyBorder(5, 11, 5, 11)));
                 field.repaint();
             }
-            @Override public void focusLost(FocusEvent e) {
+
+            @Override
+            public void focusLost(FocusEvent e) {
                 field.setBorder(BorderFactory.createCompoundBorder(
-                    new LineBorder(BORDER_COLOR, 1, true), new EmptyBorder(6, 12, 6, 12)));
+                        new LineBorder(BORDER_COLOR, 1, true), new EmptyBorder(6, 12, 6, 12)));
                 field.repaint();
             }
         });
@@ -283,18 +310,20 @@ public class LoginForm extends JFrame {
         field.setForeground(TEXT_MAIN);
         field.setBackground(new Color(249, 250, 251));
         field.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(BORDER_COLOR, 1, true),
-            new EmptyBorder(6, 12, 6, 12)
-        ));
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(6, 12, 6, 12)));
         field.addFocusListener(new FocusAdapter() {
-            @Override public void focusGained(FocusEvent e) {
+            @Override
+            public void focusGained(FocusEvent e) {
                 field.setBorder(BorderFactory.createCompoundBorder(
-                    new LineBorder(BORDER_FOCUS, 2, true), new EmptyBorder(5, 11, 5, 11)));
+                        new LineBorder(BORDER_FOCUS, 2, true), new EmptyBorder(5, 11, 5, 11)));
                 field.repaint();
             }
-            @Override public void focusLost(FocusEvent e) {
+
+            @Override
+            public void focusLost(FocusEvent e) {
                 field.setBorder(BorderFactory.createCompoundBorder(
-                    new LineBorder(BORDER_COLOR, 1, true), new EmptyBorder(6, 12, 6, 12)));
+                        new LineBorder(BORDER_COLOR, 1, true), new EmptyBorder(6, 12, 6, 12)));
                 field.repaint();
             }
         });
@@ -334,6 +363,7 @@ public class LoginForm extends JFrame {
             protected User doInBackground() throws Exception {
                 return AuthAPI.login(username, password);
             }
+
             @Override
             protected void done() {
                 btnLogin.setEnabled(true);
