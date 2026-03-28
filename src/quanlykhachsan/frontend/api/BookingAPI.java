@@ -1,11 +1,32 @@
 package quanlykhachsan.frontend.api;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
+import quanlykhachsan.backend.model.Booking;
 
 public class BookingAPI {
 
-    public static String bookRoom(int customerId, int roomId, String checkInDate, String checkOutDate) {
+    public static List<Booking> getAllBookings() {
+        List<Booking> bookings = new ArrayList<>();
+        try {
+            String jsonResponse = HttpUtil.sendGet("/bookings");
+            Gson gson = new Gson();
+            JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
+            if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
+                JsonArray data = resObj.getAsJsonArray("data");
+                for (JsonElement e : data) {
+                    bookings.add(gson.fromJson(e, Booking.class));
+                }
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return bookings;
+    }
+
+    public static JsonObject bookRoom(int customerId, int roomId, String checkInDate, String checkOutDate) {
         try {
             JsonObject req = new JsonObject();
             req.addProperty("customerId", customerId);
@@ -14,20 +35,14 @@ public class BookingAPI {
             req.addProperty("checkOutDate", checkOutDate);
 
             String jsonResponse = HttpUtil.sendPost("/bookings", new Gson().toJson(req));
-            JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
-            
-            if (resObj != null) {
-                if ("success".equals(resObj.get("status").getAsString())) {
-                    return "Success: " + resObj.get("message").getAsString();
-                } else {
-                    return "Error: " + resObj.get("message").getAsString();
-                }
-            }
+            return new Gson().fromJson(jsonResponse, JsonObject.class);
         } catch (Exception e) {
             e.printStackTrace();
-            return "Exception: " + e.getMessage();
+            JsonObject err = new JsonObject();
+            err.addProperty("status", "error");
+            err.addProperty("message", e.getMessage());
+            return err;
         }
-        return "Unknown Error";
     }
 
     public static String checkIn(int bookingId) {
@@ -36,7 +51,7 @@ public class BookingAPI {
             JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
                 return ("success".equals(resObj.get("status").getAsString()) ? "Success: " : "Error: ") 
-                        + resObj.get("message").getAsString();
+                        + (resObj.has("message") ? resObj.get("message").getAsString() : "Check-in done");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -51,7 +66,7 @@ public class BookingAPI {
             JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
                 return ("success".equals(resObj.get("status").getAsString()) ? "Success: " : "Error: ") 
-                        + resObj.get("message").getAsString();
+                        + (resObj.has("message") ? resObj.get("message").getAsString() : "Check-out done");
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -16,7 +16,7 @@ public class LoginForm extends JFrame {
 
     public LoginForm() {
         setTitle("Đăng nhập Hệ thống");
-        setSize(350, 200);
+        setSize(350, 250);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -53,9 +53,32 @@ public class LoginForm extends JFrame {
         btnLogin = new JButton("Đăng nhập");
         panel.add(btnLogin, gbc);
 
-        add(panel);
+        // --- BẮT ĐẦU VÙNG DEBUG (XÓA KHI HOÀN THÀNH DỰ ÁN) ---
+        JPanel debugPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton btnAdmin = new JButton("Login Admin (Debug)");
+        JButton btnStaff = new JButton("Login Staff (Debug)");
+        
+        btnAdmin.setFont(new Font("Arial", Font.ITALIC, 10));
+        btnStaff.setFont(new Font("Arial", Font.ITALIC, 10));
+        
+        btnAdmin.addActionListener(e -> {
+            txtUsername.setText("admin_main");
+            txtPassword.setText("hashed_pass_123");
+            handleLogin();
+        });
+        
+        btnStaff.addActionListener(e -> {
+            txtUsername.setText("staff_01");
+            txtPassword.setText("hashed_pass_456");
+            handleLogin();
+        });
 
-        // Event
+        debugPanel.add(btnAdmin);
+        debugPanel.add(btnStaff);
+
+        add(panel, BorderLayout.CENTER);
+        add(debugPanel, BorderLayout.SOUTH);
+        // --- KẾT THÚC VÙNG DEBUG ---
         btnLogin.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

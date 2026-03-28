@@ -6,10 +6,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.dao.PaymentDAO;
+import quanlykhachsan.backend.daoimpl.PaymentDAOImpl;
+import quanlykhachsan.backend.model.Payment;
 
 public class PaymentController implements HttpHandler {
+
+    private PaymentDAO paymentDAO = new PaymentDAOImpl();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -25,26 +31,33 @@ public class PaymentController implements HttpHandler {
                 Gson gson = new Gson();
                 JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
 
-                String bookingIdStr = reqObj.has("bookingId") ? reqObj.get("bookingId").getAsString() : null;
-                String amountStr = reqObj.has("amount") ? reqObj.get("amount").getAsString() : null;
+                // Lấy thông tin từ Request
+                Integer bookingId = reqObj.has("bookingId") ? reqObj.get("bookingId").getAsInt() : null;
+                Double amount = reqObj.has("amount") ? reqObj.get("amount").getAsDouble() : null;
                 String paymentMethod = reqObj.has("paymentMethod") ? reqObj.get("paymentMethod").getAsString() : null;
 
-                if (bookingIdStr == null || amountStr == null || paymentMethod == null) {
+                if (bookingId == null || amount == null || paymentMethod == null) {
                     sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu thông tin thanh toán!\"}");
                     return;
                 }
 
-                // Phase 1: Tạo Mock Transaction thay vì Record vào DB vì chưa có module Invoice
-                String transactionId = "TXN-" + System.currentTimeMillis();
-                
+                // --- LƯU THÔNG TIN THANH TOÁN VÀO CƠ SỞ DỮ LIỆU ---
+                Payment payment = new Payment();
+                payment.setInvoiceId(bookingId); // Dùng Booking ID làm Invoice ID
+                payment.setAmount(amount);
+                payment.setPaymentMethod(paymentMethod);
+                payment.setPaymentDate(new Date());
+
+                paymentDAO.addPayment(payment);
+
+                // Phản hồi thành công
                 JsonObject resObj = new JsonObject();
                 resObj.addProperty("status", "success");
-                resObj.addProperty("message", "Thanh toán thành công");
+                resObj.addProperty("message", "Thanh toán thành công và đã lưu vào hệ thống");
                 
                 JsonObject dataObj = new JsonObject();
-                dataObj.addProperty("transactionId", transactionId);
-                dataObj.addProperty("bookingId", Integer.parseInt(bookingIdStr));
-                dataObj.addProperty("amount", Double.parseDouble(amountStr));
+                dataObj.addProperty("bookingId", bookingId);
+                dataObj.addProperty("amount", amount);
                 dataObj.addProperty("paymentMethod", paymentMethod);
                 dataObj.addProperty("status", "paid");
                 
@@ -71,5 +84,4 @@ public class PaymentController implements HttpHandler {
         os.write(bytes);
         os.close();
     }
-
 }

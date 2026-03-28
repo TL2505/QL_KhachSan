@@ -56,7 +56,10 @@ public class RoomDAOImpl implements RoomDAO {
     @Override
     public ArrayList<Room> selectRoom() {
         ArrayList<Room> list = new ArrayList<>();
-        String query = "SELECT * FROM rooms";
+        String query = "SELECT r.*, c.full_name, c.phone, b.check_in_date, b.check_out_date, b.id as booking_id " +
+                       "FROM rooms r " +
+                       "LEFT JOIN bookings b ON r.id = b.room_id AND b.status IN ('confirmed', 'checked_in') " +
+                       "LEFT JOIN customers c ON b.customer_id = c.id";
         try (Connection con = DBconn.getConnection(); 
              PreparedStatement ps = con.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
@@ -67,6 +70,15 @@ public class RoomDAOImpl implements RoomDAO {
                 r.setRoomTypeId(rs.getInt("room_type_id"));
                 r.setPrice(rs.getDouble("price"));
                 r.setStatus(rs.getString("status"));
+                
+                // Extra fields for Hover/UX
+                r.setCustomerName(rs.getString("full_name"));
+                r.setCustomerPhone(rs.getString("phone"));
+                r.setCheckInDate(rs.getString("check_in_date"));
+                r.setCheckOutDate(rs.getString("check_out_date"));
+                int bid = rs.getInt("booking_id");
+                if (bid > 0) r.setBookingId(bid);
+                
                 list.add(r);
             }
         } catch (Exception e) {

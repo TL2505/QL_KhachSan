@@ -24,6 +24,10 @@ public class Main {
             server.createContext("/api/bookings", new quanlykhachsan.backend.controller.BookingController());
             // Route Thanh toán (Payment)
             server.createContext("/api/payments", new quanlykhachsan.backend.controller.PaymentController());
+            // Route Dashboard (Admin only logic handles inside)
+            server.createContext("/api/dashboard", new quanlykhachsan.backend.controller.DashboardController());
+            // Route Loại Phòng
+            server.createContext("/api/room-types", new quanlykhachsan.backend.controller.RoomTypeController());
 
             // Thiết lập cấu hình mặc định và chạy server
             server.setExecutor(null); 

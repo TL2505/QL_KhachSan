@@ -14,26 +14,33 @@ public class BookingService {
         List<Booking> bookings = bookingDAO.findByRoomId(roomId);
 
         for (Booking b : bookings) {
-            boolean overlap = checkIn.getTime() <= b.getCheckOutDate().getTime() &&
-                              checkOut.getTime() >= b.getCheckInDate().getTime();
+            // Chỉ kiểm tra trùng lặp với các booking chưa hoàn tất
+            if ("checked_out".equals(b.getStatus())) continue;
+
+            boolean overlap = checkIn.getTime() < b.getCheckOutDate().getTime() &&
+                              checkOut.getTime() > b.getCheckInDate().getTime();
             if (overlap) return false;
         }
         return true;
     }
 
-    public boolean createBooking(Booking booking) {
+    public int createBooking(Booking booking) {
         if (!checkAvailable(
                 booking.getRoomId(),
                 booking.getCheckInDate(),
                 booking.getCheckOutDate())) {
-            return false;
+            return -1;
         }
 
-        return bookingDAO.insert(booking);
+        return bookingDAO.addBooking(booking);
     }
 
     public List<Booking> getBookingsByCustomer(int customerId) {
         return bookingDAO.findByCustomerId(customerId);
+    }
+
+    public List<Booking> getAllBookings() {
+        return bookingDAO.selectBooking();
     }
 
     public Booking getBookingById(int id) {

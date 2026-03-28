@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS rooms (
   room_number VARCHAR(20) NOT NULL UNIQUE,
   room_type_id INT NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
-  status ENUM('available', 'booked', 'occupied', 'maintenance') DEFAULT 'available',
+  status ENUM('available', 'booked', 'occupied', 'maintenance', 'dirty') DEFAULT 'available',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   -- RESTRICT: Không cho xóa loại phòng nếu có phòng đang cấu hình loại này
@@ -254,3 +254,12 @@ INSERT INTO services (name, description, price) VALUES
 ('Giặt là', 'Dịch vụ giặt ủi lấy liền', 50000),
 ('Dọn phòng sớm', 'Dịch vụ dọn dẹp vệ sinh theo yêu cầu', 30000),
 ('Thuê xe', 'Thuê xe máy di chuyển 1 ngày', 150000);
+
+-- 7. bookings (Phải khớp với trạng thái rooms ở trên)
+-- Phòng 201 (ID 3) đang 'booked' -> Trần Thị B (ID 2) đặt trước
+INSERT INTO bookings (customer_id, room_id, check_in_date, check_out_date, total_price, status) VALUES 
+(2, 3, '2026-04-10 14:00:00', '2026-04-15 12:00:00', 5000000, 'confirmed');
+
+-- Phòng 301 (ID 4) đang 'occupied' -> Nguyễn Văn A (ID 1) đang ở
+INSERT INTO bookings (customer_id, room_id, check_in_date, check_out_date, total_price, status) VALUES 
+(1, 4, '2026-03-27 10:00:00', '2026-03-30 12:00:00', 4500000, 'checked_in');

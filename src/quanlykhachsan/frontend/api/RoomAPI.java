@@ -31,4 +31,55 @@ public class RoomAPI {
         }
         return rooms;
     }
+
+    public static String updateRoomStatus(int roomId, String status) {
+        try {
+            Gson gson = new Gson();
+            JsonObject reqObj = new JsonObject();
+            reqObj.addProperty("status", status);
+            String jsonResponse = HttpUtil.sendPut("/rooms/" + roomId + "/status", gson.toJson(reqObj));
+            
+            JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
+            return resObj.has("message") ? resObj.get("message").getAsString() : "Success";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    public static String addRoom(Room room) {
+        try {
+            Gson gson = new Gson();
+            String jsonResponse = HttpUtil.sendPost("/rooms", gson.toJson(room));
+            JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
+            return resObj.has("message") ? resObj.get("message").getAsString() : "Success";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    public static String updateRoom(Room room) {
+        try {
+            Gson gson = new Gson();
+            String jsonResponse = HttpUtil.sendPut("/rooms/" + room.getId(), gson.toJson(room));
+            JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
+            return resObj.has("message") ? resObj.get("message").getAsString() : "Success";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    public static String deleteRoom(int roomId) {
+        try {
+            String jsonResponse = HttpUtil.sendDelete("/rooms/" + roomId);
+            Gson gson = new Gson();
+            JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
+            return resObj.has("message") ? resObj.get("message").getAsString() : "Success";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error: " + e.getMessage();
+        }
+    }
 }

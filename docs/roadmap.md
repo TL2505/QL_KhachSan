@@ -158,10 +158,10 @@ Xây dựng các REST API cho frontend
 
 ### ✅ Checklist:
 
-* [ ] GET /rooms (hiển thị room + status)
-* [ ] POST /bookings (có kiểm tra trùng lịch)
+* [x] GET /rooms (hiển thị room + status)
+* [x] POST /bookings (có kiểm tra trùng lịch)
 * [ ] GET /customers/{id}/bookings (CRM)
-* [ ] PUT /rooms/{id}/status (Housekeeping)
+* [x] PUT /rooms/{id}/status (Housekeeping)
 * [ ] GET /invoices/{bookingId}
 * [ ] POST /service-usage
 
@@ -180,10 +180,10 @@ Xử lý dữ liệu và truy vấn MySQL
 
 ### ✅ Checklist:
 
-* [ ] Query danh sách phòng + status
-* [ ] Query kiểm tra trùng lịch booking
-* [ ] Query booking theo customer_id
-* [ ] Update room.status
+* [x] Query danh sách phòng + status
+* [x] Query kiểm tra trùng lịch booking
+* [x] Query booking theo customer_id
+* [x] Update room.status
 * [ ] Insert service_usage
 * [ ] Query invoice + service
 
@@ -205,10 +205,10 @@ Xử lý nghiệp vụ chính
 
 ### ✅ Checklist:
 
-* [ ] checkAvailable(roomId, checkIn, checkOut)
-* [ ] Validate booking (không trùng lịch)
-* [ ] Lấy lịch sử booking theo customer
-* [ ] Logic housekeeping:
+* [x] checkAvailable(roomId, checkIn, checkOut)
+* [x] Validate booking (không trùng lịch)
+* [x] Lấy lịch sử booking theo customer
+* [x] Logic housekeeping:
 
   * checkout → dirty
   * cleaning → available
@@ -232,8 +232,8 @@ Xây dựng giao diện người dùng
 
 #### 🏨 Room Grid
 
-* [ ] Hiển thị phòng dạng lưới
-* [ ] Màu theo trạng thái:
+* [x] Hiển thị phòng dạng lưới
+* [x] Màu theo trạng thái:
 
   * 🟢 available
   * 🟡 booked
@@ -244,8 +244,8 @@ Xây dựng giao diện người dùng
 
 #### 📅 Booking
 
-* [ ] Form đặt phòng
-* [ ] Hiển thị lỗi khi trùng lịch
+* [x] Form đặt phòng
+* [x] Hiển thị lỗi khi trùng lịch
 
 ---
 
@@ -257,7 +257,7 @@ Xây dựng giao diện người dùng
 
 #### 🧹 Housekeeping
 
-* [ ] Nút đổi trạng thái phòng
+* [x] Nút đổi trạng thái phòng
 
 ---
 
@@ -281,9 +281,9 @@ Kết nối hệ thống và kiểm thử
 
 ### ✅ Checklist:
 
-* [ ] Test UI → API → DB
+* [x] Test UI → API → DB
 * [ ] Fix lỗi JSON / mapping
-* [ ] Test booking:
+* [x] Test booking:
 
   * trùng → fail
   * đúng → pass

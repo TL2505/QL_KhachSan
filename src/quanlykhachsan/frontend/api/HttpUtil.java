@@ -39,6 +39,10 @@ public class HttpUtil {
         return sendWithBody("PUT", endpoint, jsonBody);
     }
 
+    public static String sendDelete(String endpoint) throws Exception {
+        return sendWithBody("DELETE", endpoint, null);
+    }
+
     private static String sendWithBody(String method, String endpoint, String jsonBody) throws Exception {
         URL url = new URL(BASE_URL + endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();

@@ -40,17 +40,44 @@ public class CustomerAPI {
             req.addProperty("cccd", customer.getIdentityCard());
 
             String jsonResponse = HttpUtil.sendPost("/customers", new Gson().toJson(req));
-            JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
-            if (resObj != null) {
-                if ("success".equals(resObj.get("status").getAsString())) {
-                    return "Success: " + resObj.get("message").getAsString();
-                } else {
-                    return "Error: " + resObj.get("message").getAsString();
-                }
-            }
+            return getMessageFromResponse(jsonResponse);
         } catch (Exception e) {
             e.printStackTrace();
             return "Exception: " + e.getMessage();
+        }
+    }
+
+    public static String updateCustomer(Customer customer) {
+        try {
+            JsonObject req = new JsonObject();
+            req.addProperty("name", customer.getFullName());
+            req.addProperty("phone", customer.getPhone());
+            req.addProperty("cccd", customer.getIdentityCard());
+
+            String jsonResponse = HttpUtil.sendPut("/customers/" + customer.getId(), new Gson().toJson(req));
+            return getMessageFromResponse(jsonResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Exception: " + e.getMessage();
+        }
+    }
+
+    public static String deleteCustomer(int id) {
+        try {
+            String jsonResponse = HttpUtil.sendDelete("/customers/" + id);
+            return getMessageFromResponse(jsonResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Exception: " + e.getMessage();
+        }
+    }
+
+    private static String getMessageFromResponse(String jsonResponse) {
+        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        if (resObj != null) {
+            String status = resObj.has("status") ? resObj.get("status").getAsString() : "error";
+            String message = resObj.has("message") ? resObj.get("message").getAsString() : "No message";
+            return status.equalsIgnoreCase("success") ? "Success: " + message : "Error: " + message;
         }
         return "Unknown Error";
     }

@@ -7,12 +7,22 @@ import quanlykhachsan.frontend.view.BookingForm;
 import quanlykhachsan.frontend.view.CustomerForm;
 import quanlykhachsan.frontend.view.PaymentForm;
 import quanlykhachsan.frontend.view.RoomForm;
+import quanlykhachsan.frontend.view.RoomManagementForm;
 import quanlykhachsan.frontend.view.LoginForm;
+import quanlykhachsan.frontend.view.DashboardForm;
 
 public class MainUI extends JFrame {
 
     private User currentUser;
     private JTabbedPane tabbedPane;
+    
+    // Form instances for cross-form communication
+    private RoomForm roomForm;
+    private BookingForm bookingForm;
+    private CustomerForm customerForm;
+    private PaymentForm paymentForm;
+    private RoomManagementForm roomManagementForm;
+    private DashboardForm dashboardForm;
 
     public MainUI(User user) {
         this.currentUser = user;
@@ -44,20 +54,45 @@ public class MainUI extends JFrame {
         tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Arial", Font.PLAIN, 16));
 
-        tabbedPane.addTab("🏢 Sơ đồ Phòng", new ImageIcon(), new RoomForm(), "Xem và quản lý phòng");
-        tabbedPane.addTab("👥 Khách hàng", new ImageIcon(), new CustomerForm(), "Quản lý thông tin khách hàng");
-        tabbedPane.addTab("📅 Đặt / Nhận phòng", new ImageIcon(), new BookingForm(), "Thao tác đặt phòng và Check-in/Check-out");
-        tabbedPane.addTab("💳 Thanh toán", new ImageIcon(), new PaymentForm(), "Xử lý thanh toán");
+        // Initialize forms
+        roomForm = new RoomForm();
+        bookingForm = new BookingForm();
+        customerForm = new CustomerForm();
+        paymentForm = new PaymentForm();
 
-        // RBAC: Chức năng dành riêng cho Admin
+        // RBAC: Admin only Dashboard & Management
         if (currentUser.getRoleId() == 1) {
-            JPanel adminPanel = new JPanel(new BorderLayout());
-            adminPanel.add(new JLabel("Khu vực Quản trị: Tính năng Quản lý Nhân sự & Báo cáo doanh thu sẽ được xây dựng ở Phase 3", SwingConstants.CENTER), BorderLayout.CENTER);
-            tabbedPane.addTab("🔧 Quản trị & Báo cáo", new ImageIcon(), adminPanel, "Quyền truy cập độc quyền của Admin");
+            dashboardForm = new DashboardForm();
+            tabbedPane.addTab("📊 Dashboard", new ImageIcon(), dashboardForm, "Tổng quan hệ thống");
+            
+            roomManagementForm = new RoomManagementForm();
+            tabbedPane.addTab("🔧 Quản lý Phòng", new ImageIcon(), roomManagementForm, "Quyền truy cập Admin");
         }
+
+        tabbedPane.addTab("🏢 Sơ đồ Phòng", new ImageIcon(), roomForm, "Xem và quản lý phòng");
+
+        tabbedPane.addTab("📅 Đặt / Nhận phòng", new ImageIcon(), bookingForm, "Thao tác đặt phòng");
+        tabbedPane.addTab("👥 Quản lý Khách hàng", new ImageIcon(), customerForm, "Quản lý thông tin khách");
+        tabbedPane.addTab("💳 Thanh toán", new ImageIcon(), paymentForm, "Xử lý thanh toán");
 
         add(tabbedPane, BorderLayout.CENTER);
     }
+
+    // --- Orchestration Methods for Cross-Form Workflow ---
+    
+    public void switchTab(String title) {
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            if (tabbedPane.getTitleAt(i).contains(title)) {
+                tabbedPane.setSelectedIndex(i);
+                break;
+            }
+        }
+    }
+
+    public RoomForm getRoomForm() { return roomForm; }
+    public BookingForm getBookingForm() { return bookingForm; }
+    public PaymentForm getPaymentForm() { return paymentForm; }
+    public CustomerForm getCustomerForm() { return customerForm; }
 
     private void logout() {
         int confirm = JOptionPane.showConfirmDialog(this, "Bạn có thực sự muốn đăng xuất?", "Đăng xuất", JOptionPane.YES_NO_OPTION);
