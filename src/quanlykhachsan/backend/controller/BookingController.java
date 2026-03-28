@@ -26,6 +26,16 @@ public class BookingController implements HttpHandler {
         String path = exchange.getRequestURI().getPath();
 
         try {
+            // 0. GET /api/bookings (Lấy danh sách booking)
+            if ("GET".equalsIgnoreCase(method) && "/api/bookings".equals(path)) {
+                Gson gson = new Gson();
+                JsonObject resObj = new JsonObject();
+                resObj.addProperty("status", "success");
+                resObj.add("data", gson.toJsonTree(bookingService.getAllBookings()));
+                sendResponse(exchange, 200, gson.toJson(resObj));
+                return;
+            }
+
             // 1. POST /api/bookings (Đặt phòng)
             if ("POST".equalsIgnoreCase(method) && "/api/bookings".equals(path)) {
                 InputStream is = exchange.getRequestBody();

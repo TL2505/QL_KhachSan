@@ -8,8 +8,11 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.service.BookingService;
 
 public class PaymentController implements HttpHandler {
+
+    private BookingService bookingService = new BookingService();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -34,23 +37,25 @@ public class PaymentController implements HttpHandler {
                     return;
                 }
 
-                // Phase 1: Tạo Mock Transaction thay vì Record vào DB vì chưa có module Invoice
-                String transactionId = "TXN-" + System.currentTimeMillis();
-                
-                JsonObject resObj = new JsonObject();
-                resObj.addProperty("status", "success");
-                resObj.addProperty("message", "Thanh toán thành công");
-                
-                JsonObject dataObj = new JsonObject();
-                dataObj.addProperty("transactionId", transactionId);
-                dataObj.addProperty("bookingId", Integer.parseInt(bookingIdStr));
-                dataObj.addProperty("amount", Double.parseDouble(amountStr));
-                dataObj.addProperty("paymentMethod", paymentMethod);
-                dataObj.addProperty("status", "paid");
-                
-                resObj.add("data", dataObj);
+                int bookingId = Integer.parseInt(bookingIdStr);
+                double amount = Double.parseDouble(amountStr);
+                boolean success = bookingService.processPayment(bookingId, amount, paymentMethod);
 
-                sendResponse(exchange, 200, gson.toJson(resObj));
+                if (success) {
+                    JsonObject resObj = new JsonObject();
+                    resObj.addProperty("status", "success");
+                    resObj.addProperty("message", "Thanh toán thành công! Phòng đang được dọn dẹp.");
+                    
+                    JsonObject dataObj = new JsonObject();
+                    dataObj.addProperty("bookingId", bookingId);
+                    dataObj.addProperty("amount", Double.parseDouble(amountStr));
+                    dataObj.addProperty("status", "completed");
+                    resObj.add("data", dataObj);
+
+                    sendResponse(exchange, 200, gson.toJson(resObj));
+                } else {
+                    sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy đơn đặt phòng ID: " + bookingId + "\"}");
+                }
 
             } else {
                 exchange.sendResponseHeaders(405, -1);

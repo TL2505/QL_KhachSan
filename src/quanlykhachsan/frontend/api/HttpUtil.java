@@ -14,6 +14,8 @@ public class HttpUtil {
     public static String sendGet(String endpoint) throws Exception {
         URL url = new URL(BASE_URL + endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(5000); // 5 seconds
+        conn.setReadTimeout(5000);
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Accept", "application/json");
 
@@ -21,12 +23,10 @@ public class HttpUtil {
             throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
         }
 
-        BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream()), StandardCharsets.UTF_8));
+        BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
         StringBuilder sb = new StringBuilder();
         String output;
-        while ((output = br.readLine()) != null) {
-            sb.append(output);
-        }
+        while ((output = br.readLine()) != null) sb.append(output);
         conn.disconnect();
         return sb.toString();
     }
@@ -39,9 +39,32 @@ public class HttpUtil {
         return sendWithBody("PUT", endpoint, jsonBody);
     }
 
+    public static String sendDelete(String endpoint) throws Exception {
+        URL url = new URL(BASE_URL + endpoint);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(5000);
+        conn.setReadTimeout(5000);
+        conn.setRequestMethod("DELETE");
+        conn.setRequestProperty("Accept", "application/json");
+
+        int code = conn.getResponseCode();
+        BufferedReader br = new BufferedReader(new InputStreamReader(
+            code >= 200 && code <= 299 ? conn.getInputStream()
+                : (conn.getErrorStream() != null ? conn.getErrorStream() : conn.getInputStream()),
+            StandardCharsets.UTF_8));
+
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null) sb.append(line);
+        conn.disconnect();
+        return sb.toString();
+    }
+
     private static String sendWithBody(String method, String endpoint, String jsonBody) throws Exception {
         URL url = new URL(BASE_URL + endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(5000);
+        conn.setReadTimeout(5000);
         conn.setDoOutput(true);
         conn.setRequestMethod(method);
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -59,14 +82,14 @@ public class HttpUtil {
         if (responseCode >= 200 && responseCode <= 299) {
             br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
         } else {
-            br = new BufferedReader(new InputStreamReader(conn.getErrorStream() != null ? conn.getErrorStream() : conn.getInputStream(), StandardCharsets.UTF_8));
+            br = new BufferedReader(new InputStreamReader(
+                conn.getErrorStream() != null ? conn.getErrorStream() : conn.getInputStream(),
+                StandardCharsets.UTF_8));
         }
 
         StringBuilder sb = new StringBuilder();
         String output;
-        while ((output = br.readLine()) != null) {
-            sb.append(output);
-        }
+        while ((output = br.readLine()) != null) sb.append(output);
         conn.disconnect();
         return sb.toString();
     }
