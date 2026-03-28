@@ -21,4 +21,28 @@ public class RoomService {
     public boolean updateRoomStatus(int roomId, String status) {
         return roomDAO.updateStatus(roomId, status);
     }
+
+    public boolean addRoom(Room room) {
+        try {
+            roomDAO.addRoom(room);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean deleteRoom(int roomId) {
+        try {
+            Room r = roomDAO.findById(roomId);
+            if (r != null) {
+                roomDAO.deleteRoom(r);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

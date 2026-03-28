@@ -2,6 +2,11 @@ package quanlykhachsan.frontend.api;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import java.util.ArrayList;
+import java.util.List;
+import quanlykhachsan.backend.model.Booking;
 
 public class BookingAPI {
 
@@ -58,5 +63,27 @@ public class BookingAPI {
             return "Exception: " + e.getMessage();
         }
         return "Unknown Error";
+    }
+
+    public static List<Booking> getAllBookings() {
+        List<Booking> bookings = new ArrayList<>();
+        try {
+            String jsonResponse = HttpUtil.sendGet("/bookings");
+            Gson gson = new Gson();
+            JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
+            
+            if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
+                JsonArray dataArray = resObj.getAsJsonArray("data");
+                if (dataArray != null) {
+                    for (JsonElement element : dataArray) {
+                        Booking b = gson.fromJson(element, Booking.class);
+                        bookings.add(b);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return bookings;
     }
 }

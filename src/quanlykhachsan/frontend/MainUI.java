@@ -30,7 +30,7 @@ public class MainUI extends JFrame {
         // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        JLabel lblTitle = new JLabel("HOTEL MANAGEMENT DASHBOARD");
+        JLabel lblTitle = new JLabel("BẢNG ĐIỀU KHIỂN QUẢN LÝ KHÁCH SẠN");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 20));
         headerPanel.add(lblTitle, BorderLayout.WEST);
 
@@ -51,8 +51,14 @@ public class MainUI extends JFrame {
 
         // RBAC: Chức năng dành riêng cho Admin
         if (currentUser.getRoleId() == 1) {
+            // Tab Nhân sự
+            JPanel empPanel = new JPanel(new BorderLayout());
+            empPanel.add(new JLabel("👤 Chức năng Quản lý Nhân sự đang được phát triển...", SwingConstants.CENTER), BorderLayout.CENTER);
+            tabbedPane.addTab("👤 Quản lý Nhân sự", new ImageIcon(), empPanel, "Quản lý nhân viên");
+
+            // Tab Báo cáo
             JPanel adminPanel = new JPanel(new BorderLayout());
-            adminPanel.add(new JLabel("Khu vực Quản trị: Tính năng Quản lý Nhân sự & Báo cáo doanh thu sẽ được xây dựng ở Phase 3", SwingConstants.CENTER), BorderLayout.CENTER);
+            adminPanel.add(new JLabel("📊 Khu vực Quản trị & Báo cáo doanh thu sẽ được xây dựng ở Phase 3", SwingConstants.CENTER), BorderLayout.CENTER);
             tabbedPane.addTab("🔧 Quản trị & Báo cáo", new ImageIcon(), adminPanel, "Quyền truy cập độc quyền của Admin");
         }
 

@@ -18,7 +18,27 @@ public class CustomerService {
         return customerDAO.insert(customer);
     }
 
+    public boolean updateCustomer(Customer customer) {
+        try {
+            customerDAO.updateCustomer(customer);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public Customer getCustomerById(int id) {
         return customerDAO.findById(id);
+    }
+
+    public boolean deleteCustomer(int id) {
+        try {
+            Customer c = new Customer();
+            c.setId(id);
+            customerDAO.deleteCustomer(c);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
