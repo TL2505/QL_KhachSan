@@ -8,7 +8,14 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import quanlykhachsan.backend.model.Invoice;
+import quanlykhachsan.backend.model.Booking;
+import quanlykhachsan.backend.model.Customer;
+import quanlykhachsan.backend.model.Room;
 import quanlykhachsan.frontend.api.InvoiceAPI;
+import quanlykhachsan.frontend.api.BookingAPI;
+import quanlykhachsan.frontend.api.CustomerAPI;
+import quanlykhachsan.frontend.api.RoomAPI;
+import quanlykhachsan.frontend.utils.InvoicePDFExporter;
 
 public class InvoiceForm extends JPanel {
 
@@ -86,7 +93,7 @@ public class InvoiceForm extends JPanel {
         btnPrintPDF.setForeground(Color.WHITE);
         btnPrintPDF.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnPrintPDF.setEnabled(false);
-        btnPrintPDF.addActionListener(e -> JOptionPane.showMessageDialog(this, "Tính năng in PDF từ Giao diện Admin đang được hoàn thiện.")); // Sẽ tích hợp InvoicePDFExporter sau
+        btnPrintPDF.addActionListener(e -> actionPrintPDF()); 
 
         bottomBar.add(btnPrintPDF);
 
@@ -119,6 +126,7 @@ public class InvoiceForm extends JPanel {
     }
 
     private void loadData(String keyword) {
+        // ... (existing loadData logic is correct)
         lblStatus.setText("Đang tải dữ liệu...");
         SwingWorker<List<Invoice>, Void> worker = new SwingWorker<>() {
             @Override
@@ -150,12 +158,53 @@ public class InvoiceForm extends JPanel {
                             statusVn
                         });
                     }
-                    lblStatus.setText("Sẵn sàng. Tính tổng: " + nf.format(totalRevenue));
+                    lblStatus.setText("Sẵn sàng. Tính tổng doanh thu: " + nf.format(totalRevenue));
                 } catch (Exception e) {
                     lblStatus.setText("Lỗi kết nối mạng!");
                 }
             }
         };
         worker.execute();
+    }
+
+    private void actionPrintPDF() {
+        int index = table.getSelectedRow();
+        if (index < 0 || currentInvoices == null || index >= currentInvoices.size()) return;
+
+        Invoice inv = currentInvoices.get(index);
+        
+        lblStatus.setText("Đang khởi tạo lệnh in...");
+        
+        SwingWorker<Void, Void> printWorker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                // Ta cần lấy lại đầy đủ đối tượng Booking, Customer, Room để in
+                // Trong thực tế có thể dùng cache, ở đây ta tải lại để đảm bảo mới nhất
+                List<Booking> allB = BookingAPI.getAllBookings();
+                Booking booking = null;
+                for (Booking b : allB) if (b.getId() == inv.getBookingId()) { booking = b; break; }
+
+                if (booking != null) {
+                    List<Customer> allC = CustomerAPI.getAllCustomers();
+                    Customer customer = null;
+                    for (Customer c : allC) if (c.getId() == booking.getCustomerId()) { customer = c; break; }
+
+                    List<Room> allR = RoomAPI.getAllRooms();
+                    Room room = null;
+                    for (Room r : allR) if (r.getId() == booking.getRoomId()) { room = r; break; }
+
+                    long diff = booking.getCheckOutDate().getTime() - booking.getCheckInDate().getTime();
+                    int days = (int) Math.max(1, diff / (1000 * 60 * 60 * 24));
+                    
+                    InvoicePDFExporter.exportPDF(booking, customer, room, days, inv.getFinalTotal());
+                }
+                return null;
+            }
+            @Override
+            protected void done() {
+                lblStatus.setText("Sẵn sàng.");
+            }
+        };
+        printWorker.execute();
     }
 }
