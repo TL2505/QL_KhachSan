@@ -242,18 +242,67 @@ INSERT INTO room_types (name, description, base_price, capacity) VALUES
 INSERT INTO rooms (room_number, room_type_id, price, status) VALUES 
 ('101', 1, 500000, 'available'),
 ('102', 1, 500000, 'available'),
+('103', 1, 500000, 'available'),
+('104', 1, 500000, 'cleaning'),
+('105', 1, 500000, 'available'),
 ('201', 2, 1000000, 'booked'),
+('202', 2, 1000000, 'available'),
+('203', 2, 1000000, 'occupied'),
+('204', 2, 1000000, 'available'),
+('205', 2, 1000000, 'maintenance'),
 ('301', 3, 1500000, 'occupied'),
-('302', 3, 1500000, 'maintenance');
+('302', 3, 1500000, 'maintenance'),
+('303', 3, 1500000, 'available'),
+('304', 3, 1500000, 'available'),
+('305', 3, 1500000, 'booked');
 
 -- 5. customers
 INSERT INTO customers (full_name, identity_card, phone, email, address) VALUES 
 ('Nguyễn Văn A', '012345678912', '0901234567', 'nva@email.com', 'Hà Nội'),
 ('Trần Thị B', '098765432109', '0987654321', 'ttb@email.com', 'Đà Nẵng'),
-('Lê Hoàng C', '036985214701', '0912345678', 'lhc@email.com', 'TP.HCM');
+('Lê Hoàng C', '036985214701', '0912345678', 'lhc@email.com', 'TP.HCM'),
+('Phạm Quang D', '079012345678', '0902345678', 'pqd@email.com', 'Cần Thơ'),
+('Vũ Bích E', '040087654321', '0812345678', 'vbe@email.com', 'Hải Phòng'),
+('Hoàng Tuấn F', '038012312312', '0931231234', 'htf@email.com', 'Bình Dương'),
+('Ngô Thanh G', '046034534534', '0898765432', 'ntg@email.com', 'Đồng Nai'),
+('Đinh Quỳnh H', '019056756756', '0981122334', 'dqh@email.com', 'Quảng Ninh'),
+('Lý Tiểu I', '001098798798', '0979988776', 'lti@email.com', 'Kiên Giang'),
+('Đỗ Hùng K', '054045645645', '0966655544', 'dhk@email.com', 'Khánh Hòa'),
+('Bùi Diệu L', '027011122233', '0944433322', 'bdl@email.com', 'Vĩnh Phúc'),
+('Trương Minh M', '033099988877', '0922211100', 'tmm@email.com', 'Bắc Ninh'),
+('Phan Tú N', '062077766655', '0911199988', 'ptn@email.com', 'Long An');
 
 -- 6. services
 INSERT INTO services (name, description, price) VALUES 
 ('Giặt là', 'Dịch vụ giặt ủi lấy liền', 50000),
 ('Dọn phòng sớm', 'Dịch vụ dọn dẹp vệ sinh theo yêu cầu', 30000),
 ('Thuê xe', 'Thuê xe máy di chuyển 1 ngày', 150000);
+
+-- 7. bookings
+INSERT INTO bookings (customer_id, room_id, check_in_date, check_out_date, total_price, status) VALUES 
+(1, 1, '2026-03-01 14:00:00', '2026-03-05 12:00:00', 2000000, 'checked_out'),
+(1, 2, '2026-04-10 14:00:00', '2026-04-15 12:00:00', 2500000, 'pending'),
+(2, 3, '2026-03-15 14:00:00', '2026-03-17 12:00:00', 2000000, 'checked_out'),
+(4, 4, '2026-03-20 14:00:00', '2026-03-22 12:00:00', 3000000, 'checked_out'),
+(5, 5, '2026-03-25 14:00:00', '2026-03-28 12:00:00', 4500000, 'checked_out'),
+(6, 1, '2026-04-01 14:00:00', '2026-04-03 12:00:00', 1000000, 'checked_out'),
+(7, 2, '2026-04-05 14:00:00', '2026-04-07 12:00:00', 1000000, 'checked_in'),
+(8, 3, '2026-04-12 14:00:00', '2026-04-14 12:00:00', 2000000, 'pending'),
+(9, 4, '2026-04-20 14:00:00', '2026-04-25 12:00:00', 7500000, 'confirmed'),
+(10, 5, '2026-03-10 14:00:00', '2026-03-12 12:00:00', 3000000, 'cancelled');
+
+-- 8. invoices
+INSERT INTO invoices (booking_id, total_room_fee, final_total, status) VALUES 
+(1, 2000000, 2000000, 'paid'),
+(3, 2000000, 2000000, 'paid'),
+(4, 3000000, 3000000, 'paid'),
+(5, 4500000, 4500000, 'paid'),
+(6, 1000000, 1000000, 'paid');
+
+-- 9. payments
+INSERT INTO payments (invoice_id, amount, payment_method) VALUES 
+(1, 2000000, 'cash'),
+(2, 2000000, 'credit_card'),
+(3, 3000000, 'bank_transfer'),
+(4, 4500000, 'e_wallet'),
+(5, 1000000, 'cash');
