@@ -3,6 +3,7 @@ package quanlykhachsan.backend.controller;
 import quanlykhachsan.backend.model.Booking;
 import quanlykhachsan.backend.service.BookingService;
 import quanlykhachsan.backend.service.RoomService;
+import quanlykhachsan.backend.utils.SecurityUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
@@ -24,6 +25,9 @@ public class BookingController implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
+
+        // Check if user is logged in (Role 1 or 2)
+        if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
 
         try {
             // 0. GET /api/bookings (Lấy danh sách booking)

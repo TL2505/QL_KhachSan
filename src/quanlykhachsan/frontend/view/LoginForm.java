@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import quanlykhachsan.frontend.api.AuthAPI;
+import quanlykhachsan.frontend.utils.SessionManagerUtil;
 import quanlykhachsan.backend.model.User;
 import quanlykhachsan.frontend.MainUI;
 
@@ -369,9 +370,10 @@ public class LoginForm extends JFrame {
                 btnLogin.setEnabled(true);
                 lblLoading.setText(" ");
                 try {
-                    User user = get();
-                    if (user != null) {
-                        dispose();
+                        User user = get();
+                        if (user != null) {
+                            SessionManagerUtil.setUser(user); // Save session
+                            dispose();
                         SwingUtilities.invokeLater(() -> new MainUI(user).setVisible(true));
                     } else {
                         showError("Tên đăng nhập hoặc mật khẩu không chính xác!");

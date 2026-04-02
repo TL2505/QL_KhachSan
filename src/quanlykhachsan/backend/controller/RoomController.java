@@ -2,6 +2,7 @@ package quanlykhachsan.backend.controller;
 
 import quanlykhachsan.backend.model.Room;
 import quanlykhachsan.backend.service.RoomService;
+import quanlykhachsan.backend.utils.SecurityUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
@@ -61,6 +62,8 @@ public class RoomController implements HttpHandler {
     }
 
     private void handleUpdateStatus(HttpExchange exchange, int roomId) throws IOException {
+        // Cập nhật trạng thái phòng (thường dùng cho lễ tân check-in/out)
+        // Không yêu cầu quyền Admin ở đây để nhân viên có thể thao tác
         try {
             InputStream is = exchange.getRequestBody();
             String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
@@ -87,6 +90,7 @@ public class RoomController implements HttpHandler {
     }
 
     private void handleAdd(HttpExchange exchange) throws IOException {
+        if (!SecurityUtil.checkAdmin(exchange)) return;
         try {
             InputStream is = exchange.getRequestBody();
             String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
@@ -119,6 +123,7 @@ public class RoomController implements HttpHandler {
     }
 
     private void handleDelete(HttpExchange exchange, int roomId) throws IOException {
+        if (!SecurityUtil.checkAdmin(exchange)) return;
         boolean ok = roomService.deleteRoom(roomId);
         if (ok) {
             JsonObject res = new JsonObject();

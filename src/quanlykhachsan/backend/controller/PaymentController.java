@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.service.BookingService;
+import quanlykhachsan.backend.utils.SecurityUtil;
 
 public class PaymentController implements HttpHandler {
 
@@ -18,6 +19,9 @@ public class PaymentController implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
+
+        // Check if user is logged in (Role 1 or 2)
+        if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
 
         try {
             // POST /api/payments
