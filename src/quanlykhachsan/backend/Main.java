@@ -18,6 +18,9 @@ public class Main {
             server.createContext("/api/auth/login", new AuthController());
             // Route Quản lý phòng
             server.createContext("/api/rooms", new quanlykhachsan.backend.controller.RoomController());
+            // Route Hồ sơ người dùng
+            server.createContext("/api/users/update-profile", new quanlykhachsan.backend.controller.UserController());
+            server.createContext("/api/users/change-password", new quanlykhachsan.backend.controller.UserController());
             // Route Khách hàng
             server.createContext("/api/customers", new quanlykhachsan.backend.controller.CustomerController());
             // Route Đặt phòng / Check-in / Check-out

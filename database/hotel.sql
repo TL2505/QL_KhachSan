@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   role_id INT NOT NULL,
   status ENUM('active', 'inactive', 'banned') DEFAULT 'active',
+  full_name VARCHAR(100) NULL,
+  email VARCHAR(100) NULL,
+  phone VARCHAR(20) NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   -- RESTRICT: Không cho xóa role nếu còn user đang dùng để tránh invalid user
@@ -223,11 +226,11 @@ INSERT INTO roles (name, description) VALUES
 ('admin', 'Quản trị viên có toàn quyền truy cập'),
 ('staff', 'Nhân viên lễ tân');
 
--- 2. users
-INSERT INTO users (username, password, role_id) VALUES 
-('admin_main', 'hashed_pass_123', 1),
-('staff_01', 'hashed_pass_456', 2),
-('staff_02', 'hashed_pass_789', 2);
+-- 2. users (Mật khẩu mặc định cho tất cả là '123456')
+INSERT INTO users (username, password, role_id, full_name, email, phone) VALUES 
+('admin_main', '$2a$10$EUiC6sIZD/Un75n20QIKjO3r5xP2eVJ4AB0ZNr/E0guhBY5GyzbFG', 1, 'Administrator', 'admin@hotel.com', '0987654321'),
+('staff_01', '$2a$10$EUiC6sIZD/Un75n20QIKjO3r5xP2eVJ4AB0ZNr/E0guhBY5GyzbFG', 2, 'Nguyen Van A', 'nva@hotel.com', '0123456789'),
+('staff_02', '$2a$10$EUiC6sIZD/Un75n20QIKjO3r5xP2eVJ4AB0ZNr/E0guhBY5GyzbFG', 2, 'Tran Thi B', 'ttb@hotel.com', '0112233445');
 
 -- 3. room_types
 INSERT INTO room_types (name, description, base_price, capacity) VALUES 
