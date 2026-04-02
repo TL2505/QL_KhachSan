@@ -3,6 +3,7 @@ package quanlykhachsan.frontend.api;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.model.User;
+import quanlykhachsan.frontend.utils.HttpUtil;
 
 public class AuthAPI {
 
