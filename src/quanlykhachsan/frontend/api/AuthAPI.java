@@ -29,6 +29,9 @@ public class AuthAPI {
                 user.setUsername(dataObj.get("username").getAsString());
                 String roleStr = dataObj.get("role") != null ? dataObj.get("role").getAsString() : "USER";
                 user.setRoleId("ADMIN".equalsIgnoreCase(roleStr) ? 1 : 2);
+                if (dataObj.has("fullName")) user.setFullName(dataObj.get("fullName").getAsString());
+                if (dataObj.has("email")) user.setEmail(dataObj.get("email").getAsString());
+                if (dataObj.has("phone")) user.setPhone(dataObj.get("phone").getAsString());
                 return user;
             } else {
                 throw new Exception(resObj.get("message").getAsString());

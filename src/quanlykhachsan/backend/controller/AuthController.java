@@ -17,6 +17,7 @@ public class AuthController implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        System.out.println("📥 Nhận yêu cầu: " + exchange.getRequestMethod() + " tại " + exchange.getRequestURI());
         // Chỉ xử lý method POST cho /api/auth/login
         if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
             
@@ -48,6 +49,9 @@ public class AuthController implements HttpHandler {
                 dataObj.addProperty("userId", user.getId());
                 dataObj.addProperty("username", user.getUsername());
                 dataObj.addProperty("role", roleStr);
+                dataObj.addProperty("fullName", user.getFullName() != null ? user.getFullName() : "");
+                dataObj.addProperty("email", user.getEmail() != null ? user.getEmail() : "");
+                dataObj.addProperty("phone", user.getPhone() != null ? user.getPhone() : "");
                 
                 resObj.add("data", dataObj);
             } else {

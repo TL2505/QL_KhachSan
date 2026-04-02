@@ -8,6 +8,7 @@ import quanlykhachsan.frontend.view.CustomerForm;
 import quanlykhachsan.frontend.view.PaymentForm;
 import quanlykhachsan.frontend.view.RoomForm;
 import quanlykhachsan.frontend.view.LoginForm;
+import quanlykhachsan.frontend.view.ProfileForm;
 
 public class MainUI extends JFrame {
 
@@ -61,6 +62,9 @@ public class MainUI extends JFrame {
             adminPanel.add(new JLabel("📊 Khu vực Quản trị & Báo cáo doanh thu sẽ được xây dựng ở Phase 3", SwingConstants.CENTER), BorderLayout.CENTER);
             tabbedPane.addTab("🔧 Quản trị & Báo cáo", new ImageIcon(), adminPanel, "Quyền truy cập độc quyền của Admin");
         }
+
+        // Đặt tab Hồ sơ cá nhân ở dưới cùng danh sách
+        tabbedPane.addTab("👤 Hồ sơ cá nhân", new ImageIcon(), new ProfileForm(currentUser), "Cài đặt hồ sơ & Mật khẩu");
 
         add(tabbedPane, BorderLayout.CENTER);
     }

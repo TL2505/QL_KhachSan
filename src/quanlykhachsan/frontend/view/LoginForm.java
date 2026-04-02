@@ -246,11 +246,12 @@ public class LoginForm extends JFrame {
         cardOuter.add(card, new GridBagConstraints());
         root.add(cardOuter, BorderLayout.CENTER);
 
-        JLabel lblFooter = new JLabel("\u00A9 2025 Hotel Manager System  |  v1.0", SwingConstants.CENTER);
-        lblFooter.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lblFooter.setForeground(TEXT_MUTED);
-        lblFooter.setBorder(new EmptyBorder(0, 0, 14, 0));
-        root.add(lblFooter, BorderLayout.SOUTH);
+        int currentYear = java.time.Year.now().getValue();
+        JLabel lblAppFooter = new JLabel("\u00A9 " + currentYear + " Hotel Manager System  |  v1.0", SwingConstants.CENTER);
+        lblAppFooter.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblAppFooter.setForeground(TEXT_MUTED);
+        lblAppFooter.setBorder(new EmptyBorder(0, 0, 14, 0));
+        root.add(lblAppFooter, BorderLayout.SOUTH);
 
         setContentPane(root);
     }
@@ -370,10 +371,10 @@ public class LoginForm extends JFrame {
                 btnLogin.setEnabled(true);
                 lblLoading.setText(" ");
                 try {
-                        User user = get();
-                        if (user != null) {
-                            SessionManagerUtil.setUser(user); // Save session
-                            dispose();
+                    User user = get();
+                    if (user != null) {
+                        SessionManagerUtil.setUser(user); // Save session
+                        dispose();
                         SwingUtilities.invokeLater(() -> new MainUI(user).setVisible(true));
                     } else {
                         showError("Tên đăng nhập hoặc mật khẩu không chính xác!");
