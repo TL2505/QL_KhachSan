@@ -87,4 +87,26 @@ public class BookingAPI {
         }
         return bookings;
     }
+
+    public static List<Booking> getBookingsByCustomer(int customerId) {
+        List<Booking> bookings = new ArrayList<>();
+        try {
+            String jsonResponse = HttpUtil.sendGet("/bookings/customer/" + customerId);
+            Gson gson = new Gson();
+            JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
+            
+            if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
+                JsonArray dataArray = resObj.getAsJsonArray("data");
+                if (dataArray != null) {
+                    for (JsonElement element : dataArray) {
+                        Booking b = gson.fromJson(element, Booking.class);
+                        bookings.add(b);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return bookings;
+    }
 }

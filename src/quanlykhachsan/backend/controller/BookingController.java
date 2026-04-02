@@ -121,7 +121,17 @@ public class BookingController implements HttpHandler {
                     sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy Booking ID\"}");
                 }
             }
-            // 4. Các Method khác
+            // 4. GET /api/bookings/customer/{id}
+            else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/bookings/customer/")) {
+                int customerId = Integer.parseInt(path.substring("/api/bookings/customer/".length()));
+                java.util.List<Booking> list = bookingService.getBookingsByCustomer(customerId);
+                Gson gson = new Gson();
+                JsonObject resObj = new JsonObject();
+                resObj.addProperty("status", "success");
+                resObj.add("data", gson.toJsonTree(list));
+                sendResponse(exchange, 200, gson.toJson(resObj));
+            }
+            // 5. Các Method khác
             else {
                 exchange.sendResponseHeaders(405, -1);
             }

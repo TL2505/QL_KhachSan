@@ -6,9 +6,14 @@ import java.sql.Statement;
 public class UpdateDbUtility {
     public static void main(String[] args) {
         String[] sqlCommands = {
-                "ALTER TABLE bookings MODIFY status VARCHAR(50) DEFAULT 'pending'",
-                "ALTER TABLE payments MODIFY payment_method VARCHAR(50) NOT NULL",
-                "ALTER TABLE payments DROP FOREIGN KEY fk_payments_invoices" // Tạm thời bỏ ràng buộc để test nhanh
+            "ALTER TABLE users ADD COLUMN full_name VARCHAR(100) NULL AFTER status",
+            "ALTER TABLE users ADD COLUMN email VARCHAR(100) NULL AFTER full_name",
+            "ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER email",
+            "UPDATE users SET full_name = 'Administrator', email = 'admin@hotel.com', phone = '0987654321' WHERE username = 'admin_main'",
+            "UPDATE users SET full_name = 'Nguyen Van A', email = 'nva@hotel.com', phone = '0123456789' WHERE username = 'staff_01'",
+            "ALTER TABLE bookings MODIFY status VARCHAR(50) DEFAULT 'pending'",
+            "ALTER TABLE payments MODIFY payment_method VARCHAR(50) NOT NULL",
+            "ALTER TABLE payments DROP FOREIGN KEY fk_payments_invoices" 
         };
 
         try (Connection con = DBconn.getConnection();

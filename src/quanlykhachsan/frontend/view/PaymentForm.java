@@ -3,13 +3,10 @@ package quanlykhachsan.frontend.view;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
-import java.awt.event.*;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import quanlykhachsan.backend.model.Booking;
 import quanlykhachsan.backend.model.Customer;
@@ -28,7 +25,6 @@ public class PaymentForm extends JPanel {
     private static final Color MUTED      = new Color(107, 114, 128);
     private static final Color BG_PANEL   = new Color(248, 250, 252);
     private static final Color BORDER_CLR = new Color(226, 232, 240);
-    private static final Color ROW_EVEN   = new Color(249, 250, 251);
     private static final Color ROW_SELECT = new Color(219, 234, 254);
 
     private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm");
@@ -356,7 +352,9 @@ public class PaymentForm extends JPanel {
                             JOptionPane.showMessageDialog(PaymentForm.this, "Lỗi: " + res, "Thất Bại", JOptionPane.ERROR_MESSAGE);
                             btnPay.setEnabled(true);
                         }
-                    } catch (Exception e) {}
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             };
             worker.execute();
