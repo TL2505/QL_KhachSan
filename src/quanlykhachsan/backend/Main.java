@@ -1,6 +1,7 @@
 package quanlykhachsan.backend;
 
 import quanlykhachsan.backend.controller.AuthController;
+import quanlykhachsan.backend.controller.InvoiceController;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -14,8 +15,9 @@ public class Main {
             System.out.println("🚀 Đang khởi động Backend Server API...");
 
             // --- ĐĂNG KÝ CÁC ROUTE (API ENDPOINTS) TẠI ĐÂY ---
-            // Route Đăng nhập
+            // Route Đăng nhập và Đăng ký
             server.createContext("/api/auth/login", new AuthController());
+            server.createContext("/api/auth/register", new AuthController());
             // Route Quản lý phòng
             server.createContext("/api/rooms", new quanlykhachsan.backend.controller.RoomController());
             // Route Hồ sơ người dùng
