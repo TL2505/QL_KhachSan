@@ -6,14 +6,14 @@ import java.sql.Statement;
 public class UpdateDbUtility {
     public static void main(String[] args) {
         String[] sqlCommands = {
-            "ALTER TABLE bookings MODIFY status VARCHAR(50) DEFAULT 'pending'",
-            "ALTER TABLE payments MODIFY payment_method VARCHAR(50) NOT NULL",
-            "ALTER TABLE payments DROP FOREIGN KEY fk_payments_invoices" // Tạm thời bỏ ràng buộc để test nhanh
+                "ALTER TABLE bookings MODIFY status VARCHAR(50) DEFAULT 'pending'",
+                "ALTER TABLE payments MODIFY payment_method VARCHAR(50) NOT NULL",
+                "ALTER TABLE payments DROP FOREIGN KEY fk_payments_invoices" // Tạm thời bỏ ràng buộc để test nhanh
         };
 
-        try (Connection con = DBconn.getConnection(); 
-             Statement st = con.createStatement()) {
-            
+        try (Connection con = DBconn.getConnection();
+                Statement st = con.createStatement()) {
+
             for (String sql : sqlCommands) {
                 try {
                     st.executeUpdate(sql);
