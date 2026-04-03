@@ -12,16 +12,13 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public void addUser(User user) {
-        String query = "INSERT INTO users(username, password, role_id, status, full_name, email, phone) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO users(username, password, role_id, status) VALUES (?, ?, ?, ?)";
         try (Connection con = DBconn.getConnection(); 
              PreparedStatement ps = con.prepareStatement(query)) {
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getPassword());
             ps.setInt(3, user.getRoleId());
             ps.setString(4, user.getStatus());
-            ps.setString(5, user.getFullName());
-            ps.setString(6, user.getEmail());
-            ps.setString(7, user.getPhone());
             ps.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -30,17 +27,14 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public void updateUser(User user) {
-        String query = "UPDATE users SET username=?, password=?, role_id=?, status=?, full_name=?, email=?, phone=? WHERE id=?";
+        String query = "UPDATE users SET username=?, password=?, role_id=?, status=? WHERE id=?";
         try (Connection con = DBconn.getConnection(); 
              PreparedStatement ps = con.prepareStatement(query)) {
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getPassword());
             ps.setInt(3, user.getRoleId());
             ps.setString(4, user.getStatus());
-            ps.setString(5, user.getFullName());
-            ps.setString(6, user.getEmail());
-            ps.setString(7, user.getPhone());
-            ps.setInt(8, user.getId());
+            ps.setInt(5, user.getId());
             ps.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -73,9 +67,6 @@ public class UserDAOImpl implements UserDAO {
                 u.setPassword(rs.getString("password"));
                 u.setRoleId(rs.getInt("role_id"));
                 u.setStatus(rs.getString("status"));
-                u.setFullName(rs.getString("full_name"));
-                u.setEmail(rs.getString("email"));
-                u.setPhone(rs.getString("phone"));
                 list.add(u);
             }
         } catch (Exception e) {
@@ -101,9 +92,6 @@ public class UserDAOImpl implements UserDAO {
                     u.setPassword(rs.getString("password"));
                     u.setRoleId(rs.getInt("role_id"));
                     u.setStatus(rs.getString("status"));
-                    u.setFullName(rs.getString("full_name"));
-                    u.setEmail(rs.getString("email"));
-                    u.setPhone(rs.getString("phone"));
                     return u;
                 }
             }

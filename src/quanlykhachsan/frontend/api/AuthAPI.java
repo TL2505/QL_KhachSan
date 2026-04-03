@@ -29,36 +29,7 @@ public class AuthAPI {
                 user.setUsername(dataObj.get("username").getAsString());
                 String roleStr = dataObj.get("role") != null ? dataObj.get("role").getAsString() : "USER";
                 user.setRoleId("ADMIN".equalsIgnoreCase(roleStr) ? 1 : 2);
-                if (dataObj.has("fullName")) user.setFullName(dataObj.get("fullName").getAsString());
-                if (dataObj.has("email")) user.setEmail(dataObj.get("email").getAsString());
-                if (dataObj.has("phone")) user.setPhone(dataObj.get("phone").getAsString());
                 return user;
-            } else {
-                throw new Exception(resObj.get("message").getAsString());
-            }
-        }
-        throw new Exception("Phản hồi cấu trúc JSON từ máy chủ không xác định!");
-    }
-
-    public static String register(User user) throws Exception {
-        JsonObject req = new JsonObject();
-        req.addProperty("username", user.getUsername());
-        req.addProperty("password", user.getPassword());
-        req.addProperty("fullName", user.getFullName());
-        req.addProperty("email", user.getEmail());
-        req.addProperty("phone", user.getPhone());
-
-        String jsonResponse;
-        try {
-            jsonResponse = HttpUtil.sendPost("/auth/register", new Gson().toJson(req));
-        } catch (java.net.ConnectException ex) {
-            throw new Exception("Không thể kết nối Backend Server! (Connection Refused). Server đã được bật chưa?");
-        }
-        
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
-        if (resObj != null) {
-            if ("success".equals(resObj.get("status").getAsString())) {
-                return resObj.get("message").getAsString();
             } else {
                 throw new Exception(resObj.get("message").getAsString());
             }

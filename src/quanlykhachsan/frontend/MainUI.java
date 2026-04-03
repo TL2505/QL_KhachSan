@@ -8,8 +8,6 @@ import quanlykhachsan.frontend.view.CustomerForm;
 import quanlykhachsan.frontend.view.PaymentForm;
 import quanlykhachsan.frontend.view.RoomForm;
 import quanlykhachsan.frontend.view.LoginForm;
-import quanlykhachsan.frontend.view.ProfileForm;
-import quanlykhachsan.frontend.view.InvoiceForm;
 
 public class MainUI extends JFrame {
 
@@ -53,9 +51,6 @@ public class MainUI extends JFrame {
 
         // RBAC: Chức năng dành riêng cho Admin
         if (currentUser.getRoleId() == 1) {
-            // Tab Hóa đơn (Chỉ Admin xem)
-            tabbedPane.addTab("🧾 Quản lý Hóa đơn", new ImageIcon(), new InvoiceForm(), "Xem lịch sử hóa đơn & doanh thu");
-
             // Tab Nhân sự
             JPanel empPanel = new JPanel(new BorderLayout());
             empPanel.add(new JLabel("👤 Chức năng Quản lý Nhân sự đang được phát triển...", SwingConstants.CENTER), BorderLayout.CENTER);
@@ -63,12 +58,9 @@ public class MainUI extends JFrame {
 
             // Tab Báo cáo
             JPanel adminPanel = new JPanel(new BorderLayout());
-            adminPanel.add(new JLabel("📊 Khu vực Báo cáo Nâng cao sẽ được xây dựng sau", SwingConstants.CENTER), BorderLayout.CENTER);
-            tabbedPane.addTab("🔧 Phân tích Báo cáo", new ImageIcon(), adminPanel, "Quyền truy cập độc quyền của Admin");
+            adminPanel.add(new JLabel("📊 Khu vực Quản trị & Báo cáo doanh thu sẽ được xây dựng ở Phase 3", SwingConstants.CENTER), BorderLayout.CENTER);
+            tabbedPane.addTab("🔧 Quản trị & Báo cáo", new ImageIcon(), adminPanel, "Quyền truy cập độc quyền của Admin");
         }
-
-        // Đặt tab Hồ sơ cá nhân ở dưới cùng danh sách
-        tabbedPane.addTab("👤 Hồ sơ cá nhân", new ImageIcon(), new ProfileForm(currentUser), "Cài đặt hồ sơ & Mật khẩu");
 
         add(tabbedPane, BorderLayout.CENTER);
     }

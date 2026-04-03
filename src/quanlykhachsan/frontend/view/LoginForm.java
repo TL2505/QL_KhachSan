@@ -243,32 +243,14 @@ public class LoginForm extends JFrame {
         card.add(Box.createVerticalStrut(14));
         card.add(btnLogin);
 
-        JButton btnRegister = new JButton("Bạn chưa có tài khoản? Đăng ký ngay!");
-        btnRegister.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btnRegister.setForeground(new Color(37, 99, 235));
-        btnRegister.setContentAreaFilled(false);
-        btnRegister.setBorderPainted(false);
-        btnRegister.setFocusPainted(false);
-        btnRegister.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnRegister.setAlignmentX(LEFT_ALIGNMENT);
-        btnRegister.addActionListener(e -> {
-            RegisterForm registerForm = new RegisterForm(this);
-            this.setVisible(false);
-            registerForm.setVisible(true);
-        });
-
-        card.add(Box.createVerticalStrut(10));
-        card.add(btnRegister);
-
         cardOuter.add(card, new GridBagConstraints());
         root.add(cardOuter, BorderLayout.CENTER);
 
-        int currentYear = java.time.Year.now().getValue();
-        JLabel lblAppFooter = new JLabel("\u00A9 " + currentYear + " Hotel Manager System  |  v1.0", SwingConstants.CENTER);
-        lblAppFooter.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lblAppFooter.setForeground(TEXT_MUTED);
-        lblAppFooter.setBorder(new EmptyBorder(0, 0, 14, 0));
-        root.add(lblAppFooter, BorderLayout.SOUTH);
+        JLabel lblFooter = new JLabel("\u00A9 2025 Hotel Manager System  |  v1.0", SwingConstants.CENTER);
+        lblFooter.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblFooter.setForeground(TEXT_MUTED);
+        lblFooter.setBorder(new EmptyBorder(0, 0, 14, 0));
+        root.add(lblFooter, BorderLayout.SOUTH);
 
         setContentPane(root);
     }
@@ -388,10 +370,10 @@ public class LoginForm extends JFrame {
                 btnLogin.setEnabled(true);
                 lblLoading.setText(" ");
                 try {
-                    User user = get();
-                    if (user != null) {
-                        SessionManagerUtil.setUser(user); // Save session
-                        dispose();
+                        User user = get();
+                        if (user != null) {
+                            SessionManagerUtil.setUser(user); // Save session
+                            dispose();
                         SwingUtilities.invokeLater(() -> new MainUI(user).setVisible(true));
                     } else {
                         showError("Tên đăng nhập hoặc mật khẩu không chính xác!");

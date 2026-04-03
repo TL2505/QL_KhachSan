@@ -23,7 +23,7 @@ public class CustomerForm extends JPanel {
 
     private JTextField txtSearch;
     private JTextField txtName, txtPhone, txtCard;
-    private JButton btnSave, btnReset, btnDelete, btnRefresh, btnViewHistory;
+    private JButton btnSave, btnReset, btnDelete, btnRefresh;
     private JLabel lblFormTitle, lblStatus;
 
     private int editingId = -1; // -1 = đang thêm mới, >0 = ID thực tế trong DB
@@ -145,19 +145,11 @@ public class CustomerForm extends JPanel {
         btnDelete.setEnabled(false);
         btnDelete.addActionListener(e -> actionDelete());
 
-        btnViewHistory = createActionButton("Xem Lịch Sử", new Color(14, 165, 233));
-        btnViewHistory.setAlignmentX(LEFT_ALIGNMENT);
-        btnViewHistory.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        btnViewHistory.setEnabled(false);
-        btnViewHistory.addActionListener(e -> actionViewHistory());
-
         form.add(btnSave);
         form.add(Box.createVerticalStrut(8));
         form.add(btnReset);
         form.add(Box.createVerticalStrut(8));
         form.add(btnDelete);
-        form.add(Box.createVerticalStrut(8));
-        form.add(btnViewHistory);
 
         wrapper.add(form, BorderLayout.NORTH);
         return wrapper;
@@ -326,7 +318,6 @@ public class CustomerForm extends JPanel {
             lblFormTitle.setText("Cập Nhật Thông Tin");
             btnSave.setText("Cập Nhật");
             btnDelete.setEnabled(true);
-            btnViewHistory.setEnabled(true);
         }
     }
 
@@ -432,14 +423,6 @@ public class CustomerForm extends JPanel {
         }
     }
 
-    private void actionViewHistory() {
-        if (editingId == -1) return;
-        String customerName = txtName.getText();
-        JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        CustomerHistoryDialog dialog = new CustomerHistoryDialog(topFrame, editingId, customerName);
-        dialog.setVisible(true);
-    }
-
     private void resetForm() {
         editingId = -1;
         txtName.setText("");
@@ -448,7 +431,6 @@ public class CustomerForm extends JPanel {
         lblFormTitle.setText("Thêm Khách Hàng Mới");
         btnSave.setText("Lưu Khách Hàng");
         btnDelete.setEnabled(false);
-        btnViewHistory.setEnabled(false);
         customerTable.clearSelection();
     }
 

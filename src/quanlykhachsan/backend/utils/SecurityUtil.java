@@ -36,32 +36,6 @@ public class SecurityUtil {
         return hasPermission(exchange, 1);
     }
 
-    /**
-     * Hashes a plain text password using BCrypt.
-     * @param password The plain text password
-     * @return The hashed password
-     */
-    public static String hashPassword(String password) {
-        return BCrypt.hashpw(password, BCrypt.gensalt());
-    }
-
-    /**
-     * Verifies a plain text password against a hashed version.
-     * @param password The plain text password
-     * @param hashed The hashed password to check against
-     * @return true if matches, false otherwise
-     */
-    public static boolean verifyPassword(String password, String hashed) {
-        if (hashed == null || !hashed.startsWith("$2")) {
-            return false;
-        }
-        try {
-            return BCrypt.checkpw(password, hashed);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     private static void sendError(HttpExchange exchange, int code, String message) throws IOException {
         String json = String.format("{\"status\":\"error\",\"message\":\"%s\"}", message);
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);

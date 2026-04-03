@@ -3,10 +3,13 @@ package quanlykhachsan.frontend.view;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.awt.event.*;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import quanlykhachsan.backend.model.Booking;
 import quanlykhachsan.backend.model.Customer;
@@ -15,10 +18,6 @@ import quanlykhachsan.frontend.api.BookingAPI;
 import quanlykhachsan.frontend.api.CustomerAPI;
 import quanlykhachsan.frontend.api.RoomAPI;
 import quanlykhachsan.frontend.api.PaymentAPI;
-import quanlykhachsan.frontend.utils.InvoicePDFExporter;
-import java.net.URL;
-import java.awt.Image;
-import javax.imageio.ImageIO;
 
 public class PaymentForm extends JPanel {
 
@@ -29,6 +28,7 @@ public class PaymentForm extends JPanel {
     private static final Color MUTED      = new Color(107, 114, 128);
     private static final Color BG_PANEL   = new Color(248, 250, 252);
     private static final Color BORDER_CLR = new Color(226, 232, 240);
+    private static final Color ROW_EVEN   = new Color(249, 250, 251);
     private static final Color ROW_SELECT = new Color(219, 234, 254);
 
     private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm");
@@ -42,7 +42,7 @@ public class PaymentForm extends JPanel {
     // Invoice Panel Components
     private JLabel lblCustName, lblRoomNum, lblDuration, lblSubtotal, lblTax, lblTotal;
     private JComboBox<String> cbMethod;
-    private JButton btnPay, btnShowQR;
+    private JButton btnPay;
     
     // ─── State ────────────────────────────────────────────────────────────
     private List<Booking> bookingsList = new ArrayList<>();
@@ -183,26 +183,6 @@ public class PaymentForm extends JPanel {
         cbMethod.setAlignmentX(LEFT_ALIGNMENT);
         content.add(cbMethod);
         
-        btnShowQR = new JButton("\uD83D\uDCF1 HIỂN THỊ MÃ QR"); // QR Code Icon
-        btnShowQR.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnShowQR.setForeground(Color.WHITE);
-        btnShowQR.setBackground(new Color(14, 165, 233));
-        btnShowQR.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnShowQR.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        btnShowQR.setAlignmentX(LEFT_ALIGNMENT);
-        btnShowQR.setVisible(false); // Ẩn mặc định
-        btnShowQR.addActionListener(e -> actionShowQR());
-        
-        cbMethod.addActionListener(e -> {
-            if ("Chuyển khoản".equals(cbMethod.getSelectedItem()) && selectedBooking != null) {
-                btnShowQR.setVisible(true);
-            } else {
-                btnShowQR.setVisible(false);
-            }
-        });
-        
-        content.add(Box.createVerticalStrut(8));
-        content.add(btnShowQR);
         content.add(Box.createVerticalGlue());
 
         btnPay = new JButton("XÁC NHẬN THANH TOÁN");
@@ -329,9 +309,6 @@ public class PaymentForm extends JPanel {
         lblTotal.setText("TỔNG CỘNG: " + nf.format(total) + " VNĐ");
         
         btnPay.setEnabled(true);
-        if ("Chuyển khoản".equals(cbMethod.getSelectedItem())) {
-            btnShowQR.setVisible(true);
-        }
     }
 
     private void resetInvoice() {
@@ -343,7 +320,6 @@ public class PaymentForm extends JPanel {
         lblTax.setText("0 VNĐ");
         lblTotal.setText("TỔNG CỘNG: 0 VNĐ");
         btnPay.setEnabled(false);
-        btnShowQR.setVisible(false);
     }
 
     private void actionProcessPayment() {
@@ -357,25 +333,15 @@ public class PaymentForm extends JPanel {
             btnPay.setEnabled(false);
             lblStatus.setText("Đang xử lý thanh toán...");
             
-            // Lấy thông tin phòng và khách hàng trước
-            Customer currentCustomer = null;
-            for (Customer c : customersList) if (c.getId() == selectedBooking.getCustomerId()) currentCustomer = c;
-            Room currentRoom = null;
-            for (Room r : roomsList) if (r.getId() == selectedBooking.getRoomId()) currentRoom = r;
-            
-            long diff = selectedBooking.getCheckOutDate().getTime() - selectedBooking.getCheckInDate().getTime();
-            long days = Math.max(1, diff / (1000 * 60 * 60 * 24));
-            double amount = days * getRoomPrice(selectedBooking.getRoomId()) * 1.1;
-
-            Booking bKeep = selectedBooking;
-            Customer cKeep = currentCustomer;
-            Room rKeep = currentRoom;
-            
             SwingWorker<String, Void> worker = new SwingWorker<>() {
                 @Override
                 protected String doInBackground() {
                     String method = (String) cbMethod.getSelectedItem();
-                    return PaymentAPI.pay(bKeep.getId(), amount, method);
+                    long diff = selectedBooking.getCheckOutDate().getTime() - selectedBooking.getCheckInDate().getTime();
+                    long days = Math.max(1, diff / (1000 * 60 * 60 * 24));
+                    double amount = days * getRoomPrice(selectedBooking.getRoomId()) * 1.1;
+                    
+                    return PaymentAPI.pay(selectedBooking.getId(), amount, method);
                 }
                 @Override
                 protected void done() {
@@ -385,76 +351,15 @@ public class PaymentForm extends JPanel {
                             JOptionPane.showMessageDialog(PaymentForm.this, 
                                 "Thanh toán thành công!\nĐơn hàng đã hoàn tất và Phòng đang được dọn dẹp.", 
                                 "Thành Công", JOptionPane.INFORMATION_MESSAGE);
-                            
-                            // Gọi Export PDF
-                            InvoicePDFExporter.exportPDF(bKeep, cKeep, rKeep, (int)days, amount);
-                            
                             loadInitialData(); 
                         } else {
                             JOptionPane.showMessageDialog(PaymentForm.this, "Lỗi: " + res, "Thất Bại", JOptionPane.ERROR_MESSAGE);
                             btnPay.setEnabled(true);
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    } catch (Exception e) {}
                 }
             };
             worker.execute();
-        }
-    }
-
-    private void actionShowQR() {
-        if (selectedBooking == null) return;
-        try {
-            long diff = selectedBooking.getCheckOutDate().getTime() - selectedBooking.getCheckInDate().getTime();
-            long days = Math.max(1, diff / (1000 * 60 * 60 * 24));
-            double amount = days * getRoomPrice(selectedBooking.getRoomId()) * 1.1;
-
-            // Chốt thông tin VietQR 
-            // Mã NH MBBank: 970422. Tk demo: 123456789. Thay bằng mã và TK thật của bạn!
-            String bankBin = "970422";
-            String accountNo = "0987654321"; // TK Demo
-            String accountName = "KHACH SAN NGOC MAI";
-            String addInfo = "Thanh Toan Phong " + getRoomNumber(selectedBooking.getRoomId());
-            
-            String amountStr = String.valueOf((long)amount);
-            
-            String qrUrl = "https://img.vietqr.io/image/" + bankBin + "-" + accountNo + "-compact.png"
-                         + "?amount=" + amountStr
-                         + "&addInfo=" + java.net.URLEncoder.encode(addInfo, "UTF-8")
-                         + "&accountName=" + java.net.URLEncoder.encode(accountName, "UTF-8");
-
-            JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "QR Code Thanh Toán", true);
-            dialog.setSize(400, 500);
-            dialog.setLocationRelativeTo(this);
-            dialog.setLayout(new BorderLayout());
-
-            JLabel lblWait = new JLabel("Đang tạo mã QR, vui lòng chờ...", SwingConstants.CENTER);
-            dialog.add(lblWait, BorderLayout.CENTER);
-
-            // Fetch image in background so we don't freeze UI
-            SwingWorker<Image, Void> loadQR = new SwingWorker<>() {
-                @Override
-                protected Image doInBackground() throws Exception {
-                    return ImageIO.read(new URL(qrUrl));
-                }
-                @Override
-                protected void done() {
-                    try {
-                        Image img = get();
-                        lblWait.setIcon(new ImageIcon(img.getScaledInstance(350, -1, Image.SCALE_SMOOTH)));
-                        lblWait.setText("");
-                    } catch (Exception ex) {
-                        lblWait.setText("Lỗi kết nối bộ tải QR!");
-                    }
-                }
-            };
-            loadQR.execute();
-
-            dialog.setVisible(true);
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi tạo QR: " + ex.getMessage());
         }
     }
 

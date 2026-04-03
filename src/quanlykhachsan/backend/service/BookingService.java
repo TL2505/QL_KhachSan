@@ -4,8 +4,6 @@ import quanlykhachsan.backend.dao.BookingDAO;
 import quanlykhachsan.backend.daoimpl.BookingDAOImpl;
 import quanlykhachsan.backend.daoimpl.RoomDAOImpl;
 import quanlykhachsan.backend.model.Booking;
-import quanlykhachsan.backend.model.Invoice;
-import quanlykhachsan.backend.daoimpl.InvoiceDAOImpl;
 
 import java.util.List;
 
@@ -81,17 +79,6 @@ public class BookingService {
             p.setPaymentMethod(dbMethod);
             p.setPaymentDate(new java.util.Date());
             new quanlykhachsan.backend.daoimpl.PaymentDAOImpl().addPayment(p);
-            
-            // 2.5 Tạo bản ghi Hóa Đơn (Invoice) và lưu vào DB
-            Invoice inv = new Invoice();
-            inv.setBookingId(bookingId);
-            double subtotal = amount / 1.1; // Amount đã bao gồm 10% thuế lúc Lễ tân thanh toán
-            double tax = amount - subtotal;
-            inv.setTotalRoomFee(subtotal);
-            inv.setTaxAmount(tax);
-            inv.setFinalTotal(amount);
-            inv.setStatus("paid");
-            new InvoiceDAOImpl().addInvoice(inv);
             
             // 3. Cập nhật trạng thái Phòng sang "cleaning"
             new RoomDAOImpl().updateStatus(b.getRoomId(), "cleaning");
