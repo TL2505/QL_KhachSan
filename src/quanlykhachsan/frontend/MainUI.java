@@ -11,6 +11,7 @@ import quanlykhachsan.frontend.view.LoginForm;
 import quanlykhachsan.frontend.view.ProfileForm;
 import quanlykhachsan.frontend.view.PersonnelForm;
 import quanlykhachsan.frontend.view.ReportForm;
+import quanlykhachsan.frontend.view.InvoiceForm;
 
 public class MainUI extends JFrame {
 
@@ -56,7 +57,13 @@ public class MainUI extends JFrame {
 
         // RBAC: Chức năng dành riêng cho Admin
         if (currentUser.getRoleId() == 1) {
+            // Tab Hóa đơn (Chỉ Admin xem)
+            tabbedPane.addTab("🧾 Quản lý Hóa đơn", new ImageIcon(), new InvoiceForm(), "Xem lịch sử hóa đơn & doanh thu");
+            
+            // Tab Nhân sự (Dùng PersonnelForm thực tế)
             tabbedPane.addTab("👤 Quản lý Nhân sự", new ImageIcon(), new PersonnelForm(), "Quản lý nhân viên");
+            
+            // Tab Báo cáo (Dùng ReportForm thực tế)
             tabbedPane.addTab("🔧 Quản trị & Báo cáo", new ImageIcon(), new ReportForm(), "Báo cáo doanh thu");
         }
 
