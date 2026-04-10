@@ -33,7 +33,7 @@ public class CustomerHistoryDialog extends JDialog {
         super(parent, "Lịch sử thuê phòng - " + customerName, true);
         this.customerId = customerId;
         this.customerName = customerName;
-        
+
         setSize(800, 500);
         setLocationRelativeTo(parent);
         setResizable(false);
@@ -80,9 +80,12 @@ public class CustomerHistoryDialog extends JDialog {
 
         // Table
         tableModel = new DefaultTableModel(
-            new String[]{"STT", "Code", "Số Phòng", "Ngày Check-in", "Ngày Check-out", "Tổng Tiền", "Trạng Thái"}, 0) {
+                new String[] { "STT", "ID", "Số Phòng", "Ngày Check-in", "Ngày Check-out", "Tổng Tiền", "Trạng Thái" },
+                0) {
             @Override
-            public boolean isCellEditable(int r, int c) { return false; }
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
 
         historyTable = new JTable(tableModel);
@@ -101,7 +104,7 @@ public class CustomerHistoryDialog extends JDialog {
         historyTable.getColumnModel().getColumn(0).setMaxWidth(60);
         historyTable.getColumnModel().getColumn(1).setPreferredWidth(60);
         historyTable.getColumnModel().getColumn(2).setPreferredWidth(80);
-        
+
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
         historyTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
@@ -110,11 +113,12 @@ public class CustomerHistoryDialog extends JDialog {
 
         historyTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean foc, int row, int col) {
+            public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean foc, int row,
+                    int col) {
                 super.getTableCellRendererComponent(t, val, sel, foc, row, col);
                 setBackground(row % 2 == 0 ? ROW_EVEN : ROW_ODD);
                 setBorder(new EmptyBorder(0, 10, 0, 10));
-                
+
                 // Color code status if it's the last column
                 if (col == 6) {
                     String status = (String) val;
@@ -130,7 +134,7 @@ public class CustomerHistoryDialog extends JDialog {
                     setForeground(new Color(17, 24, 39));
                     setFont(getFont().deriveFont(Font.PLAIN));
                 }
-                
+
                 return this;
             }
         });
@@ -144,17 +148,17 @@ public class CustomerHistoryDialog extends JDialog {
         JPanel footerPanel = new JPanel(new BorderLayout());
         footerPanel.setBackground(Color.WHITE);
         footerPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
-        
+
         lblStatus = new JLabel("Đang tải dữ liệu...");
         lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblStatus.setForeground(MUTED);
         footerPanel.add(lblStatus, BorderLayout.WEST);
-        
+
         lblTotalSpent = new JLabel("Tổng đã chi: 0 VNĐ");
         lblTotalSpent.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lblTotalSpent.setForeground(SUCCESS);
         footerPanel.add(lblTotalSpent, BorderLayout.EAST);
-        
+
         add(footerPanel, BorderLayout.SOUTH);
     }
 
@@ -191,20 +195,21 @@ public class CustomerHistoryDialog extends JDialog {
                             }
 
                             String formattedPrice = String.format("%,.0f VNĐ", b.getTotalPrice());
-                            
+
                             String statusStr = b.getStatus() != null ? b.getStatus().toLowerCase() : "";
-                            if (statusStr.equals("paid") || statusStr.equals("checked_out") || statusStr.equals("checked_in") || statusStr.equals("confirmed")) {
+                            if (statusStr.equals("paid") || statusStr.equals("checked_out")
+                                    || statusStr.equals("checked_in") || statusStr.equals("confirmed")) {
                                 totalSpent += b.getTotalPrice();
                             }
 
-                            tableModel.addRow(new Object[]{
-                                stt++,
-                                "BK#" + b.getId(),
-                                roomNumber,
-                                sdf.format(b.getCheckInDate()),
-                                sdf.format(b.getCheckOutDate()),
-                                formattedPrice,
-                                b.getStatus().toUpperCase()
+                            tableModel.addRow(new Object[] {
+                                    stt++,
+                                    "BK#" + b.getId(),
+                                    roomNumber,
+                                    sdf.format(b.getCheckInDate()),
+                                    sdf.format(b.getCheckOutDate()),
+                                    formattedPrice,
+                                    b.getStatus().toUpperCase()
                             });
                         }
                         lblStatus.setText("Đã tìm thấy " + bookings.size() + " lượt đặt phòng.");
