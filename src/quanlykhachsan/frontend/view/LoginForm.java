@@ -399,7 +399,7 @@ public class LoginForm extends JFrame {
                         txtPassword.requestFocus();
                     }
                 } catch (Exception ex) {
-                    showError("Lỗi kết nối đến máy chủ. Vui lòng thử lại!");
+                    showError(ex.getMessage() != null ? ex.getMessage() : "Lỗi kết nối đến máy chủ. Vui lòng thử lại!");
                 }
             }
         };
