@@ -247,12 +247,12 @@ public class LoginForm extends JFrame {
         root.add(cardOuter, BorderLayout.CENTER);
 
         int currentYear = java.time.Year.now().getValue();
-        JLabel lblAppFooter = new JLabel("\u00A9 " + currentYear + " Hotel Manager System  |  v1.0", SwingConstants.CENTER);
+        JLabel lblAppFooter = new JLabel("\u00A9 " + currentYear + " Hotel Manager System  |  v1.0",
+                SwingConstants.CENTER);
         lblAppFooter.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         lblAppFooter.setForeground(TEXT_MUTED);
         lblAppFooter.setBorder(new EmptyBorder(0, 0, 14, 0));
         root.add(lblAppFooter, BorderLayout.SOUTH);
-
         setContentPane(root);
     }
 

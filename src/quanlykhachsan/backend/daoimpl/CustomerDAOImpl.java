@@ -80,7 +80,7 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public void comboBoxCustomer() {
-        // Äá»ƒ trá»‘ng nhÆ° yÃªu cáº§u (sáº½ triá»ƒn khai theo nhu cáº§u UI sau nÃ y)
+        
     }
     @Override
     public java.util.List<Customer> findAll() {

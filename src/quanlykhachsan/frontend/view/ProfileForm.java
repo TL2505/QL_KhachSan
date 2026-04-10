@@ -129,7 +129,13 @@ public class ProfileForm extends JPanel {
         fixedWidthContainer.add(passwordPanel);
         
         centerWrapper.add(fixedWidthContainer);
-        add(centerWrapper, BorderLayout.CENTER);
+        
+        // Wrap content in a JScrollPane to handle window resizing
+        JScrollPane scrollPane = new JScrollPane(centerWrapper);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16); // Smoother scrolling
+        
+        add(scrollPane, BorderLayout.CENTER);
     }
 
     private void addFormField(JPanel panel, GridBagConstraints gbc, String labelText, JComponent field, int row) {

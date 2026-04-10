@@ -21,6 +21,10 @@ public class Main {
             // Route Hồ sơ người dùng
             server.createContext("/api/users/update-profile", new quanlykhachsan.backend.controller.UserController());
             server.createContext("/api/users/change-password", new quanlykhachsan.backend.controller.UserController());
+            // Route Quản lý nhân sự
+            server.createContext("/api/users", new quanlykhachsan.backend.controller.UserController());
+            // Route Báo cáo
+            server.createContext("/api/reports", new quanlykhachsan.backend.controller.ReportController());
             // Route Khách hàng
             server.createContext("/api/customers", new quanlykhachsan.backend.controller.CustomerController());
             // Route Đặt phòng / Check-in / Check-out

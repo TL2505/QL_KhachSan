@@ -9,6 +9,8 @@ import quanlykhachsan.frontend.view.PaymentForm;
 import quanlykhachsan.frontend.view.RoomForm;
 import quanlykhachsan.frontend.view.LoginForm;
 import quanlykhachsan.frontend.view.ProfileForm;
+import quanlykhachsan.frontend.view.PersonnelForm;
+import quanlykhachsan.frontend.view.ReportForm;
 
 public class MainUI extends JFrame {
 
@@ -21,7 +23,7 @@ public class MainUI extends JFrame {
         setSize(1000, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        
+
         initUI();
     }
 
@@ -43,34 +45,31 @@ public class MainUI extends JFrame {
 
         // Tabs
         tabbedPane = new JTabbedPane();
+        tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setFont(new Font("Arial", Font.PLAIN, 16));
 
         tabbedPane.addTab("🏢 Sơ đồ Phòng", new ImageIcon(), new RoomForm(), "Xem và quản lý phòng");
         tabbedPane.addTab("👥 Khách hàng", new ImageIcon(), new CustomerForm(), "Quản lý thông tin khách hàng");
-        tabbedPane.addTab("📅 Đặt / Nhận phòng", new ImageIcon(), new BookingForm(), "Thao tác đặt phòng và Check-in/Check-out");
+        tabbedPane.addTab("📅 Đặt / Nhận phòng", new ImageIcon(), new BookingForm(),
+                "Thao tác đặt phòng và Check-in/Check-out");
         tabbedPane.addTab("💳 Thanh toán", new ImageIcon(), new PaymentForm(), "Xử lý thanh toán");
 
         // RBAC: Chức năng dành riêng cho Admin
         if (currentUser.getRoleId() == 1) {
-            // Tab Nhân sự
-            JPanel empPanel = new JPanel(new BorderLayout());
-            empPanel.add(new JLabel("👤 Chức năng Quản lý Nhân sự đang được phát triển...", SwingConstants.CENTER), BorderLayout.CENTER);
-            tabbedPane.addTab("👤 Quản lý Nhân sự", new ImageIcon(), empPanel, "Quản lý nhân viên");
-
-            // Tab Báo cáo
-            JPanel adminPanel = new JPanel(new BorderLayout());
-            adminPanel.add(new JLabel("📊 Khu vực Quản trị & Báo cáo doanh thu sẽ được xây dựng ở Phase 3", SwingConstants.CENTER), BorderLayout.CENTER);
-            tabbedPane.addTab("🔧 Quản trị & Báo cáo", new ImageIcon(), adminPanel, "Quyền truy cập độc quyền của Admin");
+            tabbedPane.addTab("👤 Quản lý Nhân sự", new ImageIcon(), new PersonnelForm(), "Quản lý nhân viên");
+            tabbedPane.addTab("🔧 Quản trị & Báo cáo", new ImageIcon(), new ReportForm(), "Báo cáo doanh thu");
         }
 
         // Đặt tab Hồ sơ cá nhân ở dưới cùng danh sách
-        tabbedPane.addTab("👤 Hồ sơ cá nhân", new ImageIcon(), new ProfileForm(currentUser), "Cài đặt hồ sơ & Mật khẩu");
+        tabbedPane.addTab("👤 Hồ sơ cá nhân", new ImageIcon(), new ProfileForm(currentUser),
+                "Cài đặt hồ sơ & Mật khẩu");
 
         add(tabbedPane, BorderLayout.CENTER);
     }
 
     private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có thực sự muốn đăng xuất?", "Đăng xuất", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có thực sự muốn đăng xuất?", "Đăng xuất",
+                JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             this.dispose();
             SwingUtilities.invokeLater(() -> {
