@@ -35,6 +35,10 @@ public class Main {
             server.createContext("/api/payments", new quanlykhachsan.backend.controller.PaymentController());
             // Route Quản lý Hóa đơn
             server.createContext("/api/invoices", new quanlykhachsan.backend.controller.InvoiceController());
+            // Route Dịch vụ phát sinh
+            server.createContext("/api/services", new quanlykhachsan.backend.controller.ServiceController());
+            server.createContext("/api/service-usage", new quanlykhachsan.backend.controller.ServiceUsageController());
+
 
             // Thiết lập cấu hình mặc định và chạy server
             server.setExecutor(null); 

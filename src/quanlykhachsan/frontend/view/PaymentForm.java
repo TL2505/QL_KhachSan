@@ -40,7 +40,7 @@ public class PaymentForm extends JPanel {
     private JLabel lblStatus;
     
     // Invoice Panel Components
-    private JLabel lblCustName, lblRoomNum, lblDuration, lblSubtotal, lblTax, lblTotal;
+    private JLabel lblCustName, lblRoomNum, lblDuration, lblSubtotal, lblServiceTotal, lblTax, lblTotal;
     private JComboBox<String> cbMethod;
     private JButton btnPay, btnShowQR;
     
@@ -161,6 +161,7 @@ public class PaymentForm extends JPanel {
         content.add(Box.createVerticalStrut(15));
 
         lblSubtotal = createInvoiceRow(content, "Tiền phòng:", "0 VNĐ");
+        lblServiceTotal = createInvoiceRow(content, "Phí dịch vụ:", "0 VNĐ");
         lblTax      = createInvoiceRow(content, "Thuế (10%):", "0 VNĐ");
         
         content.add(Box.createVerticalStrut(10));
@@ -272,11 +273,11 @@ public class PaymentForm extends JPanel {
     private void refreshTable() {
         tableModel.setRowCount(0);
         for (Booking b : bookingsList) {
-            if ("occupied".equals(b.getStatus()) || "checked_out".equals(b.getStatus())) {
+            if ("checked_in".equals(b.getStatus()) || "checked_out".equals(b.getStatus())) {
                 String custName = getCustomerName(b.getCustomerId());
                 String roomNum = getRoomNumber(b.getRoomId());
                 
-                String statusVn = b.getStatus().equals("occupied") ? "Đang ở" : "Đã trả phòng";
+                String statusVn = b.getStatus().equals("checked_in") ? "Đang ở" : "Đã trả phòng";
                 
                 tableModel.addRow(new Object[]{
                     b.getId(), custName, roomNum, df.format(b.getCheckInDate()), statusVn
@@ -321,8 +322,18 @@ public class PaymentForm extends JPanel {
         lblDuration.setText(days + " đêm");
         
         double subtotal = days * roomPrice;
-        double tax = subtotal * 0.1;
-        double total = subtotal + tax;
+        
+        // Tổng tiền dịch vụ
+        double serviceSum = 0;
+        java.util.List<quanlykhachsan.backend.model.ServiceUsage> usages = 
+            quanlykhachsan.frontend.api.ServiceUsageAPI.getUsageByBooking(selectedBooking.getId());
+        for (quanlykhachsan.backend.model.ServiceUsage u : usages) {
+            serviceSum += u.getTotalPrice();
+        }
+        lblServiceTotal.setText(nf.format(serviceSum) + " VNĐ");
+        
+        double tax = (subtotal + serviceSum) * 0.1;
+        double total = subtotal + serviceSum + tax;
         
         lblSubtotal.setText(nf.format(subtotal) + " VNĐ");
         lblTax.setText(nf.format(tax) + " VNĐ");
@@ -340,6 +351,7 @@ public class PaymentForm extends JPanel {
         lblRoomNum.setText("---");
         lblDuration.setText("---");
         lblSubtotal.setText("0 VNĐ");
+        lblServiceTotal.setText("0 VNĐ");
         lblTax.setText("0 VNĐ");
         lblTotal.setText("TỔNG CỘNG: 0 VNĐ");
         btnPay.setEnabled(false);
@@ -365,7 +377,16 @@ public class PaymentForm extends JPanel {
             
             long diff = selectedBooking.getCheckOutDate().getTime() - selectedBooking.getCheckInDate().getTime();
             long days = Math.max(1, diff / (1000 * 60 * 60 * 24));
-            double amount = days * getRoomPrice(selectedBooking.getRoomId()) * 1.1;
+            double subtotal = days * getRoomPrice(selectedBooking.getRoomId());
+            
+            double serviceSum = 0;
+            java.util.List<quanlykhachsan.backend.model.ServiceUsage> usagesList = 
+                quanlykhachsan.frontend.api.ServiceUsageAPI.getUsageByBooking(selectedBooking.getId());
+            for (quanlykhachsan.backend.model.ServiceUsage u : usagesList) {
+                serviceSum += u.getTotalPrice();
+            }
+            
+            double amount = (subtotal + serviceSum) * 1.1;
 
             Booking bKeep = selectedBooking;
             Customer cKeep = currentCustomer;
@@ -387,7 +408,7 @@ public class PaymentForm extends JPanel {
                                 "Thành Công", JOptionPane.INFORMATION_MESSAGE);
                             
                             // Gọi Export PDF
-                            InvoicePDFExporter.exportPDF(bKeep, cKeep, rKeep, (int)days, amount);
+                            InvoicePDFExporter.exportPDF(bKeep, cKeep, rKeep, usagesList, (int)days, amount);
                             
                             loadInitialData(); 
                         } else {
@@ -408,7 +429,15 @@ public class PaymentForm extends JPanel {
         try {
             long diff = selectedBooking.getCheckOutDate().getTime() - selectedBooking.getCheckInDate().getTime();
             long days = Math.max(1, diff / (1000 * 60 * 60 * 24));
-            double amount = days * getRoomPrice(selectedBooking.getRoomId()) * 1.1;
+            double subtotal = days * getRoomPrice(selectedBooking.getRoomId());
+            
+            double serviceSum = 0;
+            java.util.List<quanlykhachsan.backend.model.ServiceUsage> usages = 
+                quanlykhachsan.frontend.api.ServiceUsageAPI.getUsageByBooking(selectedBooking.getId());
+            for (quanlykhachsan.backend.model.ServiceUsage u : usages) {
+                serviceSum += u.getTotalPrice();
+            }
+            double amount = (subtotal + serviceSum) * 1.1;
 
             // Chốt thông tin VietQR 
             // Mã NH MBBank: 970422. Tk demo: 123456789. Thay bằng mã và TK thật của bạn!

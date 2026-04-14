@@ -196,7 +196,10 @@ public class InvoiceForm extends JPanel {
                     long diff = booking.getCheckOutDate().getTime() - booking.getCheckInDate().getTime();
                     int days = (int) Math.max(1, diff / (1000 * 60 * 60 * 24));
                     
-                    InvoicePDFExporter.exportPDF(booking, customer, room, days, inv.getFinalTotal());
+                    java.util.List<quanlykhachsan.backend.model.ServiceUsage> usagesList = 
+                        quanlykhachsan.frontend.api.ServiceUsageAPI.getUsageByBooking(booking.getId());
+                    
+                    quanlykhachsan.frontend.utils.InvoicePDFExporter.exportPDF(booking, customer, room, usagesList, days, inv.getFinalTotal());
                 }
                 return null;
             }

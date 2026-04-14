@@ -12,6 +12,8 @@ import quanlykhachsan.frontend.view.ProfileForm;
 import quanlykhachsan.frontend.view.PersonnelForm;
 import quanlykhachsan.frontend.view.ReportForm;
 import quanlykhachsan.frontend.view.InvoiceForm;
+import quanlykhachsan.frontend.view.ServiceManagementForm;
+import quanlykhachsan.frontend.view.RoomOrderForm;
 
 public class MainUI extends JFrame {
 
@@ -53,6 +55,10 @@ public class MainUI extends JFrame {
         tabbedPane.addTab("👥 Khách hàng", new ImageIcon(), new CustomerForm(), "Quản lý thông tin khách hàng");
         tabbedPane.addTab("📅 Đặt / Nhận phòng", new ImageIcon(), new BookingForm(),
                 "Thao tác đặt phòng và Check-in/Check-out");
+        
+        // Tab Gọi Món/Minibar (Cho Lễ tân thao tác)
+        tabbedPane.addTab("🍽️ Phục vụ & Gọi món", new ImageIcon(), new RoomOrderForm(), "Thêm đồ ăn, thức uống vào phòng");
+
         tabbedPane.addTab("💳 Thanh toán", new ImageIcon(), new PaymentForm(), "Xử lý thanh toán");
 
         // RBAC: Chức năng dành riêng cho Admin
@@ -63,6 +69,9 @@ public class MainUI extends JFrame {
             // Tab Nhân sự (Dùng PersonnelForm thực tế)
             tabbedPane.addTab("👤 Quản lý Nhân sự", new ImageIcon(), new PersonnelForm(), "Quản lý nhân viên");
             
+            // Tab Menu Dịch Vụ (Admin)
+            tabbedPane.addTab("📋 Kho Menu Dịch vụ", new ImageIcon(), new ServiceManagementForm(), "Cài đặt giá nước suối, mì tôm...");
+
             // Tab Báo cáo (Dùng ReportForm thực tế)
             tabbedPane.addTab("🔧 Quản trị & Báo cáo", new ImageIcon(), new ReportForm(), "Báo cáo doanh thu");
         }

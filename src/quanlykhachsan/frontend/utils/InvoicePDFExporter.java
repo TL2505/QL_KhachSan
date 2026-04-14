@@ -15,7 +15,7 @@ import java.awt.Desktop;
 
 public class InvoicePDFExporter {
 
-    public static void exportPDF(Booking booking, Customer customer, Room room, int days, double totalAmount) {
+    public static void exportPDF(Booking booking, Customer customer, Room room, java.util.List<quanlykhachsan.backend.model.ServiceUsage> usages, int days, double totalAmount) {
         Document document = new Document(PageSize.A4, 50, 50, 50, 50);
         try {
             // Check if folder exists
@@ -28,7 +28,7 @@ public class InvoicePDFExporter {
             PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(fileName));
             document.open();
 
-            // Font setting - try to use an Arial font for Vietnamese support, fallback to basic if not available
+            // Font setting
             BaseFont bf;
             try {
                  bf = BaseFont.createFont("c:/windows/fonts/arial.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
@@ -68,36 +68,58 @@ public class InvoicePDFExporter {
             
             document.add(new Paragraph(" "));
 
-            // TABLE SECTION
+            DecimalFormat nf = new DecimalFormat("#,###");
+
+            // TABLE SECTION: PHÒNG
             PdfPTable table = new PdfPTable(4);
             table.setWidthPercentage(100);
             table.setSpacingBefore(10f);
             table.setSpacingAfter(10f);
             
-            // Table Header
-            PdfPCell cell1 = new PdfPCell(new Phrase("Phòng", fontBold));
-            cell1.setBackgroundColor(BaseColor.LIGHT_GRAY);
-            PdfPCell cell2 = new PdfPCell(new Phrase("Số ngày/đêm", fontBold));
-            cell2.setBackgroundColor(BaseColor.LIGHT_GRAY);
-            PdfPCell cell3 = new PdfPCell(new Phrase("Đơn giá", fontBold));
-            cell3.setBackgroundColor(BaseColor.LIGHT_GRAY);
-            PdfPCell cell4 = new PdfPCell(new Phrase("Thành tiền", fontBold));
-            cell4.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            PdfPCell cell1 = new PdfPCell(new Phrase("Phòng", fontBold)); cell1.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            PdfPCell cell2 = new PdfPCell(new Phrase("Số ngày/đêm", fontBold)); cell2.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            PdfPCell cell3 = new PdfPCell(new Phrase("Đơn giá", fontBold)); cell3.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            PdfPCell cell4 = new PdfPCell(new Phrase("Thành tiền", fontBold)); cell4.setBackgroundColor(BaseColor.LIGHT_GRAY);
             
-            table.addCell(cell1);
-            table.addCell(cell2);
-            table.addCell(cell3);
-            table.addCell(cell4);
+            table.addCell(cell1); table.addCell(cell2); table.addCell(cell3); table.addCell(cell4);
 
-            DecimalFormat nf = new DecimalFormat("#,###");
-
-            // Table Content
+            double roomSub = days * (room != null ? room.getPrice() : 0);
             table.addCell(new Phrase((room != null ? room.getRoomNumber() : "N/A"), fontNormal));
             table.addCell(new Phrase(String.valueOf(days), fontNormal));
             table.addCell(new Phrase((room != null ? nf.format(room.getPrice()) : "0") + " VNĐ", fontNormal));
-            table.addCell(new Phrase(nf.format(days * (room != null ? room.getPrice() : 0)) + " VNĐ", fontNormal));
+            table.addCell(new Phrase(nf.format(roomSub) + " VNĐ", fontNormal));
             
             document.add(table);
+
+            // TABLE SECTION: DỊCH VỤ PHÁT SINH
+            double serviceSub = 0;
+            if (usages != null && usages.size() > 0) {
+                document.add(new Paragraph(" "));
+                document.add(new Paragraph("Dịch vụ bổ sung (Minibar/Room Service):", fontBold));
+                
+                PdfPTable svcTable = new PdfPTable(4);
+                svcTable.setWidthPercentage(100);
+                svcTable.setSpacingBefore(5f);
+                svcTable.setSpacingAfter(10f);
+                
+                svcTable.addCell(new PdfPCell(new Phrase("Món/Dịch vụ", fontBold)));
+                svcTable.addCell(new PdfPCell(new Phrase("Số lượng", fontBold)));
+                svcTable.addCell(new PdfPCell(new Phrase("Đơn giá", fontBold)));
+                svcTable.addCell(new PdfPCell(new Phrase("Thành tiền", fontBold)));
+                
+                java.util.List<quanlykhachsan.backend.model.Service> allSvc = quanlykhachsan.frontend.api.ServiceAPI.getAllServices();
+                for (quanlykhachsan.backend.model.ServiceUsage u : usages) {
+                    String sName = "Dịch vụ " + u.getServiceId();
+                    for(quanlykhachsan.backend.model.Service s: allSvc) if(s.getId() == u.getServiceId()) sName = s.getName();
+                    
+                    svcTable.addCell(new Phrase(sName, fontNormal));
+                    svcTable.addCell(new Phrase(String.valueOf(u.getQuantity()), fontNormal));
+                    svcTable.addCell(new Phrase(nf.format(u.getUnitPrice()) + " VNĐ", fontNormal));
+                    svcTable.addCell(new Phrase(nf.format(u.getTotalPrice()) + " VNĐ", fontNormal));
+                    serviceSub += u.getTotalPrice();
+                }
+                document.add(svcTable);
+            }
 
             // TOTAL SECTION
             PdfPTable totalTable = new PdfPTable(2);
@@ -108,10 +130,13 @@ public class InvoicePDFExporter {
             totalTable.addCell(blankCell);
             
             PdfPTable innerTotalTable = new PdfPTable(2);
-            innerTotalTable.addCell(new Phrase("Cộng tiền hàng:", fontNormal));
-            innerTotalTable.addCell(new Phrase(nf.format(days * (room != null ? room.getPrice() : 0)) + " VNĐ", fontNormal));
+            innerTotalTable.addCell(new Phrase("Tiền phòng:", fontNormal));
+            innerTotalTable.addCell(new Phrase(nf.format(roomSub) + " VNĐ", fontNormal));
             
-            double tax = (days * (room != null ? room.getPrice() : 0)) * 0.1;
+            innerTotalTable.addCell(new Phrase("Phí dịch vụ:", fontNormal));
+            innerTotalTable.addCell(new Phrase(nf.format(serviceSub) + " VNĐ", fontNormal));
+            
+            double tax = (roomSub + serviceSub) * 0.1;
             innerTotalTable.addCell(new Phrase("Thuế GTGT (10%):", fontNormal));
             innerTotalTable.addCell(new Phrase(nf.format(tax) + " VNĐ", fontNormal));
             
