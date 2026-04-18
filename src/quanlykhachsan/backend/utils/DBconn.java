@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBconn {
-    private static final String URL = "jdbc:mysql://localhost:3307/hotel_management_system?useUnicode=true&characterEncoding=UTF-8";
+    private static final String URL = "jdbc:mysql://localhost:3307/hotel_prod_db?useUnicode=true&characterEncoding=UTF-8";
     private static final String USER = "root"; // Đổi theo cấu hình máy bạn
     private static final String PASSWORD = ""; // Đổi theo cấu hình máy bạn
 

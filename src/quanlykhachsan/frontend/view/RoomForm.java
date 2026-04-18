@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Collections;
 import quanlykhachsan.backend.model.Room;
+import quanlykhachsan.backend.model.User;
 import quanlykhachsan.frontend.api.RoomAPI;
 
 public class RoomForm extends JPanel {
@@ -17,6 +18,7 @@ public class RoomForm extends JPanel {
     private JPanel gridPanel;        // Panel chứa các card phòng (wrap layout)
     private JLabel lblStatus;        // Thanh trạng thái phía trên
     private Room selectedRoom;       // Phòng đang được chọn (để xóa)
+    private User currentUser;        // User hiện tại (để phân quyền)
 
     // ── Màu sắc ──────────────────────────────────────────────────────────
     private static final Color C_AVAILABLE   = new Color(34, 197, 94);   // xanh lá
@@ -34,10 +36,11 @@ public class RoomForm extends JPanel {
     private static final Color BORDER_C  = new Color(226, 232, 240);
 
     // Kích thước mỗi card phòng
-    private static final int CARD_W = 140;
-    private static final int CARD_H = 140;
+    private static final int CARD_W = 160;
+    private static final int CARD_H = 170;
 
-    public RoomForm() {
+    public RoomForm(User user) {
+        this.currentUser = user;
         setLayout(new BorderLayout(0, 0));
         setBackground(BG);
         initUI();
@@ -45,62 +48,65 @@ public class RoomForm extends JPanel {
     }
 
     private void initUI() {
-        // ── Toolbar ──────────────────────────────────────────────────────
-        JPanel toolbar = new JPanel(new BorderLayout(12, 0));
-        toolbar.setBackground(Color.WHITE);
-        toolbar.setBorder(BorderFactory.createCompoundBorder(
-            new MatteBorder(0, 0, 1, 0, BORDER_C),
-            new EmptyBorder(10, 16, 10, 16)
-        ));
+        // ── Main Header Wrapper ───────────────────────────────────────────
+        JPanel mainHeader = new JPanel();
+        mainHeader.setLayout(new BoxLayout(mainHeader, BoxLayout.Y_AXIS));
+        mainHeader.setBackground(Color.WHITE);
+        mainHeader.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_C));
 
-        // Bên trái: Tiêu đề + chú thích màu
-        JPanel leftBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
-        leftBar.setOpaque(false);
+        // ── Row 1: Title & Action Buttons ────────────────────────────────
+        JPanel topRow = new JPanel(new BorderLayout(15, 0));
+        topRow.setOpaque(false);
+        topRow.setBorder(new EmptyBorder(12, 20, 8, 20));
 
-        JLabel pageTitle = new JLabel("Sơ đồ Phòng");
-        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 17));
-        pageTitle.setForeground(new Color(17, 24, 39));
-        leftBar.add(pageTitle);
+        JLabel pageTitle = new JLabel("Sơ đồ phòng khách sạn");
+        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        pageTitle.setForeground(new Color(15, 23, 42));
+        topRow.add(pageTitle, BorderLayout.WEST);
 
-        leftBar.add(makeSep());
-        leftBar.add(makeLegend("Trống",     C_AVAILABLE));
-        leftBar.add(makeLegend("Đã đặt",    C_BOOKED));
-        leftBar.add(makeLegend("Có khách",  C_OCCUPIED));
-        leftBar.add(makeLegend("Bảo trì",   C_MAINTENANCE));
-
-        // Bên phải: Nút bấm
-        JPanel rightBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        rightBar.setOpaque(false);
+        JPanel actionButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        actionButtons.setOpaque(false);
 
         lblStatus = new JLabel(" ");
         lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblStatus.setForeground(MUTED);
-        rightBar.add(lblStatus);
+        actionButtons.add(lblStatus);
 
-        JButton btnRefresh = makeToolBtn("\u21BA Làm Mới", MUTED, false);
+        JButton btnRefresh = makeToolBtn("Làm mới", MUTED, false);
         btnRefresh.addActionListener(e -> loadRooms());
+        actionButtons.add(btnRefresh);
 
-        JButton btnAdd = makeToolBtn("+ Thêm Phòng", PRIMARY, true);
-        btnAdd.addActionListener(e -> showAddRoomDialog());
+        if (currentUser.getRoleId() == 1) { // ADMIN
+            JButton btnAdd = makeToolBtn("Thêm phòng", PRIMARY, true);
+            btnAdd.addActionListener(e -> showAddRoomDialog());
+            actionButtons.add(btnAdd);
 
-        JButton btnChangeStatus = makeToolBtn("✎ Đổi Trạng Thái", new Color(124, 58, 237), true);
-        btnChangeStatus.addActionListener(e -> {
-            if (selectedRoom == null) {
-                JOptionPane.showMessageDialog(this,
-                    "Vui lòng nhấn chọn phòng muốn thay đổi trạng thái!",
-                    "Chưa chọn phòng", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                showChangeStatusDialog(selectedRoom);
-            }
-        });
+            JButton btnChangeStatus = makeToolBtn("Đổi trạng thái", new Color(124, 58, 237), true);
+            btnChangeStatus.addActionListener(e -> {
+                if (selectedRoom == null) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng chọn một phòng!", "Chưa chọn phòng", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    showChangeStatusDialog(selectedRoom);
+                }
+            });
+            actionButtons.add(btnChangeStatus);
+        }
+        topRow.add(actionButtons, BorderLayout.EAST);
 
-        rightBar.add(btnRefresh);
-        rightBar.add(btnAdd);
-        rightBar.add(btnChangeStatus);
+        // ── Row 2: Legend (Simplified) ───────────────────────────────────
+        JPanel legendRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+        legendRow.setOpaque(false);
+        legendRow.setBorder(new EmptyBorder(0, 20, 12, 20));
 
-        toolbar.add(leftBar, BorderLayout.WEST);
-        toolbar.add(rightBar, BorderLayout.EAST);
-        add(toolbar, BorderLayout.NORTH);
+        legendRow.add(new JLabel("Chú thích:"));
+        legendRow.add(makeLegend("Trống",     C_AVAILABLE));
+        legendRow.add(makeLegend("Đã đặt",    C_BOOKED));
+        legendRow.add(makeLegend("Có khách",  C_OCCUPIED));
+        legendRow.add(makeLegend("Bảo trì",   C_MAINTENANCE));
+
+        mainHeader.add(topRow);
+        mainHeader.add(legendRow);
+        add(mainHeader, BorderLayout.NORTH);
 
         // ── Grid panel (WrapFlowLayout) ──────────────────────────────────
         gridPanel = new JPanel(new WrapLayout(FlowLayout.LEADING, 12, 12));
@@ -141,7 +147,7 @@ public class RoomForm extends JPanel {
                 try {
                     List<Room> roomsList = get();
                     if (roomsList == null || roomsList.isEmpty()) {
-                        JLabel empty = new JLabel("Chưa có phòng nào. Nhấn '+ Thêm Phòng' để bắt đầu!");
+                        JLabel empty = new JLabel("Chưa có phòng nào. Nhấn 'Thêm phòng' để bắt đầu!");
                         empty.setFont(new Font("Segoe UI", Font.ITALIC, 14));
                         empty.setForeground(MUTED);
                         gridPanel.add(empty);
@@ -177,89 +183,116 @@ public class RoomForm extends JPanel {
     // ── Tạo card phòng ────────────────────────────────────────────────────
 
     private JPanel makeRoomCard(Room room) {
-        Color bg = getStatusColor(room.getStatus());
-        boolean dark = isDark(bg);
-
+        Color statusColor = getStatusColor(room.getStatus());
+        
         JPanel card = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Bóng đổ nhẹ
-                g2.setColor(new Color(0, 0, 0, 20));
-                g2.fillRoundRect(3, 5, getWidth() - 3, getHeight() - 3, 16, 16);
-                // Card nền
-                g2.setColor(bg);
-                g2.fillRoundRect(0, 0, getWidth() - 3, getHeight() - 3, 16, 16);
-                // Viền highlight nếu đang selected
+                
+                // Shadow
+                g2.setColor(new Color(0, 0, 0, 10));
+                g2.fillRoundRect(3, 3, getWidth()-6, getHeight()-6, 15, 15);
+                
+                // Main Card with soft tint background if selected
                 if (room.equals(selectedRoom)) {
+                    g2.setColor(new Color(PRIMARY.getRed(), PRIMARY.getGreen(), PRIMARY.getBlue(), 20));
+                    g2.fillRoundRect(0, 0, getWidth()-5, getHeight()-5, 15, 15);
+                    g2.setColor(PRIMARY);
+                    g2.setStroke(new BasicStroke(2f));
+                    g2.drawRoundRect(0, 0, getWidth()-5, getHeight()-5, 15, 15);
+                } else {
                     g2.setColor(Color.WHITE);
-                    g2.setStroke(new BasicStroke(3f));
-                    g2.drawRoundRect(2, 2, getWidth() - 8, getHeight() - 8, 12, 12);
+                    g2.fillRoundRect(0, 0, getWidth()-5, getHeight()-5, 15, 15);
+                    g2.setColor(new Color(241, 245, 249));
+                    g2.setStroke(new BasicStroke(1f));
+                    g2.drawRoundRect(0, 0, getWidth()-5, getHeight()-5, 15, 15);
                 }
             }
         };
         card.setPreferredSize(new Dimension(CARD_W, CARD_H));
-        card.setLayout(new GridBagLayout());
+        card.setLayout(new BorderLayout());
         card.setOpaque(false);
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Nội dung card
-        JPanel content = new JPanel();
-        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setOpaque(false);
+        // Content
+        JPanel inner = new JPanel();
+        inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
+        inner.setOpaque(false);
+        inner.setBorder(new EmptyBorder(12, 12, 12, 12));
 
-        JLabel lblNumber = new JLabel(room.getRoomNumber(), SwingConstants.CENTER);
-        lblNumber.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        lblNumber.setForeground(dark ? Color.WHITE : new Color(17, 24, 39));
-        lblNumber.setAlignmentX(CENTER_ALIGNMENT);
+        JLabel lblIcon = new JLabel("Phòng");
+        lblIcon.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        lblIcon.setAlignmentX(LEFT_ALIGNMENT);
 
-        String statusVn = toVietnamese(room.getStatus());
-        JLabel lblStatus2 = new JLabel(statusVn.toUpperCase(), SwingConstants.CENTER);
-        lblStatus2.setFont(new Font("Segoe UI", Font.BOLD, 10));
-        lblStatus2.setForeground(dark ? new Color(255, 255, 255, 220) : new Color(55, 65, 81));
-        lblStatus2.setAlignmentX(CENTER_ALIGNMENT);
+        JLabel lblNumber = new JLabel(room.getRoomNumber());
+        lblNumber.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblNumber.setForeground(new Color(15, 23, 42));
+        lblNumber.setAlignmentX(LEFT_ALIGNMENT);
+
+        JLabel lblCap = new JLabel("Sức chứa: " + (room.getRoomTypeId() == 1 ? "2-4" : "1-2") + " người");
+        lblCap.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblCap.setForeground(MUTED);
+        lblCap.setAlignmentX(LEFT_ALIGNMENT);
+
+        JPanel statusPill = new JPanel() {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Soft background tint for status
+                g2.setColor(new Color(statusColor.getRed(), statusColor.getGreen(), statusColor.getBlue(), 35));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                // Accent border
+                g2.setColor(new Color(statusColor.getRed(), statusColor.getGreen(), statusColor.getBlue(), 120));
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 8, 8);
+            }
+        };
+        statusPill.setLayout(new FlowLayout(FlowLayout.CENTER, 8, 2));
+        statusPill.setOpaque(false);
+        statusPill.setMaximumSize(new Dimension(90, 20));
+        statusPill.setAlignmentX(LEFT_ALIGNMENT);
+        
+        JLabel lblStatusTxt = new JLabel(toVietnamese(room.getStatus()));
+        lblStatusTxt.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        lblStatusTxt.setForeground(statusColor.darker());
+        statusPill.add(lblStatusTxt);
 
         NumberFormat nf = NumberFormat.getNumberInstance(new Locale("vi", "VN"));
-        JLabel lblPrice = new JLabel(nf.format(room.getPrice()) + " đ/đêm", SwingConstants.CENTER);
-        lblPrice.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        lblPrice.setForeground(dark ? new Color(255, 255, 255, 180) : new Color(75, 85, 99));
-        lblPrice.setAlignmentX(CENTER_ALIGNMENT);
+        JLabel lblPrice = new JLabel(nf.format(room.getPrice()) + " đ/đêm");
+        lblPrice.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblPrice.setForeground(PRIMARY);
+        lblPrice.setAlignmentX(LEFT_ALIGNMENT);
 
-        content.add(lblNumber);
-        content.add(Box.createVerticalStrut(2));
-        content.add(lblStatus2);
-        content.add(Box.createVerticalStrut(4));
-        content.add(lblPrice);
+        inner.add(lblIcon);
+        inner.add(lblNumber);
+        inner.add(lblCap);
+        inner.add(Box.createVerticalStrut(10));
+        inner.add(statusPill);
+        inner.add(Box.createVerticalGlue());
+        inner.add(lblPrice);
 
-        card.add(content);
+        card.add(inner, BorderLayout.CENTER);
 
-        // Click để chọn (highlight)
+        // Click logic... (same as before)
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                selectedRoom = room;
-                for (Component c : gridPanel.getComponents()) {
-                    c.repaint();
+                if (currentUser.getRoleId() == 3) {
+                    showRoomDetailDialog(room);
+                } else {
+                    selectedRoom = room;
+                    gridPanel.repaint();
                 }
             }
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                card.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
-            }
-            @Override
-            public void mouseExited(MouseEvent e) {
-                card.setBorder(null);
-            }
         });
-
         return card;
     }
 
     // ── Dialog Thêm Phòng ─────────────────────────────────────────────────
 
     private void showAddRoomDialog() {
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Thêm Phòng Mới", true);
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Thêm phòng mới", true);
         dialog.setSize(380, 420);
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
@@ -269,7 +302,7 @@ public class RoomForm extends JPanel {
         panel.setBorder(new EmptyBorder(24, 28, 24, 28));
         panel.setBackground(Color.WHITE);
 
-        JLabel title = new JLabel("Thêm Phòng Mới");
+        JLabel title = new JLabel("Thêm phòng mới");
         title.setFont(new Font("Segoe UI", Font.BOLD, 16));
         title.setForeground(new Color(17, 24, 39));
         title.setAlignmentX(LEFT_ALIGNMENT);
@@ -277,7 +310,7 @@ public class RoomForm extends JPanel {
         panel.add(title);
         panel.add(Box.createVerticalStrut(16));
 
-        JTextField txtRoomNumber = addDialogField(panel, "Số Phòng (vd: 101, 202)");
+        JTextField txtRoomNumber = addDialogField(panel, "Số phòng (vd: 101, 202)");
         panel.add(Box.createVerticalStrut(10));
         JTextField txtPrice = addDialogField(panel, "Giá / Đêm (VNĐ, vd: 500000)");
         panel.add(Box.createVerticalStrut(10));
@@ -304,7 +337,7 @@ public class RoomForm extends JPanel {
         lblErr.setAlignmentX(LEFT_ALIGNMENT);
         panel.add(lblErr);
 
-        JButton btnSave = new JButton("Lưu Phòng") {
+        JButton btnSave = new JButton("Lưu phòng") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
@@ -374,7 +407,7 @@ public class RoomForm extends JPanel {
 
     private void showChangeStatusDialog(Room room) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
-            "Đổi Trạng Thái Phòng", true);
+            "Đổi trạng thái phòng", true);
         dialog.setSize(380, 420);
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
@@ -384,7 +417,7 @@ public class RoomForm extends JPanel {
         panel.setBorder(new EmptyBorder(24, 28, 24, 28));
         panel.setBackground(Color.WHITE);
 
-        JLabel title = new JLabel("✎ Đổi Trạng Thái — Phòng " + room.getRoomNumber());
+        JLabel title = new JLabel("Đổi trạng thái — Phòng " + room.getRoomNumber());
         title.setFont(new Font("Segoe UI", Font.BOLD, 15));
         title.setForeground(new Color(17, 24, 39));
         title.setAlignmentX(LEFT_ALIGNMENT);
@@ -399,10 +432,10 @@ public class RoomForm extends JPanel {
         panel.add(Box.createVerticalStrut(18));
 
         String[][] statusOptions = {
-            {"available",       "🟢  Trống — Sẵn sàng nhận khách mới"},
-            {"cleaning",        "🧹  Đang dọn dẹp — Vừa có khách trả"},
-            {"maintenance",     "🔧  Bảo trì — Phủ phòng / sửa chữa"},
-            {"out_of_service",  "🚫  Ngừng hoạt động — Tạm thời đóng cửa"}
+            {"available",       "Trống — Sẵn sàng nhận khách mới"},
+            {"cleaning",        "Đang dọn dẹp — Vừa có khách trả"},
+            {"maintenance",     "Bảo trì — Phủ phòng / sửa chữa"},
+            {"out_of_service",  "Ngừng hoạt động — Tạm thời đóng cửa"}
         };
 
         ButtonGroup group = new ButtonGroup();
@@ -426,7 +459,7 @@ public class RoomForm extends JPanel {
         lblErr.setAlignmentX(LEFT_ALIGNMENT);
         panel.add(lblErr);
 
-        JButton btnSave = new JButton("Lưu Thay Đổi") {
+        JButton btnSave = new JButton("Lưu thay đổi") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
@@ -482,6 +515,14 @@ public class RoomForm extends JPanel {
         dialog.setVisible(true);
     }
 
+    private void showRoomDetailDialog(Room room) {
+        new RoomDetailDialog(
+            (Frame) SwingUtilities.getWindowAncestor(this),
+            room,
+            currentUser
+        ).setVisible(true);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private void setStatus(String msg, Color color) {
@@ -492,16 +533,24 @@ public class RoomForm extends JPanel {
     }
 
     private JPanel makeLegend(String text, Color color) {
-        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         p.setOpaque(false);
-        JLabel dot = new JLabel("  ");
-        dot.setOpaque(true);
-        dot.setBackground(color);
-        dot.setBorder(new LineBorder(new Color(0,0,0,40), 1, true));
-        p.add(dot);
+        
+        JPanel indicator = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(color);
+                g2.fillOval(0, 0, getWidth(), getHeight());
+            }
+        };
+        indicator.setPreferredSize(new Dimension(10, 10));
+        p.add(indicator);
+
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lbl.setForeground(new Color(55, 65, 81));
+        lbl.setForeground(new Color(71, 85, 105));
         p.add(lbl);
         return p;
     }
@@ -512,26 +561,37 @@ public class RoomForm extends JPanel {
         return sep;
     }
 
-    private JButton makeToolBtn(String text, Color fg, boolean solid) {
-        JButton btn = solid ? new JButton(text) {
+    private JButton makeToolBtn(String text, Color color, boolean filled) {
+        JButton btn = new JButton() {
             @Override
             protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g;
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getModel().isRollover() ? fg.darker() : fg);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                if (filled) {
+                    Graphics2D g2 = (Graphics2D) g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(getModel().isRollover() ? color.darker() : color);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                }
                 super.paintComponent(g);
             }
-        } : new JButton(text);
-
-        btn.setFont(new Font("Segoe UI", solid ? Font.BOLD : Font.PLAIN, 13));
-        btn.setForeground(solid ? Color.WHITE : fg);
-        if (solid) {
-            btn.setContentAreaFilled(false);
-            btn.setBorderPainted(false);
-        }
-        btn.setFocusPainted(false);
+        };
+        
+        btn.setText(text);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setFocusPainted(false);
+        
+        if (filled) {
+            btn.setForeground(Color.WHITE);
+            btn.setContentAreaFilled(false);
+            btn.setBorder(new EmptyBorder(7, 15, 7, 15));
+        } else {
+            btn.setForeground(color);
+            btn.setContentAreaFilled(false);
+            btn.setBorder(BorderFactory.createCompoundBorder(
+                new RoundBorder(color, 8),
+                new EmptyBorder(6, 14, 6, 14)
+            ));
+        }
         return btn;
     }
 
@@ -563,28 +623,28 @@ public class RoomForm extends JPanel {
 
     private Color getStatusColor(String status) {
         if (status == null) return Color.LIGHT_GRAY;
-        return switch (status.toLowerCase()) {
-            case "available"      -> C_AVAILABLE;
-            case "booked"         -> C_BOOKED;
-            case "occupied"       -> C_OCCUPIED;
-            case "maintenance"    -> C_MAINTENANCE;
-            case "cleaning"       -> C_CLEANING;
-            case "out_of_service" -> C_SERVICE;
-            default               -> new Color(200, 200, 200);
-        };
+        switch (status.toLowerCase()) {
+            case "available":      return C_AVAILABLE;
+            case "booked":         return C_BOOKED;
+            case "occupied":       return C_OCCUPIED;
+            case "maintenance":    return C_MAINTENANCE;
+            case "cleaning":       return C_CLEANING;
+            case "out_of_service": return C_SERVICE;
+            default:               return new Color(200, 200, 200);
+        }
     }
 
     private String toVietnamese(String status) {
         if (status == null) return "N/A";
-        return switch (status.toLowerCase()) {
-            case "available"      -> "Trống";
-            case "booked"         -> "Đã đặt";
-            case "occupied"       -> "Có khách";
-            case "maintenance"    -> "Bảo trì";
-            case "cleaning"       -> "Dọn dẹp";
-            case "out_of_service" -> "Ngừng bán";
-            default               -> status;
-        };
+        switch (status.toLowerCase()) {
+            case "available":      return "Trống";
+            case "booked":         return "Đã đặt";
+            case "occupied":       return "Có khách";
+            case "maintenance":    return "Bảo trì";
+            case "cleaning":       return "Dọn dẹp";
+            case "out_of_service": return "Ngừng bán";
+            default:               return status;
+        }
     }
 
     private boolean isDark(Color c) {
@@ -650,6 +710,25 @@ public class RoomForm extends JPanel {
             dim.width = Math.max(dim.width, rowWidth);
             if (dim.height > 0) dim.height += getVgap();
             dim.height += rowHeight;
+        }
+    }
+    private static class RoundBorder extends AbstractBorder {
+        private final Color color;
+        private final int radius;
+        public RoundBorder(Color color, int radius) {
+            this.color = color;
+            this.radius = radius;
+        }
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(color);
+            g2.drawRoundRect(x, y, width - 1, height - 1, radius, radius);
+        }
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(radius / 3, radius / 2, radius / 3, radius / 2);
         }
     }
 }

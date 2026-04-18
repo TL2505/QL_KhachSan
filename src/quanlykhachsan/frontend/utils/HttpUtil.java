@@ -14,8 +14,8 @@ public class HttpUtil {
     public static String sendGet(String endpoint) throws Exception {
         URL url = new URL(BASE_URL + endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(5000); // 5 seconds
-        conn.setReadTimeout(5000);
+        conn.setConnectTimeout(10000); // 10 seconds
+        conn.setReadTimeout(10000);
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
@@ -43,8 +43,8 @@ public class HttpUtil {
     public static String sendDelete(String endpoint) throws Exception {
         URL url = new URL(BASE_URL + endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(5000);
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(10000);
         conn.setRequestMethod("DELETE");
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
@@ -65,8 +65,8 @@ public class HttpUtil {
     private static String sendWithBody(String method, String endpoint, String jsonBody) throws Exception {
         URL url = new URL(BASE_URL + endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(5000);
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(10000);
         conn.setDoOutput(true);
         conn.setRequestMethod(method);
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");

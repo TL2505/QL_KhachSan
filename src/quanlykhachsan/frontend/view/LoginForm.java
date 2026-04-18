@@ -74,12 +74,13 @@ public class LoginForm extends JFrame {
         headerContent.setLayout(new BoxLayout(headerContent, BoxLayout.Y_AXIS));
         headerContent.setOpaque(false);
 
-        JLabel iconLabel = new JLabel("\uD83C\uDFE8", SwingConstants.CENTER);
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 45));
+        JLabel iconLabel = new JLabel("HỆ THỐNG", SwingConstants.CENTER);
+        iconLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        iconLabel.setForeground(new Color(191, 219, 254));
         iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel titleLabel = new JLabel("QUẢN LÝ KHÁCH SẠN", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        JLabel titleLabel = new JLabel("ĐĂNG NHẬP", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -203,13 +204,13 @@ public class LoginForm extends JFrame {
         lblLoading.setForeground(TEXT_MUTED);
         lblLoading.setAlignmentX(LEFT_ALIGNMENT);
 
-        btnLogin = new JButton("Đăng nhập \u2192") {
+        btnLogin = new JButton("🚀 Đăng nhập ngay") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(isEnabled() ? (getModel().isRollover() ? PRIMARY_HOVER : PRIMARY_COLOR) : BORDER_COLOR);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 super.paintComponent(g);
             }
         };

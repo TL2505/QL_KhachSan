@@ -22,4 +22,5 @@ public interface RoomDAO {
     public java.util.List<Room> findAll();
     public Room findById(int id);
     public boolean updateStatus(int roomId, String status);
+    public java.util.List<Room> findAvailableRooms(java.util.Date checkIn, java.util.Date checkOut);
 }

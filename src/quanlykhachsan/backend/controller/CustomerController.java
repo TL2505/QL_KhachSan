@@ -23,13 +23,31 @@ public class CustomerController implements HttpHandler {
         Gson gson = new Gson();
 
         try {
-            // 1. GET /api/customers
+            // 1. GET /api/customers or /api/customers/{id}
             if ("GET".equalsIgnoreCase(method)) {
-                List<Customer> customers = customerService.getAllCustomers();
-                JsonObject resObj = new JsonObject();
-                resObj.addProperty("status", "success");
-                resObj.add("data", gson.toJsonTree(customers));
-                sendResponse(exchange, 200, gson.toJson(resObj));
+                String path = exchange.getRequestURI().getPath();
+                String[] parts = path.split("/");
+                
+                if (parts.length >= 4) {
+                    // GET /api/customers/{id}
+                    int id = Integer.parseInt(parts[3]);
+                    Customer c = customerService.getCustomerById(id);
+                    if (c != null) {
+                        JsonObject resObj = new JsonObject();
+                        resObj.addProperty("status", "success");
+                        resObj.add("data", gson.toJsonTree(c));
+                        sendResponse(exchange, 200, gson.toJson(resObj));
+                    } else {
+                        sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy khách hàng!\"}");
+                    }
+                } else {
+                    // GET /api/customers
+                    List<Customer> customers = customerService.getAllCustomers();
+                    JsonObject resObj = new JsonObject();
+                    resObj.addProperty("status", "success");
+                    resObj.add("data", gson.toJsonTree(customers));
+                    sendResponse(exchange, 200, gson.toJson(resObj));
+                }
             } 
             // 2. POST /api/customers
             else if ("POST".equalsIgnoreCase(method)) {
@@ -66,7 +84,7 @@ public class CustomerController implements HttpHandler {
         }
     }
 
-    private void handlePost(HttpExchange exchange, Gson gson) throws IOException {
+    private void handlePost(HttpExchange exchange, Gson gson) throws Exception {
         if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
         InputStream is = exchange.getRequestBody();
         String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
@@ -93,7 +111,7 @@ public class CustomerController implements HttpHandler {
         }
     }
 
-    private void handlePut(HttpExchange exchange, int id, Gson gson) throws IOException {
+    private void handlePut(HttpExchange exchange, int id, Gson gson) throws Exception {
         if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
         InputStream is = exchange.getRequestBody();
         String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
@@ -120,7 +138,7 @@ public class CustomerController implements HttpHandler {
         }
     }
 
-    private void handleDelete(HttpExchange exchange, int id) throws IOException {
+    private void handleDelete(HttpExchange exchange, int id) throws Exception {
         if (!SecurityUtil.checkAdmin(exchange)) return;
         Customer c = customerService.getCustomerById(id);
         if (c == null) {

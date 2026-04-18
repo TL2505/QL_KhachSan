@@ -9,6 +9,7 @@ public class User {
     private String fullName;
     private String email;
     private String phone;
+    private Integer customerId;
 
     public User() {
     }
@@ -22,6 +23,19 @@ public class User {
         this.fullName = fullName;
         this.email = email;
         this.phone = phone;
+        this.customerId = null;
+    }
+
+    public User(int id, String username, String password, int roleId, String status, String fullName, String email, String phone, Integer customerId) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.roleId = roleId;
+        this.status = status;
+        this.fullName = fullName;
+        this.email = email;
+        this.phone = phone;
+        this.customerId = customerId;
     }
 
     public int getId() { return id; }
@@ -40,4 +54,6 @@ public class User {
     public void setEmail(String email) { this.email = email; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+    public Integer getCustomerId() { return customerId; }
+    public void setCustomerId(Integer customerId) { this.customerId = customerId; }
 }

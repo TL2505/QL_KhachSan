@@ -14,31 +14,23 @@ public class CustomerService {
         return customerDAO.findAll();
     }
 
-    public boolean addCustomer(Customer customer) {
+    public boolean addCustomer(Customer customer) throws Exception {
         return customerDAO.insert(customer);
     }
 
-    public boolean updateCustomer(Customer customer) {
-        try {
-            customerDAO.updateCustomer(customer);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    public boolean updateCustomer(Customer customer) throws Exception {
+        customerDAO.updateCustomer(customer);
+        return true;
     }
 
     public Customer getCustomerById(int id) {
         return customerDAO.findById(id);
     }
 
-    public boolean deleteCustomer(int id) {
-        try {
-            Customer c = new Customer();
-            c.setId(id);
-            customerDAO.deleteCustomer(c);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    public boolean deleteCustomer(int id) throws Exception {
+        Customer c = new Customer();
+        c.setId(id);
+        customerDAO.deleteCustomer(c);
+        return true;
     }
 }

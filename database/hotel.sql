@@ -1,9 +1,15 @@
--- CREATE DATABASE
-CREATE DATABASE IF NOT EXISTS hotel_management_system
+﻿-- CREATE DATABASE
+CREATE DATABASE IF NOT EXISTS hotel_prod_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE hotel_management_system;
+USE hotel_prod_db;
+
+-- CLEANUP OLD TABLES
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS loyalty_histories, reviews, promotions, messages, payments, invoices, service_usage, services, booking_details, bookings, customers, rooms, room_types, users, roles;
+DROP VIEW IF EXISTS v_monthly_revenue;
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- --------------------------------------------------------
 -- Table: roles
@@ -28,6 +34,7 @@ CREATE TABLE IF NOT EXISTS users (
   full_name VARCHAR(100) NULL,
   email VARCHAR(100) NULL,
   phone VARCHAR(20) NULL,
+  customer_id INT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   -- RESTRICT: Không cho xóa role nếu còn user đang dùng để tránh invalid user
@@ -45,6 +52,8 @@ CREATE TABLE IF NOT EXISTS room_types (
   description TEXT,
   base_price DECIMAL(10, 2) NOT NULL,
   capacity INT NOT NULL DEFAULT 2,
+  image_url VARCHAR(255) NULL,
+  amenities VARCHAR(500) DEFAULT 'Wifi, TV, Air Conditioning',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -76,6 +85,10 @@ CREATE TABLE IF NOT EXISTS customers (
   phone VARCHAR(20) NOT NULL,
   email VARCHAR(100),
   address VARCHAR(255),
+  is_vip BOOLEAN DEFAULT FALSE,
+  loyalty_points INT DEFAULT 0,
+  total_loyalty_points INT DEFAULT 0,
+  loyalty_level VARCHAR(50) DEFAULT 'Member',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_customer_identity (identity_card),
@@ -188,11 +201,71 @@ CREATE TABLE IF NOT EXISTS payments (
 ) ENGINE=InnoDB;
 
 -- --------------------------------------------------------
+-- Table: messages
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sender_id INT NOT NULL,
+  receiver_id INT NOT NULL,
+  content TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_chat_participants (sender_id, receiver_id)
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
+-- Table: promotions
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS promotions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  description VARCHAR(255),
+  discount_type ENUM('percentage', 'fixed_amount') NOT NULL,
+  discount_value DECIMAL(10, 2) NOT NULL,
+  start_date DATETIME NOT NULL,
+  end_date DATETIME NOT NULL,
+  condition_type ENUM('none', 'room_type', 'min_stay', 'vip_only') DEFAULT 'none',
+  condition_value VARCHAR(100),
+  status ENUM('active', 'inactive') DEFAULT 'active',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
+-- Table: reviews
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  room_id INT NOT NULL,
+  customer_id INT NOT NULL,
+  rating INT NOT NULL CHECK(rating >= 1 AND rating <= 5),
+  comment TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
+-- Table: loyalty_histories
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS loyalty_histories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  customer_id INT NOT NULL,
+  points INT NOT NULL,
+  type ENUM('earn', 'redeem') NOT NULL,
+  description VARCHAR(255),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
 -- VIEWS & TRIGGERS
 -- --------------------------------------------------------
 
 -- View: Báo cáo danh thu hàng tháng (Nhóm theo hóa đơn đã thanh toán)
-CREATE OR REPLACE VIEW view_monthly_revenue AS
+CREATE OR REPLACE VIEW v_monthly_revenue AS
 SELECT 
     DATE_FORMAT(issue_date, '%Y-%m') AS month,
     COUNT(id) AS total_invoices,
@@ -205,6 +278,8 @@ GROUP BY DATE_FORMAT(issue_date, '%Y-%m')
 ORDER BY month DESC;
 
 -- Trigger: Cập nhật tổng tiền dịch vụ vào hóa đơn sau khi thêm service_usage mới
+DROP TRIGGER IF EXISTS trg_after_insert_service_usage;
+
 DELIMITER //
 CREATE TRIGGER trg_after_insert_service_usage
 AFTER INSERT ON service_usage
@@ -222,24 +297,25 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 -- 1. roles
-INSERT INTO roles (name, description) VALUES 
+INSERT IGNORE INTO roles (name, description) VALUES 
 ('admin', 'Quản trị viên có toàn quyền truy cập'),
-('staff', 'Nhân viên lễ tân');
+('staff', 'Nhân viên lễ tân'),
+('customer', 'Khách hàng trú tại khách sạn');
 
 -- 2. users (Mật khẩu mặc định cho tất cả là '123456')
-INSERT INTO users (username, password, role_id, full_name, email, phone) VALUES 
-('admin_main', '$2a$10$EUiC6sIZD/Un75n20QIKjO3r5xP2eVJ4AB0ZNr/E0guhBY5GyzbFG', 1, 'Administrator', 'admin@hotel.com', '0987654321'),
-('staff_01', '$2a$10$EUiC6sIZD/Un75n20QIKjO3r5xP2eVJ4AB0ZNr/E0guhBY5GyzbFG', 2, 'Nguyen Van A', 'nva@hotel.com', '0123456789'),
-('staff_02', '$2a$10$EUiC6sIZD/Un75n20QIKjO3r5xP2eVJ4AB0ZNr/E0guhBY5GyzbFG', 2, 'Tran Thi B', 'ttb@hotel.com', '0112233445');
+INSERT IGNORE INTO users (username, password, role_id, full_name, email, phone, customer_id) VALUES 
+('admin_main', '$2a$10$EUiC6sIZD/Un75n20QIKjO3r5xP2eVJ4AB0ZNr/E0guhBY5GyzbFG', 1, 'Administrator', 'admin@hotel.com', '0987654321', NULL),
+('staff_01', '$2a$10$EUiC6sIZD/Un75n20QIKjO3r5xP2eVJ4AB0ZNr/E0guhBY5GyzbFG', 2, 'Nguyen Van A', 'nva@hotel.com', '0123456789', NULL),
+('customer_test', '$2a$10$EUiC6sIZD/Un75n20QIKjO3r5xP2eVJ4AB0ZNr/E0guhBY5GyzbFG', 3, 'Khách hàng Test', 'test@gmail.com', '0900000000', 1);
 
 -- 3. room_types
-INSERT INTO room_types (name, description, base_price, capacity) VALUES 
-('Standard', 'Phòng tiêu chuẩn cơ bản 2 người', 500000, 2),
-('Deluxe', 'Phòng cao cấp view biển hướng nắng', 1000000, 2),
-('Family', 'Phòng căn hộ gia đình diện tích rộng', 1500000, 4);
+INSERT IGNORE INTO room_types (name, description, base_price, capacity, image_url, amenities) VALUES 
+('Standard', 'Phòng tiêu chuẩn cơ bản, đầy đủ tiện nghi cho 2 người', 500000, 2, 'standard.jpg', 'Wifi, TV, Air Conditioning, Hot Water'),
+('Deluxe', 'Phòng cao cấp view biển, không gian sang trọng', 1000000, 2, 'deluxe.jpg', 'Wifi, TV, Air Conditioning, Hot Water, Mini Bar, Ocean View'),
+('Family', 'Phòng căn hộ rộng rãi cho cả gia đình', 1500000, 4, 'family.jpg', 'Wifi, TV, Air Conditioning, Hot Water, Mini Bar, Kitchen, Extra Bed');
 
 -- 4. rooms
-INSERT INTO rooms (room_number, room_type_id, price, status) VALUES 
+INSERT IGNORE INTO rooms (room_number, room_type_id, price, status) VALUES 
 ('101', 1, 500000, 'available'),
 ('102', 1, 500000, 'available'),
 ('103', 1, 500000, 'available'),
@@ -257,29 +333,29 @@ INSERT INTO rooms (room_number, room_type_id, price, status) VALUES
 ('305', 3, 1500000, 'booked');
 
 -- 5. customers
-INSERT INTO customers (full_name, identity_card, phone, email, address) VALUES 
-('Nguyễn Văn A', '012345678912', '0901234567', 'nva@email.com', 'Hà Nội'),
-('Trần Thị B', '098765432109', '0987654321', 'ttb@email.com', 'Đà Nẵng'),
-('Lê Hoàng C', '036985214701', '0912345678', 'lhc@email.com', 'TP.HCM'),
-('Phạm Quang D', '079012345678', '0902345678', 'pqd@email.com', 'Cần Thơ'),
-('Vũ Bích E', '040087654321', '0812345678', 'vbe@email.com', 'Hải Phòng'),
-('Hoàng Tuấn F', '038012312312', '0931231234', 'htf@email.com', 'Bình Dương'),
-('Ngô Thanh G', '046034534534', '0898765432', 'ntg@email.com', 'Đồng Nai'),
-('Đinh Quỳnh H', '019056756756', '0981122334', 'dqh@email.com', 'Quảng Ninh'),
-('Lý Tiểu I', '001098798798', '0979988776', 'lti@email.com', 'Kiên Giang'),
-('Đỗ Hùng K', '054045645645', '0966655544', 'dhk@email.com', 'Khánh Hòa'),
-('Bùi Diệu L', '027011122233', '0944433322', 'bdl@email.com', 'Vĩnh Phúc'),
-('Trương Minh M', '033099988877', '0922211100', 'tmm@email.com', 'Bắc Ninh'),
-('Phan Tú N', '062077766655', '0911199988', 'ptn@email.com', 'Long An');
+INSERT IGNORE INTO customers (full_name, identity_card, phone, email, address, is_vip, loyalty_points, total_loyalty_points, loyalty_level) VALUES 
+('Nguyễn Văn A', '012345678912', '0901234567', 'nva@email.com', 'Hà Nội', TRUE, 1500, 1500, 'Gold'),
+('Trần Thị B', '098765432109', '0987654321', 'ttb@email.com', 'Đà Nẵng', FALSE, 500, 500, 'Member'),
+('Lê Hoàng C', '036985214701', '0912345678', 'lhc@email.com', 'TP.HCM', FALSE, 200, 200, 'Member'),
+('Phạm Quang D', '079012345678', '0902345678', 'pqd@email.com', 'Cần Thơ', TRUE, 5000, 5000, 'Diamond'),
+('Vũ Bích E', '040087654321', '0812345678', 'vbe@email.com', 'Hải Phòng', FALSE, 0, 0, 'Member'),
+('Hoàng Tuấn F', '038012312312', '0931231234', 'htf@email.com', 'Bình Dương', FALSE, 100, 100, 'Member'),
+('Ngô Thanh G', '046034534534', '0898765432', 'ntg@email.com', 'Đồng Nai', FALSE, 0, 0, 'Member'),
+('Đinh Quỳnh H', '019056756756', '0981122334', 'dqh@email.com', 'Quảng Ninh', TRUE, 2200, 2200, 'Platinum'),
+('Lý Tiểu I', '001098798798', '0979988776', 'lti@email.com', 'Kiên Giang', FALSE, 300, 300, 'Member'),
+('Đỗ Hùng K', '054045645645', '0966655544', 'dhk@email.com', 'Khánh Hòa', FALSE, 0, 0, 'Member'),
+('Bùi Diệu L', '027011122233', '0944433322', 'bdl@email.com', 'Vĩnh Phúc', FALSE, 800, 800, 'Silver'),
+('Trương Minh M', '033099988877', '0922211100', 'tmm@email.com', 'Bắc Ninh', FALSE, 150, 150, 'Member'),
+('Phan Tú N', '062077766655', '0911199988', 'ptn@email.com', 'Long An', FALSE, 0, 0, 'Member');
 
 -- 6. services
-INSERT INTO services (name, description, price) VALUES 
+INSERT IGNORE INTO services (name, description, price) VALUES 
 ('Giặt là', 'Dịch vụ giặt ủi lấy liền', 50000),
 ('Dọn phòng sớm', 'Dịch vụ dọn dẹp vệ sinh theo yêu cầu', 30000),
 ('Thuê xe', 'Thuê xe máy di chuyển 1 ngày', 150000);
 
 -- 7. bookings
-INSERT INTO bookings (customer_id, room_id, check_in_date, check_out_date, total_price, status) VALUES 
+INSERT IGNORE INTO bookings (customer_id, room_id, check_in_date, check_out_date, total_price, status) VALUES 
 (1, 1, '2026-03-01 14:00:00', '2026-03-05 12:00:00', 2000000, 'checked_out'),
 (1, 2, '2026-04-10 14:00:00', '2026-04-15 12:00:00', 2500000, 'pending'),
 (2, 3, '2026-03-15 14:00:00', '2026-03-17 12:00:00', 2000000, 'checked_out'),
@@ -292,7 +368,7 @@ INSERT INTO bookings (customer_id, room_id, check_in_date, check_out_date, total
 (10, 5, '2026-03-10 14:00:00', '2026-03-12 12:00:00', 3000000, 'cancelled');
 
 -- 8. invoices
-INSERT INTO invoices (booking_id, total_room_fee, final_total, status) VALUES 
+INSERT IGNORE INTO invoices (booking_id, total_room_fee, final_total, status) VALUES 
 (1, 2000000, 2000000, 'paid'),
 (3, 2000000, 2000000, 'paid'),
 (4, 3000000, 3000000, 'paid'),
@@ -300,9 +376,38 @@ INSERT INTO invoices (booking_id, total_room_fee, final_total, status) VALUES
 (6, 1000000, 1000000, 'paid');
 
 -- 9. payments
-INSERT INTO payments (invoice_id, amount, payment_method) VALUES 
+INSERT IGNORE INTO payments (invoice_id, amount, payment_method) VALUES 
 (1, 2000000, 'cash'),
 (2, 2000000, 'credit_card'),
 (3, 3000000, 'bank_transfer'),
 (4, 4500000, 'e_wallet'),
 (5, 1000000, 'cash');
+
+-- 10. messages
+INSERT IGNORE INTO messages (sender_id, receiver_id, content, is_read) VALUES 
+(4, 2, 'Chào lễ tân, cho tôi hỏi về dịch vụ giặt là?', 0),
+(2, 4, 'Dạ chào anh, dịch vụ giặt là bên em hoạt động từ 7h sáng đến 10h tối ạ.', 1),
+(4, 2, 'Cảm ơn bạn, tôi sẽ gửi đồ sau.', 0);
+
+-- 11. promotions
+INSERT IGNORE INTO promotions (name, description, discount_type, discount_value, start_date, end_date, condition_type, condition_value, status) VALUES 
+('Mùa Hè Sôi Động', 'Giảm 10% cho tất cả các phòng', 'percentage', 10, '2026-05-01 00:00:00', '2026-08-31 23:59:59', 'none', '', 'active'),
+('Giảm Giá VIP', 'Giảm 500k cho khách VIP', 'fixed_amount', 500000, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 'vip_only', '', 'active'),
+('Ưu đãi Family', 'Giảm 15% khi thuê phòng Family tối thiểu 3 đêm', 'percentage', 15, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 'min_stay', '3', 'active');
+
+-- 11. reviews
+INSERT IGNORE INTO reviews (room_id, customer_id, rating, comment) VALUES 
+(1, 1, 5, 'Phòng sạch sẽ, view đẹp, thái độ nhân viên tốt.'),
+(2, 2, 4, 'Dịch vụ ổn nhưng check in hơi chậm.'),
+(3, 3, 5, 'Rất hài lòng, sẽ quay lại lần sau.'),
+(4, 4, 3, 'Điều hòa trong phòng hơi ồn, bù lại thức ăn ngon.'),
+(5, 5, 5, 'Trải nghiệm tuyệt vời, đánh giá 5 sao cho chất lượng dịch vụ!');
+
+-- 12. loyalty_histories
+INSERT IGNORE INTO loyalty_histories (customer_id, points, type, description) VALUES 
+(1, 1500, 'earn', 'Điểm thưởng từ booking ID 1'),
+(2, 500, 'earn', 'Điểm thưởng từ booking ID 2'),
+(3, 200, 'earn', 'Điểm thưởng từ dịch vụ dùng thêm'),
+(4, 5000, 'earn', 'Điểm thưởng từ booking ID 4 (Khách hàng đặc biệt)'),
+(8, 2200, 'earn', 'Tích điểm theo chương trình khuyến mãi đầu năm'),
+(11, 800, 'earn', 'Khách hàng thân thiết check-in nhiều lần');

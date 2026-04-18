@@ -14,13 +14,13 @@ import java.util.ArrayList;
 public interface CustomerDAO {
 
 //    add Customer
-    public void addCustomer(Customer customer);
+    public void addCustomer(Customer customer) throws Exception;
 
 //    update Customer
-    public void updateCustomer(Customer customer);
+    public void updateCustomer(Customer customer) throws Exception;
 
 //    delete Customer
-    public void deleteCustomer(Customer customer);
+    public void deleteCustomer(Customer customer) throws Exception;
 
 //    list of Customer 
     public ArrayList<Customer> selectCustomer();
@@ -29,5 +29,7 @@ public interface CustomerDAO {
 
     public java.util.List<Customer> findAll();
     public Customer findById(int id);
-    public boolean insert(Customer customer);
+    public boolean insert(Customer customer) throws Exception;
+    public int addAndReturnId(Customer customer) throws Exception;
+    public void updateLoyaltyPoints(int customerId, int currentPointsChange, int totalPointsChange, String newLevel) throws Exception;
 }

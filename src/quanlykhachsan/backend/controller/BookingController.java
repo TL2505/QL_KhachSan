@@ -3,6 +3,7 @@ package quanlykhachsan.backend.controller;
 import quanlykhachsan.backend.model.Booking;
 import quanlykhachsan.backend.service.BookingService;
 import quanlykhachsan.backend.service.RoomService;
+import quanlykhachsan.backend.service.LoyaltyService;
 import quanlykhachsan.backend.utils.SecurityUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -19,6 +20,7 @@ public class BookingController implements HttpHandler {
 
     private BookingService bookingService = new BookingService();
     private RoomService roomService = new RoomService();
+    private LoyaltyService loyaltyService = new LoyaltyService();
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
     @Override
@@ -26,8 +28,8 @@ public class BookingController implements HttpHandler {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
-        // Check if user is logged in (Role 1 or 2)
-        if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
+        // Check if user is logged in (Role 1, 2, or 3)
+        if (!SecurityUtil.hasPermission(exchange, 1, 2, 3)) return;
 
         try {
             // 0. GET /api/bookings (Lấy danh sách booking)
@@ -84,14 +86,14 @@ public class BookingController implements HttpHandler {
                 newBooking.setTotalPrice(totalPrice);
                 newBooking.setStatus("pending");
 
-                boolean success = bookingService.createBooking(newBooking);
+                int generatedId = bookingService.addBooking(newBooking);
 
-                if (success) {
+                if (generatedId > 0) {
                     // Update room status -> booked
                     roomService.updateRoomStatus(roomId, "booked");
-                    sendResponse(exchange, 200, "{\"status\": \"success\", \"message\": \"Đặt phòng thành công\", \"data\": null}");
+                    sendResponse(exchange, 200, "{\"status\": \"success\", \"message\": \"Đặt phòng thành công\", \"bookingId\": " + generatedId + "}");
                 } else {
-                    sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"Trùng lịch trùng phòng! Không thể đặt.\"}");
+                    sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"Lỗi tạo booking hoặc trùng lịch!\"}");
                 }
 
             }
@@ -116,6 +118,21 @@ public class BookingController implements HttpHandler {
                 if (b != null) {
                     bookingService.updateBookingStatus(bookingId, "checked_out");
                     roomService.updateRoomStatus(b.getRoomId(), "available");
+
+                    // Cộng điểm tích lũy cho khách hàng sau khi check-out
+                    try {
+                        if (b.getCustomerId() > 0 && b.getTotalPrice() > 0) {
+                            loyaltyService.addPoints(
+                                b.getCustomerId(),
+                                b.getTotalPrice(),
+                                "Thanh toán phòng #" + b.getRoomId() + " (Booking #" + bookingId + ")"
+                            );
+                        }
+                    } catch (Exception loyaltyEx) {
+                        // Không để lỗi điểm thưởng ảnh hưởng đến việc check-out
+                        System.err.println("[WARN] Không thể cộng điểm thành viên: " + loyaltyEx.getMessage());
+                    }
+
                     sendResponse(exchange, 200, "{\"status\": \"success\", \"message\": \"Check-out thành công\"}");
                 } else {
                     sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy Booking ID\"}");
@@ -138,7 +155,10 @@ public class BookingController implements HttpHandler {
 
         } catch (Exception e) {
             e.printStackTrace();
-            sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"Lỗi Server: " + e.getMessage() + "\"}");
+            JsonObject errObj = new JsonObject();
+            errObj.addProperty("status", "error");
+            errObj.addProperty("message", "Lỗi Server: " + e.getMessage());
+            sendResponse(exchange, 500, new Gson().toJson(errObj));
         }
     }
 
