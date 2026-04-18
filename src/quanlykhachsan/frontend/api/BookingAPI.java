@@ -11,7 +11,7 @@ import quanlykhachsan.backend.model.Booking;
 
 public class BookingAPI {
 
-    public static String bookRoom(int customerId, int roomId, String checkInDate, String checkOutDate) {
+    public static JsonObject bookRoom(int customerId, int roomId, String checkInDate, String checkOutDate) {
         try {
             JsonObject req = new JsonObject();
             req.addProperty("customerId", customerId);
@@ -20,20 +20,11 @@ public class BookingAPI {
             req.addProperty("checkOutDate", checkOutDate);
 
             String jsonResponse = HttpUtil.sendPost("/bookings", new Gson().toJson(req));
-            JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
-            
-            if (resObj != null) {
-                if ("success".equals(resObj.get("status").getAsString())) {
-                    return "Success: " + resObj.get("message").getAsString();
-                } else {
-                    return "Error: " + resObj.get("message").getAsString();
-                }
-            }
+            return new Gson().fromJson(jsonResponse, JsonObject.class);
         } catch (Exception e) {
             e.printStackTrace();
-            return "Exception: " + e.getMessage();
+            return null;
         }
-        return "Unknown Error";
     }
 
     public static String checkIn(int bookingId) {

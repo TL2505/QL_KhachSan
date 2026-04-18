@@ -22,7 +22,7 @@ public class CustomerForm extends JPanel {
     private TableRowSorter<DefaultTableModel> sorter;
 
     private JTextField txtSearch;
-    private JTextField txtName, txtPhone, txtCard;
+    private JTextField txtName, txtPhone, txtCard, txtLoyaltyLevel, txtLoyaltyPoints;
     private JButton btnSave, btnReset, btnDelete, btnRefresh, btnViewHistory;
     private JLabel lblFormTitle, lblStatus;
 
@@ -56,7 +56,7 @@ public class CustomerForm extends JPanel {
         ));
         JLabel pageTitle = new JLabel("Quản lý Khách hàng");
         pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        pageTitle.setForeground(new Color(17, 24, 39));
+        pageTitle.setForeground(new Color(15, 23, 42));
         lblStatus = new JLabel(" ");
         lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         statusBar.add(pageTitle, BorderLayout.WEST);
@@ -85,9 +85,9 @@ public class CustomerForm extends JPanel {
         form.setBackground(Color.WHITE);
         form.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        lblFormTitle = new JLabel("Thêm Khách Hàng Mới");
-        lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblFormTitle.setForeground(new Color(17, 24, 39));
+        lblFormTitle = new JLabel("📝 Thông tin chi tiết");
+        lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblFormTitle.setForeground(new Color(15, 23, 42));
         lblFormTitle.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel lblSub = new JLabel("Nhập thông tin khách hàng");
@@ -124,28 +124,49 @@ public class CustomerForm extends JPanel {
         txtCard.setAlignmentX(LEFT_ALIGNMENT);
         txtCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         form.add(txtCard);
+        form.add(Box.createVerticalStrut(12));
+
+        // Loyalty Info (Read-only)
+        form.add(createFieldLabel("Hạng Thành Viên"));
+        txtLoyaltyLevel = createField("Silver");
+        txtLoyaltyLevel.setEditable(false);
+        txtLoyaltyLevel.setBackground(new Color(243, 244, 246));
+        txtLoyaltyLevel.setAlignmentX(LEFT_ALIGNMENT);
+        txtLoyaltyLevel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        form.add(txtLoyaltyLevel);
+        form.add(Box.createVerticalStrut(12));
+
+        form.add(createFieldLabel("Điểm Tích Lũy"));
+        txtLoyaltyPoints = createField("0");
+        txtLoyaltyPoints.setEditable(false);
+        txtLoyaltyPoints.setBackground(new Color(243, 244, 246));
+        txtLoyaltyPoints.setAlignmentX(LEFT_ALIGNMENT);
+        txtLoyaltyPoints.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        form.add(txtLoyaltyPoints);
+
         form.add(Box.createVerticalStrut(20));
         form.add(createSeparator());
         form.add(Box.createVerticalStrut(16));
 
         // Buttons
-        btnSave = createActionButton("Lưu Khách Hàng", SUCCESS);
+        btnSave = createActionButton("💾 Lưu Khách Hàng", SUCCESS);
         btnSave.setAlignmentX(LEFT_ALIGNMENT);
         btnSave.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btnSave.addActionListener(e -> actionSave());
 
-        btnReset = createGhostButton("Làm Mới Form");
+        btnReset = createGhostButton("🔄 Làm Mới Form");
+        btnReset.setOpaque(false);
         btnReset.setAlignmentX(LEFT_ALIGNMENT);
         btnReset.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         btnReset.addActionListener(e -> resetForm());
 
-        btnDelete = createActionButton("Xóa Khách Hàng", DANGER);
+        btnDelete = createActionButton("🗑️ Xóa Khách Hàng", DANGER);
         btnDelete.setAlignmentX(LEFT_ALIGNMENT);
         btnDelete.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btnDelete.setEnabled(false);
         btnDelete.addActionListener(e -> actionDelete());
 
-        btnViewHistory = createActionButton("Xem Lịch Sử", new Color(14, 165, 233));
+        btnViewHistory = createActionButton("📜 Xem Lịch Sử", new Color(14, 165, 233));
         btnViewHistory.setAlignmentX(LEFT_ALIGNMENT);
         btnViewHistory.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btnViewHistory.setEnabled(false);
@@ -159,7 +180,14 @@ public class CustomerForm extends JPanel {
         form.add(Box.createVerticalStrut(8));
         form.add(btnViewHistory);
 
-        wrapper.add(form, BorderLayout.NORTH);
+        // BỌC form vào JScrollPane để có thanh cuộn
+        JScrollPane formScroll = new JScrollPane(form,
+            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+            JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        formScroll.setBorder(null);
+        formScroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        wrapper.add(formScroll, BorderLayout.CENTER);
         return wrapper;
     }
 
@@ -172,8 +200,8 @@ public class CustomerForm extends JPanel {
         searchBar.setBackground(Color.WHITE);
         searchBar.setBorder(new EmptyBorder(12, 16, 12, 16));
 
-        JLabel searchIcon = new JLabel("\uD83D\uDD0D");
-        searchIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+        JLabel searchIcon = new JLabel("TÌM: ");
+        searchIcon.setFont(new Font("Segoe UI", Font.BOLD, 13));
         txtSearch = new JTextField();
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtSearch.setBorder(BorderFactory.createCompoundBorder(
@@ -182,8 +210,8 @@ public class CustomerForm extends JPanel {
         ));
         txtSearch.putClientProperty("JTextField.placeholderText", "Tìm kiếm theo tên hoặc số điện thoại...");
 
-        btnRefresh = new JButton("\u21BA Tải Lại");
-        btnRefresh.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btnRefresh = new JButton("Tải Lại");
+        btnRefresh.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnRefresh.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnRefresh.addActionListener(e -> loadCustomers());
 
@@ -194,7 +222,7 @@ public class CustomerForm extends JPanel {
 
         // Bảng
         tableModel = new DefaultTableModel(
-            new String[]{"RealID", "ID", "Họ và Tên", "Số Điện Thoại", "CCCD / CMND"}, 0) {
+            new String[]{"RealID", "ID", "Họ và Tên", "Số Điện Thoại", "CCCD / CMND", "Hạng", "Điểm"}, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -222,11 +250,42 @@ public class CustomerForm extends JPanel {
         customerTable.getColumnModel().getColumn(0).setPreferredWidth(0);
         
         // Cột 1: STT nhỏ
-        customerTable.getColumnModel().getColumn(1).setPreferredWidth(50);
-        customerTable.getColumnModel().getColumn(1).setMaxWidth(60);
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-        customerTable.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        customerTable.getColumnModel().getColumn(1).setPreferredWidth(40);
+        customerTable.getColumnModel().getColumn(1).setMaxWidth(50);
+
+        // Name, Phone, ID Card widths
+        customerTable.getColumnModel().getColumn(2).setPreferredWidth(150);
+        customerTable.getColumnModel().getColumn(3).setPreferredWidth(100);
+        customerTable.getColumnModel().getColumn(4).setPreferredWidth(110);
+        
+        // Cột 5: Hạng
+        customerTable.getColumnModel().getColumn(5).setPreferredWidth(80);
+        customerTable.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int col) {
+                JLabel lbl = new JLabel(value != null ? value.toString() : "Silver");
+                lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                lbl.setOpaque(true);
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                String lvl = value != null ? value.toString() : "Silver";
+                if ("VIP".equals(lvl)) {
+                    lbl.setBackground(new Color(245, 243, 255)); lbl.setForeground(new Color(109, 40, 217));
+                } else if ("Gold".equals(lvl)) {
+                    lbl.setBackground(new Color(255, 251, 235)); lbl.setForeground(new Color(180, 83, 9));
+                } else {
+                    lbl.setBackground(new Color(241, 245, 249)); lbl.setForeground(new Color(100, 116, 139));
+                }
+                if (isSelected) lbl.setBackground(new Color(219, 234, 254));
+                return lbl;
+            }
+        });
+
+        // Cột 6: Điểm
+        customerTable.getColumnModel().getColumn(6).setPreferredWidth(70);
+        DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+        rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
+        customerTable.getColumnModel().getColumn(6).setCellRenderer(rightRenderer);
 
         // Zebra stripes
         customerTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
@@ -287,7 +346,9 @@ public class CustomerForm extends JPanel {
                                 stt++, 
                                 c.getFullName(), 
                                 c.getPhone(), 
-                                c.getIdentityCard()
+                                c.getIdentityCard(),
+                                c.getLoyaltyLevel() != null ? c.getLoyaltyLevel() : "Silver",
+                                c.getLoyaltyPoints()
                             });
                         }
                         setStatus(customersList.size() + " khách hàng", SUCCESS);
@@ -322,6 +383,8 @@ public class CustomerForm extends JPanel {
             txtName.setText(selected.getFullName());
             txtPhone.setText(selected.getPhone());
             txtCard.setText(selected.getIdentityCard());
+            txtLoyaltyLevel.setText(selected.getLoyaltyLevel() != null ? selected.getLoyaltyLevel() : "Silver");
+            txtLoyaltyPoints.setText(String.valueOf(selected.getLoyaltyPoints()));
             
             lblFormTitle.setText("Cập Nhật Thông Tin");
             btnSave.setText("Cập Nhật");
@@ -419,12 +482,35 @@ public class CustomerForm extends JPanel {
                             resetForm();
                             loadCustomers();
                         } else {
-                            JOptionPane.showMessageDialog(CustomerForm.this, 
-                                "Không thể xóa: " + res, "Lỗi Hệ Thống", JOptionPane.ERROR_MESSAGE);
+                            // Kiểm tra nội dung lỗi từ server
+                            String errMsg = res != null ? res : "";
+                            if (errMsg.contains("foreign key") || errMsg.contains("constraint") || errMsg.contains("Cannot delete")) {
+                                JOptionPane.showMessageDialog(CustomerForm.this,
+                                    "Không thể xóa khách hàng này!\n\n"
+                                    + "Lý do: Khách hàng đang có lịch sử đặt phòng trong hệ thống.\n"
+                                    + "Hãy xóa các đơn đặt phòng liên quan trước, sau đó thử lại.",
+                                    "Không Thể Xóa", JOptionPane.WARNING_MESSAGE);
+                            } else {
+                                JOptionPane.showMessageDialog(CustomerForm.this,
+                                    "Không thể xóa: " + res, "Lỗi Hệ Thống", JOptionPane.ERROR_MESSAGE);
+                            }
                             setStatus("Xóa thất bại", DANGER);
                         }
                     } catch (Exception ex) {
-                        setStatus("Lỗi kết nối server!", DANGER);
+                        // Kiểm tra nếu là lỗi Foreign Key
+                        String errMsg = ex.getMessage() != null ? ex.getMessage() : "";
+                        if (errMsg.contains("foreign key") || errMsg.contains("constraint") || errMsg.contains("Cannot delete")) {
+                            JOptionPane.showMessageDialog(CustomerForm.this,
+                                "Không thể xóa khách hàng này!\n\n"
+                                + "Lý do: Khách hàng này đang có lịch sử đặt phòng trong hệ thống.\n"
+                                + "Hãy xóa các đơn đặt phòng liên quan trước, sau đó thử lại.",
+                                "Không Thể Xóa", JOptionPane.WARNING_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(CustomerForm.this,
+                                "Lỗi kết nối server: " + ex.getMessage(),
+                                "Lỗi Hệ Thống", JOptionPane.ERROR_MESSAGE);
+                        }
+                        setStatus("Xóa thất bại", DANGER);
                     }
                 }
             };
@@ -445,6 +531,8 @@ public class CustomerForm extends JPanel {
         txtName.setText("");
         txtPhone.setText("");
         txtCard.setText("");
+        txtLoyaltyLevel.setText("Member");
+        txtLoyaltyPoints.setText("0");
         lblFormTitle.setText("Thêm Khách Hàng Mới");
         btnSave.setText("Lưu Khách Hàng");
         btnDelete.setEnabled(false);
@@ -474,8 +562,16 @@ public class CustomerForm extends JPanel {
         f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         f.putClientProperty("JTextField.placeholderText", placeholder);
         f.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(BORDER_CLR, 1, true),
-            new EmptyBorder(5, 10, 5, 10)
+            new LineBorder(BORDER_CLR, 1, true) {
+                @Override
+                public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                    Graphics2D g2 = (Graphics2D) g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(BORDER_CLR);
+                    g2.drawRoundRect(x, y, width-1, height-1, 10, 10);
+                }
+            },
+            new EmptyBorder(5, 12, 5, 10)
         ));
         return f;
     }
@@ -487,7 +583,7 @@ public class CustomerForm extends JPanel {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(isEnabled() ? (getModel().isRollover() ? bg.darker() : bg) : new Color(209,213,219));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 super.paintComponent(g);
             }
         };

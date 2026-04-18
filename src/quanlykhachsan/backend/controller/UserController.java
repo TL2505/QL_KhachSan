@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.sql.*;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -33,6 +34,16 @@ public class UserController implements HttpHandler {
         String path = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
         String pathInfo = path.replace("/api/users", "");
+
+        if (path.equals("/api/users/register")) {
+            handleRegister(exchange);
+            return;
+        }
+
+        if (path.equals("/api/roles") && "GET".equalsIgnoreCase(method)) {
+            handleGetAllRoles(exchange);
+            return;
+        }
 
         if (path.equals("/api/users/update-profile") || path.equals("/api/users/change-password")) {
             handleProfileActions(exchange, path);
@@ -72,33 +83,43 @@ public class UserController implements HttpHandler {
             statusCode = 400;
             resObj.addProperty("status", "error");
             resObj.addProperty("message", "Thiếu username");
-        } else if (path.equals("/api/users/update-profile")) {
-            String fullName = reqObj.has("fullName") ? reqObj.get("fullName").getAsString() : null;
-            String email = reqObj.has("email") ? reqObj.get("email").getAsString() : null;
-            String phone = reqObj.has("phone") ? reqObj.get("phone").getAsString() : null;
+            sendJson(exchange, statusCode, gson.toJson(resObj));
+            return;
+        }
 
-            boolean success = authService.updateProfile(username, fullName, email, phone);
-            if (success) {
-                resObj.addProperty("status", "success");
-                resObj.addProperty("message", "Cập nhật hồ sơ thành công");
-            } else {
-                statusCode = 500;
-                resObj.addProperty("status", "error");
-                resObj.addProperty("message", "Lỗi khi cập nhật hồ sơ");
-            }
-        } else if (path.equals("/api/users/change-password")) {
-            String oldPassword = reqObj.has("oldPassword") ? reqObj.get("oldPassword").getAsString() : null;
-            String newPassword = reqObj.has("newPassword") ? reqObj.get("newPassword").getAsString() : null;
+        try {
+            if (path.equals("/api/users/update-profile")) {
+                String fullName = reqObj.has("fullName") ? reqObj.get("fullName").getAsString() : null;
+                String email = reqObj.has("email") ? reqObj.get("email").getAsString() : null;
+                String phone = reqObj.has("phone") ? reqObj.get("phone").getAsString() : null;
 
-            boolean success = authService.changePassword(username, oldPassword, newPassword);
-            if (success) {
-                resObj.addProperty("status", "success");
-                resObj.addProperty("message", "Đổi mật khẩu thành công");
-            } else {
-                statusCode = 400;
-                resObj.addProperty("status", "error");
-                resObj.addProperty("message", "Mật khẩu cũ không chính xác hoặc lỗi hệ thống");
+                boolean success = authService.updateProfile(username, fullName, email, phone);
+                if (success) {
+                    resObj.addProperty("status", "success");
+                    resObj.addProperty("message", "Cập nhật hồ sơ thành công");
+                } else {
+                    statusCode = 500;
+                    resObj.addProperty("status", "error");
+                    resObj.addProperty("message", "Lỗi khi cập nhật hồ sơ");
+                }
+            } else if (path.equals("/api/users/change-password")) {
+                String oldPassword = reqObj.has("oldPassword") ? reqObj.get("oldPassword").getAsString() : null;
+                String newPassword = reqObj.has("newPassword") ? reqObj.get("newPassword").getAsString() : null;
+
+                boolean success = authService.changePassword(username, oldPassword, newPassword);
+                if (success) {
+                    resObj.addProperty("status", "success");
+                    resObj.addProperty("message", "Đổi mật khẩu thành công");
+                } else {
+                    statusCode = 400;
+                    resObj.addProperty("status", "error");
+                    resObj.addProperty("message", "Mật khẩu cũ không chính xác");
+                }
             }
+        } catch (Exception e) {
+            statusCode = 500;
+            resObj.addProperty("status", "error");
+            resObj.addProperty("message", "Lỗi hệ thống: " + e.getMessage());
         }
         sendJson(exchange, statusCode, gson.toJson(resObj));
     }
@@ -113,6 +134,14 @@ public class UserController implements HttpHandler {
         JsonObject res = new JsonObject();
         res.addProperty("status", "success");
         res.add("data", gson.toJsonTree(users));
+        sendJson(exchange, 200, res.toString());
+    }
+
+    private void handleGetAllRoles(HttpExchange exchange) throws IOException {
+        List<quanlykhachsan.backend.model.Role> roles = userDAO.selectAllRoles();
+        JsonObject res = new JsonObject();
+        res.addProperty("status", "success");
+        res.add("data", gson.toJsonTree(roles));
         sendJson(exchange, 200, res.toString());
     }
 
@@ -133,22 +162,42 @@ public class UserController implements HttpHandler {
                 return;
             }
 
-            user.setPassword(SecurityUtil.hashPassword(user.getPassword()));
-            if (user.getStatus() == null || user.getStatus().isEmpty()) {
-                user.setStatus("active");
+            int customerRoleId = userDAO.getRoleIdByName("customer");
+            boolean ok;
+            if (user.getRoleId() == customerRoleId && customerRoleId != -1) {
+                // Nếu là khách hàng, tạo hồ sơ khách hàng trước
+                quanlykhachsan.backend.model.Customer c = new quanlykhachsan.backend.model.Customer();
+                c.setFullName(user.getFullName() != null ? user.getFullName() : user.getUsername());
+                c.setIdentityCard("AUTO-" + System.currentTimeMillis());
+                c.setPhone(user.getPhone() != null ? user.getPhone() : "");
+                c.setEmail(user.getEmail() != null ? user.getEmail() : "");
+                
+                ok = authService.registerCustomer(user, c);
+            } else {
+                user.setPassword(SecurityUtil.hashPassword(user.getPassword()));
+                if (user.getStatus() == null || user.getStatus().isEmpty()) {
+                    user.setStatus("active");
+                }
+                ok = userDAO.insert(user);
             }
-
-            boolean ok = userDAO.insert(user);
+            
             if (ok) {
                 JsonObject res = new JsonObject();
                 res.addProperty("status", "success");
                 res.addProperty("message", "Thêm người dùng thành công");
                 sendJson(exchange, 201, res.toString());
             } else {
-                sendJson(exchange, 500, buildError("Thêm người dùng thất bại"));
+                sendJson(exchange, 500, buildError("Thêm người dùng thất bại."));
             }
+        } catch (java.sql.SQLIntegrityConstraintViolationException e) {
+            String dbMsg = e.getMessage().toLowerCase();
+            String userMsg = "Dữ liệu bị trùng lặp: ";
+            if (dbMsg.contains("username")) userMsg = "Tên đăng nhập đã tồn tại";
+            else if (dbMsg.contains("identity_card") || dbMsg.contains("cccd")) userMsg = "Số CCCD/Passport đã được sử dụng";
+            else userMsg += e.getMessage();
+            sendJson(exchange, 400, buildError(userMsg));
         } catch (Exception e) {
-            sendJson(exchange, 500, buildError("Lỗi server: " + e.getMessage()));
+            sendJson(exchange, 500, buildError("Lỗi hệ thống: " + e.getMessage()));
         }
     }
 
@@ -179,14 +228,38 @@ public class UserController implements HttpHandler {
                 existingUser.setPassword(SecurityUtil.hashPassword(reqUser.getPassword()));
             }
 
+            int customerRoleId = userDAO.getRoleIdByName("customer");
+            // Nếu người dùng được đổi sang quyền Khách hàng mà chưa có customer_id liên kết
+            if (existingUser.getRoleId() == customerRoleId && customerRoleId != -1 && existingUser.getCustomerId() == null) {
+                quanlykhachsan.backend.model.Customer c = new quanlykhachsan.backend.model.Customer();
+                c.setFullName(existingUser.getFullName() != null && !existingUser.getFullName().isEmpty() 
+                    ? existingUser.getFullName() : existingUser.getUsername());
+                c.setIdentityCard("LINK-" + System.currentTimeMillis());
+                c.setPhone(existingUser.getPhone() != null ? existingUser.getPhone() : "");
+                c.setEmail(existingUser.getEmail() != null ? existingUser.getEmail() : "");
+                
+                quanlykhachsan.backend.dao.CustomerDAO customerDAO = new quanlykhachsan.backend.daoimpl.CustomerDAOImpl();
+                int customerId = customerDAO.addAndReturnId(c);
+                if (customerId > 0) {
+                    existingUser.setCustomerId(customerId);
+                }
+            }
+
             userDAO.updateUser(existingUser);
 
             JsonObject res = new JsonObject();
             res.addProperty("status", "success");
             res.addProperty("message", "Cập nhật người dùng thành công");
             sendJson(exchange, 200, res.toString());
+        } catch (java.sql.SQLIntegrityConstraintViolationException e) {
+            String dbMsg = e.getMessage().toLowerCase();
+            String userMsg = "Dữ liệu bị trùng lặp: ";
+            if (dbMsg.contains("username")) userMsg = "Tên đăng nhập đã tồn tại";
+            else if (dbMsg.contains("identity_card") || dbMsg.contains("cccd")) userMsg = "Số CCCD/Passport đã được sử dụng";
+            else userMsg += e.getMessage();
+            sendJson(exchange, 400, buildError(userMsg));
         } catch (Exception e) {
-            sendJson(exchange, 500, buildError("Lỗi server: " + e.getMessage()));
+            sendJson(exchange, 500, buildError("Lỗi hệ thống: " + e.getMessage()));
         }
     }
 
@@ -201,12 +274,15 @@ public class UserController implements HttpHandler {
             return;
         }
 
-        userDAO.deleteUser(existingUser);
-
-        JsonObject res = new JsonObject();
-        res.addProperty("status", "success");
-        res.addProperty("message", "Xóa người dùng thành công");
-        sendJson(exchange, 200, res.toString());
+        try {
+            userDAO.deleteUser(existingUser);
+            JsonObject res = new JsonObject();
+            res.addProperty("status", "success");
+            res.addProperty("message", "Xóa người dùng thành công");
+            sendJson(exchange, 200, res.toString());
+        } catch (Exception e) {
+            sendJson(exchange, 500, buildError("Lỗi hệ thống khi xóa: " + e.getMessage()));
+        }
     }
 
     private void sendJson(HttpExchange exchange, int statusCode, String json) throws IOException {
@@ -222,5 +298,52 @@ public class UserController implements HttpHandler {
         obj.addProperty("status", "error");
         obj.addProperty("message", msg);
         return gson.toJson(obj);
+    }
+
+    private void handleRegister(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, buildError("Method Not Allowed"));
+            return;
+        }
+        try {
+            InputStream is = exchange.getRequestBody();
+            String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            JsonObject reqObj = gson.fromJson(body, JsonObject.class);
+
+            User user = new User();
+            user.setUsername(reqObj.get("username").getAsString());
+            user.setPassword(reqObj.get("password").getAsString());
+            user.setFullName(reqObj.get("fullName").getAsString());
+            user.setEmail(reqObj.get("email").getAsString());
+            user.setPhone(reqObj.get("phone").getAsString());
+
+            quanlykhachsan.backend.model.Customer customer = new quanlykhachsan.backend.model.Customer();
+            customer.setFullName(user.getFullName());
+            customer.setEmail(user.getEmail());
+            customer.setPhone(user.getPhone());
+            customer.setIdentityCard(reqObj.has("identityCard") && !reqObj.get("identityCard").getAsString().isEmpty() 
+                ? reqObj.get("identityCard").getAsString() 
+                : "REG-" + System.currentTimeMillis());
+            customer.setAddress(reqObj.has("address") ? reqObj.get("address").getAsString() : "");
+
+            boolean success = authService.registerCustomer(user, customer);
+            if (success) {
+                JsonObject res = new JsonObject();
+                res.addProperty("status", "success");
+                res.addProperty("message", "Đăng ký thành công");
+                sendJson(exchange, 201, res.toString());
+            } else {
+                sendJson(exchange, 400, buildError("Đăng ký thất bại."));
+            }
+        } catch (java.sql.SQLIntegrityConstraintViolationException e) {
+            String dbMsg = e.getMessage().toLowerCase();
+            String userMsg = "Dữ liệu bị trùng lặp: ";
+            if (dbMsg.contains("username")) userMsg = "Tên đăng nhập đã tồn tại";
+            else if (dbMsg.contains("identity_card") || dbMsg.contains("cccd")) userMsg = "Số CCCD/Passport đã được sử dụng";
+            else userMsg += e.getMessage();
+            sendJson(exchange, 400, buildError(userMsg));
+        } catch (Exception e) {
+            sendJson(exchange, 500, buildError("Lỗi hệ thống: " + e.getMessage()));
+        }
     }
 }

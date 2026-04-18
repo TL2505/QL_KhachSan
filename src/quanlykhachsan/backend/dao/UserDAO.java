@@ -1,24 +1,19 @@
 package quanlykhachsan.backend.dao;
 
 import quanlykhachsan.backend.model.User;
+import quanlykhachsan.backend.model.Role;
 import java.util.ArrayList;
+import java.util.List;
 
 public interface UserDAO {
-
-//    add User
-    public void addUser(User user);
-
-//    update User
-    public void updateUser(User user);
-
-//    delete User
-    public void deleteUser(User user);
-
-//    list of User
+    // ... logic existing
+    public void addUser(User user) throws Exception;
+    public void updateUser(User user) throws Exception;
+    public void deleteUser(User user) throws Exception;
     public ArrayList<User> selectUser();
-
     public void comboBoxUser();
-
     public User findByUsername(String username);
-    public boolean insert(User user);
+    public boolean insert(User user) throws Exception;
+    public int getRoleIdByName(String roleName);
+    public List<Role> selectAllRoles();
 }

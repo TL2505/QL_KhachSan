@@ -105,4 +105,34 @@ public class RoomDAOImpl implements RoomDAO {
             return false;
         }
     }
+    @Override
+    public java.util.List<Room> findAvailableRooms(java.util.Date checkIn, java.util.Date checkOut) {
+        java.util.List<Room> list = new java.util.ArrayList<>();
+        String query = "SELECT * FROM rooms r " +
+                       "WHERE r.status NOT IN ('out_of_service', 'maintenance') " +
+                       "AND r.id NOT IN (" +
+                       "  SELECT b.room_id FROM bookings b " +
+                       "  WHERE b.status IN ('confirmed', 'checked_in', 'pending') " +
+                       "  AND NOT (b.check_out_date <= ? OR b.check_in_date >= ?)" +
+                       ")";
+        try (Connection con = DBconn.getConnection(); 
+             PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setTimestamp(1, new java.sql.Timestamp(checkIn.getTime()));
+            ps.setTimestamp(2, new java.sql.Timestamp(checkOut.getTime()));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Room r = new Room();
+                    r.setId(rs.getInt("id"));
+                    r.setRoomNumber(rs.getString("room_number"));
+                    r.setRoomTypeId(rs.getInt("room_type_id"));
+                    r.setPrice(rs.getDouble("price"));
+                    r.setStatus(rs.getString("status"));
+                    list.add(r);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

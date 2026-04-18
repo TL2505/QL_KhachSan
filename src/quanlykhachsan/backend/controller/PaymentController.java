@@ -9,19 +9,21 @@ import java.nio.charset.StandardCharsets;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.service.BookingService;
+import quanlykhachsan.backend.service.LoyaltyService;
 import quanlykhachsan.backend.utils.SecurityUtil;
 
 public class PaymentController implements HttpHandler {
 
     private BookingService bookingService = new BookingService();
+    private LoyaltyService loyaltyService = new LoyaltyService();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
-        // Check if user is logged in (Role 1 or 2)
-        if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
+        // Check if user is logged in (Role 1, 2, or 3)
+        if (!SecurityUtil.hasPermission(exchange, 1, 2, 3)) return;
 
         try {
             // POST /api/payments
@@ -35,6 +37,7 @@ public class PaymentController implements HttpHandler {
                 String bookingIdStr = reqObj.has("bookingId") ? reqObj.get("bookingId").getAsString() : null;
                 String amountStr = reqObj.has("amount") ? reqObj.get("amount").getAsString() : null;
                 String paymentMethod = reqObj.has("paymentMethod") ? reqObj.get("paymentMethod").getAsString() : null;
+                String customerIdStr = reqObj.has("customerId") ? reqObj.get("customerId").getAsString() : null;
 
                 if (bookingIdStr == null || amountStr == null || paymentMethod == null) {
                     sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu thông tin thanh toán!\"}");
@@ -46,14 +49,22 @@ public class PaymentController implements HttpHandler {
                 boolean success = bookingService.processPayment(bookingId, amount, paymentMethod);
 
                 if (success) {
+                    // Award loyalty points
+                    int earnedPoints = 0;
+                    if (customerIdStr != null) {
+                        int customerId = Integer.parseInt(customerIdStr);
+                        loyaltyService.addPoints(customerId, amount, "Thanh toán đơn đặt phòng #" + bookingId);
+                        earnedPoints = (int) (amount / 1000);
+                    }
+
                     JsonObject resObj = new JsonObject();
                     resObj.addProperty("status", "success");
-                    resObj.addProperty("message", "Thanh toán thành công! Phòng đang được dọn dẹp.");
+                    resObj.addProperty("message", "Thanh toán thành công!");
                     
                     JsonObject dataObj = new JsonObject();
                     dataObj.addProperty("bookingId", bookingId);
-                    dataObj.addProperty("amount", Double.parseDouble(amountStr));
-                    dataObj.addProperty("status", "completed");
+                    dataObj.addProperty("amount", amount);
+                    dataObj.addProperty("earnedPoints", earnedPoints);
                     resObj.add("data", dataObj);
 
                     sendResponse(exchange, 200, gson.toJson(resObj));

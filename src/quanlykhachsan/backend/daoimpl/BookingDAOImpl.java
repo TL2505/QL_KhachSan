@@ -11,10 +11,10 @@ import quanlykhachsan.backend.utils.DBconn;
 public class BookingDAOImpl implements BookingDAO {
 
     @Override
-    public void addBooking(Booking booking) {
+    public int addBooking(Booking booking) {
         String query = "INSERT INTO bookings(customer_id, room_id, check_in_date, check_out_date, total_price, status) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection con = DBconn.getConnection(); 
-             PreparedStatement ps = con.prepareStatement(query)) {
+             PreparedStatement ps = con.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, booking.getCustomerId());
             ps.setInt(2, booking.getRoomId());
             ps.setTimestamp(3, new java.sql.Timestamp(booking.getCheckInDate().getTime()));
@@ -22,9 +22,17 @@ public class BookingDAOImpl implements BookingDAO {
             ps.setDouble(5, booking.getTotalPrice());
             ps.setString(6, booking.getStatus());
             ps.executeUpdate();
+            
+            ResultSet rs = ps.getGeneratedKeys();
+            if (rs.next()) {
+                int id = rs.getInt(1);
+                booking.setId(id);
+                return id;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return -1;
     }
 
     @Override
@@ -104,11 +112,6 @@ public class BookingDAOImpl implements BookingDAO {
 
     @Override
     public boolean insert(Booking booking) {
-        try {
-            addBooking(booking);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return addBooking(booking) > 0;
     }
 }

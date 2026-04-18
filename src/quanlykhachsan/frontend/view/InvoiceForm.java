@@ -45,7 +45,7 @@ public class InvoiceForm extends JPanel {
             new EmptyBorder(12, 20, 12, 20)
         ));
         
-        JLabel title = new JLabel("🧾 Quản lý Hóa Đơn (Doanh thu)");
+        JLabel title = new JLabel("Quản lý Hóa Đơn (Doanh thu)");
         title.setFont(new Font("Segoe UI", Font.BOLD, 18));
         title.setForeground(new Color(17, 24, 39));
         
@@ -65,13 +65,13 @@ public class InvoiceForm extends JPanel {
         txtSearch.setPreferredSize(new Dimension(200, 32));
         txtSearch.putClientProperty("JTextField.placeholderText", "Tìm theo tên khách, phòng...");
         
-        JButton btnSearch = new JButton("\uD83D\uDD0D Tìm");
+        JButton btnSearch = new JButton("Tìm");
         btnSearch.setBackground(new Color(37, 99, 235));
         btnSearch.setForeground(Color.WHITE);
         btnSearch.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnSearch.addActionListener(e -> loadData(txtSearch.getText()));
 
-        JButton btnRefresh = new JButton("\u21BA Tải lại");
+        JButton btnRefresh = new JButton("Tải lại");
         btnRefresh.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnRefresh.addActionListener(e -> {
             txtSearch.setText("");
@@ -87,7 +87,7 @@ public class InvoiceForm extends JPanel {
         bottomBar.setBackground(Color.WHITE);
         bottomBar.setBorder(new MatteBorder(1, 0, 0, 0, new Color(226, 232, 240)));
 
-        btnPrintPDF = new JButton("\uD83D\uDDA8 In Hóa Đơn PDF");
+        btnPrintPDF = new JButton("In Hóa Đơn PDF");
         btnPrintPDF.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnPrintPDF.setBackground(new Color(5, 150, 105));
         btnPrintPDF.setForeground(Color.WHITE);

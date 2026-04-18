@@ -42,7 +42,13 @@ public class AuthController implements HttpHandler {
 
                 // 3. Chuẩn bị dữ liệu trả về (Response JSON)
                 if (user != null) {
-                    String roleStr = (user.getRoleId() == 1) ? "ADMIN" : "USER";
+                    quanlykhachsan.backend.dao.UserDAO userDAO = new quanlykhachsan.backend.daoimpl.UserDAOImpl();
+                    int adminId = userDAO.getRoleIdByName("admin");
+                    int customerId = userDAO.getRoleIdByName("customer");
+                    
+                    String roleStr = "STAFF"; // Mặc định
+                    if (user.getRoleId() == adminId) roleStr = "ADMIN";
+                    else if (user.getRoleId() == customerId) roleStr = "CUSTOMER";
                     
                     resObj.addProperty("status", "success");
                     resObj.addProperty("message", "Đăng nhập thành công");
@@ -54,6 +60,7 @@ public class AuthController implements HttpHandler {
                     dataObj.addProperty("fullName", user.getFullName() != null ? user.getFullName() : "");
                     dataObj.addProperty("email", user.getEmail() != null ? user.getEmail() : "");
                     dataObj.addProperty("phone", user.getPhone() != null ? user.getPhone() : "");
+                    dataObj.addProperty("customerId", user.getCustomerId());
                     
                     resObj.add("data", dataObj);
                 } else {
@@ -63,31 +70,57 @@ public class AuthController implements HttpHandler {
                     resObj.add("data", null);
                 }
             } else if ("/api/auth/register".equals(path)) {
-                User newUser = new User();
-                newUser.setUsername(reqObj.has("username") ? reqObj.get("username").getAsString() : null);
-                newUser.setPassword(reqObj.has("password") ? reqObj.get("password").getAsString() : null);
-                newUser.setFullName(reqObj.has("fullName") ? reqObj.get("fullName").getAsString() : "");
-                newUser.setEmail(reqObj.has("email") ? reqObj.get("email").getAsString() : "");
-                newUser.setPhone(reqObj.has("phone") ? reqObj.get("phone").getAsString() : "");
-                newUser.setStatus("pending");
-                newUser.setRoleId(2); // default as staff
+                // Đăng ký công khai mặc định là Khách hàng (Role 3)
+                String username = reqObj.has("username") ? reqObj.get("username").getAsString() : null;
+                String password = reqObj.has("password") ? reqObj.get("password").getAsString() : null;
                 
-                if (newUser.getUsername() == null || newUser.getPassword() == null || newUser.getUsername().isEmpty() || newUser.getPassword().isEmpty()) {
+                if (username == null || password == null || username.isEmpty() || password.isEmpty()) {
                     statusCode = 400;
                     resObj.addProperty("status", "error");
                     resObj.addProperty("message", "Tên đăng nhập và mật khẩu không được trống.");
-                    resObj.add("data", null);
                 } else {
-                    boolean success = authService.register(newUser);
-                    if (success) {
-                        resObj.addProperty("status", "success");
-                        resObj.addProperty("message", "Đăng ký thành công. Vui lòng chờ phê duyệt.");
-                        resObj.add("data", null);
-                    } else {
-                        statusCode = 400; // Bad request
+                    User newUser = new User();
+                    newUser.setUsername(username);
+                    newUser.setPassword(password);
+                    newUser.setFullName(reqObj.has("fullName") ? reqObj.get("fullName").getAsString() : "Khách hàng mới");
+                    newUser.setEmail(reqObj.has("email") ? reqObj.get("email").getAsString() : "");
+                    newUser.setPhone(reqObj.has("phone") ? reqObj.get("phone").getAsString() : "");
+                    
+                    quanlykhachsan.backend.model.Customer customer = new quanlykhachsan.backend.model.Customer();
+                    customer.setFullName(newUser.getFullName());
+                    customer.setEmail(newUser.getEmail());
+                    customer.setPhone(newUser.getPhone());
+                    
+                    String idCard = (reqObj.has("identityCard") && !reqObj.get("identityCard").getAsString().trim().isEmpty()) 
+                                    ? reqObj.get("identityCard").getAsString().trim() 
+                                    : "TEMP-" + System.currentTimeMillis();
+                    customer.setIdentityCard(idCard);
+                    customer.setAddress(reqObj.has("address") ? reqObj.get("address").getAsString() : "");
+
+                    try {
+                        boolean success = authService.registerCustomer(newUser, customer);
+                        if (success) {
+                            resObj.addProperty("status", "success");
+                            resObj.addProperty("message", "Đăng ký thành công! Chào mừng bạn đến với hệ thống.");
+                        } else {
+                            statusCode = 400;
+                            resObj.addProperty("status", "error");
+                            resObj.addProperty("message", "Đăng ký thất bại.");
+                        }
+                    } catch (java.sql.SQLIntegrityConstraintViolationException e) {
+                        statusCode = 400;
                         resObj.addProperty("status", "error");
-                        resObj.addProperty("message", "Tên đăng nhập đã tồn tại.");
-                        resObj.add("data", null);
+                        String dbMsg = e.getMessage().toLowerCase();
+                        String userMsg = "Lỗi trùng lặp dữ liệu: ";
+                        if (dbMsg.contains("username")) userMsg = "Tên đăng nhập đã tồn tại";
+                        else if (dbMsg.contains("identity_card") || dbMsg.contains("cccd")) userMsg = "Số CCCD/Passport đã được sử dụng";
+                        else userMsg += e.getMessage(); // Hiển thị lỗi SQL thực tế để debug
+                        
+                        resObj.addProperty("message", userMsg);
+                    } catch (Exception e) {
+                        statusCode = 500;
+                        resObj.addProperty("status", "error");
+                        resObj.addProperty("message", "Lỗi hệ thống: " + e.getMessage());
                     }
                 }
             } else {

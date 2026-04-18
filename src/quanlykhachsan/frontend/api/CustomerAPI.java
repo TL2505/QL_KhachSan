@@ -97,4 +97,18 @@ public class CustomerAPI {
         }
         return "Unknown Error";
     }
+
+    public static Customer getCustomerById(int id) {
+        try {
+            String jsonResponse = HttpUtil.sendGet("/customers/" + id);
+            Gson gson = new Gson();
+            JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
+            if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
+                return gson.fromJson(resObj.get("data"), Customer.class);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

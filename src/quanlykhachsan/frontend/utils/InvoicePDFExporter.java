@@ -111,8 +111,8 @@ public class InvoicePDFExporter {
             innerTotalTable.addCell(new Phrase("Cộng tiền hàng:", fontNormal));
             innerTotalTable.addCell(new Phrase(nf.format(days * (room != null ? room.getPrice() : 0)) + " VNĐ", fontNormal));
             
-            double tax = (days * (room != null ? room.getPrice() : 0)) * 0.1;
-            innerTotalTable.addCell(new Phrase("Thuế GTGT (10%):", fontNormal));
+            double tax = 0.0;
+            innerTotalTable.addCell(new Phrase("Thuế GTGT (0%):", fontNormal));
             innerTotalTable.addCell(new Phrase(nf.format(tax) + " VNĐ", fontNormal));
             
             innerTotalTable.addCell(new Phrase("TỔNG THANH TOÁN:", fontBold));

@@ -63,16 +63,17 @@ public class InvoiceDAOImpl implements InvoiceDAO {
 
     @Override
     public boolean addInvoice(Invoice invoice) {
-        String sql = "INSERT INTO invoices(booking_id, total_room_fee, total_service_fee, tax_amount, final_total, status) " +
-                     "VALUES (?, ?, 0, ?, ?, ?)";
+        String sql = "INSERT INTO invoices(booking_id, total_room_fee, total_service_fee, discount, tax_amount, final_total, status) " +
+                     "VALUES (?, ?, 0, ?, ?, ?, ?)";
         try (Connection con = DBconn.getConnection();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
              
             ps.setInt(1, invoice.getBookingId());
             ps.setDouble(2, invoice.getTotalRoomFee());
-            ps.setDouble(3, invoice.getTaxAmount());
-            ps.setDouble(4, invoice.getFinalTotal());
-            ps.setString(5, invoice.getStatus());
+            ps.setDouble(3, invoice.getDiscount());
+            ps.setDouble(4, invoice.getTaxAmount());
+            ps.setDouble(5, invoice.getFinalTotal());
+            ps.setString(6, invoice.getStatus());
 
             int affectedRows = ps.executeUpdate();
             if (affectedRows > 0) {

@@ -28,10 +28,17 @@ public class AuthAPI {
                 user.setId(dataObj.get("userId").getAsInt());
                 user.setUsername(dataObj.get("username").getAsString());
                 String roleStr = dataObj.get("role") != null ? dataObj.get("role").getAsString() : "USER";
-                user.setRoleId("ADMIN".equalsIgnoreCase(roleStr) ? 1 : 2);
+                
+                int roleId = 2; // Default Staff
+                if ("ADMIN".equalsIgnoreCase(roleStr)) roleId = 1;
+                else if ("CUSTOMER".equalsIgnoreCase(roleStr)) roleId = 3;
+                user.setRoleId(roleId);
                 if (dataObj.has("fullName")) user.setFullName(dataObj.get("fullName").getAsString());
                 if (dataObj.has("email")) user.setEmail(dataObj.get("email").getAsString());
                 if (dataObj.has("phone")) user.setPhone(dataObj.get("phone").getAsString());
+                if (dataObj.has("customerId") && !dataObj.get("customerId").isJsonNull()) {
+                    user.setCustomerId(dataObj.get("customerId").getAsInt());
+                }
                 return user;
             } else {
                 throw new Exception(resObj.get("message").getAsString());

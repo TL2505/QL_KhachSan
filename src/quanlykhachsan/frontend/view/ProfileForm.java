@@ -37,7 +37,8 @@ public class ProfileForm extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
 
         JLabel titleLabel = new JLabel("Hồ Sơ & Bảo Mật", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        titleLabel.setForeground(new Color(15, 23, 42));
         add(titleLabel, BorderLayout.NORTH);
 
         JPanel mainPanel = new JPanel();

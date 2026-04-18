@@ -12,6 +12,7 @@ import java.awt.event.*;
 import java.util.List;
 import java.util.ArrayList;
 import quanlykhachsan.backend.model.User;
+import quanlykhachsan.backend.model.Role;
 import quanlykhachsan.frontend.api.UserAPI;
 
 public class PersonnelForm extends JPanel {
@@ -28,6 +29,7 @@ public class PersonnelForm extends JPanel {
 
     private int editingId = -1;
     private List<User> usersList = new ArrayList<>();
+    private List<Role> cachedRoles = new ArrayList<>();
 
     private static final Color PRIMARY    = new Color(37, 99, 235);
     private static final Color SUCCESS    = new Color(5, 150, 105);
@@ -43,7 +45,32 @@ public class PersonnelForm extends JPanel {
         setLayout(new BorderLayout(0, 0));
         setBackground(BG_PANEL);
         initUI();
-        loadUsers();
+        loadInitialData();
+    }
+
+    private void loadInitialData() {
+        SwingWorker<List<Role>, Void> roleWorker = new SwingWorker<>() {
+            @Override
+            protected List<Role> doInBackground() throws Exception {
+                return UserAPI.getRoles();
+            }
+            @Override
+            protected void done() {
+                try {
+                    cachedRoles = get();
+                    cbRole.removeAllItems();
+                    if (cachedRoles != null) {
+                        for (Role r : cachedRoles) {
+                            cbRole.addItem(r.getName());
+                        }
+                    }
+                    loadUsers();
+                } catch (Exception ex) {
+                    setStatus("Lỗi nạp quyền!", DANGER);
+                }
+            }
+        };
+        roleWorker.execute();
     }
 
     private void initUI() {
@@ -53,9 +80,9 @@ public class PersonnelForm extends JPanel {
             new MatteBorder(0, 0, 1, 0, BORDER_CLR),
             new EmptyBorder(10, 16, 10, 16)
         ));
-        JLabel pageTitle = new JLabel("Quản lý Nhân sự (Admin)");
+        JLabel pageTitle = new JLabel("Quản lý Người dùng & Phân quyền");
         pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        pageTitle.setForeground(new Color(17, 24, 39));
+        pageTitle.setForeground(new Color(15, 23, 42));
         lblStatus = new JLabel(" ");
         lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         statusBar.add(pageTitle, BorderLayout.WEST);
@@ -83,12 +110,12 @@ public class PersonnelForm extends JPanel {
         form.setBackground(Color.WHITE);
         form.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        lblFormTitle = new JLabel("Thêm Nhân Viên Mới");
-        lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblFormTitle.setForeground(new Color(17, 24, 39));
+        lblFormTitle = new JLabel("Hồ sơ người dùng");
+        lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblFormTitle.setForeground(new Color(15, 23, 42));
         lblFormTitle.setAlignmentX(LEFT_ALIGNMENT);
-
-        JLabel lblSub = new JLabel("Tạo tài khoản quản trị/nhân viên");
+        
+        JLabel lblSub = new JLabel("Quản lý tài khoản Admin/Staff/Customer");
         lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblSub.setForeground(MUTED);
         lblSub.setAlignmentX(LEFT_ALIGNMENT);
@@ -124,7 +151,7 @@ public class PersonnelForm extends JPanel {
         form.add(Box.createVerticalStrut(10));
 
         form.add(createFieldLabel("Phân quyền *"));
-        cbRole = new JComboBox<>(new String[]{"Nhân viên (Lễ tân)", "Quản trị viên (Admin)"});
+        cbRole = new JComboBox<>();
         cbRole.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         cbRole.setAlignmentX(LEFT_ALIGNMENT);
         form.add(cbRole);
@@ -137,17 +164,18 @@ public class PersonnelForm extends JPanel {
         form.add(cbStatus);
         form.add(Box.createVerticalStrut(15));
 
-        btnSave = createActionButton("Lưu Nhân Viên", SUCCESS);
+        btnSave = createActionButton("Lưu Người Dùng", SUCCESS);
         btnSave.setAlignmentX(LEFT_ALIGNMENT);
         btnSave.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btnSave.addActionListener(e -> actionSave());
 
         btnReset = createGhostButton("Làm Mới");
+        btnReset.setOpaque(false);
         btnReset.setAlignmentX(LEFT_ALIGNMENT);
         btnReset.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         btnReset.addActionListener(e -> resetForm());
 
-        btnDelete = createActionButton("Xóa Nhân Viên", DANGER);
+        btnDelete = createActionButton("Xóa Người Dùng", DANGER);
         btnDelete.setAlignmentX(LEFT_ALIGNMENT);
         btnDelete.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btnDelete.setEnabled(false);
@@ -173,8 +201,8 @@ public class PersonnelForm extends JPanel {
         searchBar.setBackground(Color.WHITE);
         searchBar.setBorder(new EmptyBorder(12, 16, 12, 16));
 
-        JLabel searchIcon = new JLabel("\uD83D\uDD0D");
-        searchIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+        JLabel searchIcon = new JLabel("TÌM: ");
+        searchIcon.setFont(new Font("Segoe UI", Font.BOLD, 13));
         txtSearch = new JTextField();
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtSearch.setBorder(BorderFactory.createCompoundBorder(
@@ -183,7 +211,7 @@ public class PersonnelForm extends JPanel {
         ));
         txtSearch.putClientProperty("JTextField.placeholderText", "Tìm kiếm nhân viên...");
 
-        btnRefresh = new JButton("\u21BA Tải Lại");
+        btnRefresh = new JButton("Tải Lại");
         btnRefresh.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         btnRefresh.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnRefresh.addActionListener(e -> loadUsers());
@@ -261,7 +289,16 @@ public class PersonnelForm extends JPanel {
                     tableModel.setRowCount(0);
                     if (usersList != null) {
                         for (User u : usersList) {
-                            String roleStr = u.getRoleId() == 1 ? "Admin" : "Nhân viên";
+                            String roleStr = "Quyền #" + u.getRoleId();
+                            if (cachedRoles != null) {
+                                for (Role r : cachedRoles) {
+                                    if (r.getId() == u.getRoleId()) {
+                                        roleStr = r.getName();
+                                        break;
+                                    }
+                                }
+                            }
+                            
                             tableModel.addRow(new Object[]{
                                 u.getId(), 
                                 u.getUsername(), 
@@ -284,33 +321,48 @@ public class PersonnelForm extends JPanel {
 
     private void onRowSelected() {
         int viewRow = userTable.getSelectedRow();
-        if (viewRow < 0) return;
+        if (viewRow < 0 || viewRow >= userTable.getRowCount()) return;
         
-        int modelRow = userTable.convertRowIndexToModel(viewRow);
-        int realId = (int) tableModel.getValueAt(modelRow, 0); 
-        
-        User selected = null;
-        for (User u : usersList) {
-            if (u.getId() == realId) {
-                selected = u;
-                break;
+        try {
+            int modelRow = userTable.convertRowIndexToModel(viewRow);
+            if (modelRow < 0 || modelRow >= tableModel.getRowCount()) return;
+            
+            int realId = (int) tableModel.getValueAt(modelRow, 0); 
+            
+            User selected = null;
+            for (User u : usersList) {
+                if (u.getId() == realId) {
+                    selected = u;
+                    break;
+                }
             }
-        }
-        
-        if (selected != null) {
-            editingId = selected.getId();
-            txtUsername.setText(selected.getUsername());
-            txtUsername.setEditable(false);
-            txtPassword.setText("");
-            txtFullName.setText(selected.getFullName());
-            txtEmail.setText(selected.getEmail());
-            txtPhone.setText(selected.getPhone());
-            cbRole.setSelectedIndex(selected.getRoleId() == 1 ? 1 : 0);
-            cbStatus.setSelectedItem(selected.getStatus());
+            
+            if (selected != null) {
+                editingId = selected.getId();
+                txtUsername.setText(selected.getUsername());
+                txtUsername.setEditable(false);
+                txtPassword.setText("");
+                txtFullName.setText(selected.getFullName());
+                txtEmail.setText(selected.getEmail());
+                txtPhone.setText(selected.getPhone());
+                
+                // Set role in combo box
+                if (cachedRoles != null) {
+                    for (int i = 0; i < cachedRoles.size(); i++) {
+                        if (cachedRoles.get(i).getId() == selected.getRoleId()) {
+                            cbRole.setSelectedIndex(i);
+                            break;
+                        }
+                    }
+                }
+                cbStatus.setSelectedItem(selected.getStatus());
 
-            lblFormTitle.setText("Cập Nhật Thông Tin");
-            btnSave.setText("Cập Nhật");
-            btnDelete.setEnabled(true);
+                lblFormTitle.setText("Cập Nhật Thông Tin");
+                btnSave.setText("Cập Nhật");
+                btnDelete.setEnabled(true);
+            }
+        } catch (IndexOutOfBoundsException ex) {
+            return; // Bỏ qua nếu bảng đang trong trạng thái cập nhật
         }
     }
 
@@ -329,11 +381,20 @@ public class PersonnelForm extends JPanel {
         String fullName = txtFullName.getText().trim();
         String email = txtEmail.getText().trim();
         String phone = txtPhone.getText().trim();
-        int roleId = cbRole.getSelectedIndex() == 1 ? 1 : 2;
+        
+        int roleId = -1;
+        int roleIdx = cbRole.getSelectedIndex();
+        if (cachedRoles != null && roleIdx >= 0 && roleIdx < cachedRoles.size()) {
+            roleId = cachedRoles.get(roleIdx).getId();
+        }
+        
         String status = cbStatus.getSelectedItem().toString();
 
         if (username.isEmpty()) {
             showWarn("Vui lòng nhập tài khoản đăng nhập!"); return;
+        }
+        if (roleId == -1) {
+            showWarn("Vui lòng chọn phân quyền hợp lệ!"); return;
         }
         if (editingId == -1 && password.isEmpty()) {
             showWarn("Tạo mới bắt buộc phải có mật khẩu!"); return;
@@ -342,6 +403,7 @@ public class PersonnelForm extends JPanel {
         btnSave.setEnabled(false);
         setStatus("Đang xử lý...", MUTED);
 
+        final int finalRoleId = roleId;
         SwingWorker<String, Void> worker = new SwingWorker<>() {
             @Override
             protected String doInBackground() throws Exception {
@@ -351,7 +413,7 @@ public class PersonnelForm extends JPanel {
                 u.setFullName(fullName);
                 u.setEmail(email);
                 u.setPhone(phone);
-                u.setRoleId(roleId);
+                u.setRoleId(finalRoleId);
                 u.setStatus(status);
                 
                 if (editingId != -1) {
@@ -402,7 +464,7 @@ public class PersonnelForm extends JPanel {
                     try {
                         String res = get();
                         if (res != null) {
-                            setStatus("Đã xóa nhân viên!", SUCCESS);
+                            setStatus("Đã xóa người dùng!", SUCCESS);
                             resetForm();
                             loadUsers();
                         }
@@ -427,8 +489,8 @@ public class PersonnelForm extends JPanel {
         cbRole.setSelectedIndex(0);
         cbStatus.setSelectedIndex(0);
         
-        lblFormTitle.setText("Thêm Nhân Viên Mới");
-        btnSave.setText("Lưu Nhân Viên");
+        lblFormTitle.setText("Thêm Người Dùng Mới");
+        btnSave.setText("Lưu Người Dùng");
         btnDelete.setEnabled(false);
         userTable.clearSelection();
     }
@@ -455,8 +517,16 @@ public class PersonnelForm extends JPanel {
         f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         f.putClientProperty("JTextField.placeholderText", placeholder);
         f.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(BORDER_CLR, 1, true),
-            new EmptyBorder(5, 10, 5, 10)
+            new LineBorder(BORDER_CLR, 1, true) {
+                @Override
+                public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                    Graphics2D g2 = (Graphics2D) g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(BORDER_CLR);
+                    g2.drawRoundRect(x, y, width-1, height-1, 10, 10);
+                }
+            },
+            new EmptyBorder(5, 12, 5, 10)
         ));
         f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         f.setAlignmentX(LEFT_ALIGNMENT);
@@ -470,7 +540,7 @@ public class PersonnelForm extends JPanel {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(isEnabled() ? (getModel().isRollover() ? bg.darker() : bg) : new Color(209,213,219));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 super.paintComponent(g);
             }
         };
