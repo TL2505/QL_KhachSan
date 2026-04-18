@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 import quanlykhachsan.backend.model.Room;
+import quanlykhachsan.backend.model.RoomType;
 
 public class RoomAPI {
 
@@ -91,5 +92,39 @@ public class RoomAPI {
             e.printStackTrace();
             return "Loi ket noi: " + e.getMessage();
         }
+    }
+
+    /** Lấy chi tiết loại phòng theo ID */
+    public static RoomType getRoomType(int typeId) {
+        try {
+            String json = HttpUtil.sendGet("/room-types/" + typeId);
+            JsonObject res = gson.fromJson(json, JsonObject.class);
+            if (res != null && "success".equals(res.get("status").getAsString())) {
+                return gson.fromJson(res.get("data"), RoomType.class);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /** Tìm phòng trống theo ngày */
+    public static List<Room> searchAvailableRooms(String checkIn, String checkOut) {
+        List<Room> rooms = new ArrayList<>();
+        try {
+            String json = HttpUtil.sendGet("/rooms/search?checkIn=" + checkIn + "&checkOut=" + checkOut);
+            JsonObject res = gson.fromJson(json, JsonObject.class);
+            if (res != null && "success".equals(res.get("status").getAsString())) {
+                JsonArray data = res.getAsJsonArray("data");
+                if (data != null) {
+                    for (JsonElement el : data) {
+                        rooms.add(gson.fromJson(el, Room.class));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rooms;
     }
 }

@@ -6,12 +6,21 @@ import quanlykhachsan.backend.daoimpl.RoomDAOImpl;
 import quanlykhachsan.backend.model.Booking;
 import quanlykhachsan.backend.model.Invoice;
 import quanlykhachsan.backend.daoimpl.InvoiceDAOImpl;
+import quanlykhachsan.backend.model.Promotion;
+import quanlykhachsan.backend.model.Customer;
+import quanlykhachsan.backend.model.Room;
+import quanlykhachsan.backend.daoimpl.CustomerDAOImpl;
+import quanlykhachsan.backend.daoimpl.RoomDAOImpl;
+import quanlykhachsan.backend.daoimpl.PaymentDAOImpl;
 
 import java.util.List;
 
 public class BookingService {
 
     private BookingDAO bookingDAO = new BookingDAOImpl();
+    private PromotionService promotionService = new PromotionService();
+    private CustomerDAOImpl customerDAO = new CustomerDAOImpl();
+    private RoomDAOImpl roomDAO = new RoomDAOImpl();
 
     public List<Booking> getAllBookings() {
         return bookingDAO.selectBooking();
@@ -28,15 +37,14 @@ public class BookingService {
         return true;
     }
 
-    public boolean createBooking(Booking booking) {
+    public int addBooking(Booking booking) {
         if (!checkAvailable(
                 booking.getRoomId(),
                 booking.getCheckInDate(),
                 booking.getCheckOutDate())) {
-            return false;
+            return -1;
         }
-
-        return bookingDAO.insert(booking);
+        return bookingDAO.addBooking(booking);
     }
 
     public List<Booking> getBookingsByCustomer(int customerId) {
@@ -63,16 +71,32 @@ public class BookingService {
     public boolean processPayment(int bookingId, double amount, String method) {
         Booking b = getBookingById(bookingId);
         if (b != null) {
-            // 1. Cập nhật trạng thái Booking sang "paid"
+            // 1. Fetch info for promotion calculation
+            Customer customer = customerDAO.findById(b.getCustomerId());
+            Room room = roomDAO.findById(b.getRoomId());
+            
+            // 2. Calculate promotion
+            Promotion bestPromo = promotionService.calculateBestDiscount(b, customer, room);
+            double discount = 0;
+            if (bestPromo != null) {
+                long diff = b.getCheckOutDate().getTime() - b.getCheckInDate().getTime();
+                long nights = Math.max(1, diff / (1000 * 60 * 60 * 24));
+                if ("percentage".equals(bestPromo.getDiscountType())) {
+                    discount = (room.getPrice() * nights) * (bestPromo.getDiscountValue() / 100.0);
+                } else {
+                    discount = bestPromo.getDiscountValue();
+                }
+            }
+
+            // 3. Update Booking status to "paid"
             b.setStatus("paid");
             bookingDAO.updateBooking(b);
             
-            // 2. Tạo bản ghi Thanh toán (Payment) và lưu vào DB
+            // 4. Create Payment record
             quanlykhachsan.backend.model.Payment p = new quanlykhachsan.backend.model.Payment();
             p.setInvoiceId(bookingId); 
-            p.setAmount(amount);
+            p.setAmount(amount); // This 'amount' from UI is expected to be final price
             
-            // Ánh xạ phương thức từ giao diện sang DB (nếu cần gọn gàng)
             String dbMethod = method;
             if (method.contains("Cash")) dbMethod = "cash";
             else if (method.contains("Credit Card")) dbMethod = "credit_card";
@@ -80,21 +104,27 @@ public class BookingService {
             
             p.setPaymentMethod(dbMethod);
             p.setPaymentDate(new java.util.Date());
-            new quanlykhachsan.backend.daoimpl.PaymentDAOImpl().addPayment(p);
+            new PaymentDAOImpl().addPayment(p);
             
-            // 2.5 Tạo bản ghi Hóa Đơn (Invoice) và lưu vào DB
+            // 5. Create Invoice record
             Invoice inv = new Invoice();
             inv.setBookingId(bookingId);
-            double subtotal = amount / 1.1; // Amount đã bao gồm 10% thuế lúc Lễ tân thanh toán
-            double tax = amount - subtotal;
+            
+            long diff = b.getCheckOutDate().getTime() - b.getCheckInDate().getTime();
+            long nights = Math.max(1, diff / (1000 * 60 * 60 * 24));
+            double subtotal = room.getPrice() * nights;
+            
             inv.setTotalRoomFee(subtotal);
+            inv.setDiscount(discount);
+            double taxableAmount = subtotal - discount;
+            double tax = 0.0;
             inv.setTaxAmount(tax);
-            inv.setFinalTotal(amount);
+            inv.setFinalTotal(taxableAmount + tax);
             inv.setStatus("paid");
             new InvoiceDAOImpl().addInvoice(inv);
             
-            // 3. Cập nhật trạng thái Phòng sang "cleaning"
-            new RoomDAOImpl().updateStatus(b.getRoomId(), "cleaning");
+            // 6. Update Room status to "cleaning"
+            roomDAO.updateStatus(b.getRoomId(), "cleaning");
             
             return true;
         }

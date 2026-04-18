@@ -5,11 +5,28 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import quanlykhachsan.frontend.utils.HttpUtil;
 import quanlykhachsan.backend.model.User;
+import quanlykhachsan.backend.model.Role;
 import java.util.List;
 import java.util.ArrayList;
 import java.lang.reflect.Type;
 
 public class UserAPI {
+
+    public static List<Role> getRoles() throws Exception {
+        String jsonResponse;
+        try {
+            jsonResponse = HttpUtil.sendGet("/roles");
+        } catch (java.net.ConnectException ex) {
+            throw new Exception("Không thể kết nối Backend Server!");
+        }
+        
+        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
+            Type listType = new TypeToken<ArrayList<Role>>(){}.getType();
+            return new Gson().fromJson(resObj.get("data"), listType);
+        }
+        throw new Exception("Lỗi khi tải danh sách quyền!");
+    }
 
     public static String updateProfile(String username, String fullName, String email, String phone) throws Exception {
         JsonObject req = new JsonObject();
@@ -59,6 +76,7 @@ public class UserAPI {
         }
         throw new Exception("Phản hồi cấu trúc JSON từ máy chủ không xác định!");
     }
+
 
     public static List<User> getAllUsers() throws Exception {
         String jsonResponse;

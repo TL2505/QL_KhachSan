@@ -31,7 +31,7 @@ public class InvoiceForm extends JPanel {
 
     public InvoiceForm() {
         setLayout(new BorderLayout());
-        setBackground(new Color(248, 250, 252));
+        setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBgPanel());
         initUI();
         loadData("");
     }
@@ -39,15 +39,15 @@ public class InvoiceForm extends JPanel {
     private void initUI() {
         // ── Header ──────────────────────────────────────────────────────
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(Color.WHITE);
+        header.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         header.setBorder(BorderFactory.createCompoundBorder(
-            new MatteBorder(0, 0, 1, 0, new Color(226, 232, 240)),
+            new MatteBorder(0, 0, 1, 0, quanlykhachsan.frontend.utils.ThemeManager.getBorderColor()),
             new EmptyBorder(12, 20, 12, 20)
         ));
         
-        JLabel title = new JLabel("🧾 Quản lý Hóa Đơn (Doanh thu)");
+        JLabel title = new JLabel("Quản lý Hóa Đơn (Doanh thu)");
         title.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        title.setForeground(new Color(17, 24, 39));
+        title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         
         lblStatus = new JLabel("Đang tải...");
         lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -59,19 +59,19 @@ public class InvoiceForm extends JPanel {
 
         // ── Top Bar ─────────────────────────────────────────────────────
         JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
-        topBar.setBackground(Color.WHITE);
+        topBar.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         
         txtSearch = new JTextField(20);
         txtSearch.setPreferredSize(new Dimension(200, 32));
         txtSearch.putClientProperty("JTextField.placeholderText", "Tìm theo tên khách, phòng...");
         
-        JButton btnSearch = new JButton("\uD83D\uDD0D Tìm");
+        JButton btnSearch = new JButton("Tìm");
         btnSearch.setBackground(new Color(37, 99, 235));
         btnSearch.setForeground(Color.WHITE);
         btnSearch.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnSearch.addActionListener(e -> loadData(txtSearch.getText()));
 
-        JButton btnRefresh = new JButton("\u21BA Tải lại");
+        JButton btnRefresh = new JButton("Tải lại");
         btnRefresh.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnRefresh.addActionListener(e -> {
             txtSearch.setText("");
@@ -84,10 +84,10 @@ public class InvoiceForm extends JPanel {
         
         // ── Bottom Bar ──────────────────────────────────────────────────
         JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
-        bottomBar.setBackground(Color.WHITE);
-        bottomBar.setBorder(new MatteBorder(1, 0, 0, 0, new Color(226, 232, 240)));
+        bottomBar.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
+        bottomBar.setBorder(new MatteBorder(1, 0, 0, 0, quanlykhachsan.frontend.utils.ThemeManager.getBorderColor()));
 
-        btnPrintPDF = new JButton("\uD83D\uDDA8 In Hóa Đơn PDF");
+        btnPrintPDF = new JButton("In Hóa Đơn PDF");
         btnPrintPDF.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnPrintPDF.setBackground(new Color(5, 150, 105));
         btnPrintPDF.setForeground(Color.WHITE);
@@ -106,7 +106,7 @@ public class InvoiceForm extends JPanel {
         table.setRowHeight(35);
         table.setShowGrid(false);
         table.setSelectionBackground(new Color(219, 234, 254));
-        table.setSelectionForeground(new Color(17, 24, 39));
+        table.setSelectionForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
         table.getTableHeader().setReorderingAllowed(false);
         
@@ -196,7 +196,10 @@ public class InvoiceForm extends JPanel {
                     long diff = booking.getCheckOutDate().getTime() - booking.getCheckInDate().getTime();
                     int days = (int) Math.max(1, diff / (1000 * 60 * 60 * 24));
                     
-                    InvoicePDFExporter.exportPDF(booking, customer, room, days, inv.getFinalTotal());
+                    java.util.List<quanlykhachsan.backend.model.ServiceUsage> usagesList = 
+                        quanlykhachsan.frontend.api.ServiceUsageAPI.getUsageByBooking(booking.getId());
+                    
+                    quanlykhachsan.frontend.utils.InvoicePDFExporter.exportPDF(booking, customer, room, usagesList, days, inv.getFinalTotal());
                 }
                 return null;
             }

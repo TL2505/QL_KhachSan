@@ -14,7 +14,19 @@ public class UpdateDbUtility {
             "UPDATE users SET full_name = 'Nguyen Van A', email = 'nva@hotel.com', phone = '0123456789' WHERE username = 'staff_01'",
             "ALTER TABLE bookings MODIFY status VARCHAR(50) DEFAULT 'pending'",
             "ALTER TABLE payments MODIFY payment_method VARCHAR(50) NOT NULL",
-            "ALTER TABLE payments DROP FOREIGN KEY fk_payments_invoices" 
+            "ALTER TABLE payments DROP FOREIGN KEY fk_payments_invoices",
+            "ALTER TABLE users DROP COLUMN theme_preference",
+            "CREATE TABLE IF NOT EXISTS messages (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "sender_id INT, " +
+                "receiver_id INT NULL, " +
+                "content TEXT, " +
+                "is_read BOOLEAN DEFAULT FALSE, " +
+                "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                "FOREIGN KEY (sender_id) REFERENCES users(id), " +
+                "FOREIGN KEY (receiver_id) REFERENCES users(id)" +
+            ") ENGINE=InnoDB",
+            "ALTER TABLE messages MODIFY receiver_id INT NULL"
         };
 
         try (Connection con = DBconn.getConnection();

@@ -9,6 +9,9 @@ import java.net.InetSocketAddress;
 public class Main {
     public static void main(String[] args) {
         try {
+            // Đảm bảo cấu trúc Database đã được tạo hoặc cập nhật đầy đủ
+            quanlykhachsan.backend.utils.UpdateDbUtility.main(new String[] {});
+
             // Khởi tạo Server lắng nghe tại cổng 8080
             HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
 
@@ -23,6 +26,9 @@ public class Main {
             // Route Hồ sơ người dùng
             server.createContext("/api/users/update-profile", new quanlykhachsan.backend.controller.UserController());
             server.createContext("/api/users/change-password", new quanlykhachsan.backend.controller.UserController());
+            server.createContext("/api/users/update-theme", new quanlykhachsan.backend.controller.UserController());
+            // Route Phân quyền (Roles) - PHẢI đăng ký TRƯỚC /api/users
+            server.createContext("/api/roles", new quanlykhachsan.backend.controller.UserController());
             // Route Quản lý nhân sự
             server.createContext("/api/users", new quanlykhachsan.backend.controller.UserController());
             // Route Báo cáo
@@ -35,9 +41,17 @@ public class Main {
             server.createContext("/api/payments", new quanlykhachsan.backend.controller.PaymentController());
             // Route Quản lý Hóa đơn
             server.createContext("/api/invoices", new quanlykhachsan.backend.controller.InvoiceController());
+            // Route Đánh giá (Review)
+            server.createContext("/api/reviews", new quanlykhachsan.backend.controller.ReviewController());
+            // Route Chat
+            server.createContext("/api/chat", new quanlykhachsan.backend.controller.ChatController());
+            // Route Khuyến mãi (Promotion)
+            server.createContext("/api/promotions", new quanlykhachsan.backend.controller.PromotionController());
+            // Route Khách hàng thân thiết (Loyalty)
+            server.createContext("/api/loyalty", new quanlykhachsan.backend.controller.LoyaltyController());
 
             // Thiết lập cấu hình mặc định và chạy server
-            server.setExecutor(null); 
+            server.setExecutor(null);
             server.start();
 
             System.out.println("✅ Server đang chạy thành công tại: http://localhost:8080/");

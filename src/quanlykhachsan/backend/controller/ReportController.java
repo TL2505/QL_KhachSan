@@ -3,6 +3,7 @@ package quanlykhachsan.backend.controller;
 import quanlykhachsan.backend.dao.ReportDAO;
 import quanlykhachsan.backend.daoimpl.ReportDAOImpl;
 import quanlykhachsan.backend.model.MonthlyRevenue;
+import quanlykhachsan.backend.model.DailyStats;
 import quanlykhachsan.backend.utils.SecurityUtil;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -33,18 +34,45 @@ public class ReportController implements HttpHandler {
 
         if ("GET".equalsIgnoreCase(method) && path.equals("/api/reports/monthly-revenue")) {
             handleGetMonthlyRevenue(exchange);
+        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/reports/today-stats")) {
+            handleGetTodayStats(exchange);
+        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/reports/active-accounts")) {
+            handleGetActiveAccounts(exchange);
         } else {
             sendJson(exchange, 404, buildError("Endpoint không tồn tại"));
         }
     }
 
     private void handleGetMonthlyRevenue(HttpExchange exchange) throws IOException {
-        if (!SecurityUtil.checkAdmin(exchange)) return;
-        
+        if (!SecurityUtil.checkAdmin(exchange))
+            return;
+
         List<MonthlyRevenue> data = reportDAO.getMonthlyRevenue();
         JsonObject res = new JsonObject();
         res.addProperty("status", "success");
         res.add("data", gson.toJsonTree(data));
+        sendJson(exchange, 200, res.toString());
+    }
+
+    private void handleGetTodayStats(HttpExchange exchange) throws IOException {
+        if (!SecurityUtil.hasPermission(exchange, 1, 2))
+            return;
+
+        DailyStats stats = reportDAO.getDailyStats();
+        JsonObject res = new JsonObject();
+        res.addProperty("status", "success");
+        res.add("data", gson.toJsonTree(stats));
+        sendJson(exchange, 200, res.toString());
+    }
+
+    private void handleGetActiveAccounts(HttpExchange exchange) throws IOException {
+        if (!SecurityUtil.checkAdmin(exchange))
+            return;
+
+        int activeCount = reportDAO.getActiveAccountCount();
+        JsonObject res = new JsonObject();
+        res.addProperty("status", "success");
+        res.addProperty("data", activeCount);
         sendJson(exchange, 200, res.toString());
     }
 

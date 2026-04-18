@@ -7,17 +7,22 @@ public class Customer {
     private String phone;
     private String email;
     private String address;
+    private boolean isVip;
+    private int loyaltyPoints;
+    private int totalLoyaltyPoints;
+    private String loyaltyLevel;
 
     public Customer() {
     }
 
-    public Customer(int id, String fullName, String identityCard, String phone, String email, String address) {
+    public Customer(int id, String fullName, String identityCard, String phone, String email, String address, boolean isVip) {
         this.id = id;
         this.fullName = fullName;
         this.identityCard = identityCard;
         this.phone = phone;
         this.email = email;
         this.address = address;
+        this.isVip = isVip;
     }
 
     public int getId() { return id; }
@@ -32,4 +37,13 @@ public class Customer {
     public void setEmail(String email) { this.email = email; }
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+    public boolean isVip() { return isVip; }
+    public void setVip(boolean isVip) { this.isVip = isVip; }
+
+    public int getLoyaltyPoints() { return loyaltyPoints; }
+    public void setLoyaltyPoints(int loyaltyPoints) { this.loyaltyPoints = loyaltyPoints; }
+    public int getTotalLoyaltyPoints() { return totalLoyaltyPoints; }
+    public void setTotalLoyaltyPoints(int totalLoyaltyPoints) { this.totalLoyaltyPoints = totalLoyaltyPoints; }
+    public String getLoyaltyLevel() { return loyaltyLevel; }
+    public void setLoyaltyLevel(String loyaltyLevel) { this.loyaltyLevel = loyaltyLevel; }
 }

@@ -1,14 +1,18 @@
 package quanlykhachsan.backend.service;
 
-import quanlykhachsan.backend.dao.RoomDAO;
-import quanlykhachsan.backend.daoimpl.RoomDAOImpl;
+import quanlykhachsan.backend.dao.RoomTypeDAO;
+import quanlykhachsan.backend.daoimpl.RoomTypeDAOImpl;
 import quanlykhachsan.backend.model.Room;
+import quanlykhachsan.backend.model.RoomType;
 
 import java.util.List;
+import quanlykhachsan.backend.dao.RoomDAO;
+import quanlykhachsan.backend.daoimpl.RoomDAOImpl;
 
 public class RoomService {
 
     private RoomDAO roomDAO = new RoomDAOImpl();
+    private RoomTypeDAO roomTypeDAO = new RoomTypeDAOImpl();
 
     public List<Room> getAllRooms() {
         return roomDAO.findAll();
@@ -44,5 +48,17 @@ public class RoomService {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public List<RoomType> getAllRoomTypes() {
+        return roomTypeDAO.findAll();
+    }
+
+    public RoomType getRoomTypeById(int id) {
+        return roomTypeDAO.findById(id);
+    }
+
+    public List<Room> findAvailableRooms(java.util.Date checkIn, java.util.Date checkOut) {
+        return roomDAO.findAvailableRooms(checkIn, checkOut);
     }
 }

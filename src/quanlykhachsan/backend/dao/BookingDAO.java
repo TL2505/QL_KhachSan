@@ -6,7 +6,7 @@ import java.util.ArrayList;
 public interface BookingDAO {
 
 //    add Booking
-    public void addBooking(Booking booking);
+    public int addBooking(Booking booking);
 
 //    update Booking
     public void updateBooking(Booking booking);
