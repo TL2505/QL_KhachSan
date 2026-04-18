@@ -2,6 +2,8 @@ package quanlykhachsan.frontend.utils;
 
 import quanlykhachsan.backend.model.User;
 
+import quanlykhachsan.frontend.utils.ThemeManager;
+
 /**
  * Singleton class to manage the current user session on the frontend.
  */
@@ -10,6 +12,7 @@ public class SessionManagerUtil {
 
     public static void setUser(User user) {
         currentUser = user;
+        // Theme preference is now managed locally on the machine, ignoring DB preference.
     }
 
     public static User getUser() {

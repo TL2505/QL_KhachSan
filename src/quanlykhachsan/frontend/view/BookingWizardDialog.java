@@ -19,8 +19,8 @@ public class BookingWizardDialog extends JDialog {
     private long days;
     private double totalPrice;
 
-    private static final Color PRIMARY = new Color(13, 148, 136);
-    private static final Color BG = new Color(248, 250, 252);
+    private final Color PRIMARY = new Color(13, 148, 136);
+    private final Color BG = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
     private final NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 
     public BookingWizardDialog(Window owner, User user, Room room, String cin, String cout) {
@@ -116,9 +116,9 @@ public class BookingWizardDialog extends JDialog {
 
         // Action
         JPanel footer = new JPanel(new BorderLayout());
-        footer.setBackground(Color.WHITE);
+        footer.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         footer.setBorder(new CompoundBorder(
-            new MatteBorder(1, 0, 0, 0, new Color(226, 232, 240)),
+            new MatteBorder(1, 0, 0, 0, quanlykhachsan.frontend.utils.ThemeManager.getBorderColor()),
             new EmptyBorder(15, 25, 15, 25)
         ));
 
@@ -137,7 +137,7 @@ public class BookingWizardDialog extends JDialog {
     private JLabel createSectionTitle(String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lbl.setForeground(new Color(15, 23, 42));
+        lbl.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         lbl.setBorder(new EmptyBorder(0, 0, 10, 0));
         return lbl;
     }
@@ -149,11 +149,11 @@ public class BookingWizardDialog extends JDialog {
         
         JLabel lbl = new JLabel(label);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lbl.setForeground(new Color(100, 116, 139));
+        lbl.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         
         JLabel val = new JLabel(value);
         val.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        val.setForeground(new Color(15, 23, 42));
+        val.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         
         p.add(lbl, BorderLayout.WEST);
         p.add(val, BorderLayout.EAST);

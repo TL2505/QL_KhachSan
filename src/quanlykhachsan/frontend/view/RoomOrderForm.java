@@ -35,7 +35,7 @@ public class RoomOrderForm extends JPanel {
 
     public RoomOrderForm() {
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         initUI();
     }
 
@@ -74,7 +74,7 @@ public class RoomOrderForm extends JPanel {
         
         // Vùng gọi món (Top của Right)
         JPanel orderPanel = new JPanel(new BorderLayout());
-        orderPanel.setBackground(new Color(248, 250, 252));
+        orderPanel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBgPanel());
         orderPanel.setBorder(BorderFactory.createCompoundBorder(
             new MatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY),
             new EmptyBorder(10, 10, 10, 10)

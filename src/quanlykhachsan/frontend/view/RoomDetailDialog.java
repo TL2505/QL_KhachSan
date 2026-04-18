@@ -37,11 +37,11 @@ public class RoomDetailDialog extends JDialog {
     private JPanel reviewListPanel;
     private JButton btnPay, btnSubmitReview;
 
-    private static final Color PRIMARY = new Color(37, 99, 235);
-    private static final Color SUCCESS = new Color(34, 197, 94);
-    private static final Color DANGER  = new Color(239, 68, 68);
-    private static final Color MUTED   = new Color(107, 114, 128);
-    private static final Color BG      = new Color(250, 250, 250);
+    private final Color PRIMARY = new Color(37, 99, 235);
+    private final Color SUCCESS = new Color(34, 197, 94);
+    private final Color DANGER  = new Color(239, 68, 68);
+    private final Color MUTED   = new Color(107, 114, 128);
+    private final Color BG      = new Color(250, 250, 250);
 
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -62,7 +62,7 @@ public class RoomDetailDialog extends JDialog {
     private void initUI() {
         // --- Header ---
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(Color.WHITE);
+        header.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         header.setBorder(new CompoundBorder(
             new MatteBorder(0, 0, 1, 0, new Color(230, 230, 230)),
             new EmptyBorder(20, 25, 20, 25)
@@ -163,7 +163,7 @@ public class RoomDetailDialog extends JDialog {
 
         reviewListPanel = new JPanel();
         reviewListPanel.setLayout(new BoxLayout(reviewListPanel, BoxLayout.Y_AXIS));
-        reviewListPanel.setBackground(Color.WHITE);
+        reviewListPanel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         
         JScrollPane scrollReviews = new JScrollPane(reviewListPanel);
         scrollReviews.setPreferredSize(new Dimension(0, 150));
@@ -196,7 +196,7 @@ public class RoomDetailDialog extends JDialog {
 
         // --- Actions ---
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
-        actions.setBackground(Color.WHITE);
+        actions.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         actions.setBorder(new MatteBorder(1, 0, 0, 0, new Color(230, 230, 230)));
 
         JButton btnCancel = new JButton("Đóng");
@@ -286,7 +286,7 @@ public class RoomDetailDialog extends JDialog {
 
     private JPanel createReviewCard(Review r) {
         JPanel card = new JPanel(new BorderLayout(5, 5));
-        card.setBackground(new Color(241, 245, 249));
+        card.setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
         card.setBorder(new CompoundBorder(
             new EmptyBorder(5, 5, 5, 5),
             new EmptyBorder(8, 12, 8, 12)
@@ -299,7 +299,7 @@ public class RoomDetailDialog extends JDialog {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(Color.WHITE);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-                g2.setColor(new Color(226, 232, 240));
+                g2.setColor(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor());
                 g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 20, 20);
             }
         };
@@ -455,7 +455,7 @@ public class RoomDetailDialog extends JDialog {
     private JLabel makeLabel(String text) {
         JLabel l = new JLabel(text);
         l.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        l.setForeground(new Color(55, 65, 81));
+        l.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         l.setBorder(new EmptyBorder(0, 0, 5, 0));
         return l;
     }

@@ -11,6 +11,7 @@ import java.util.Collections;
 import quanlykhachsan.backend.model.Room;
 import quanlykhachsan.backend.model.User;
 import quanlykhachsan.frontend.api.RoomAPI;
+import quanlykhachsan.frontend.utils.WrapLayout;
 
 public class RoomForm extends JPanel {
 
@@ -21,19 +22,19 @@ public class RoomForm extends JPanel {
     private User currentUser;        // User hiện tại (để phân quyền)
 
     // ── Màu sắc ──────────────────────────────────────────────────────────
-    private static final Color C_AVAILABLE   = new Color(34, 197, 94);   // xanh lá
-    private static final Color C_BOOKED      = new Color(234, 179, 8);   // vàng
-    private static final Color C_OCCUPIED    = new Color(239, 68, 68);   // đỏ
-    private static final Color C_MAINTENANCE = new Color(107, 114, 128); // xám
-    private static final Color C_CLEANING    = new Color(56, 189, 248);  // xanh dương nhạt (sky)
-    private static final Color C_SERVICE     = new Color(156, 163, 175); // xám trung tính
+    private final Color C_AVAILABLE   = new Color(34, 197, 94);   // xanh lá
+    private final Color C_BOOKED      = new Color(234, 179, 8);   // vàng
+    private final Color C_OCCUPIED    = new Color(239, 68, 68);   // đỏ
+    private final Color C_MAINTENANCE = new Color(107, 114, 128); // xám
+    private final Color C_CLEANING    = new Color(56, 189, 248);  // xanh dương nhạt (sky)
+    private final Color C_SERVICE     = new Color(156, 163, 175); // xám trung tính
 
-    private static final Color PRIMARY   = new Color(37, 99, 235);
-    private static final Color DANGER    = new Color(220, 38, 38);
-    private static final Color SUCCESS   = new Color(5, 150, 105);
-    private static final Color MUTED     = new Color(107, 114, 128);
-    private static final Color BG        = new Color(248, 250, 252);
-    private static final Color BORDER_C  = new Color(226, 232, 240);
+    private final Color PRIMARY   = new Color(37, 99, 235);
+    private final Color DANGER    = new Color(220, 38, 38);
+    private final Color SUCCESS   = new Color(5, 150, 105);
+    private final Color MUTED     = quanlykhachsan.frontend.utils.ThemeManager.getTextMuted();
+    private final Color BG        = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
+    private final Color BORDER_C  = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
 
     // Kích thước mỗi card phòng
     private static final int CARD_W = 160;
@@ -51,7 +52,7 @@ public class RoomForm extends JPanel {
         // ── Main Header Wrapper ───────────────────────────────────────────
         JPanel mainHeader = new JPanel();
         mainHeader.setLayout(new BoxLayout(mainHeader, BoxLayout.Y_AXIS));
-        mainHeader.setBackground(Color.WHITE);
+        mainHeader.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         mainHeader.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_C));
 
         // ── Row 1: Title & Action Buttons ────────────────────────────────
@@ -61,7 +62,7 @@ public class RoomForm extends JPanel {
 
         JLabel pageTitle = new JLabel("Sơ đồ phòng khách sạn");
         pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        pageTitle.setForeground(new Color(15, 23, 42));
+        pageTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         topRow.add(pageTitle, BorderLayout.WEST);
 
         JPanel actionButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -203,9 +204,9 @@ public class RoomForm extends JPanel {
                     g2.setStroke(new BasicStroke(2f));
                     g2.drawRoundRect(0, 0, getWidth()-5, getHeight()-5, 15, 15);
                 } else {
-                    g2.setColor(Color.WHITE);
+                    g2.setColor(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
                     g2.fillRoundRect(0, 0, getWidth()-5, getHeight()-5, 15, 15);
-                    g2.setColor(new Color(241, 245, 249));
+                    g2.setColor(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor());
                     g2.setStroke(new BasicStroke(1f));
                     g2.drawRoundRect(0, 0, getWidth()-5, getHeight()-5, 15, 15);
                 }
@@ -228,7 +229,7 @@ public class RoomForm extends JPanel {
 
         JLabel lblNumber = new JLabel(room.getRoomNumber());
         lblNumber.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblNumber.setForeground(new Color(15, 23, 42));
+        lblNumber.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         lblNumber.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel lblCap = new JLabel("Sức chứa: " + (room.getRoomTypeId() == 1 ? "2-4" : "1-2") + " người");
@@ -300,11 +301,11 @@ public class RoomForm extends JPanel {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(24, 28, 24, 28));
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
 
         JLabel title = new JLabel("Thêm phòng mới");
         title.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        title.setForeground(new Color(17, 24, 39));
+        title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         title.setAlignmentX(LEFT_ALIGNMENT);
 
         panel.add(title);
@@ -415,11 +416,11 @@ public class RoomForm extends JPanel {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(24, 28, 24, 28));
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
 
         JLabel title = new JLabel("Đổi trạng thái — Phòng " + room.getRoomNumber());
         title.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        title.setForeground(new Color(17, 24, 39));
+        title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         title.setAlignmentX(LEFT_ALIGNMENT);
         panel.add(title);
         panel.add(Box.createVerticalStrut(4));
@@ -443,8 +444,8 @@ public class RoomForm extends JPanel {
             JRadioButton rb = new JRadioButton(entry[1]);
             rb.setActionCommand(entry[0]);
             rb.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            rb.setForeground(new Color(17, 24, 39));
-            rb.setBackground(Color.WHITE);
+            rb.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+            rb.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
             rb.setAlignmentX(LEFT_ALIGNMENT);
             if (entry[0].equals(room.getStatus())) rb.setSelected(true);
             group.add(rb);
@@ -616,7 +617,7 @@ public class RoomForm extends JPanel {
     private JLabel makeDialogLabel(String text) {
         JLabel l = new JLabel(text);
         l.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        l.setForeground(new Color(55, 65, 81));
+        l.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         l.setAlignmentX(LEFT_ALIGNMENT);
         return l;
     }
@@ -652,66 +653,7 @@ public class RoomForm extends JPanel {
         return luminance < 0.5;
     }
 
-    static class WrapLayout extends FlowLayout {
-        WrapLayout(int align, int hgap, int vgap) { super(align, hgap, vgap); }
 
-        @Override
-        public Dimension preferredLayoutSize(Container target) {
-            return layoutSize(target, true);
-        }
-        @Override
-        public Dimension minimumLayoutSize(Container target) {
-            Dimension minimum = layoutSize(target, false);
-            minimum.width -= (getHgap() + 1);
-            return minimum;
-        }
-
-        private Dimension layoutSize(Container target, boolean preferred) {
-            synchronized (target.getTreeLock()) {
-                int targetWidth = target.getSize().width;
-                Container container = target;
-                while (container.getSize().width == 0 && container.getParent() != null) {
-                    container = container.getParent();
-                }
-                targetWidth = container.getSize().width;
-                if (targetWidth == 0) targetWidth = Integer.MAX_VALUE;
-
-                int hgap = getHgap(), vgap = getVgap();
-                Insets insets = target.getInsets();
-                int horizontalInsetsAndGap = insets.left + insets.right + (hgap * 2);
-                int maxWidth = targetWidth - horizontalInsetsAndGap;
-
-                Dimension dim = new Dimension(0, 0);
-                int rowWidth = 0, rowHeight = 0;
-
-                int nmembers = target.getComponentCount();
-                for (int i = 0; i < nmembers; i++) {
-                    Component m = target.getComponent(i);
-                    if (m.isVisible()) {
-                        Dimension d = preferred ? m.getPreferredSize() : m.getMinimumSize();
-                        if (rowWidth + d.width > maxWidth) {
-                            addRow(dim, rowWidth, rowHeight);
-                            rowWidth = 0;
-                            rowHeight = 0;
-                        }
-                        if (rowWidth != 0) rowWidth += hgap;
-                        rowWidth += d.width;
-                        rowHeight = Math.max(rowHeight, d.height);
-                    }
-                }
-                addRow(dim, rowWidth, rowHeight);
-                dim.width += horizontalInsetsAndGap;
-                dim.height += insets.top + insets.bottom + vgap * 2;
-                return dim;
-            }
-        }
-
-        private void addRow(Dimension dim, int rowWidth, int rowHeight) {
-            dim.width = Math.max(dim.width, rowWidth);
-            if (dim.height > 0) dim.height += getVgap();
-            dim.height += rowHeight;
-        }
-    }
     private static class RoundBorder extends AbstractBorder {
         private final Color color;
         private final int radius;

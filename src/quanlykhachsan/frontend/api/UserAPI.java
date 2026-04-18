@@ -77,6 +77,7 @@ public class UserAPI {
         throw new Exception("Phản hồi cấu trúc JSON từ máy chủ không xác định!");
     }
 
+
     public static List<User> getAllUsers() throws Exception {
         String jsonResponse;
         try {

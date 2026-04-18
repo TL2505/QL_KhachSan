@@ -14,10 +14,10 @@ public class CustomerPromotionView extends JPanel {
     private JLabel lblStatus;
     private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
 
-    private static final Color PRIMARY   = new Color(37, 99, 235);
-    private static final Color SUCCESS   = new Color(5, 150, 105);
-    private static final Color BG_PANEL = new Color(248, 250, 252);
-    private static final Color BORDER_CLR = new Color(226, 232, 240);
+    private final Color PRIMARY   = new Color(37, 99, 235);
+    private final Color SUCCESS   = new Color(5, 150, 105);
+    private final Color BG_PANEL = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
+    private final Color BORDER_CLR = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
 
     public CustomerPromotionView() {
         setLayout(new BorderLayout(0, 0));
@@ -29,14 +29,14 @@ public class CustomerPromotionView extends JPanel {
     private void initUI() {
         // Header
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(Color.WHITE);
+        header.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         header.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 0, 1, 0, BORDER_CLR),
                 new EmptyBorder(20, 25, 20, 25)));
         
         JLabel title = new JLabel("Ưu đãi & Khuyến mãi dành riêng cho bạn");
         title.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        title.setForeground(new Color(15, 23, 42));
+        title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         
         lblStatus = new JLabel("Đang tải các ưu đãi mới nhất...");
         lblStatus.setFont(new Font("Segoe UI", Font.ITALIC, 13));
@@ -107,7 +107,7 @@ public class CustomerPromotionView extends JPanel {
 
                 // Side Dash Line (Voucher effect)
                 g2.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0));
-                g2.setColor(new Color(226, 232, 240));
+                g2.setColor(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor());
                 g2.drawLine(80, 15, 80, getHeight()-25);
             }
         };
@@ -140,7 +140,7 @@ public class CustomerPromotionView extends JPanel {
 
         JLabel title = new JLabel(p.getName());
         title.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        title.setForeground(new Color(15, 23, 42));
+        title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         String valueStr = p.getDiscountType().equals("percentage") 
             ? p.getDiscountValue() + "% Giảm toàn bộ"
@@ -151,7 +151,7 @@ public class CustomerPromotionView extends JPanel {
 
         JLabel cond = new JLabel("Hạn sử dụng: " + df.format(p.getEndDate()));
         cond.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        cond.setForeground(new Color(100, 116, 139));
+        cond.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
 
         right.add(title);
         right.add(Box.createVerticalStrut(5));

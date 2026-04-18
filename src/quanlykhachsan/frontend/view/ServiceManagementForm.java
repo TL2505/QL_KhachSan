@@ -18,7 +18,7 @@ public class ServiceManagementForm extends JPanel {
 
     public ServiceManagementForm() {
         setLayout(new BorderLayout());
-        setBackground(new Color(248, 250, 252));
+        setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBgPanel());
         initUI();
         loadData();
     }
@@ -27,7 +27,7 @@ public class ServiceManagementForm extends JPanel {
         // --- Form nhập liệu (NORTH) ---
         JPanel panelNorth = new JPanel(new GridLayout(2, 4, 10, 10));
         panelNorth.setBorder(BorderFactory.createTitledBorder("Nhập thông tin Dịch vụ/Minibar"));
-        panelNorth.setBackground(Color.WHITE);
+        panelNorth.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
 
         panelNorth.add(new JLabel(" Tên Dịch Vụ:"));
         txtName = new JTextField();
@@ -68,7 +68,7 @@ public class ServiceManagementForm extends JPanel {
 
         // --- Thao tác (SOUTH) ---
         JPanel panelSouth = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
-        panelSouth.setBackground(Color.WHITE);
+        panelSouth.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
 
         btnAdd = new JButton("➕ Thêm mới");
         btnUpdate = new JButton("✏️ Cập nhật");

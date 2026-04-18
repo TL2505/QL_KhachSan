@@ -22,7 +22,7 @@ public class CustomerPaymentDialog extends JDialog {
     private double discountAmount = 0;
     private quanlykhachsan.backend.model.Customer loyaltyCustomer;
 
-    private static final Color PRIMARY = new Color(13, 148, 136); // Teal 600
+    private final Color PRIMARY = new Color(13, 148, 136); // Teal 600
 
     public CustomerPaymentDialog(Window owner, Booking booking, Runnable onSuccess) {
         super(owner, "Thanh Toán & Trả Phòng", Dialog.ModalityType.APPLICATION_MODAL);
@@ -32,7 +32,7 @@ public class CustomerPaymentDialog extends JDialog {
         setSize(450, 600);
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout());
-        getContentPane().setBackground(Color.WHITE);
+        getContentPane().setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
 
         initUI();
         loadQRCodeBackground();
@@ -42,7 +42,7 @@ public class CustomerPaymentDialog extends JDialog {
         // Top Header
         JPanel header = new JPanel();
         header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
-        header.setBackground(Color.WHITE);
+        header.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         header.setBorder(new EmptyBorder(20, 20, 10, 20));
 
         JLabel title = new JLabel("Thanh toán Chuyển khoản QR");
@@ -60,7 +60,7 @@ public class CustomerPaymentDialog extends JDialog {
         
         JLabel desc = new JLabel("Mở ứng dụng Ngân hàng để quét mã QR bên dưới.");
         desc.setFont(new Font("Segoe UI", Font.ITALIC, 13));
-        desc.setForeground(new Color(100, 116, 139));
+        desc.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         desc.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         header.add(title);
@@ -97,7 +97,7 @@ public class CustomerPaymentDialog extends JDialog {
 
         // QR Area inside Center
         JPanel center = new JPanel(new BorderLayout());
-        center.setBackground(Color.WHITE);
+        center.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         center.setBorder(new EmptyBorder(10, 20, 10, 20));
         
         lblWait = new JLabel("Đang tạo mã QR, vui lòng chờ...", SwingConstants.CENTER);
@@ -108,7 +108,7 @@ public class CustomerPaymentDialog extends JDialog {
 
         // Bottom Actions
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
-        bottom.setBackground(Color.WHITE);
+        bottom.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         bottom.setBorder(new EmptyBorder(0, 0, 20, 0));
 
         JButton btnCancel = new JButton("Hủy bỏ");

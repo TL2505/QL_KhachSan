@@ -22,12 +22,12 @@ public class CustomerHistoryDialog extends JDialog {
     private JLabel lblStatus;
     private JLabel lblTotalSpent;
 
-    private static final Color SUCCESS = new Color(5, 150, 105);
-    private static final Color DANGER = new Color(220, 38, 38);
-    private static final Color MUTED = new Color(107, 114, 128);
-    private static final Color ROW_EVEN = new Color(249, 250, 251);
-    private static final Color ROW_ODD = Color.WHITE;
-    private static final Color BORDER_CLR = new Color(226, 232, 240);
+    private final Color SUCCESS = new Color(5, 150, 105);
+    private final Color DANGER = new Color(220, 38, 38);
+    private final Color MUTED = new Color(107, 114, 128);
+    private final Color ROW_EVEN = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(15, 23, 42) : new Color(249, 250, 251);
+    private final Color ROW_ODD = quanlykhachsan.frontend.utils.ThemeManager.getCardBg();
+    private final Color BORDER_CLR = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
 
     public CustomerHistoryDialog(JFrame parent, int customerId, String customerName) {
         super(parent, "Lịch sử thuê phòng - " + customerName, true);
@@ -38,7 +38,7 @@ public class CustomerHistoryDialog extends JDialog {
         setLocationRelativeTo(parent);
         setResizable(false);
         setLayout(new BorderLayout());
-        getContentPane().setBackground(Color.WHITE);
+        getContentPane().setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
 
         initUI();
         loadHistory();
@@ -47,12 +47,12 @@ public class CustomerHistoryDialog extends JDialog {
     private void initUI() {
         // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(Color.WHITE);
+        headerPanel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         headerPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
 
         JLabel titleLabel = new JLabel("Lịch sử thuê phòng");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titleLabel.setForeground(new Color(17, 24, 39));
+        titleLabel.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         JLabel subLabel = new JLabel("Khách hàng: " + customerName);
         subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
@@ -60,7 +60,7 @@ public class CustomerHistoryDialog extends JDialog {
 
         JPanel titleWrapper = new JPanel();
         titleWrapper.setLayout(new BoxLayout(titleWrapper, BoxLayout.Y_AXIS));
-        titleWrapper.setBackground(Color.WHITE);
+        titleWrapper.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         subLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         titleWrapper.add(titleLabel);
@@ -95,7 +95,7 @@ public class CustomerHistoryDialog extends JDialog {
         historyTable.setFocusable(false);
 
         historyTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        historyTable.getTableHeader().setBackground(new Color(241, 245, 249));
+        historyTable.getTableHeader().setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
         historyTable.getTableHeader().setForeground(new Color(71, 85, 105));
         historyTable.getTableHeader().setPreferredSize(new Dimension(0, 40));
         historyTable.getTableHeader().setBorder(new MatteBorder(1, 0, 1, 0, BORDER_CLR));
@@ -131,7 +131,7 @@ public class CustomerHistoryDialog extends JDialog {
                         setForeground(new Color(217, 119, 6)); // Orange for pending/checked_in
                     }
                 } else {
-                    setForeground(new Color(17, 24, 39));
+                    setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
                     setFont(getFont().deriveFont(Font.PLAIN));
                 }
 
@@ -141,12 +141,12 @@ public class CustomerHistoryDialog extends JDialog {
 
         JScrollPane scroll = new JScrollPane(historyTable);
         scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getViewport().setBackground(Color.WHITE);
+        scroll.getViewport().setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         add(scroll, BorderLayout.CENTER);
 
         // Footer
         JPanel footerPanel = new JPanel(new BorderLayout());
-        footerPanel.setBackground(Color.WHITE);
+        footerPanel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         footerPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
         lblStatus = new JLabel("Đang tải dữ liệu...");

@@ -15,8 +15,8 @@ public class SupportManagementForm extends JPanel {
     private CardLayout cardLayout;
     private ChatPanel activeChatPanel;
 
-    private static final Color BG = new Color(248, 250, 252);
-    private static final Color BORDER = new Color(226, 232, 240);
+    private final Color BG = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
+    private final Color BORDER = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
 
     public SupportManagementForm(User admin) {
         this.currentUser = admin;
@@ -31,7 +31,7 @@ public class SupportManagementForm extends JPanel {
         // --- Sidebar (Inbox List) ---
         JPanel sidebar = new JPanel(new BorderLayout());
         sidebar.setPreferredSize(new Dimension(300, 0));
-        sidebar.setBackground(Color.WHITE);
+        sidebar.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER));
 
         JLabel lblTitle = new JLabel("Hỗ trợ trực tuyến");
@@ -41,7 +41,7 @@ public class SupportManagementForm extends JPanel {
 
         listContainer = new JPanel();
         listContainer.setLayout(new BoxLayout(listContainer, BoxLayout.Y_AXIS));
-        listContainer.setBackground(Color.WHITE);
+        listContainer.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
 
         JScrollPane scrollList = new JScrollPane(listContainer);
         scrollList.setBorder(null);
@@ -86,7 +86,7 @@ public class SupportManagementForm extends JPanel {
                     if (inbox.isEmpty()) {
                         JLabel lblNone = new JLabel("Chưa có yêu cầu hỗ trợ nào mới");
                         lblNone.setFont(new Font("Segoe UI", Font.ITALIC, 14));
-                        lblNone.setForeground(new Color(100, 116, 139));
+                        lblNone.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
                         lblNone.setBorder(new EmptyBorder(30, 20, 0, 0));
                         listContainer.add(lblNone);
                     }
@@ -102,7 +102,7 @@ public class SupportManagementForm extends JPanel {
         String name = m.getSenderName() != null ? m.getSenderName() : "Khách hàng #" + otherId;
 
         JPanel item = new JPanel(new BorderLayout(10, 5));
-        item.setBackground(Color.WHITE);
+        item.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         item.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER),
             new EmptyBorder(15, 20, 15, 20)
@@ -115,7 +115,7 @@ public class SupportManagementForm extends JPanel {
         
         JLabel lblPreview = new JLabel(m.getContent());
         lblPreview.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblPreview.setForeground(new Color(100, 116, 139));
+        lblPreview.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
 
         item.add(lblName, BorderLayout.NORTH);
         item.add(lblPreview, BorderLayout.CENTER);
@@ -125,9 +125,9 @@ public class SupportManagementForm extends JPanel {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) { openChat(otherId, name); }
             @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) { item.setBackground(new Color(248, 250, 252)); }
+            public void mouseEntered(java.awt.event.MouseEvent e) { item.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBgPanel()); }
             @Override
-            public void mouseExited(java.awt.event.MouseEvent e) { item.setBackground(Color.WHITE); }
+            public void mouseExited(java.awt.event.MouseEvent e) { item.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg()); }
         };
 
         item.addMouseListener(clickAdapter);

@@ -18,11 +18,11 @@ public class ReviewManagementForm extends JPanel {
     private DefaultTableModel tableModel;
     private JLabel lblStatus;
 
-    private static final Color PRIMARY   = new Color(37, 99, 235);
-    private static final Color BG        = new Color(248, 250, 252);
-    private static final Color CARD_BG   = Color.WHITE;
-    private static final Color BORDER_C  = new Color(226, 232, 240);
-    private static final Color DANGER    = new Color(239, 68, 68);
+    private final Color PRIMARY   = new Color(37, 99, 235);
+    private final Color BG        = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
+    private final Color CARD_BG   = quanlykhachsan.frontend.utils.ThemeManager.getCardBg();
+    private final Color BORDER_C  = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
+    private final Color DANGER    = new Color(239, 68, 68);
 
     private SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 
@@ -42,7 +42,7 @@ public class ReviewManagementForm extends JPanel {
         
         JLabel lblTitle = new JLabel("Chăm sóc & Phản hồi Khách hàng");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblTitle.setForeground(new Color(15, 23, 42));
+        lblTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         header.add(lblTitle, BorderLayout.WEST);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -98,7 +98,7 @@ public class ReviewManagementForm extends JPanel {
         table.setRowHeight(40);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
-        table.getTableHeader().setBackground(new Color(241, 245, 249));
+        table.getTableHeader().setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         

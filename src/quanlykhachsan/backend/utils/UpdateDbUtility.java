@@ -15,6 +15,7 @@ public class UpdateDbUtility {
             "ALTER TABLE bookings MODIFY status VARCHAR(50) DEFAULT 'pending'",
             "ALTER TABLE payments MODIFY payment_method VARCHAR(50) NOT NULL",
             "ALTER TABLE payments DROP FOREIGN KEY fk_payments_invoices",
+            "ALTER TABLE users DROP COLUMN theme_preference",
             "CREATE TABLE IF NOT EXISTS messages (" +
                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
                 "sender_id INT, " +

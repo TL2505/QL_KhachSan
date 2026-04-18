@@ -32,15 +32,15 @@ public class PromotionForm extends JPanel {
     private List<Promotion> promotionsList = new ArrayList<>();
     private final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    private static final Color PRIMARY = new Color(37, 99, 235);
-    private static final Color SUCCESS = new Color(5, 150, 105);
-    private static final Color DANGER = new Color(220, 38, 38);
-    private static final Color MUTED = new Color(107, 114, 128);
-    private static final Color BG_PANEL = new Color(248, 250, 252);
-    private static final Color BORDER_CLR = new Color(226, 232, 240);
-    private static final Color ROW_EVEN = new Color(249, 250, 251);
-    private static final Color ROW_ODD = Color.WHITE;
-    private static final Color ROW_SELECT = new Color(219, 234, 254);
+    private final Color PRIMARY = new Color(37, 99, 235);
+    private final Color SUCCESS = new Color(5, 150, 105);
+    private final Color DANGER = new Color(220, 38, 38);
+    private final Color MUTED = new Color(107, 114, 128);
+    private final Color BG_PANEL = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
+    private final Color BORDER_CLR = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
+    private final Color ROW_EVEN = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(15, 23, 42) : new Color(249, 250, 251);
+    private final Color ROW_ODD = quanlykhachsan.frontend.utils.ThemeManager.getCardBg();
+    private final Color ROW_SELECT = new Color(219, 234, 254);
 
     public PromotionForm() {
         setLayout(new BorderLayout(0, 0));
@@ -52,13 +52,13 @@ public class PromotionForm extends JPanel {
     private void initUI() {
         // Status bar
         JPanel statusBar = new JPanel(new BorderLayout());
-        statusBar.setBackground(Color.WHITE);
+        statusBar.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         statusBar.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 0, 1, 0, BORDER_CLR),
                 new EmptyBorder(10, 16, 10, 16)));
         JLabel pageTitle = new JLabel("Quản lý Chương trình Khuyến mãi");
         pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        pageTitle.setForeground(new Color(15, 23, 42));
+        pageTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         lblStatus = new JLabel(" ");
         lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         statusBar.add(pageTitle, BorderLayout.WEST);
@@ -79,17 +79,17 @@ public class PromotionForm extends JPanel {
 
     private JPanel buildFormPanel() {
         JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setBackground(Color.WHITE);
+        wrapper.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         wrapper.setBorder(new MatteBorder(0, 0, 0, 1, BORDER_CLR));
 
         JPanel form = new JPanel();
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
-        form.setBackground(Color.WHITE);
+        form.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         form.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         lblFormTitle = new JLabel("Thêm Khuyến Mãi Mới");
         lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblFormTitle.setForeground(new Color(17, 24, 39));
+        lblFormTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         lblFormTitle.setAlignmentX(LEFT_ALIGNMENT);
         form.add(lblFormTitle);
         form.add(Box.createVerticalStrut(15));
@@ -168,10 +168,10 @@ public class PromotionForm extends JPanel {
 
     private JPanel buildTablePanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 0));
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
 
         JPanel searchBar = new JPanel(new BorderLayout(8, 0));
-        searchBar.setBackground(Color.WHITE);
+        searchBar.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         searchBar.setBorder(new EmptyBorder(12, 16, 12, 16));
 
         txtSearch = new JTextField();
@@ -400,7 +400,7 @@ public class PromotionForm extends JPanel {
     private JLabel createFieldLabel(String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl.setForeground(new Color(55, 65, 81));
+        lbl.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         lbl.setAlignmentX(LEFT_ALIGNMENT);
         return lbl;
     }

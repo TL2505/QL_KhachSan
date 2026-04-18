@@ -26,6 +26,7 @@ public class Main {
             // Route Hồ sơ người dùng
             server.createContext("/api/users/update-profile", new quanlykhachsan.backend.controller.UserController());
             server.createContext("/api/users/change-password", new quanlykhachsan.backend.controller.UserController());
+            server.createContext("/api/users/update-theme", new quanlykhachsan.backend.controller.UserController());
             // Route Phân quyền (Roles) - PHẢI đăng ký TRƯỚC /api/users
             server.createContext("/api/roles", new quanlykhachsan.backend.controller.UserController());
             // Route Quản lý nhân sự

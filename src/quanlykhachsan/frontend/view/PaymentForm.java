@@ -23,17 +23,19 @@ import java.awt.Image;
 import javax.imageio.ImageIO;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.model.ServiceUsage;
+import quanlykhachsan.frontend.api.ServiceUsageAPI;
 
 public class PaymentForm extends JPanel {
 
     // ─── Constants ────────────────────────────────────────────────────────
-    private static final Color PRIMARY = new Color(37, 99, 235);
-    private static final Color SUCCESS = new Color(5, 150, 105);
-    private static final Color DANGER = new Color(220, 38, 38);
-    private static final Color MUTED = new Color(107, 114, 128);
-    private static final Color BG_PANEL = new Color(248, 250, 252);
-    private static final Color BORDER_CLR = new Color(226, 232, 240);
-    private static final Color ROW_SELECT = new Color(219, 234, 254);
+    private final Color PRIMARY = new Color(37, 99, 235);
+    private final Color SUCCESS = new Color(5, 150, 105);
+    private final Color DANGER = new Color(220, 38, 38);
+    private final Color MUTED = new Color(107, 114, 128);
+    private final Color BG_PANEL = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
+    private final Color BORDER_CLR = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
+    private final Color ROW_SELECT = new Color(219, 234, 254);
 
     private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm");
     private final DecimalFormat nf = new DecimalFormat("#,###");
@@ -44,7 +46,7 @@ public class PaymentForm extends JPanel {
     private JLabel lblStatus;
 
     // Invoice Panel Components
-    private JLabel lblCustName, lblRoomNum, lblDuration, lblSubtotal, lblPromo, lblDiscount, lblTax, lblTotal;
+    private JLabel lblCustName, lblRoomNum, lblDuration, lblSubtotal, lblServiceTotal, lblPromo, lblDiscount, lblTax, lblTotal;
     private JComboBox<String> cbMethod;
     private JButton btnPay, btnShowQR;
 
@@ -54,6 +56,8 @@ public class PaymentForm extends JPanel {
     private List<Room> roomsList = new ArrayList<>();
     private Booking selectedBooking = null;
     private double currentCalculatedDiscount = 0;
+    private double currentServiceTotal = 0;
+    private List<ServiceUsage> selectedServiceUsages = new ArrayList<>();
     private int currentLoyaltyPoints = 0;
     private double redeemDiscount = 0;
     private int pointsToRedeem = 0;
@@ -72,14 +76,14 @@ public class PaymentForm extends JPanel {
     private void initUI() {
         // ── Header ──────────────────────────────────────────────────────
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(Color.WHITE);
+        header.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         header.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(0, 0, 1, 0, BORDER_CLR),
                 new EmptyBorder(12, 20, 12, 20)));
 
         JLabel title = new JLabel("Thanh toán & Hóa đơn");
         title.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        title.setForeground(new Color(15, 23, 42));
+        title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         lblStatus = new JLabel("Đang tải...");
         lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -102,15 +106,15 @@ public class PaymentForm extends JPanel {
 
     private JPanel buildListPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         panel.setBorder(new MatteBorder(0, 0, 0, 1, BORDER_CLR));
 
         JPanel toolBar = new JPanel(new BorderLayout());
-        toolBar.setBackground(Color.WHITE);
+        toolBar.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         toolBar.setBorder(new EmptyBorder(10, 15, 10, 15));
         JLabel sub = new JLabel("Danh sách phòng chờ thanh toán");
         sub.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        sub.setForeground(new Color(55, 65, 81));
+        sub.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         JButton btnRefresh = new JButton("Tải lại");
         btnRefresh.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -131,7 +135,7 @@ public class PaymentForm extends JPanel {
         bookingTable.setRowHeight(40);
         bookingTable.setShowGrid(false);
         bookingTable.setSelectionBackground(ROW_SELECT);
-        bookingTable.setSelectionForeground(new Color(17, 24, 39));
+        bookingTable.setSelectionForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         // Header
         bookingTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -176,10 +180,11 @@ public class PaymentForm extends JPanel {
         content.add(Box.createVerticalStrut(15));
 
         lblSubtotal = createInvoiceRow(content, "Tiền phòng:", "0 VNĐ");
+        lblServiceTotal = createInvoiceRow(content, "Tiền dịch vụ:", "0 VNĐ");
         lblPromo = createInvoiceRow(content, "Khuyến mãi:", "Không có");
         lblDiscount = createInvoiceRow(content, "Giảm giá:", "0 VNĐ");
         lblTax = createInvoiceRow(content, "Thuế (10%):", "0 VNĐ");
-        lblTax.setVisible(false);
+        lblTax.setVisible(true);
 
         content.add(Box.createVerticalStrut(10));
 
@@ -198,8 +203,8 @@ public class PaymentForm extends JPanel {
         lblLoyaltyTier = new JLabel("SILVER");
         lblLoyaltyTier.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblLoyaltyTier.setOpaque(true);
-        lblLoyaltyTier.setBackground(new Color(241, 245, 249));
-        lblLoyaltyTier.setForeground(new Color(100, 116, 139));
+        lblLoyaltyTier.setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
+        lblLoyaltyTier.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         lblLoyaltyTier.setBorder(new EmptyBorder(2, 8, 2, 8));
 
         lblLoyaltyPoints = new JLabel("0 điểm");
@@ -316,7 +321,7 @@ public class PaymentForm extends JPanel {
 
         JLabel v = new JLabel(value);
         v.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        v.setForeground(new Color(17, 24, 39));
+        v.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         row.add(l, BorderLayout.WEST);
         row.add(v, BorderLayout.EAST);
@@ -329,7 +334,7 @@ public class PaymentForm extends JPanel {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setForeground(new Color(30, 64, 175));
-        btn.setBackground(Color.WHITE);
+        btn.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return btn;
     }
@@ -430,8 +435,8 @@ public class PaymentForm extends JPanel {
                             lblLoyaltyTier.setBackground(new Color(255, 251, 235));
                             lblLoyaltyTier.setForeground(new Color(180, 83, 9));
                         } else {
-                            lblLoyaltyTier.setBackground(new Color(241, 245, 249));
-                            lblLoyaltyTier.setForeground(new Color(100, 116, 139));
+                            lblLoyaltyTier.setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
+                            lblLoyaltyTier.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
                         }
 
                         btnRedeem100.setEnabled(currentLoyaltyPoints >= 100);
@@ -487,8 +492,32 @@ public class PaymentForm extends JPanel {
         lblPromo.setText("Đang kiểm tra...");
         lblDiscount.setText("...");
 
-        final long finalDays = days;
         final double finalSubtotal = subtotal;
+
+        // Fetch services in background
+        SwingWorker<Double, Void> serviceWorker = new SwingWorker<>() {
+            @Override
+            protected Double doInBackground() {
+                selectedServiceUsages = ServiceUsageAPI.getUsageByBooking(selectedBooking.getId());
+                double total = 0;
+                for (ServiceUsage u : selectedServiceUsages) {
+                    total += u.getTotalPrice();
+                }
+                return total;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    currentServiceTotal = get();
+                    lblServiceTotal.setText(nf.format(currentServiceTotal) + " VNĐ");
+                    recalculateTotal();
+                } catch (Exception e) {
+                    currentServiceTotal = 0;
+                }
+            }
+        };
+        serviceWorker.execute();
 
         SwingWorker<JsonObject, Void> promoWorker = new SwingWorker<>() {
             @Override
@@ -516,15 +545,7 @@ public class PaymentForm extends JPanel {
                         lblPromo.setForeground(MUTED);
                     }
 
-                    lblDiscount.setText("- " + nf.format(currentCalculatedDiscount) + " VNĐ");
-                    lblDiscount.setForeground(DANGER);
-
-                    double taxable = finalSubtotal - currentCalculatedDiscount;
-                    double tax = 0;
-                    double total = taxable + tax;
-
                     lblSubtotal.setText(nf.format(finalSubtotal) + " VNĐ");
-                    lblTax.setText(nf.format(tax) + " VNĐ");
                     recalculateTotal();
 
                 } catch (Exception e) {
@@ -549,14 +570,16 @@ public class PaymentForm extends JPanel {
         double roomPrice = getRoomPrice(selectedBooking.getRoomId());
         double subtotal = days * roomPrice;
 
-        double taxable = subtotal - currentCalculatedDiscount - redeemDiscount;
-        if (taxable < 0)
-            taxable = 0;
+        double discountTotal = currentCalculatedDiscount + redeemDiscount;
+        double taxableAmount = subtotal + currentServiceTotal - discountTotal;
+        if (taxableAmount < 0)
+            taxableAmount = 0;
 
-        double tax = 0;
-        double total = taxable + tax;
+        double tax = taxableAmount * 0.1; // 10% VAT
+        double total = taxableAmount + tax;
 
-        lblDiscount.setText("- " + nf.format(currentCalculatedDiscount + redeemDiscount) + " VNĐ");
+        lblDiscount.setText("- " + nf.format(discountTotal) + " VNĐ");
+        lblTax.setText(nf.format(tax) + " VNĐ");
         lblTotal.setText("TỔNG CỘNG: " + nf.format(total) + " VNĐ");
     }
 
@@ -569,10 +592,15 @@ public class PaymentForm extends JPanel {
         lblServiceTotal.setText("0 VNĐ");
         lblTax.setText("0 VNĐ");
         lblDiscount.setText("0 VNĐ");
+        lblPromo.setText("Không có");
+        lblPromo.setForeground(MUTED);
         lblTotal.setText("TỔNG CỘNG: 0 VNĐ");
         btnPay.setEnabled(false);
         btnShowQR.setVisible(false);
         loyaltyPanel.setVisible(false);
+        currentCalculatedDiscount = 0;
+        currentServiceTotal = 0;
+        selectedServiceUsages.clear();
         redeemDiscount = 0;
         pointsToRedeem = 0;
     }
@@ -602,9 +630,10 @@ public class PaymentForm extends JPanel {
             long diff = selectedBooking.getCheckOutDate().getTime() - selectedBooking.getCheckInDate().getTime();
             long days = Math.max(1, diff / (1000 * 60 * 60 * 24));
             double subtotal = days * getRoomPrice(selectedBooking.getRoomId());
-            double amount = (subtotal - currentCalculatedDiscount - redeemDiscount);
-            if (amount < 0)
-                amount = 0;
+            double discountTotal = currentCalculatedDiscount + redeemDiscount;
+            double taxable = subtotal + currentServiceTotal - discountTotal;
+            if (taxable < 0) taxable = 0;
+            double amount = taxable * 1.1; // Room + Service - Discount + 10% Tax
 
             final double finalAmount = amount;
             final long finalDays = days;
@@ -639,7 +668,7 @@ public class PaymentForm extends JPanel {
                                     "Thành Công", JOptionPane.INFORMATION_MESSAGE);
 
                             // Gọi Export PDF
-                            InvoicePDFExporter.exportPDF(bKeep, cKeep, rKeep, (int) finalDays, finalAmount);
+                            InvoicePDFExporter.exportPDF(bKeep, cKeep, rKeep, selectedServiceUsages, (int) finalDays, finalAmount);
 
                             loadInitialData();
                         } else {
@@ -663,9 +692,10 @@ public class PaymentForm extends JPanel {
             long diff = selectedBooking.getCheckOutDate().getTime() - selectedBooking.getCheckInDate().getTime();
             long days = Math.max(1, diff / (1000 * 60 * 60 * 24));
             double subtotal = days * getRoomPrice(selectedBooking.getRoomId());
-            double amount = (subtotal - currentCalculatedDiscount - redeemDiscount) * 1.1;
-            if (amount < 0)
-                amount = 0;
+            double discountTotal = currentCalculatedDiscount + redeemDiscount;
+            double taxable = subtotal + currentServiceTotal - discountTotal;
+            if (taxable < 0) taxable = 0;
+            double amount = taxable * 1.1;
 
             // Chốt thông tin VietQR
             // Mã NH MBBank: 970422. Tk demo: 123456789. Thay bằng mã và TK thật của bạn!

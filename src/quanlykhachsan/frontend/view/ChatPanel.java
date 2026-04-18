@@ -24,9 +24,9 @@ public class ChatPanel extends JPanel {
     private Timer refreshTimer;
     private List<Integer> loadedMessageIds = new ArrayList<>();
 
-    private static final Color MSG_SELF = new Color(37, 99, 235); // Blue
-    private static final Color MSG_OTHER = new Color(241, 245, 249); // Light gray
-    private static final Color TEXT_OTHER = new Color(51, 65, 85);
+    private final Color MSG_SELF = new Color(37, 99, 235); // Blue
+    private final Color MSG_OTHER = new Color(241, 245, 249); // Light gray
+    private final Color TEXT_OTHER = new Color(51, 65, 85);
 
     public ChatPanel(User currentUser, int otherUserId, String otherUserName) {
         this.currentUser = currentUser;
@@ -34,7 +34,7 @@ public class ChatPanel extends JPanel {
         this.otherUserName = otherUserName;
 
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
 
         initUI();
         startPolling();
@@ -44,7 +44,7 @@ public class ChatPanel extends JPanel {
         // --- Messages Area ---
         messagesContainer = new JPanel();
         messagesContainer.setLayout(new BoxLayout(messagesContainer, BoxLayout.Y_AXIS));
-        messagesContainer.setBackground(Color.WHITE);
+        messagesContainer.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         messagesContainer.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         scrollPane = new JScrollPane(messagesContainer);
@@ -54,16 +54,16 @@ public class ChatPanel extends JPanel {
 
         // --- Input Area ---
         JPanel inputPanel = new JPanel(new BorderLayout(10, 0));
-        inputPanel.setBackground(Color.WHITE);
+        inputPanel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         inputPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(226, 232, 240)),
+            BorderFactory.createMatteBorder(1, 0, 0, 0, quanlykhachsan.frontend.utils.ThemeManager.getBorderColor()),
             new EmptyBorder(12, 12, 12, 12)
         ));
 
         txtInput = new JTextField();
         txtInput.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txtInput.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(226, 232, 240), 1, true),
+            BorderFactory.createLineBorder(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor(), 1, true),
             new EmptyBorder(8, 12, 8, 12)
         ));
         txtInput.addActionListener(e -> sendMessage());

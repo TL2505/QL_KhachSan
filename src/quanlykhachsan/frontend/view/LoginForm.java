@@ -7,6 +7,7 @@ import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import quanlykhachsan.frontend.api.AuthAPI;
 import quanlykhachsan.frontend.utils.SessionManagerUtil;
+import quanlykhachsan.frontend.utils.ThemeManager;
 import quanlykhachsan.backend.model.User;
 import quanlykhachsan.frontend.MainUI;
 
@@ -19,15 +20,16 @@ public class LoginForm extends JFrame {
     private JLabel lblError;
     private JLabel lblLoading;
 
-    private static final Color PRIMARY_COLOR = new Color(37, 99, 235);
-    private static final Color PRIMARY_HOVER = new Color(29, 78, 216);
-    private static final Color BG_COLOR = new Color(245, 247, 250);
-    private static final Color CARD_COLOR = Color.WHITE;
-    private static final Color TEXT_MAIN = new Color(17, 24, 39);
-    private static final Color TEXT_MUTED = new Color(107, 114, 128);
-    private static final Color ERROR_COLOR = new Color(220, 38, 38);
-    private static final Color BORDER_COLOR = new Color(209, 213, 219);
-    private static final Color BORDER_FOCUS = new Color(37, 99, 235);
+    private final Color PRIMARY_COLOR = ThemeManager.getPrimary();
+    private final Color PRIMARY_HOVER = new Color(29, 78, 216);
+    private final Color BG_COLOR = ThemeManager.getBgPanel();
+    private final Color CARD_COLOR = ThemeManager.getCardBg();
+    private final Color TEXT_MAIN = ThemeManager.getTextMain();
+    private final Color TEXT_MUTED = ThemeManager.getTextMuted();
+    private final Color ERROR_COLOR = ThemeManager.getDanger();
+    private final Color BORDER_COLOR = ThemeManager.getBorderColor();
+    private final Color BORDER_FOCUS = ThemeManager.getPrimary();
+    private final Color SUCCESS_COLOR = ThemeManager.getSuccess();
 
     public LoginForm() {
         setTitle("Đăng nhập - Hệ thống Quản lý Khách sạn");
@@ -35,130 +37,84 @@ public class LoginForm extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
-        setUndecorated(true);
-        setShape(new RoundRectangle2D.Double(0, 0, 480, 580, 20, 20));
         initUI();
         setupKeyBindings();
     }
 
     private void initUI() {
-        JPanel root = new JPanel(new BorderLayout()) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g;
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gp = new GradientPaint(0, 0, new Color(219, 234, 254), 0, getHeight(), BG_COLOR);
-                g2.setPaint(gp);
-                g2.fillRect(0, 0, getWidth(), getHeight());
-            }
-        };
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(BG_COLOR);
         root.setBorder(new LineBorder(BORDER_COLOR, 1));
 
         // ── Header gradient ──────────────────────────────────────────────
-        JPanel headerPanel = new JPanel(new BorderLayout()) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g;
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gp = new GradientPaint(0, 0, PRIMARY_COLOR, getWidth(), getHeight(),
-                        new Color(99, 102, 241));
-                g2.setPaint(gp);
-                g2.fillRect(0, 0, getWidth(), getHeight());
-            }
-        };
-        headerPanel.setPreferredSize(new Dimension(480, 170));
-        headerPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        headerPanel.setPreferredSize(new Dimension(480, 160));
+        headerPanel.setBorder(new EmptyBorder(10, 20, 20, 20));
 
         JPanel headerContent = new JPanel();
         headerContent.setLayout(new BoxLayout(headerContent, BoxLayout.Y_AXIS));
         headerContent.setOpaque(false);
 
         JLabel iconLabel = new JLabel("HỆ THỐNG", SwingConstants.CENTER);
-        iconLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        iconLabel.setForeground(new Color(191, 219, 254));
+        iconLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        iconLabel.setForeground(SUCCESS_COLOR);
         iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel titleLabel = new JLabel("ĐĂNG NHẬP", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 30));
+        titleLabel.setForeground(TEXT_MAIN);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel subLabel = new JLabel("Hệ thống Quản lý Khách sạn Chuyên nghiệp", SwingConstants.CENTER);
-        subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        subLabel.setForeground(new Color(191, 219, 254));
+        subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subLabel.setForeground(TEXT_MUTED);
         subLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        headerContent.add(Box.createVerticalStrut(20));
         headerContent.add(iconLabel);
-        headerContent.add(Box.createVerticalStrut(6));
+        headerContent.add(Box.createVerticalStrut(4));
         headerContent.add(titleLabel);
-        headerContent.add(Box.createVerticalStrut(3));
+        headerContent.add(Box.createVerticalStrut(2));
         headerContent.add(subLabel);
 
-        JButton btnClose = new JButton("x");
-        btnClose.setFont(new Font("Arial", Font.BOLD, 18));
-        btnClose.setForeground(new Color(191, 219, 254));
-        btnClose.setContentAreaFilled(false);
-        btnClose.setBorderPainted(false);
-        btnClose.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnClose.addActionListener(e -> System.exit(0));
-        JPanel closeWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        closeWrapper.setOpaque(false);
-        closeWrapper.add(btnClose);
+        JCheckBox chkThemeToggle = new JCheckBox("Dark mode", ThemeManager.isDarkMode());
+        chkThemeToggle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        chkThemeToggle.setForeground(new Color(156, 163, 175));
+        chkThemeToggle.setOpaque(false);
+        chkThemeToggle.setFocusPainted(false);
+        chkThemeToggle.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        chkThemeToggle.addActionListener(e -> {
+            Point loc = getLocation();
+            ThemeManager.setDarkMode(chkThemeToggle.isSelected());
+            this.dispose();
+            LoginForm newLogin = new LoginForm();
+            newLogin.setLocation(loc);
+            newLogin.setVisible(true);
+        });
 
-        headerPanel.add(closeWrapper, BorderLayout.NORTH);
+        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        topBar.setOpaque(false);
+        topBar.add(chkThemeToggle);
+
+        headerPanel.add(topBar, BorderLayout.NORTH);
         headerPanel.add(headerContent, BorderLayout.CENTER);
-
-        MouseAdapter mover = new MouseAdapter() {
-            Point start;
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                start = e.getPoint();
-            }
-
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                Point loc = getLocation();
-                setLocation(loc.x + e.getX() - start.x, loc.y + e.getY() - start.y);
-            }
-        };
-        headerPanel.addMouseListener(mover);
-        headerPanel.addMouseMotionListener(mover);
         root.add(headerPanel, BorderLayout.NORTH);
 
         // ── Card đăng nhập ───────────────────────────────────────────────
         JPanel cardOuter = new JPanel(new GridBagLayout());
         cardOuter.setOpaque(false);
-        cardOuter.setBorder(new EmptyBorder(20, 40, 10, 40));
+        cardOuter.setBorder(new EmptyBorder(0, 40, 10, 40));
 
-        JPanel card = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g;
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Shadow
-                for (int i = 5; i >= 0; i--) {
-                    g2.setColor(new Color(0, 0, 0, (5 - i) * 5));
-                    g2.fillRoundRect(i, i + 2, getWidth() - i * 2, getHeight() - i * 2, 16, 16);
-                }
-                g2.setColor(CARD_COLOR);
-                g2.fillRoundRect(0, 0, getWidth() - 4, getHeight() - 4, 16, 16);
-            }
-        };
+        JPanel card = new JPanel();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setOpaque(false);
-        card.setBorder(new EmptyBorder(28, 28, 28, 28));
+        card.setBackground(CARD_COLOR);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            new RoundBorder(BORDER_COLOR, 15),
+            new EmptyBorder(20, 28, 20, 28)
+        ));
 
-        JLabel lblWelcome = new JLabel("Chào mừng trở lại!");
-        lblWelcome.setFont(new Font("Segoe UI", Font.BOLD, 19));
-        lblWelcome.setForeground(TEXT_MAIN);
-        lblWelcome.setAlignmentX(LEFT_ALIGNMENT);
-
-        JLabel lblSub = new JLabel("Vui lòng đăng nhập để tiếp tục sử dụng hệ thống");
-        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblSub.setForeground(TEXT_MUTED);
-        lblSub.setAlignmentX(LEFT_ALIGNMENT);
+        // Labels removed as requested
 
         lblError = new JLabel(" ");
         lblError.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -204,13 +160,13 @@ public class LoginForm extends JFrame {
         lblLoading.setForeground(TEXT_MUTED);
         lblLoading.setAlignmentX(LEFT_ALIGNMENT);
 
-        btnLogin = new JButton("🚀 Đăng nhập ngay") {
+        btnLogin = new JButton("Đăng nhập ngay") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(isEnabled() ? (getModel().isRollover() ? PRIMARY_HOVER : PRIMARY_COLOR) : BORDER_COLOR);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.setColor(isEnabled() ? PRIMARY_COLOR : BORDER_COLOR);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
                 super.paintComponent(g);
             }
         };
@@ -224,12 +180,12 @@ public class LoginForm extends JFrame {
         btnLogin.setAlignmentX(LEFT_ALIGNMENT);
         btnLogin.addActionListener(e -> handleLogin());
 
-        card.add(lblWelcome);
-        card.add(Box.createVerticalStrut(4));
-        card.add(lblSub);
-        card.add(Box.createVerticalStrut(4));
+        // card.add(lblWelcome); // Removed as requested
+        // card.add(Box.createVerticalStrut(4));
+        // card.add(lblSub);
+        // card.add(Box.createVerticalStrut(4));
         card.add(lblError);
-        card.add(Box.createVerticalStrut(6));
+        card.add(Box.createVerticalStrut(2));
         card.add(lblUsername);
         card.add(Box.createVerticalStrut(6));
         card.add(txtUsername);
@@ -242,11 +198,9 @@ public class LoginForm extends JFrame {
         card.add(Box.createVerticalStrut(6));
         card.add(lblLoading);
         card.add(Box.createVerticalStrut(14));
-        card.add(btnLogin);
-
         JButton btnRegister = new JButton("Bạn chưa có tài khoản? Đăng ký ngay!");
-        btnRegister.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btnRegister.setForeground(new Color(37, 99, 235));
+        btnRegister.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnRegister.setForeground(SUCCESS_COLOR);
         btnRegister.setContentAreaFilled(false);
         btnRegister.setBorderPainted(false);
         btnRegister.setFocusPainted(false);
@@ -258,7 +212,9 @@ public class LoginForm extends JFrame {
             registerForm.setVisible(true);
         });
 
-        card.add(Box.createVerticalStrut(10));
+        card.add(Box.createVerticalStrut(14));
+        card.add(btnLogin);
+        card.add(Box.createVerticalStrut(14));
         card.add(btnRegister);
 
         cardOuter.add(card, new GridBagConstraints());
@@ -290,22 +246,21 @@ public class LoginForm extends JFrame {
         };
         field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         field.setForeground(TEXT_MAIN);
-        field.setBackground(new Color(249, 250, 251));
         field.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(BORDER_COLOR, 1, true),
-                new EmptyBorder(6, 12, 6, 12)));
+                new RoundBorder(BORDER_COLOR, 8),
+                new EmptyBorder(8, 12, 8, 12)));
         field.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
                 field.setBorder(BorderFactory.createCompoundBorder(
-                        new LineBorder(BORDER_FOCUS, 2, true), new EmptyBorder(5, 11, 5, 11)));
+                        new RoundBorder(BORDER_FOCUS, 8), new EmptyBorder(8, 12, 8, 12)));
                 field.repaint();
             }
 
             @Override
             public void focusLost(FocusEvent e) {
                 field.setBorder(BorderFactory.createCompoundBorder(
-                        new LineBorder(BORDER_COLOR, 1, true), new EmptyBorder(6, 12, 6, 12)));
+                        new RoundBorder(BORDER_COLOR, 8), new EmptyBorder(8, 12, 8, 12)));
                 field.repaint();
             }
         });
@@ -328,22 +283,21 @@ public class LoginForm extends JFrame {
         };
         field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         field.setForeground(TEXT_MAIN);
-        field.setBackground(new Color(249, 250, 251));
         field.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(BORDER_COLOR, 1, true),
-                new EmptyBorder(6, 12, 6, 12)));
+                new RoundBorder(BORDER_COLOR, 8),
+                new EmptyBorder(8, 12, 8, 12)));
         field.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
                 field.setBorder(BorderFactory.createCompoundBorder(
-                        new LineBorder(BORDER_FOCUS, 2, true), new EmptyBorder(5, 11, 5, 11)));
+                        new RoundBorder(BORDER_FOCUS, 8), new EmptyBorder(8, 12, 8, 12)));
                 field.repaint();
             }
 
             @Override
             public void focusLost(FocusEvent e) {
                 field.setBorder(BorderFactory.createCompoundBorder(
-                        new LineBorder(BORDER_COLOR, 1, true), new EmptyBorder(6, 12, 6, 12)));
+                        new RoundBorder(BORDER_COLOR, 8), new EmptyBorder(8, 12, 8, 12)));
                 field.repaint();
             }
         });
@@ -351,9 +305,8 @@ public class LoginForm extends JFrame {
     }
 
     private void setupKeyBindings() {
-        ActionListener loginAction = e -> handleLogin();
-        txtUsername.addActionListener(loginAction);
-        txtPassword.addActionListener(loginAction);
+        txtUsername.addActionListener(e -> txtPassword.requestFocus());
+        txtPassword.addActionListener(e -> handleLogin());
     }
 
     private void showError(String msg) {
@@ -405,5 +358,25 @@ public class LoginForm extends JFrame {
             }
         };
         worker.execute();
+    }
+
+    private static class RoundBorder extends AbstractBorder {
+        private final Color color;
+        private final int radius;
+        public RoundBorder(Color color, int radius) {
+            this.color = color;
+            this.radius = radius;
+        }
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(color);
+            g2.drawRoundRect(x, y, width - 1, height - 1, radius, radius);
+        }
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(radius / 2, radius / 2, radius / 2, radius / 2);
+        }
     }
 }

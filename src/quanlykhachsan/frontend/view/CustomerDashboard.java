@@ -30,14 +30,14 @@ public class CustomerDashboard extends JPanel {
     private DefaultTableModel tblModel;
     private JPanel promoPanel;
 
-    private static final Color PRIMARY    = new Color(37, 99, 235);
-    private static final Color BG         = new Color(248, 250, 252);
-    private static final Color CARD_BG    = Color.WHITE;
-    private static final Color BORDER_C   = new Color(226, 232, 240);
-    private static final Color SUCCESS    = new Color(34, 197, 94);
-    private static final Color SILVER_C   = new Color(148, 163, 184);
-    private static final Color GOLD_C     = new Color(234, 179, 8);
-    private static final Color VIP_C      = new Color(139, 92, 246);
+    private final Color PRIMARY    = new Color(37, 99, 235);
+    private final Color BG         = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
+    private final Color CARD_BG    = quanlykhachsan.frontend.utils.ThemeManager.getCardBg();
+    private final Color BORDER_C   = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
+    private final Color SUCCESS    = new Color(34, 197, 94);
+    private final Color SILVER_C   = new Color(148, 163, 184);
+    private final Color GOLD_C     = new Color(234, 179, 8);
+    private final Color VIP_C      = new Color(139, 92, 246);
 
     private SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
     private NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -61,10 +61,10 @@ public class CustomerDashboard extends JPanel {
         welcomeBox.setOpaque(false);
         JLabel lblWelcome = new JLabel("Chào mừng trở lại,");
         lblWelcome.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        lblWelcome.setForeground(new Color(100, 116, 139));
+        lblWelcome.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         lblName = new JLabel("Đang tải...");
         lblName.setFont(new Font("Segoe UI", Font.BOLD, 30));
-        lblName.setForeground(new Color(15, 23, 42));
+        lblName.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         welcomeBox.add(lblWelcome);
         welcomeBox.add(lblName);
         topPanel.add(welcomeBox, BorderLayout.WEST);
@@ -83,8 +83,8 @@ public class CustomerDashboard extends JPanel {
         
         JButton btnReload = new JButton("🔄 Tải lại");
         btnReload.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnReload.setBackground(new Color(226, 232, 240));
-        btnReload.setForeground(new Color(15, 23, 42));
+        btnReload.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor());
+        btnReload.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         btnReload.setFocusPainted(false);
         btnReload.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnReload.addActionListener(e -> loadData());
@@ -129,7 +129,7 @@ public class CustomerDashboard extends JPanel {
 
         JLabel t = new JLabel("Thẻ Thành Viên");
         t.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        t.setForeground(new Color(100, 116, 139));
+        t.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         card.add(t);
         card.add(Box.createVerticalStrut(20));
 
@@ -149,14 +149,14 @@ public class CustomerDashboard extends JPanel {
         progressTier.setValue(0);
         progressTier.setPreferredSize(new Dimension(0, 8));
         progressTier.setForeground(PRIMARY);
-        progressTier.setBackground(new Color(241, 245, 249));
+        progressTier.setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
         progressTier.setBorder(null);
         card.add(progressTier);
         card.add(Box.createVerticalStrut(8));
 
         lblNextTierMsg = new JLabel("Bạn cần thêm 1,000đ để lên hạng Gold");
         lblNextTierMsg.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        lblNextTierMsg.setForeground(new Color(100, 116, 139));
+        lblNextTierMsg.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         card.add(lblNextTierMsg);
 
         card.add(Box.createVerticalStrut(30));
@@ -191,7 +191,7 @@ public class CustomerDashboard extends JPanel {
 
         JLabel t = new JLabel("Lịch sử Đặt phòng của bạn");
         t.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        t.setForeground(new Color(15, 23, 42));
+        t.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         panel.add(t, BorderLayout.NORTH);
 
         tblModel = new DefaultTableModel(new String[]{"Ngày đặt", "Phòng", "Thời gian", "Tổng tiền", "Trạng thái", "Hành động"}, 0) {
@@ -202,7 +202,7 @@ public class CustomerDashboard extends JPanel {
 
         JScrollPane scroll = new JScrollPane(tblBookings);
         scroll.setBorder(new LineBorder(BORDER_C, 1, true));
-        scroll.getViewport().setBackground(Color.WHITE);
+        scroll.getViewport().setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         panel.add(scroll, BorderLayout.CENTER);
 
         return panel;
@@ -214,7 +214,7 @@ public class CustomerDashboard extends JPanel {
         table.setIntercellSpacing(new Dimension(0, 0));
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
         table.getTableHeader().setPreferredSize(new Dimension(0, 40));
-        table.getTableHeader().setBackground(new Color(248, 250, 252));
+        table.getTableHeader().setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBgPanel());
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
@@ -232,7 +232,7 @@ public class CustomerDashboard extends JPanel {
 
         JLabel t = new JLabel("Ưu đãi hấp dẫn dành cho bạn");
         t.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        t.setForeground(new Color(15, 23, 42));
+        t.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         panel.add(t, BorderLayout.NORTH);
 
         promoPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 15, 0));
@@ -400,7 +400,7 @@ public class CustomerDashboard extends JPanel {
                 label.setText("ĐÃ HỦY");
                 label.setForeground(new Color(239, 68, 68));
             } else {
-                label.setForeground(new Color(100, 116, 139));
+                label.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
             }
             return label;
         }
@@ -427,7 +427,7 @@ public class CustomerDashboard extends JPanel {
                 setEnabled(true);
             } else {
                 setText("---");
-                setBackground(Color.WHITE);
+                setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
                 setForeground(new Color(203, 213, 225));
                 setEnabled(false);
             }

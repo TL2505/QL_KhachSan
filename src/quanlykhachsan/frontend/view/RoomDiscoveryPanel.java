@@ -12,6 +12,7 @@ import java.util.Locale;
 import quanlykhachsan.backend.model.Room;
 import quanlykhachsan.backend.model.User;
 import quanlykhachsan.frontend.api.RoomAPI;
+import quanlykhachsan.frontend.utils.WrapLayout;
 
 public class RoomDiscoveryPanel extends JPanel {
 
@@ -22,9 +23,9 @@ public class RoomDiscoveryPanel extends JPanel {
     private JLabel lblResults;
     private String lastCin, lastCout;
 
-    private static final Color PRIMARY = new Color(13, 148, 136); // Teal 600
-    private static final Color BG = new Color(248, 250, 252);
-    private static final Color BORDER_C = new Color(226, 232, 240);
+    private final Color PRIMARY = new Color(13, 148, 136); // Teal 600
+    private final Color BG = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
+    private final Color BORDER_C = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     private final NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 
@@ -40,7 +41,7 @@ public class RoomDiscoveryPanel extends JPanel {
     private void initUI() {
         // --- Search Bar Section ---
         JPanel searchBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 15));
-        searchBar.setBackground(Color.WHITE);
+        searchBar.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         searchBar.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_C));
 
         // Dates
@@ -93,16 +94,17 @@ public class RoomDiscoveryPanel extends JPanel {
 
         lblResults = new JLabel("Vui lòng chọn ngày để tìm kiếm các phòng khả dụng.");
         lblResults.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        lblResults.setForeground(new Color(100, 116, 139));
+        lblResults.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         contentPanel.add(lblResults, BorderLayout.NORTH);
 
-        gridPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 20));
+        gridPanel = new JPanel(new WrapLayout(FlowLayout.LEADING, 20, 20));
         gridPanel.setOpaque(false);
 
         JScrollPane scroll = new JScrollPane(gridPanel);
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
         contentPanel.add(scroll, BorderLayout.CENTER);
 
         add(contentPanel, BorderLayout.CENTER);
@@ -176,14 +178,14 @@ public class RoomDiscoveryPanel extends JPanel {
     private JPanel createRoomCard(Room r) {
         JPanel card = new JPanel();
         card.setPreferredSize(new Dimension(280, 360));
-        card.setBackground(Color.WHITE);
+        card.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         card.setLayout(new BorderLayout());
         card.setBorder(new LineBorder(BORDER_C, 1, true));
 
         // Top: Image placeholder/Icon
         JPanel imgPanel = new JPanel(new GridBagLayout());
         imgPanel.setPreferredSize(new Dimension(280, 160));
-        imgPanel.setBackground(new Color(241, 245, 249));
+        imgPanel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
         JLabel lblIcon = new JLabel("HOTEL ROOM"); 
         lblIcon.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblIcon.setForeground(new Color(148, 163, 184));
@@ -209,7 +211,7 @@ public class RoomDiscoveryPanel extends JPanel {
 
         JLabel amenities = new JLabel("<html>Tiện nội: Wifi, Điều hòa, TV, Nước nóng...</html>");
         amenities.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        amenities.setForeground(new Color(100, 116, 139));
+        amenities.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         details.add(amenities);
 
         card.add(details, BorderLayout.CENTER);
@@ -231,26 +233,27 @@ public class RoomDiscoveryPanel extends JPanel {
                 performSearch(); // Refresh list after potential booking
             });
             // Also color the top image badge
-            imgPanel.setBackground(new Color(241, 245, 249)); // pale blue
+            imgPanel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249)); // pale blue
         } else {
             btnBook.setEnabled(false);
             btnBook.setForeground(Color.WHITE);
+            boolean isDark = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode();
             if (st.equals("booked")) {
                btnBook.setText("ĐÃ TẠO ĐẶT CHỖ");
                btnBook.setBackground(new Color(234, 179, 8)); // Yellow
-               imgPanel.setBackground(new Color(254, 249, 195));
+               imgPanel.setBackground(isDark ? new Color(133, 77, 14) : new Color(254, 249, 195));
             } else if (st.equals("occupied")) {
                btnBook.setText("ĐANG CÓ KHÁCH");
                btnBook.setBackground(new Color(220, 38, 38)); // Red
-               imgPanel.setBackground(new Color(254, 226, 226));
+               imgPanel.setBackground(isDark ? new Color(127, 29, 29) : new Color(254, 226, 226));
             } else if (st.equals("maintenance")) {
                btnBook.setText("ĐANG BẢO TRÌ");
                btnBook.setBackground(new Color(156, 163, 175)); // Gray
-               imgPanel.setBackground(new Color(243, 244, 246));
+               imgPanel.setBackground(isDark ? new Color(55, 65, 81) : new Color(243, 244, 246));
             } else if (st.equals("cleaning")) {
                btnBook.setText("ĐANG DỌN DẸP");
                btnBook.setBackground(new Color(56, 189, 248)); // Sky Blue
-               imgPanel.setBackground(new Color(224, 242, 254));
+               imgPanel.setBackground(isDark ? new Color(12, 74, 110) : new Color(224, 242, 254));
             } else {
                btnBook.setText("KHÔNG KHẢ DỤNG");
                btnBook.setBackground(Color.GRAY);
@@ -261,4 +264,6 @@ public class RoomDiscoveryPanel extends JPanel {
 
         return card;
     }
+
+
 }

@@ -16,8 +16,8 @@ public class RegisterForm extends JFrame {
     private JButton btnRegister, btnBack;
     private JFrame loginFrame;
 
-    private static final Color PRIMARY = new Color(13, 148, 136); // Teal
-    private static final Color BG = new Color(248, 250, 252);
+    private final Color PRIMARY = new Color(13, 148, 136); // Teal
+    private final Color BG = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
 
     public RegisterForm(JFrame loginFrame) {
         this.loginFrame = loginFrame;
@@ -33,7 +33,7 @@ public class RegisterForm extends JFrame {
 
     private void initUI() {
         JPanel root = new JPanel(new BorderLayout());
-        root.setBorder(new LineBorder(new Color(226, 232, 240), 1));
+        root.setBorder(new LineBorder(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor(), 1));
         root.setBackground(BG);
 
         // Header
@@ -95,11 +95,14 @@ public class RegisterForm extends JFrame {
     private void addInputField(JPanel p, String label, JTextField field) {
         JLabel l = new JLabel(label);
         l.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        l.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         l.setAlignmentX(LEFT_ALIGNMENT);
         p.add(l);
         p.add(Box.createVerticalStrut(5));
         
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        field.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
+        field.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         field.setAlignmentX(LEFT_ALIGNMENT);
         p.add(field);
         p.add(Box.createVerticalStrut(12));

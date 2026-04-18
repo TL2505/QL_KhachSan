@@ -13,8 +13,8 @@ public class ReviewSubmissionDialog extends JDialog {
     private JSlider sldRating;
     private JTextArea txtComment;
 
-    private static final Color PRIMARY = new Color(13, 148, 136);
-    private static final Color BG = new Color(248, 250, 252);
+    private final Color PRIMARY = new Color(13, 148, 136);
+    private final Color BG = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
 
     public ReviewSubmissionDialog(Window owner, Booking booking) {
         super(owner, "Đánh giá dịch vụ", Dialog.ModalityType.APPLICATION_MODAL);
@@ -67,7 +67,7 @@ public class ReviewSubmissionDialog extends JDialog {
         txtComment.setWrapStyleWord(true);
         txtComment.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         JScrollPane scroll = new JScrollPane(txtComment);
-        scroll.setBorder(new LineBorder(new Color(226, 232, 240)));
+        scroll.setBorder(new LineBorder(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor()));
         content.add(scroll);
 
         add(content, BorderLayout.CENTER);

@@ -17,23 +17,23 @@ import quanlykhachsan.frontend.api.LoyaltyAPI;
 public class LoyaltyForm extends JPanel {
 
     // ─── Color Palette ────────────────────────────────────────────────────
-    private static final Color BG = new Color(248, 250, 252);
-    private static final Color WHITE = Color.WHITE;
-    private static final Color BORDER_CLR = new Color(226, 232, 240);
-    private static final Color TEXT_DARK = new Color(17, 24, 39);
-    private static final Color TEXT_MUTED = new Color(107, 114, 128);
-    private static final Color PRIMARY = new Color(37, 99, 235);
-    private static final Color SUCCESS = new Color(5, 150, 105);
-    private static final Color DANGER = new Color(220, 38, 38);
-    private static final Color SILVER_BG = new Color(241, 245, 249);
-    private static final Color SILVER_FG = new Color(100, 116, 139);
-    private static final Color GOLD_BG = new Color(255, 251, 235);
-    private static final Color GOLD_FG = new Color(180, 83, 9);
-    private static final Color VIP_BG = new Color(245, 243, 255);
-    private static final Color VIP_FG = new Color(109, 40, 217);
-    private static final Color ROW_EVEN = new Color(248, 250, 252);
-    private static final Color EARN_CLR = new Color(220, 252, 231);
-    private static final Color REDEEM_CLR = new Color(255, 237, 213);
+    private final Color BG = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
+    private final Color WHITE = quanlykhachsan.frontend.utils.ThemeManager.getCardBg();
+    private final Color BORDER_CLR = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
+    private final Color TEXT_DARK = quanlykhachsan.frontend.utils.ThemeManager.getTextMain();
+    private final Color TEXT_MUTED = new Color(107, 114, 128);
+    private final Color PRIMARY = new Color(37, 99, 235);
+    private final Color SUCCESS = new Color(5, 150, 105);
+    private final Color DANGER = new Color(220, 38, 38);
+private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249);
+    private final Color SILVER_FG = quanlykhachsan.frontend.utils.ThemeManager.getTextMuted();
+    private final Color GOLD_BG = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(146, 64, 14) : new Color(255, 251, 235);
+    private final Color GOLD_FG = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(253, 230, 138) : new Color(180, 83, 9);
+    private final Color VIP_BG = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(76, 29, 149) : new Color(245, 243, 255);
+    private final Color VIP_FG = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(221, 214, 254) : new Color(109, 40, 217);
+    private final Color ROW_EVEN = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(15, 23, 42) : new Color(249, 250, 251);
+    private final Color EARN_CLR = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(6, 78, 59) : new Color(220, 252, 231);
+    private final Color REDEEM_CLR = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(120, 53, 15) : new Color(255, 237, 213);
 
     private final DecimalFormat nf = new DecimalFormat("#,###");
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
@@ -207,7 +207,7 @@ public class LoyaltyForm extends JPanel {
         card.setBackground(WHITE);
         card.setPreferredSize(new Dimension(220, 0));
         card.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(BORDER_CLR, 1, true),
+                BorderFactory.createEmptyBorder(0,0,0,0),
                 new EmptyBorder(18, 16, 18, 16)));
 
         JLabel t = new JLabel("🏆 Hạng thành viên");
@@ -223,7 +223,7 @@ public class LoyaltyForm extends JPanel {
                 "✔ Giảm 5% dịch vụ"
         }));
         card.add(Box.createVerticalStrut(12));
-        card.add(buildTierBlock("🥈 Silver", "500 – 1.999 điểm", new Color(71, 85, 105), new Color(226, 232, 240), new String[] {
+        card.add(buildTierBlock("🥈 Silver", "500 – 1.999 điểm", new Color(71, 85, 105), quanlykhachsan.frontend.utils.ThemeManager.getBorderColor(), new String[] {
                 "✔ Tích 1đ / 1.000đ",
                 "✔ Check-in sớm",
                 "✔ Giảm 8% dịch vụ"
@@ -340,7 +340,7 @@ public class LoyaltyForm extends JPanel {
     private JPanel buildCustomerTableCard() {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(WHITE);
-        card.setBorder(new LineBorder(BORDER_CLR, 1, true));
+        card.setBorder(null);
 
         // Toolbar
         JPanel toolbar = new JPanel(new BorderLayout(10, 0));
@@ -399,7 +399,7 @@ public class LoyaltyForm extends JPanel {
                     case "Gold":
                         lbl.setBackground(GOLD_BG); lbl.setForeground(GOLD_FG); break;
                     case "Silver":
-                        lbl.setBackground(new Color(226, 232, 240));
+                        lbl.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor());
                         lbl.setForeground(new Color(71, 85, 105)); break;
                     case "Diamond": case "Platinum":
                         lbl.setBackground(new Color(237, 233, 254));
@@ -435,7 +435,7 @@ public class LoyaltyForm extends JPanel {
     private JPanel buildHistoryCard() {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(WHITE);
-        card.setBorder(new LineBorder(BORDER_CLR, 1, true));
+        card.setBorder(null);
 
         // Header
         JPanel histHeader = new JPanel(new BorderLayout());
@@ -450,10 +450,11 @@ public class LoyaltyForm extends JPanel {
         // Detail chip (customer info)
         detailPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         detailPanel.setOpaque(false);
-        lblDetName = makeChipLabel("---", new Color(219, 234, 254), PRIMARY);
+        boolean isDark = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode();
+        lblDetName = makeChipLabel("---", isDark ? new Color(30,58,138) : new Color(219, 234, 254), PRIMARY);
         lblDetLevel = makeChipLabel("---", SILVER_BG, SILVER_FG);
-        lblDetPoints = makeChipLabel("0 điểm", new Color(220, 252, 231), SUCCESS);
-        lblDetTotal = makeChipLabel("Tổng: 0đ", new Color(254, 243, 199), GOLD_FG);
+        lblDetPoints = makeChipLabel("0 điểm", isDark ? new Color(6,78,59) : new Color(220, 252, 231), SUCCESS);
+        lblDetTotal = makeChipLabel("Tổng: 0đ", isDark ? new Color(113,63,18) : new Color(254, 243, 199), GOLD_FG);
         detailPanel.add(lblDetName);
         detailPanel.add(lblDetLevel);
         detailPanel.add(lblDetPoints);
@@ -686,7 +687,7 @@ public class LoyaltyForm extends JPanel {
         table.setFillsViewportHeight(true);
 
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        table.getTableHeader().setBackground(new Color(248, 250, 252));
+        table.getTableHeader().setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBgPanel());
         table.getTableHeader().setForeground(TEXT_MUTED);
         table.getTableHeader().setPreferredSize(new Dimension(0, 38));
         table.getTableHeader().setReorderingAllowed(false);

@@ -15,19 +15,23 @@ import org.jfree.data.general.DefaultPieDataset;
 import quanlykhachsan.backend.model.DailyStats;
 import quanlykhachsan.frontend.api.ReportAPI;
 
+import quanlykhachsan.frontend.utils.ThemeManager;
+
 public class AdminDashboard extends JPanel {
 
     private JLabel lblRevenue, lblOccupancy, lblCheckIn, lblCheckOut;
     private JPanel chartContainer;
     private ChartPanel pieChartPanel;
 
-    private static final Color PRIMARY   = new Color(37, 99, 235); // Blue 600
-    private static final Color SUCCESS   = new Color(34, 197, 94); // Green 500
-    private static final Color WARNING   = new Color(234, 179, 8);  // Yellow 500
-    private static final Color DANGER    = new Color(239, 68, 68);  // Red 500
-    private static final Color BG        = new Color(248, 250, 252); // Slate 50
-    private static final Color CARD_BG   = Color.WHITE;
-    private static final Color BORDER_C  = new Color(226, 232, 240); // Slate 200
+    private final Color PRIMARY   = ThemeManager.getPrimary();
+    private final Color SUCCESS   = ThemeManager.getSuccess();
+    private final Color WARNING   = ThemeManager.getWarning();
+    private final Color DANGER    = ThemeManager.getDanger();
+    private final Color BG        = ThemeManager.getBgPanel();
+    private final Color CARD_BG   = ThemeManager.getCardBg();
+    private final Color TEXT_MAIN = ThemeManager.getTextMain();
+    private final Color TEXT_MUT = ThemeManager.getTextMuted();
+    private final Color BORDER_C  = ThemeManager.getBorderColor();
 
     private java.util.function.Consumer<Integer> tabSwitcher;
 
@@ -47,7 +51,7 @@ public class AdminDashboard extends JPanel {
         header.setOpaque(false);
         JLabel lblTitle = new JLabel("TỔNG QUAN VẬN HÀNH HÔM NAY");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lblTitle.setForeground(new Color(15, 23, 42));
+        lblTitle.setForeground(TEXT_MAIN);
         header.add(lblTitle, BorderLayout.WEST);
         
         JButton btnRefresh = new JButton("🔄 Làm mới");
@@ -79,13 +83,16 @@ public class AdminDashboard extends JPanel {
         // Left: Room Chart
         chartContainer = new JPanel(new BorderLayout());
         chartContainer.setBackground(CARD_BG);
-        chartContainer.setBorder(new RoundBorder(BORDER_C, 15));
-        chartContainer.setPreferredSize(new Dimension(500, 400));
+        chartContainer.setBorder(BorderFactory.createCompoundBorder(
+            new RoundBorder(BORDER_C, 12),
+            new EmptyBorder(15, 15, 15, 15)
+        ));
         
-        JLabel chartTitle = new JLabel(" Phân bổ trạng thái phòng");
-        chartTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        chartTitle.setBorder(new EmptyBorder(15, 20, 10, 0));
-        chartContainer.add(chartTitle, BorderLayout.NORTH);
+        JLabel lblChartTitle = new JLabel("Thống kê Doanh thu 7 ngày gần nhất");
+        lblChartTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblChartTitle.setForeground(TEXT_MAIN);
+        lblChartTitle.setBorder(new EmptyBorder(0, 0, 15, 0));
+        chartContainer.add(lblChartTitle, BorderLayout.NORTH);
         
         body.add(chartContainer, BorderLayout.CENTER);
 
@@ -103,8 +110,6 @@ public class AdminDashboard extends JPanel {
         quickActions.add(actionTitle);
 
         JButton btnBooking = createActionBtn("Quản lý Đặt phòng");
-        // For Admin, mapping "Booking" to "Room Layout" (index 1) since Booking is Staff-only in this version, 
-        // or we could add Booking back for Admin if preferred.
         btnBooking.addActionListener(e -> { if(tabSwitcher != null) tabSwitcher.accept(1); });
         quickActions.add(btnBooking);
 
@@ -138,15 +143,12 @@ public class AdminDashboard extends JPanel {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Color Background with extreme soft tint (alpha 25)
                 g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 25));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
                 
-                // Border
                 g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 60));
                 g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
                 
-                // Side bar accent (thinner and full height)
                 g2.setColor(color);
                 g2.fillRoundRect(0, 15, 4, getHeight() - 30, 4, 4);
             }
@@ -155,12 +157,12 @@ public class AdminDashboard extends JPanel {
         card.setLayout(new BorderLayout());
         card.setBorder(new EmptyBorder(15, 20, 15, 20));
 
-        JLabel lblTitle = new JLabel(title.toUpperCase());
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblTitle.setForeground(new Color(100, 116, 139));
+        JLabel lblTitle = new JLabel(title);
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblTitle.setForeground(TEXT_MUT);
         
-        valLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        valLabel.setForeground(color);
+        valLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        valLabel.setForeground(TEXT_MAIN);
 
         card.add(lblTitle, BorderLayout.NORTH);
         card.add(valLabel, BorderLayout.CENTER);
@@ -240,16 +242,14 @@ public class AdminDashboard extends JPanel {
             });
         }
 
-        JFreeChart pieChart = ChartFactory.createPieChart(null, dataset, true, true, false);
-        pieChart.setBackgroundPaint(CARD_BG);
-        pieChart.setBorderVisible(false);
+        JFreeChart chart = ChartFactory.createPieChart(null, dataset, true, true, false);
+        chart.setBackgroundPaint(CARD_BG);
+        chart.setBorderVisible(false);
         
-        org.jfree.chart.plot.PiePlot plot = (org.jfree.chart.plot.PiePlot) pieChart.getPlot();
-        plot.setBackgroundPaint(CARD_BG);
+        org.jfree.chart.plot.PiePlot plot = (org.jfree.chart.plot.PiePlot) chart.getPlot();
         plot.setOutlineVisible(false);
-        plot.setLabelGenerator(null); // Hide labels on chart for cleaner look
+        plot.setLabelGenerator(null);
         
-        // Custom colors for slices
         plot.setSectionPaint("Trống", new Color(34, 197, 94));
         plot.setSectionPaint("Có khách", new Color(37, 99, 235));
         plot.setSectionPaint("Dọn dẹp", new Color(234, 179, 8));
@@ -257,15 +257,18 @@ public class AdminDashboard extends JPanel {
         plot.setSectionPaint("Đã đặt", new Color(168, 85, 247));
 
         if (pieChartPanel != null) chartContainer.remove(pieChartPanel);
-        pieChartPanel = new ChartPanel(pieChart);
-        pieChartPanel.setBackground(CARD_BG);
-        pieChartPanel.setPreferredSize(new Dimension(400, 300));
-        chartContainer.add(pieChartPanel, BorderLayout.CENTER);
-        chartContainer.revalidate();
+            chart.getPlot().setBackgroundPaint(CARD_BG);
+            chart.getLegend().setBackgroundPaint(CARD_BG);
+            chart.getLegend().setItemPaint(TEXT_MAIN);
+
+            pieChartPanel = new ChartPanel(chart);
+            pieChartPanel.setPreferredSize(new Dimension(300, 250));
+            pieChartPanel.setBorder(new RoundBorder(BORDER_C, 12));
+            pieChartPanel.setBackground(CARD_BG);
+            chartContainer.add(pieChartPanel, BorderLayout.CENTER);
         chartContainer.repaint();
     }
 
-    // Helper class for rounded borders
     private static class RoundBorder extends AbstractBorder {
         private final Color color;
         private final int radius;
