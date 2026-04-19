@@ -20,11 +20,12 @@ import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.JsonUtil;
 
 public class ReportController implements HttpHandler {
 
     private ReportDAO reportDAO = new ReportDAOImpl();
-    private Gson gson = new Gson();
+    private Gson gson = JsonUtil.getGson();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {

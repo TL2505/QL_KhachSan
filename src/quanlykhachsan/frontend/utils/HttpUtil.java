@@ -9,7 +9,28 @@ import java.nio.charset.StandardCharsets;
 
 public class HttpUtil {
 
-    private static final String BASE_URL = "http://localhost:8080/api";
+    private static final String BASE_URL;
+
+    static {
+        String url = "http://localhost:8080/api"; // mặc định
+        try {
+            java.util.Properties props = new java.util.Properties();
+            java.io.File configFile = new java.io.File("config.properties");
+            if (configFile.exists()) {
+                try (java.io.FileInputStream fis = new java.io.FileInputStream(configFile)) {
+                    props.load(fis);
+                    String loaded = props.getProperty("server.url");
+                    if (loaded != null && !loaded.trim().isEmpty()) {
+                        url = loaded.trim();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[HttpUtil] Không đọc được config.properties, dùng localhost: " + e.getMessage());
+        }
+        BASE_URL = url;
+        System.out.println("[HttpUtil] Server URL: " + BASE_URL);
+    }
 
     public static String sendGet(String endpoint) throws Exception {
         URL url = new URL(BASE_URL + endpoint);
@@ -19,6 +40,7 @@ public class HttpUtil {
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
+        conn.setRequestProperty("ngrok-skip-browser-warning", "true");
 
         if (conn.getResponseCode() != 200) {
             throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
@@ -48,6 +70,7 @@ public class HttpUtil {
         conn.setRequestMethod("DELETE");
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
+        conn.setRequestProperty("ngrok-skip-browser-warning", "true");
 
         int code = conn.getResponseCode();
         BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -72,6 +95,7 @@ public class HttpUtil {
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
+        conn.setRequestProperty("ngrok-skip-browser-warning", "true");
 
         if (jsonBody != null && !jsonBody.isEmpty()) {
             try (OutputStream os = conn.getOutputStream()) {

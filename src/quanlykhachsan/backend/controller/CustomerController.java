@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.JsonUtil;
 
 public class CustomerController implements HttpHandler {
 
@@ -20,7 +21,7 @@ public class CustomerController implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
-        Gson gson = new Gson();
+        Gson gson = JsonUtil.getGson();
 
         try {
             // 1. GET /api/customers or /api/customers/{id}

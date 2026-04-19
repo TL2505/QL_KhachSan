@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import quanlykhachsan.frontend.utils.JsonUtil;
 import java.util.ArrayList;
 import java.util.List;
 import quanlykhachsan.backend.model.Customer;
@@ -15,7 +16,7 @@ public class CustomerAPI {
         List<Customer> customers = new ArrayList<>();
         try {
             String jsonResponse = HttpUtil.sendGet("/customers");
-            Gson gson = new Gson();
+            Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
 
             if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
@@ -40,8 +41,8 @@ public class CustomerAPI {
             req.addProperty("phone", customer.getPhone());
             req.addProperty("cccd", customer.getIdentityCard());
 
-            String jsonResponse = HttpUtil.sendPost("/customers", new Gson().toJson(req));
-            JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+            String jsonResponse = HttpUtil.sendPost("/customers", JsonUtil.getGson().toJson(req));
+            JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
                 if ("success".equals(resObj.get("status").getAsString())) {
                     return "Success: " + resObj.get("message").getAsString();
@@ -63,8 +64,8 @@ public class CustomerAPI {
             req.addProperty("phone", customer.getPhone());
             req.addProperty("cccd", customer.getIdentityCard());
 
-            String jsonResponse = HttpUtil.sendPut("/customers/" + customer.getId(), new Gson().toJson(req));
-            JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+            String jsonResponse = HttpUtil.sendPut("/customers/" + customer.getId(), JsonUtil.getGson().toJson(req));
+            JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
                 if ("success".equals(resObj.get("status").getAsString())) {
                     return "Success: " + resObj.get("message").getAsString();
@@ -82,7 +83,7 @@ public class CustomerAPI {
     public static String deleteCustomer(int id) {
         try {
             String jsonResponse = HttpUtil.sendDelete("/customers/" + id);
-            Gson gson = new Gson();
+            Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
                 if ("success".equals(resObj.get("status").getAsString())) {
@@ -101,7 +102,7 @@ public class CustomerAPI {
     public static Customer getCustomerById(int id) {
         try {
             String jsonResponse = HttpUtil.sendGet("/customers/" + id);
-            Gson gson = new Gson();
+            Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
             if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
                 return gson.fromJson(resObj.get("data"), Customer.class);

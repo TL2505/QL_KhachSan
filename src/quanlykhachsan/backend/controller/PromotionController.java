@@ -9,8 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.model.Promotion;
 import quanlykhachsan.backend.service.PromotionService;
 import quanlykhachsan.backend.service.BookingService;
@@ -32,7 +32,7 @@ public class PromotionController implements HttpHandler {
     private BookingService bookingService = new BookingService();
     private CustomerDAOImpl customerDAO = new CustomerDAOImpl();
     private RoomDAOImpl roomDAO = new RoomDAOImpl();
-    private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+    private Gson gson = JsonUtil.getGson();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {

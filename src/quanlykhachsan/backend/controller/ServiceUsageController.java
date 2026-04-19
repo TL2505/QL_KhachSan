@@ -1,6 +1,7 @@
 package quanlykhachsan.backend.controller;
 
 import com.google.gson.Gson;
+import quanlykhachsan.backend.utils.JsonUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import quanlykhachsan.backend.daoimpl.ServiceUsageDAOImpl;
@@ -13,7 +14,7 @@ import java.util.Map;
 
 public class ServiceUsageController implements HttpHandler {
     private final ServiceUsageDAOImpl usageDAO = new ServiceUsageDAOImpl();
-    private final Gson gson = new Gson();
+    private final Gson gson = JsonUtil.getGson();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {

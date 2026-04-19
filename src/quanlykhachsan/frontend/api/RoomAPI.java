@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import quanlykhachsan.frontend.utils.JsonUtil;
 import java.util.ArrayList;
 import java.util.List;
 import quanlykhachsan.backend.model.Room;
@@ -12,7 +13,7 @@ import quanlykhachsan.backend.model.RoomType;
 
 public class RoomAPI {
 
-    private static final Gson gson = new Gson();
+    private static final Gson gson = JsonUtil.getGson();
 
     /** Lấy toàn bộ danh sách phòng */
     public static List<Room> getAllRooms() {

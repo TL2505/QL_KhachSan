@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import quanlykhachsan.frontend.utils.HttpUtil;
+import quanlykhachsan.frontend.utils.JsonUtil;
 import quanlykhachsan.backend.model.DailyStats;
 import quanlykhachsan.backend.model.MonthlyRevenue;
 import quanlykhachsan.backend.model.DashboardData;
@@ -23,10 +24,10 @@ public class ReportAPI {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused)");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
             Type listType = new TypeToken<ArrayList<MonthlyRevenue>>(){}.getType();
-            return new Gson().fromJson(resObj.get("data"), listType);
+            return JsonUtil.getGson().fromJson(resObj.get("data"), listType);
         }
         throw new Exception("Lỗi khi tải dữ liệu báo cáo!");
     }
@@ -39,9 +40,9 @@ public class ReportAPI {
             throw new Exception("Không thể kết nối Backend Server!");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
-            return new Gson().fromJson(resObj.get("data"), DailyStats.class);
+            return JsonUtil.getGson().fromJson(resObj.get("data"), DailyStats.class);
         }
         throw new Exception("Lỗi khi tải dữ liệu thống kê ngày!");
     }
@@ -54,7 +55,7 @@ public class ReportAPI {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused)");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
             return resObj.get("data").getAsInt();
         }
@@ -64,15 +65,15 @@ public class ReportAPI {
     public static DashboardData getDashboardData(DashboardFilter filter) throws Exception {
         String jsonResponse;
         try {
-            String requestBody = new Gson().toJson(filter);
+            String requestBody = JsonUtil.getGson().toJson(filter);
             jsonResponse = HttpUtil.sendPost("/reports/dashboard", requestBody);
         } catch (java.net.ConnectException ex) {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused)");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
-            return new Gson().fromJson(resObj.get("data"), DashboardData.class);
+            return JsonUtil.getGson().fromJson(resObj.get("data"), DashboardData.class);
         }
         throw new Exception("Lỗi khi tải dữ liệu phân tích Dashboard!");
     }

@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.JsonUtil;
 
 public class AuthController implements HttpHandler {
 
@@ -28,7 +29,7 @@ public class AuthController implements HttpHandler {
             String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             
             // Dùng Gson để parse
-            Gson gson = new Gson();
+            Gson gson = JsonUtil.getGson();
             JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
             JsonObject resObj = new JsonObject();
             int statusCode = 200;

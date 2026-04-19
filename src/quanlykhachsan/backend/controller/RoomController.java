@@ -15,13 +15,14 @@ import quanlykhachsan.backend.model.DailyStats;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.model.RoomType;
+import quanlykhachsan.backend.utils.JsonUtil;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class RoomController implements HttpHandler {
 
     private RoomService roomService = new RoomService();
-    private Gson gson = new Gson();
+    private Gson gson = JsonUtil.getGson();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {

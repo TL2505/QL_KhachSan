@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.Gson;
+import quanlykhachsan.frontend.utils.JsonUtil;
 import java.util.ArrayList;
 import java.util.List;
 import quanlykhachsan.backend.model.Customer;
@@ -17,7 +17,7 @@ public class LoyaltyAPI {
         List<Customer> customers = new ArrayList<>();
         try {
             String json = HttpUtil.sendGet("/loyalty/customers");
-            Gson gson = new Gson();
+            Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(json, JsonObject.class);
             if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
                 JsonArray arr = resObj.getAsJsonArray("data");
@@ -38,7 +38,7 @@ public class LoyaltyAPI {
         List<LoyaltyHistory> list = new ArrayList<>();
         try {
             String json = HttpUtil.sendGet("/loyalty/history/" + customerId);
-            Gson gson = new Gson();
+            Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(json, JsonObject.class);
             if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
                 JsonArray arr = resObj.getAsJsonArray("data");
@@ -63,8 +63,8 @@ public class LoyaltyAPI {
             req.addProperty("discountAmount", discountAmount);
             req.addProperty("description", description);
 
-            String json = HttpUtil.sendPost("/loyalty/redeem", new Gson().toJson(req));
-            JsonObject resObj = new Gson().fromJson(json, JsonObject.class);
+            String json = HttpUtil.sendPost("/loyalty/redeem", JsonUtil.getGson().toJson(req));
+            JsonObject resObj = JsonUtil.getGson().fromJson(json, JsonObject.class);
             return resObj != null && "success".equals(resObj.get("status").getAsString());
         } catch (Exception e) {
             e.printStackTrace();
@@ -75,7 +75,7 @@ public class LoyaltyAPI {
     public static Customer getCustomerLoyalty(int customerId) {
         try {
             String json = HttpUtil.sendGet("/loyalty/customers"); // We can filter here or add a specific endpoint
-            Gson gson = new Gson();
+            Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(json, JsonObject.class);
             if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
                 JsonArray arr = resObj.getAsJsonArray("data");

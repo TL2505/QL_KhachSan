@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.JsonUtil;
 
 public class BookingController implements HttpHandler {
 
@@ -34,7 +35,7 @@ public class BookingController implements HttpHandler {
         try {
             // 0. GET /api/bookings (Lấy danh sách booking)
             if ("GET".equalsIgnoreCase(method) && "/api/bookings".equals(path)) {
-                Gson gson = new Gson();
+                Gson gson = JsonUtil.getGson();
                 JsonObject resObj = new JsonObject();
                 resObj.addProperty("status", "success");
                 resObj.add("data", gson.toJsonTree(bookingService.getAllBookings()));
@@ -47,7 +48,7 @@ public class BookingController implements HttpHandler {
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
-                Gson gson = new Gson();
+                Gson gson = JsonUtil.getGson();
                 JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
 
                 String customerIdStr = reqObj.has("customerId") ? reqObj.get("customerId").getAsString() : null;
@@ -141,7 +142,7 @@ public class BookingController implements HttpHandler {
             // 4. GET /api/bookings/room/{roomId} - Active booking for a room
             else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/bookings/room/")) {
                 int roomId = Integer.parseInt(path.substring("/api/bookings/room/".length()));
-                Gson gson = new Gson();
+                Gson gson = JsonUtil.getGson();
                 // Find the active booking for this room (checked_in, booked, or pending)
                 quanlykhachsan.backend.model.Booking activeBooking = null;
                 for (quanlykhachsan.backend.model.Booking b : bookingService.getAllBookings()) {
@@ -164,7 +165,7 @@ public class BookingController implements HttpHandler {
             else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/bookings/customer/")) {
                 int customerId = Integer.parseInt(path.substring("/api/bookings/customer/".length()));
                 java.util.List<Booking> list = bookingService.getBookingsByCustomer(customerId);
-                Gson gson = new Gson();
+                Gson gson = JsonUtil.getGson();
                 JsonObject resObj = new JsonObject();
                 resObj.addProperty("status", "success");
                 resObj.add("data", gson.toJsonTree(list));
@@ -180,7 +181,7 @@ public class BookingController implements HttpHandler {
             JsonObject errObj = new JsonObject();
             errObj.addProperty("status", "error");
             errObj.addProperty("message", "Lỗi Server: " + e.getMessage());
-            sendResponse(exchange, 500, new Gson().toJson(errObj));
+            sendResponse(exchange, 500, JsonUtil.getGson().toJson(errObj));
         }
     }
 

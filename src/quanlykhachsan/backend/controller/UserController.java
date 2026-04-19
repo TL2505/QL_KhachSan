@@ -17,12 +17,13 @@ import java.sql.*;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.JsonUtil;
 
 public class UserController implements HttpHandler {
 
     private AuthService authService = new AuthService();
     private UserDAO userDAO = new UserDAOImpl();
-    private Gson gson = new Gson();
+    private Gson gson = JsonUtil.getGson();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {

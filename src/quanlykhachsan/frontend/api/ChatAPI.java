@@ -6,12 +6,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import quanlykhachsan.backend.model.Message;
 import quanlykhachsan.frontend.utils.HttpUtil;
+import quanlykhachsan.frontend.utils.JsonUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChatAPI {
-    private static final Gson gson = new Gson();
+    private static final Gson gson = JsonUtil.getGson();
 
     public static void sendMessage(Message msg) {
         try {

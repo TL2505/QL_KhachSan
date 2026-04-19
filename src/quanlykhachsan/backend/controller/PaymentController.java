@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.service.BookingService;
 import quanlykhachsan.backend.service.LoyaltyService;
 import quanlykhachsan.backend.utils.SecurityUtil;
@@ -31,7 +32,7 @@ public class PaymentController implements HttpHandler {
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
-                Gson gson = new Gson();
+                Gson gson = JsonUtil.getGson();
                 JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
 
                 String bookingIdStr = reqObj.has("bookingId") ? reqObj.get("bookingId").getAsString() : null;
