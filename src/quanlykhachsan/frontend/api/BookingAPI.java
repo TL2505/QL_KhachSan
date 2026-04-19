@@ -100,4 +100,37 @@ public class BookingAPI {
         }
         return bookings;
     }
+
+    public static Booking getActiveBookingByRoom(int roomId) {
+        try {
+            String jsonResponse = HttpUtil.sendGet("/bookings/room/" + roomId);
+            Gson gson = new Gson();
+            JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
+            if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
+                if (resObj.get("data").isJsonNull()) return null;
+                return gson.fromJson(resObj.get("data"), Booking.class);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static boolean processPayment(int bookingId, int customerId, double amount, String paymentMethod) {
+        try {
+            JsonObject req = new JsonObject();
+            req.addProperty("bookingId", bookingId);
+            req.addProperty("customerId", customerId);
+            req.addProperty("amount", amount);
+            req.addProperty("paymentMethod", paymentMethod);
+            String jsonResponse = HttpUtil.sendPost("/payments", new Gson().toJson(req));
+            JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+            if (resObj != null) {
+                return "success".equals(resObj.get("status").getAsString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

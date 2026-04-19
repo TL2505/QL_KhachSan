@@ -23,7 +23,9 @@ import com.google.gson.JsonObject;
 public class BookingForm extends JPanel {
 
     // ─── Widgets ──────────────────────────────────────────────────────────
-    private JComboBox<ComboItem> cbCustomer, cbRoom;
+    private JComboBox<ComboItem> cbRoom;
+    private JButton btnSelectCustomer;
+    private Customer selectedCustomer = null;
     private JDateChooser dateCheckIn, dateCheckOut;
     private JButton btnBook, btnRefresh;
 
@@ -110,11 +112,35 @@ public class BookingForm extends JPanel {
 
         // Khách hàng
         cardNew.add(createFieldLabel("Khách Hàng"));
-        cbCustomer = new JComboBox<>();
-        cbCustomer.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        cbCustomer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        cbCustomer.setAlignmentX(LEFT_ALIGNMENT);
-        cardNew.add(cbCustomer);
+        btnSelectCustomer = new JButton(" Chọn khách hàng...");
+        btnSelectCustomer.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnSelectCustomer.setHorizontalAlignment(SwingConstants.LEFT);
+        btnSelectCustomer.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+        btnSelectCustomer.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
+        btnSelectCustomer.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(BORDER_CLR, 1, true), new EmptyBorder(8, 12, 8, 12)));
+        btnSelectCustomer.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnSelectCustomer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        btnSelectCustomer.setAlignmentX(LEFT_ALIGNMENT);
+        btnSelectCustomer.setFocusPainted(false);
+        btnSelectCustomer.addActionListener(e -> {
+            Window parentWindow = SwingUtilities.getWindowAncestor(BookingForm.this);
+            Frame frame = null;
+            if (parentWindow instanceof Frame) {
+                frame = (Frame) parentWindow;
+            }
+            CustomerSelectDialog dialog = new CustomerSelectDialog(frame);
+            dialog.setVisible(true);
+            Customer c = dialog.getSelectedCustomer();
+            if (c != null) {
+                selectedCustomer = c;
+                btnSelectCustomer.setText("  " + c.getFullName() + " - " + c.getPhone());
+                btnSelectCustomer.setForeground(PRIMARY);
+                btnSelectCustomer.setBorder(BorderFactory.createCompoundBorder(
+                    new LineBorder(PRIMARY, 2, true), new EmptyBorder(7, 11, 7, 11)));
+            }
+        });
+        cardNew.add(btnSelectCustomer);
         cardNew.add(Box.createVerticalStrut(12));
 
         // Phòng
@@ -127,25 +153,24 @@ public class BookingForm extends JPanel {
         cardNew.add(Box.createVerticalStrut(12));
 
         // Check-in & Out row
-        JPanel dateRow = new JPanel(new WrapLayout(FlowLayout.LEADING, 10, 5));
+        JPanel dateRow = new JPanel(new GridLayout(1, 2, 10, 0));
         dateRow.setOpaque(false);
         dateRow.setAlignmentX(LEFT_ALIGNMENT);
+        dateRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 65));
         
-        JPanel pIn = new JPanel(); pIn.setLayout(new BoxLayout(pIn, BoxLayout.Y_AXIS)); pIn.setOpaque(false);
-        pIn.add(createFieldLabel("Check-in"));
+        JPanel pIn = new JPanel(new BorderLayout()); pIn.setOpaque(false);
+        pIn.add(createFieldLabel("Check-in Ngày Đến"), BorderLayout.NORTH);
         dateCheckIn = new JDateChooser();
         dateCheckIn.setDateFormatString("dd/MM/yyyy");
-        dateCheckIn.setPreferredSize(new Dimension(160, 38));
-        dateCheckIn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        pIn.add(dateCheckIn);
+        dateCheckIn.setPreferredSize(new Dimension(0, 40));
+        pIn.add(dateCheckIn, BorderLayout.CENTER);
         
-        JPanel pOut = new JPanel(); pOut.setLayout(new BoxLayout(pOut, BoxLayout.Y_AXIS)); pOut.setOpaque(false);
-        pOut.add(createFieldLabel("Check-out"));
+        JPanel pOut = new JPanel(new BorderLayout()); pOut.setOpaque(false);
+        pOut.add(createFieldLabel("Check-out Ngày Đi"), BorderLayout.NORTH);
         dateCheckOut = new JDateChooser();
         dateCheckOut.setDateFormatString("dd/MM/yyyy");
-        dateCheckOut.setPreferredSize(new Dimension(160, 38));
-        dateCheckOut.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        pOut.add(dateCheckOut);
+        dateCheckOut.setPreferredSize(new Dimension(0, 40));
+        pOut.add(dateCheckOut, BorderLayout.CENTER);
         
         dateRow.add(pIn);
         dateRow.add(pOut);
@@ -164,16 +189,18 @@ public class BookingForm extends JPanel {
         cardNew.add(Box.createVerticalStrut(16));
 
         // Buttons
-        JPanel btnRow = new JPanel(new WrapLayout(FlowLayout.LEADING, 10, 10));
+        JPanel btnRow = new JPanel(new GridLayout(1, 2, 10, 0));
         btnRow.setOpaque(false);
         btnRow.setAlignmentX(LEFT_ALIGNMENT);
+        btnRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
-        btnRefresh = createGhostBtn("Tải Lại");
-        btnRefresh.setPreferredSize(new Dimension(120, 40));
+        btnRefresh = createGhostBtn("Tải Lại Bảng");
+        btnRefresh.setPreferredSize(new Dimension(0, 40));
         btnRefresh.addActionListener(e -> loadInitialData());
-        btnBook = createSolidBtn("Đặt Phòng ngay", PRIMARY);
-        btnBook.setPreferredSize(new Dimension(180, 40));
+        btnBook = createSolidBtn("Đặt Phòng Mới", PRIMARY);
+        btnBook.setPreferredSize(new Dimension(0, 40));
         btnBook.addActionListener(e -> actionBook());
+        
         btnRow.add(btnRefresh);
         btnRow.add(btnBook);
         cardNew.add(btnRow);
@@ -339,11 +366,15 @@ public class BookingForm extends JPanel {
     // ── LOAD DỮ LIỆU ──────────────────────────────────────────────────────
 
     private void loadInitialData() {
-        cbCustomer.removeAllItems();
         cbRoom.removeAllItems();
-        cbCustomer.addItem(new ComboItem(-1, "Đang tải..."));
         cbRoom.addItem(new ComboItem(-1, "Đang tải..."));
         setStatus("Đang tải thông tin...", MUTED);
+        
+        selectedCustomer = null; 
+        btnSelectCustomer.setText(" Chọn khách hàng...");
+        btnSelectCustomer.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+        btnSelectCustomer.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(BORDER_CLR, 1, true), new EmptyBorder(8, 12, 8, 12)));
 
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
             @Override
@@ -355,18 +386,9 @@ public class BookingForm extends JPanel {
 
             @Override
             protected void done() {
-                cbCustomer.removeAllItems();
                 cbRoom.removeAllItems();
                 try {
                     get();
-                    if (customersList != null && !customersList.isEmpty()) {
-                        for (Customer c : customersList) {
-                            cbCustomer.addItem(new ComboItem(c.getId(),
-                                    c.getFullName() + "  \u2014  " + c.getPhone()));
-                        }
-                    } else {
-                        cbCustomer.addItem(new ComboItem(-1, "Không có khách hàng"));
-                    }
                     if (roomsList != null && !roomsList.isEmpty()) {
                         for (Room r : roomsList) {
                             if ("available".equalsIgnoreCase(r.getStatus())) {
@@ -382,7 +404,6 @@ public class BookingForm extends JPanel {
 
                     loadBookings();
                 } catch (Exception e) {
-                    cbCustomer.addItem(new ComboItem(-1, "Lỗi kết nối"));
                     cbRoom.addItem(new ComboItem(-1, "Lỗi kết nối"));
                     setStatus("Lỗi tải dữ liệu: " + e.getMessage(), DANGER);
                 }
@@ -471,10 +492,9 @@ public class BookingForm extends JPanel {
     }
 
     private void actionBook() {
-        ComboItem selCustomer = (ComboItem) cbCustomer.getSelectedItem();
         ComboItem selRoom = (ComboItem) cbRoom.getSelectedItem();
 
-        if (selCustomer == null || selCustomer.getId() == -1) {
+        if (selectedCustomer == null) {
             showWarn("Vui lòng chọn khách hàng hợp lệ!");
             return;
         }
@@ -493,12 +513,12 @@ public class BookingForm extends JPanel {
         }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Xác nhận đặt phòng cho:\n  Khách: " + selCustomer + "\n  Phòng: " + selRoom,
+                "Xác nhận đặt phòng cho:\n  Khách: " + selectedCustomer.getFullName() + "\n  Phòng: " + selRoom,
                 "Xác nhận Đặt Phòng", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (confirm != JOptionPane.YES_OPTION)
             return;
 
-        int customerId = selCustomer.getId();
+        int customerId = selectedCustomer.getId();
         int roomId = selRoom.getId();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         String ci = sdf.format(dateCheckIn.getDate());

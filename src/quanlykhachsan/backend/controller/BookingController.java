@@ -138,7 +138,29 @@ public class BookingController implements HttpHandler {
                     sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy Booking ID\"}");
                 }
             }
-            // 4. GET /api/bookings/customer/{id}
+            // 4. GET /api/bookings/room/{roomId} - Active booking for a room
+            else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/bookings/room/")) {
+                int roomId = Integer.parseInt(path.substring("/api/bookings/room/".length()));
+                Gson gson = new Gson();
+                // Find the active booking for this room (checked_in, booked, or pending)
+                quanlykhachsan.backend.model.Booking activeBooking = null;
+                for (quanlykhachsan.backend.model.Booking b : bookingService.getAllBookings()) {
+                    if (b.getRoomId() == roomId &&
+                        (b.getStatus().equals("checked_in") || b.getStatus().equals("booked") || b.getStatus().equals("pending"))) {
+                        activeBooking = b;
+                        break;
+                    }
+                }
+                JsonObject resObj = new JsonObject();
+                resObj.addProperty("status", "success");
+                if (activeBooking != null) {
+                    resObj.add("data", gson.toJsonTree(activeBooking));
+                } else {
+                    resObj.add("data", com.google.gson.JsonNull.INSTANCE);
+                }
+                sendResponse(exchange, 200, gson.toJson(resObj));
+            }
+            // 5. GET /api/bookings/customer/{id}
             else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/bookings/customer/")) {
                 int customerId = Integer.parseInt(path.substring("/api/bookings/customer/".length()));
                 java.util.List<Booking> list = bookingService.getBookingsByCustomer(customerId);

@@ -33,7 +33,7 @@ public class LoginForm extends JFrame {
 
     public LoginForm() {
         setTitle("Đăng nhập - Hệ thống Quản lý Khách sạn");
-        setSize(480, 580);
+        setSize(480, 640);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);

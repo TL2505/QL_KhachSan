@@ -6,6 +6,8 @@ import com.google.gson.reflect.TypeToken;
 import quanlykhachsan.frontend.utils.HttpUtil;
 import quanlykhachsan.backend.model.DailyStats;
 import quanlykhachsan.backend.model.MonthlyRevenue;
+import quanlykhachsan.backend.model.DashboardData;
+import quanlykhachsan.backend.model.DashboardFilter;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -57,5 +59,21 @@ public class ReportAPI {
             return resObj.get("data").getAsInt();
         }
         throw new Exception("Lỗi khi tải số liệu tài khoản kích hoạt!");
+    }
+
+    public static DashboardData getDashboardData(DashboardFilter filter) throws Exception {
+        String jsonResponse;
+        try {
+            String requestBody = new Gson().toJson(filter);
+            jsonResponse = HttpUtil.sendPost("/reports/dashboard", requestBody);
+        } catch (java.net.ConnectException ex) {
+            throw new Exception("Không thể kết nối Backend Server! (Connection Refused)");
+        }
+        
+        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
+            return new Gson().fromJson(resObj.get("data"), DashboardData.class);
+        }
+        throw new Exception("Lỗi khi tải dữ liệu phân tích Dashboard!");
     }
 }
