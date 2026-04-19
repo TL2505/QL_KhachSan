@@ -47,6 +47,8 @@ public class DashboardData {
         private double roomRevenue;
         private double serviceRevenue;
 
+        public KPI() {}
+
         public double getAdr() { return adr; }
         public void setAdr(double adr) { this.adr = adr; }
 
@@ -75,6 +77,8 @@ public class DashboardData {
         private double serviceRevenue;
         private double totalRevenue;
 
+        public RevenueChartItem() {}
+
         public RevenueChartItem(String label, double roomRevenue, double serviceRevenue, double totalRevenue) {
             this.label = label;
             this.roomRevenue = roomRevenue;
@@ -92,6 +96,8 @@ public class DashboardData {
         private String label;
         private double rate;
 
+        public OccupancyChartItem() {}
+
         public OccupancyChartItem(String label, double rate) {
             this.label = label;
             this.rate = rate;
@@ -107,6 +113,8 @@ public class DashboardData {
         private double roomFee;
         private double serviceFee;
         private double total;
+
+        public InvoiceDetail() {}
 
         public InvoiceDetail(String id, String date, double roomFee, double serviceFee, double total) {
             this.id = id;
