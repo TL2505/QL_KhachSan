@@ -356,17 +356,17 @@ INSERT IGNORE INTO services (name, description, price) VALUES
 ('Thuê xe', 'Thuê xe máy di chuyển 1 ngày', 150000);
 
 -- 7. bookings
-INSERT IGNORE INTO bookings (customer_id, room_id, check_in_date, check_out_date, total_price, status) VALUES 
-(1, 1, '2026-03-01 14:00:00', '2026-03-05 12:00:00', 2000000, 'checked_out'),
-(1, 2, '2026-04-10 14:00:00', '2026-04-15 12:00:00', 2500000, 'pending'),
-(2, 3, '2026-03-15 14:00:00', '2026-03-17 12:00:00', 2000000, 'checked_out'),
-(4, 4, '2026-03-20 14:00:00', '2026-03-22 12:00:00', 3000000, 'checked_out'),
-(5, 5, '2026-03-25 14:00:00', '2026-03-28 12:00:00', 4500000, 'checked_out'),
-(6, 1, '2026-04-01 14:00:00', '2026-04-03 12:00:00', 1000000, 'checked_out'),
-(7, 2, '2026-04-05 14:00:00', '2026-04-07 12:00:00', 1000000, 'checked_in'),
-(8, 3, '2026-04-12 14:00:00', '2026-04-14 12:00:00', 2000000, 'pending'),
-(9, 4, '2026-04-20 14:00:00', '2026-04-25 12:00:00', 7500000, 'confirmed'),
-(10, 5, '2026-03-10 14:00:00', '2026-03-12 12:00:00', 3000000, 'cancelled');
+INSERT IGNORE INTO bookings (customer_id, room_id, check_in_date, check_out_date, total_price, status, customer_type) VALUES 
+(1, 1, '2026-03-01 14:00:00', '2026-03-05 12:00:00', 2000000, 'checked_out', 'Walk-in'),
+(1, 2, '2026-04-10 14:00:00', '2026-04-15 12:00:00', 2500000, 'pending', 'OTA'),
+(2, 3, '2026-03-15 14:00:00', '2026-03-17 12:00:00', 2000000, 'checked_out', 'Walk-in'),
+(4, 4, '2026-03-20 14:00:00', '2026-03-22 12:00:00', 3000000, 'checked_out', 'Corporate'),
+(5, 5, '2026-03-25 14:00:00', '2026-03-28 12:00:00', 4500000, 'checked_out', 'Walk-in'),
+(6, 1, '2026-04-01 14:00:00', '2026-04-03 12:00:00', 1000000, 'checked_out', 'Walk-in'),
+(7, 2, '2026-04-05 14:00:00', '2026-04-07 12:00:00', 1000000, 'checked_in', 'OTA'),
+(8, 3, '2026-04-12 14:00:00', '2026-04-14 12:00:00', 2000000, 'pending', 'Corporate'),
+(9, 4, '2026-04-20 14:00:00', '2026-04-25 12:00:00', 7500000, 'confirmed', 'Walk-in'),
+(10, 5, '2026-03-10 14:00:00', '2026-03-12 12:00:00', 3000000, 'cancelled', 'Walk-in');
 
 -- 8. invoices
 INSERT IGNORE INTO invoices (booking_id, total_room_fee, final_total, status) VALUES 
