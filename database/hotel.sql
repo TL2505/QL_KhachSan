@@ -509,7 +509,7 @@ INSERT INTO `payments` (`id`, `invoice_id`, `amount`, `payment_method`, `payment
 
 
 INSERT INTO `messages` (`id`, `sender_id`, `receiver_id`, `content`, `is_read`, `created_at`) VALUES
-(4, 1, NULL, 'tôi muốn đặt phòng', 0, '2026-04-20 04:38:57');
+(4, 3, 2, 'tôi muốn đặt phòng', 0, '2026-04-20 04:38:57');
 
 
 INSERT INTO `promotions` (`id`, `name`, `description`, `discount_type`, `discount_value`, `start_date`, `end_date`, `condition_type`, `condition_value`, `status`, `created_at`, `updated_at`) VALUES
