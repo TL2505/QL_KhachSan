@@ -505,11 +505,11 @@ INSERT INTO `payments` (`id`, `invoice_id`, `amount`, `payment_method`, `payment
 (3, 3, 3000000.00, 'bank_transfer', '2026-04-20 04:03:26', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
 (4, 4, 4500000.00, 'e_wallet', '2026-04-20 04:03:26', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
 (5, 5, 1000000.00, 'cash', '2026-04-20 04:03:26', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(84, 63, 500000.00, 'cash', '2026-04-20 04:40:20', '2026-04-20 04:40:20', '2026-04-20 04:40:20');
+(84, 84, 500000.00, 'cash', '2026-04-20 04:40:20', '2026-04-20 04:40:20', '2026-04-20 04:40:20');
 
 
 INSERT INTO `messages` (`id`, `sender_id`, `receiver_id`, `content`, `is_read`, `created_at`) VALUES
-(4, 3, NULL, 'tôi muốn đặt phòng', 0, '2026-04-20 04:38:57');
+(4, 1, NULL, 'tôi muốn đặt phòng', 0, '2026-04-20 04:38:57');
 
 
 INSERT INTO `promotions` (`id`, `name`, `description`, `discount_type`, `discount_value`, `start_date`, `end_date`, `condition_type`, `condition_value`, `status`, `created_at`, `updated_at`) VALUES
