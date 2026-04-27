@@ -5,10 +5,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import quanlykhachsan.frontend.utils.HttpUtil;
 import quanlykhachsan.frontend.utils.JsonUtil;
-import quanlykhachsan.backend.model.DailyStats;
-import quanlykhachsan.backend.model.MonthlyRevenue;
-import quanlykhachsan.backend.model.DashboardData;
-import quanlykhachsan.backend.model.DashboardFilter;
+import quanlykhachsan.backend.report.DailyStats;
+import quanlykhachsan.backend.report.MonthlyRevenue;
+import quanlykhachsan.backend.report.DashboardData;
+import quanlykhachsan.backend.report.DashboardFilter;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;

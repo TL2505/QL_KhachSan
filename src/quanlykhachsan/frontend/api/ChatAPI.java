@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
-import quanlykhachsan.backend.model.Message;
+import quanlykhachsan.backend.interaction.Message;
 import quanlykhachsan.frontend.utils.HttpUtil;
 import quanlykhachsan.frontend.utils.JsonUtil;
 

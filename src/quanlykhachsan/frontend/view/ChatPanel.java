@@ -8,8 +8,8 @@ import java.awt.event.AdjustmentListener;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.ArrayList;
-import quanlykhachsan.backend.model.Message;
-import quanlykhachsan.backend.model.User;
+import quanlykhachsan.backend.interaction.Message;
+import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.api.ChatAPI;
 
 public class ChatPanel extends JPanel {

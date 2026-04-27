@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import quanlykhachsan.backend.model.User;
+import quanlykhachsan.backend.user.User;
 
 public class ChatDialog extends JDialog {
     private ChatPanel chatPanel;

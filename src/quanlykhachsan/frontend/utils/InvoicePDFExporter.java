@@ -8,15 +8,15 @@ import java.io.FileOutputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import quanlykhachsan.backend.model.Booking;
-import quanlykhachsan.backend.model.Customer;
-import quanlykhachsan.backend.model.Room;
+import quanlykhachsan.backend.booking.Booking;
+import quanlykhachsan.backend.customer.Customer;
+import quanlykhachsan.backend.room.Room;
 import java.awt.Desktop;
 
 public class InvoicePDFExporter {
 
     public static void exportPDF(Booking booking, Customer customer, Room room,
-            java.util.List<quanlykhachsan.backend.model.ServiceUsage> usages, int days, double totalAmount) {
+            java.util.List<quanlykhachsan.backend.hotelservice.ServiceUsage> usages, int days, double totalAmount) {
         Document document = new Document(PageSize.A4, 50, 50, 50, 50);
         try {
             // Check if folder exists
@@ -121,11 +121,11 @@ public class InvoicePDFExporter {
                 svcTable.addCell(new PdfPCell(new Phrase("Đơn giá", fontBold)));
                 svcTable.addCell(new PdfPCell(new Phrase("Thành tiền", fontBold)));
 
-                java.util.List<quanlykhachsan.backend.model.Service> allSvc = quanlykhachsan.frontend.api.ServiceAPI
+                java.util.List<quanlykhachsan.backend.hotelservice.Service> allSvc = quanlykhachsan.frontend.api.ServiceAPI
                         .getAllServices();
-                for (quanlykhachsan.backend.model.ServiceUsage u : usages) {
+                for (quanlykhachsan.backend.hotelservice.ServiceUsage u : usages) {
                     String sName = "Dịch vụ " + u.getServiceId();
-                    for (quanlykhachsan.backend.model.Service s : allSvc)
+                    for (quanlykhachsan.backend.hotelservice.Service s : allSvc)
                         if (s.getId() == u.getServiceId())
                             sName = s.getName();
 

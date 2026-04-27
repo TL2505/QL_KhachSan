@@ -3,7 +3,7 @@ package quanlykhachsan.frontend.view;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import quanlykhachsan.backend.model.User;
+import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.api.UserAPI;
 
 public class ProfileForm extends JPanel {

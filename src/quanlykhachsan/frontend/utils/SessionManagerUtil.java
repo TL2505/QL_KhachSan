@@ -1,6 +1,6 @@
 package quanlykhachsan.frontend.utils;
 
-import quanlykhachsan.backend.model.User;
+import quanlykhachsan.backend.user.User;
 
 import quanlykhachsan.frontend.utils.ThemeManager;
 
