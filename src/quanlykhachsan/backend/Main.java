@@ -21,6 +21,12 @@ public class Main {
             // Route Đăng nhập và Đăng ký
             server.createContext("/api/auth/login", new AuthController());
             server.createContext("/api/auth/register", new AuthController());
+            
+            // Route Google Auth
+            quanlykhachsan.backend.controller.GoogleAuthController googleController = new quanlykhachsan.backend.controller.GoogleAuthController();
+            server.createContext("/api/auth/google/login", googleController);
+            server.createContext("/api/auth/google/callback", googleController);
+            server.createContext("/api/auth/google/status", googleController);
             // Route Quản lý phòng
             server.createContext("/api/rooms", new quanlykhachsan.backend.controller.RoomController());
             // Route Hồ sơ người dùng

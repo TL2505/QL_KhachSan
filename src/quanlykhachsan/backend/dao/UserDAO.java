@@ -13,6 +13,7 @@ public interface UserDAO {
     public ArrayList<User> selectUser();
     public void comboBoxUser();
     public User findByUsername(String username);
+    public User findByEmail(String email);
     public boolean insert(User user) throws Exception;
     public int getRoleIdByName(String roleName);
     public List<Role> selectAllRoles();

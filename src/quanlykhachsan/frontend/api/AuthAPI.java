@@ -73,4 +73,27 @@ public class AuthAPI {
         }
         throw new Exception("Phản hồi cấu trúc JSON từ máy chủ không xác định!");
     }
+
+    public static User checkGoogleStatus(String sessionId) throws Exception {
+        String jsonResponse;
+        try {
+            jsonResponse = HttpUtil.sendGet("/auth/google/status?sid=" + sessionId);
+        } catch (Exception e) {
+            return null;
+        }
+
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
+        if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
+            JsonObject dataObj = resObj.getAsJsonObject("data");
+            User user = new User();
+            user.setId(dataObj.get("userId").getAsInt());
+            user.setUsername(dataObj.get("username").getAsString());
+            String roleStr = dataObj.get("role").getAsString();
+            user.setRoleId("ADMIN".equals(roleStr) ? 1 : 2);
+            user.setFullName(dataObj.get("fullName").getAsString());
+            user.setEmail(dataObj.get("email").getAsString());
+            return user;
+        }
+        return null;
+    }
 }

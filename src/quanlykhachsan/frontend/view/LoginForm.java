@@ -217,6 +217,31 @@ public class LoginForm extends JFrame {
         card.add(Box.createVerticalStrut(14));
         card.add(btnRegister);
 
+        // --- Nút Google Login ---
+        card.add(Box.createVerticalStrut(14));
+        JButton btnGoogle = new JButton("Tiếp tục với Google") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(ThemeManager.isDarkMode() ? new Color(45, 55, 72) : Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                g2.setColor(new Color(226, 232, 240));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                super.paintComponent(g);
+            }
+        };
+        btnGoogle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnGoogle.setForeground(TEXT_MAIN);
+        btnGoogle.setContentAreaFilled(false);
+        btnGoogle.setBorderPainted(false);
+        btnGoogle.setFocusPainted(false);
+        btnGoogle.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnGoogle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        btnGoogle.setAlignmentX(LEFT_ALIGNMENT);
+        btnGoogle.addActionListener(e -> handleGoogleLogin());
+        card.add(btnGoogle);
+
         cardOuter.add(card, new GridBagConstraints());
         root.add(cardOuter, BorderLayout.CENTER);
 
@@ -358,6 +383,58 @@ public class LoginForm extends JFrame {
             }
         };
         worker.execute();
+    }
+
+    private void handleGoogleLogin() {
+        clearError();
+        String sessionId = java.util.UUID.randomUUID().toString();
+        String loginUrl = "http://localhost:8080/api/auth/google/login?sid=" + sessionId;
+
+        try {
+            Desktop.getDesktop().browse(new java.net.URI(loginUrl));
+            lblLoading.setText("\u23F3 Đang chờ bạn đăng nhập trên trình duyệt...");
+            btnLogin.setEnabled(false);
+
+            // Bắt đầu polling
+            Timer timer = new Timer(2000, null);
+            timer.addActionListener(new ActionListener() {
+                private int attempts = 0;
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    attempts++;
+                    if (attempts > 60) { // Timeout after 2 minutes
+                        timer.stop();
+                        btnLogin.setEnabled(true);
+                        lblLoading.setText(" ");
+                        showError("Hết thời gian chờ đăng nhập Google.");
+                        return;
+                    }
+
+                    new SwingWorker<User, Void>() {
+                        @Override
+                        protected User doInBackground() throws Exception {
+                            return AuthAPI.checkGoogleStatus(sessionId);
+                        }
+                        @Override
+                        protected void done() {
+                            try {
+                                User user = get();
+                                if (user != null) {
+                                    timer.stop();
+                                    SessionManagerUtil.setUser(user);
+                                    dispose();
+                                    SwingUtilities.invokeLater(() -> new quanlykhachsan.frontend.MainUI(user).setVisible(true));
+                                }
+                            } catch (Exception ex) {}
+                        }
+                    }.execute();
+                }
+            });
+            timer.start();
+
+        } catch (Exception ex) {
+            showError("Không thể mở trình duyệt: " + ex.getMessage());
+        }
     }
 
     private static class RoundBorder extends AbstractBorder {

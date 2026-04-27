@@ -116,6 +116,34 @@ public class UserDAOImpl implements UserDAO {
     }
 
     @Override
+    public User findByEmail(String email) {
+        String query = "SELECT * FROM users WHERE email = ?";
+        try (Connection con = DBconn.getConnection(); 
+             PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    User u = new User();
+                    u.setId(rs.getInt("id"));
+                    u.setUsername(rs.getString("username"));
+                    u.setPassword(rs.getString("password"));
+                    u.setRoleId(rs.getInt("role_id"));
+                    u.setStatus(rs.getString("status"));
+                    u.setFullName(rs.getString("full_name"));
+                    u.setEmail(rs.getString("email"));
+                    u.setPhone(rs.getString("phone"));
+                    int cid = rs.getInt("customer_id");
+                    if (!rs.wasNull()) u.setCustomerId(cid);
+                    return u;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
     public boolean insert(User user) throws Exception {
         addUser(user);
         return true;
