@@ -3,6 +3,7 @@ package quanlykhachsan.frontend.api;
 import quanlykhachsan.frontend.utils.HttpUtil;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.frontend.utils.JsonUtil;
 
 public class PaymentAPI {
 
@@ -14,8 +15,8 @@ public class PaymentAPI {
             req.addProperty("paymentMethod", paymentMethod);
             req.addProperty("customerId", customerId);
 
-            String jsonResponse = HttpUtil.sendPost("/payments", new Gson().toJson(req));
-            JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+            String jsonResponse = HttpUtil.sendPost("/payments", JsonUtil.getGson().toJson(req));
+            JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
             
             if (resObj != null) {
                 if ("success".equals(resObj.get("status").getAsString())) {

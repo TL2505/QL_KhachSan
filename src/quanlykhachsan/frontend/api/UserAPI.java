@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import quanlykhachsan.frontend.utils.HttpUtil;
+import quanlykhachsan.frontend.utils.JsonUtil;
 import quanlykhachsan.backend.model.User;
 import quanlykhachsan.backend.model.Role;
 import java.util.List;
@@ -20,10 +21,10 @@ public class UserAPI {
             throw new Exception("Không thể kết nối Backend Server!");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
             Type listType = new TypeToken<ArrayList<Role>>(){}.getType();
-            return new Gson().fromJson(resObj.get("data"), listType);
+            return JsonUtil.getGson().fromJson(resObj.get("data"), listType);
         }
         throw new Exception("Lỗi khi tải danh sách quyền!");
     }
@@ -37,12 +38,12 @@ public class UserAPI {
 
         String jsonResponse;
         try {
-            jsonResponse = HttpUtil.sendPost("/users/update-profile", new Gson().toJson(req));
+            jsonResponse = HttpUtil.sendPost("/users/update-profile", JsonUtil.getGson().toJson(req));
         } catch (java.net.ConnectException ex) {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused)");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null) {
             if ("success".equals(resObj.get("status").getAsString())) {
                 return resObj.get("message").getAsString();
@@ -61,12 +62,12 @@ public class UserAPI {
 
         String jsonResponse;
         try {
-            jsonResponse = HttpUtil.sendPost("/users/change-password", new Gson().toJson(req));
+            jsonResponse = HttpUtil.sendPost("/users/change-password", JsonUtil.getGson().toJson(req));
         } catch (java.net.ConnectException ex) {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused)");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null) {
             if ("success".equals(resObj.get("status").getAsString())) {
                 return resObj.get("message").getAsString();
@@ -86,16 +87,16 @@ public class UserAPI {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused)");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
             Type listType = new TypeToken<ArrayList<User>>(){}.getType();
-            return new Gson().fromJson(resObj.get("data"), listType);
+            return JsonUtil.getGson().fromJson(resObj.get("data"), listType);
         }
         throw new Exception("Lỗi khi tải danh sách người dùng!");
     }
 
     public static String createUser(User user) throws Exception {
-        String jsonBody = new Gson().toJson(user);
+        String jsonBody = JsonUtil.getGson().toJson(user);
         String jsonResponse;
         try {
             jsonResponse = HttpUtil.sendPost("/users", jsonBody);
@@ -103,7 +104,7 @@ public class UserAPI {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused)");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
             return resObj.get("message").getAsString();
         } else if (resObj != null) {
@@ -113,7 +114,7 @@ public class UserAPI {
     }
 
     public static String updateUser(User user) throws Exception {
-        String jsonBody = new Gson().toJson(user);
+        String jsonBody = JsonUtil.getGson().toJson(user);
         String jsonResponse;
         try {
             jsonResponse = HttpUtil.sendPut("/users/" + user.getId(), jsonBody);
@@ -121,7 +122,7 @@ public class UserAPI {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused)");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
             return resObj.get("message").getAsString();
         } else if (resObj != null) {

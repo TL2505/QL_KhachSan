@@ -4,7 +4,11 @@ import quanlykhachsan.backend.dao.ReportDAO;
 import quanlykhachsan.backend.daoimpl.ReportDAOImpl;
 import quanlykhachsan.backend.model.MonthlyRevenue;
 import quanlykhachsan.backend.model.DailyStats;
+import quanlykhachsan.backend.model.DashboardData;
+import quanlykhachsan.backend.model.DashboardFilter;
 import quanlykhachsan.backend.utils.SecurityUtil;
+import java.io.InputStreamReader;
+import java.io.Reader;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -16,11 +20,12 @@ import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.JsonUtil;
 
 public class ReportController implements HttpHandler {
 
     private ReportDAO reportDAO = new ReportDAOImpl();
-    private Gson gson = new Gson();
+    private Gson gson = JsonUtil.getGson();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -38,6 +43,8 @@ public class ReportController implements HttpHandler {
             handleGetTodayStats(exchange);
         } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/reports/active-accounts")) {
             handleGetActiveAccounts(exchange);
+        } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/reports/dashboard")) {
+            handleGetDashboardData(exchange);
         } else {
             sendJson(exchange, 404, buildError("Endpoint không tồn tại"));
         }
@@ -81,6 +88,24 @@ public class ReportController implements HttpHandler {
         exchange.sendResponseHeaders(statusCode, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(bytes);
+        }
+    }
+
+    private void handleGetDashboardData(HttpExchange exchange) throws IOException {
+        if (!SecurityUtil.checkAdmin(exchange))
+            return;
+
+        try (Reader reader = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)) {
+            DashboardFilter filter = gson.fromJson(reader, DashboardFilter.class);
+            DashboardData data = reportDAO.getDashboardData(filter);
+            
+            JsonObject res = new JsonObject();
+            res.addProperty("status", "success");
+            res.add("data", gson.toJsonTree(data));
+            sendJson(exchange, 200, res.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendJson(exchange, 500, buildError("Lỗi xử lý dữ liệu Dashboard"));
         }
     }
 

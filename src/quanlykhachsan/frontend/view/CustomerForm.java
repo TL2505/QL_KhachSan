@@ -37,7 +37,7 @@ public class CustomerForm extends JPanel {
     private final Color BORDER_CLR = quanlykhachsan.frontend.utils.ThemeManager.getBorderColor();
     private final Color ROW_EVEN   = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(15, 23, 42) : new Color(249, 250, 251);
     private final Color ROW_ODD    = quanlykhachsan.frontend.utils.ThemeManager.getCardBg();
-    private final Color ROW_SELECT = new Color(219, 234, 254);
+    private final Color ROW_SELECT = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(51, 65, 85) : new Color(219, 234, 254);
 
     public CustomerForm() {
         setLayout(new BorderLayout(0, 0));
@@ -130,7 +130,7 @@ public class CustomerForm extends JPanel {
         form.add(createFieldLabel("Hạng Thành Viên"));
         txtLoyaltyLevel = createField("Silver");
         txtLoyaltyLevel.setEditable(false);
-        txtLoyaltyLevel.setBackground(new Color(243, 244, 246));
+        txtLoyaltyLevel.setBackground(BG_PANEL);
         txtLoyaltyLevel.setAlignmentX(LEFT_ALIGNMENT);
         txtLoyaltyLevel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         form.add(txtLoyaltyLevel);
@@ -139,7 +139,7 @@ public class CustomerForm extends JPanel {
         form.add(createFieldLabel("Điểm Tích Lũy"));
         txtLoyaltyPoints = createField("0");
         txtLoyaltyPoints.setEditable(false);
-        txtLoyaltyPoints.setBackground(new Color(243, 244, 246));
+        txtLoyaltyPoints.setBackground(BG_PANEL);
         txtLoyaltyPoints.setAlignmentX(LEFT_ALIGNMENT);
         txtLoyaltyPoints.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         form.add(txtLoyaltyPoints);

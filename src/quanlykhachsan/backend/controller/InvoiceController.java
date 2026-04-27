@@ -1,6 +1,7 @@
 package quanlykhachsan.backend.controller;
 
 import com.google.gson.Gson;
+import quanlykhachsan.backend.utils.JsonUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
@@ -13,7 +14,7 @@ import quanlykhachsan.backend.model.Invoice;
 
 public class InvoiceController implements HttpHandler {
     private final InvoiceDAO invoiceDAO = new InvoiceDAOImpl();
-    private final Gson gson = new Gson();
+    private final Gson gson = JsonUtil.getGson();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {

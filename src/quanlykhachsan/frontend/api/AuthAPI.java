@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.model.User;
 import quanlykhachsan.frontend.utils.HttpUtil;
+import quanlykhachsan.frontend.utils.JsonUtil;
 
 public class AuthAPI {
 
@@ -14,13 +15,13 @@ public class AuthAPI {
 
         String jsonResponse;
         try {
-            jsonResponse = HttpUtil.sendPost("/auth/login", new Gson().toJson(req));
+            jsonResponse = HttpUtil.sendPost("/auth/login", JsonUtil.getGson().toJson(req));
         } catch (java.net.ConnectException ex) {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused). Server đã được bật chưa?");
         }
         
         // Parse response
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         if (resObj != null) {
             if ("success".equals(resObj.get("status").getAsString())) {
                 JsonObject dataObj = resObj.getAsJsonObject("data");
@@ -57,7 +58,7 @@ public class AuthAPI {
 
         String jsonResponse;
         try {
-            jsonResponse = HttpUtil.sendPost("/auth/register", new Gson().toJson(req));
+            jsonResponse = HttpUtil.sendPost("/auth/register", JsonUtil.getGson().toJson(req));
         } catch (java.net.ConnectException ex) {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused). Server đã được bật chưa?");
         }

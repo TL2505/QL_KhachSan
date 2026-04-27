@@ -2,6 +2,7 @@ package quanlykhachsan.backend.controller;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.JsonUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import quanlykhachsan.backend.model.Message;
@@ -18,7 +19,7 @@ import java.util.HashMap;
 
 public class ChatController implements HttpHandler {
     private ChatService chatService = new ChatService();
-    private Gson gson = new Gson();
+    private Gson gson = JsonUtil.getGson();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {

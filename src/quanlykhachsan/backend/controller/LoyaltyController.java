@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.model.Customer;
 import quanlykhachsan.backend.model.LoyaltyHistory;
 import quanlykhachsan.backend.service.CustomerService;
@@ -24,7 +25,7 @@ public class LoyaltyController implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
-        Gson gson = new Gson();
+        Gson gson = JsonUtil.getGson();
 
         if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
 

@@ -275,15 +275,46 @@ public class RoomForm extends JPanel {
 
         card.add(inner, BorderLayout.CENTER);
 
-        // Click logic... (same as before)
+        // ── Status-based interaction tooltip ──
+        String tooltip = null;
+        switch (room.getStatus().toLowerCase()) {
+            case "available": tooltip = "Nhấn để đặt phòng cho khách"; break;
+            case "booked":    tooltip = "Nhấn để xác nhận nhận phòng (Check-in)"; break;
+            case "occupied":  tooltip = "Nhấn để trả phòng & thanh toán (Check-out)"; break;
+        }
+        if (tooltip != null) card.setToolTipText(tooltip);
+
+        // Click logic
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (currentUser.getRoleId() == 3) {
+                    // Khách hàng: xem chi tiết phòng
                     showRoomDetailDialog(room);
-                } else {
+                } else if (currentUser.getRoleId() == 1) {
+                    // Admin: chọn để đổi trạng thái
                     selectedRoom = room;
                     gridPanel.repaint();
+                } else {
+                    // Nhân viên (role 2): tương tác trực tiếp theo trạng thái
+                    String status = room.getStatus().toLowerCase();
+                    if (status.equals("available") || status.equals("booked") || status.equals("occupied") || status.equals("cleaning")) {
+                        Window w = SwingUtilities.getWindowAncestor(RoomForm.this);
+                        new RoomActionDialog(w, room, currentUser, () -> SwingUtilities.invokeLater(() -> loadRooms())).setVisible(true);
+                    } else {
+                        selectedRoom = room;
+                        gridPanel.repaint();
+                    }
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (currentUser.getRoleId() == 2) {
+                    String st = room.getStatus().toLowerCase();
+                    if (st.equals("available") || st.equals("booked") || st.equals("occupied")) {
+                        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                    }
                 }
             }
         });
