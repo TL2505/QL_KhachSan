@@ -6,7 +6,7 @@ import quanlykhachsan.frontend.utils.HttpUtil;
 import quanlykhachsan.frontend.utils.JsonUtil;
 import java.util.ArrayList;
 import java.util.List;
-import quanlykhachsan.backend.model.Invoice;
+import quanlykhachsan.backend.booking.Invoice;
 
 public class InvoiceAPI {
     private static final Gson gson = JsonUtil.getGson();

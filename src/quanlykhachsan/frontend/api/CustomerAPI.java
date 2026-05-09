@@ -8,7 +8,7 @@ import com.google.gson.JsonObject;
 import quanlykhachsan.frontend.utils.JsonUtil;
 import java.util.ArrayList;
 import java.util.List;
-import quanlykhachsan.backend.model.Customer;
+import quanlykhachsan.backend.customer.Customer;
 
 public class CustomerAPI {
 

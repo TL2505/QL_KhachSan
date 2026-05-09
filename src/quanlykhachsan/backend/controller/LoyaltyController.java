@@ -10,10 +10,10 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.utils.JsonUtil;
-import quanlykhachsan.backend.model.Customer;
-import quanlykhachsan.backend.model.LoyaltyHistory;
-import quanlykhachsan.backend.service.CustomerService;
-import quanlykhachsan.backend.service.LoyaltyService;
+import quanlykhachsan.backend.customer.Customer;
+import quanlykhachsan.backend.customer.LoyaltyHistory;
+import quanlykhachsan.backend.customer.CustomerService;
+import quanlykhachsan.backend.customer.LoyaltyService;
 import quanlykhachsan.backend.utils.SecurityUtil;
 
 public class LoyaltyController implements HttpHandler {

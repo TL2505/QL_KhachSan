@@ -8,7 +8,7 @@ import java.awt.geom.RoundRectangle2D;
 import quanlykhachsan.frontend.api.AuthAPI;
 import quanlykhachsan.frontend.utils.SessionManagerUtil;
 import quanlykhachsan.frontend.utils.ThemeManager;
-import quanlykhachsan.backend.model.User;
+import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.MainUI;
 
 public class LoginForm extends JFrame {

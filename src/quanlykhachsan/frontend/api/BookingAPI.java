@@ -8,7 +8,7 @@ import com.google.gson.JsonElement;
 import quanlykhachsan.frontend.utils.JsonUtil;
 import java.util.ArrayList;
 import java.util.List;
-import quanlykhachsan.backend.model.Booking;
+import quanlykhachsan.backend.booking.Booking;
 
 public class BookingAPI {
 

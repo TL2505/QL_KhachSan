@@ -2,25 +2,25 @@ package quanlykhachsan.frontend;
 
 import javax.swing.*;
 import java.awt.*;
-import quanlykhachsan.backend.model.User;
-import quanlykhachsan.frontend.view.BookingForm;
-import quanlykhachsan.frontend.view.CustomerForm;
-import quanlykhachsan.frontend.view.PaymentForm;
-import quanlykhachsan.frontend.view.RoomForm;
+import quanlykhachsan.backend.user.User;
+import quanlykhachsan.frontend.view.staff.BookingForm;
+import quanlykhachsan.frontend.view.staff.CustomerForm;
+import quanlykhachsan.frontend.view.staff.PaymentForm;
+import quanlykhachsan.frontend.view.staff.RoomForm;
 import quanlykhachsan.frontend.view.LoginForm;
 import quanlykhachsan.frontend.view.ProfileForm;
-import quanlykhachsan.frontend.view.PersonnelForm;
-import quanlykhachsan.frontend.view.ReportForm;
-import quanlykhachsan.frontend.view.InvoiceForm;
+import quanlykhachsan.frontend.view.admin.PersonnelForm;
+import quanlykhachsan.frontend.view.admin.ReportForm;
+import quanlykhachsan.frontend.view.staff.InvoiceForm;
 import quanlykhachsan.frontend.utils.ThemeManager;
-import quanlykhachsan.frontend.view.PromotionForm;
-import quanlykhachsan.frontend.view.CustomerPromotionView;
-import quanlykhachsan.frontend.view.AdminDashboard;
-import quanlykhachsan.frontend.view.ReviewManagementForm;
-import quanlykhachsan.frontend.view.CustomerDashboard;
-import quanlykhachsan.frontend.view.LoyaltyForm;
-import quanlykhachsan.frontend.view.RoomDiscoveryPanel;
-import quanlykhachsan.frontend.view.SupportManagementForm;
+import quanlykhachsan.frontend.view.admin.PromotionForm;
+import quanlykhachsan.frontend.view.customer.CustomerPromotionView;
+import quanlykhachsan.frontend.view.admin.AdminDashboard;
+import quanlykhachsan.frontend.view.staff.ReviewManagementForm;
+import quanlykhachsan.frontend.view.customer.CustomerDashboard;
+import quanlykhachsan.frontend.view.staff.LoyaltyForm;
+import quanlykhachsan.frontend.view.customer.RoomDiscoveryPanel;
+import quanlykhachsan.frontend.view.admin.SupportManagementForm;
 
 public class MainUI extends JFrame {
 

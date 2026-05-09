@@ -1,7 +1,7 @@
 package quanlykhachsan.backend;
 
-import quanlykhachsan.backend.controller.AuthController;
-import quanlykhachsan.backend.controller.InvoiceController;
+import quanlykhachsan.backend.auth.AuthController;
+import quanlykhachsan.backend.booking.InvoiceController;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -22,31 +22,31 @@ public class Main {
             server.createContext("/api/auth/login", new AuthController());
             server.createContext("/api/auth/register", new AuthController());
             // Route Quản lý phòng
-            server.createContext("/api/rooms", new quanlykhachsan.backend.controller.RoomController());
+            server.createContext("/api/rooms", new quanlykhachsan.backend.room.RoomController());
             // Route Hồ sơ người dùng
-            server.createContext("/api/users/update-profile", new quanlykhachsan.backend.controller.UserController());
-            server.createContext("/api/users/change-password", new quanlykhachsan.backend.controller.UserController());
-            server.createContext("/api/users/update-theme", new quanlykhachsan.backend.controller.UserController());
+            server.createContext("/api/users/update-profile", new quanlykhachsan.backend.user.UserController());
+            server.createContext("/api/users/change-password", new quanlykhachsan.backend.user.UserController());
+            server.createContext("/api/users/update-theme", new quanlykhachsan.backend.user.UserController());
             // Route Phân quyền (Roles) - PHẢI đăng ký TRƯỚC /api/users
-            server.createContext("/api/roles", new quanlykhachsan.backend.controller.UserController());
+            server.createContext("/api/roles", new quanlykhachsan.backend.user.UserController());
             // Route Quản lý nhân sự
-            server.createContext("/api/users", new quanlykhachsan.backend.controller.UserController());
+            server.createContext("/api/users", new quanlykhachsan.backend.user.UserController());
             // Route Báo cáo
-            server.createContext("/api/reports", new quanlykhachsan.backend.controller.ReportController());
+            server.createContext("/api/reports", new quanlykhachsan.backend.report.ReportController());
             // Route Khách hàng
-            server.createContext("/api/customers", new quanlykhachsan.backend.controller.CustomerController());
+            server.createContext("/api/customers", new quanlykhachsan.backend.customer.CustomerController());
             // Route Đặt phòng / Check-in / Check-out
-            server.createContext("/api/bookings", new quanlykhachsan.backend.controller.BookingController());
+            server.createContext("/api/bookings", new quanlykhachsan.backend.booking.BookingController());
             // Route Thanh toán (Payment)
-            server.createContext("/api/payments", new quanlykhachsan.backend.controller.PaymentController());
+            server.createContext("/api/payments", new quanlykhachsan.backend.booking.PaymentController());
             // Route Quản lý Hóa đơn
-            server.createContext("/api/invoices", new quanlykhachsan.backend.controller.InvoiceController());
+            server.createContext("/api/invoices", new quanlykhachsan.backend.booking.InvoiceController());
             // Route Đánh giá (Review)
-            server.createContext("/api/reviews", new quanlykhachsan.backend.controller.ReviewController());
+            server.createContext("/api/reviews", new quanlykhachsan.backend.interaction.ReviewController());
             // Route Chat
-            server.createContext("/api/chat", new quanlykhachsan.backend.controller.ChatController());
+            server.createContext("/api/chat", new quanlykhachsan.backend.interaction.ChatController());
             // Route Khuyến mãi (Promotion)
-            server.createContext("/api/promotions", new quanlykhachsan.backend.controller.PromotionController());
+            server.createContext("/api/promotions", new quanlykhachsan.backend.promotion.PromotionController());
             // Route Khách hàng thân thiết (Loyalty)
             server.createContext("/api/loyalty", new quanlykhachsan.backend.controller.LoyaltyController());
 

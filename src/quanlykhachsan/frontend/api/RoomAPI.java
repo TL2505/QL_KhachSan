@@ -8,8 +8,8 @@ import com.google.gson.JsonObject;
 import quanlykhachsan.frontend.utils.JsonUtil;
 import java.util.ArrayList;
 import java.util.List;
-import quanlykhachsan.backend.model.Room;
-import quanlykhachsan.backend.model.RoomType;
+import quanlykhachsan.backend.room.Room;
+import quanlykhachsan.backend.room.RoomType;
 
 public class RoomAPI {
 
