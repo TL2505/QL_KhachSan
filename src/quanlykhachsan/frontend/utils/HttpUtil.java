@@ -67,7 +67,14 @@ public class HttpUtil {
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("ngrok-skip-browser-warning", "true");
                 int code = conn.getResponseCode();
+                String ngrokError = conn.getHeaderField("Ngrok-Error-Code");
                 conn.disconnect();
+                
+                // Nếu ngrok trả về lỗi (ví dụ tunnel offline), bỏ qua URL này
+                if (ngrokError != null) {
+                    continue;
+                }
+
                 // Bất kỳ response HTTP hợp lệ nào (kể cả 404) đều chứng tỏ server đang chạy
                 if (code > 0) {
                     return true;

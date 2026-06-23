@@ -21,7 +21,13 @@ public class AuthAPI {
         }
         
         // Parse response
-        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj;
+        try {
+            resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
+        } catch (com.google.gson.JsonSyntaxException e) {
+            throw new Exception("Máy chủ phản hồi dữ liệu không hợp lệ. Vui lòng kiểm tra lại kết nối hoặc URL máy chủ.");
+        }
+        
         if (resObj != null) {
             if ("success".equals(resObj.get("status").getAsString())) {
                 JsonObject dataObj = resObj.getAsJsonObject("data");
@@ -63,7 +69,13 @@ public class AuthAPI {
             throw new Exception("Không thể kết nối Backend Server! (Connection Refused). Server đã được bật chưa?");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        JsonObject resObj;
+        try {
+            resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
+        } catch (com.google.gson.JsonSyntaxException e) {
+            throw new Exception("Máy chủ phản hồi dữ liệu không hợp lệ. Vui lòng kiểm tra lại kết nối hoặc URL máy chủ.");
+        }
+        
         if (resObj != null) {
             if ("success".equals(resObj.get("status").getAsString())) {
                 return resObj.get("message").getAsString();
