@@ -67,7 +67,13 @@ public class HttpUtil {
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("ngrok-skip-browser-warning", "true");
                 int code = conn.getResponseCode();
+                String ngrokError = conn.getHeaderField("Ngrok-Error-Code");
                 conn.disconnect();
+                // Nếu ngrok trả về lỗi (ví dụ tunnel offline), bỏ qua URL này
+                if (ngrokError != null) {
+                    continue;
+                }
+
                 // Chỉ chấp nhận response HTTP thành công (2xx) chứng tỏ server đang chạy
                 if (code >= 200 && code < 300) {
                     return true;

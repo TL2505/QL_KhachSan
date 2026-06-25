@@ -21,14 +21,14 @@ public class AuthAPI {
         }
         
         if (jsonResponse == null || jsonResponse.trim().isEmpty() || jsonResponse.trim().startsWith("<")) {
-            throw new Exception("Server chưa up");
+            throw new Exception("Máy chủ phản hồi dữ liệu không hợp lệ. Vui lòng kiểm tra lại kết nối hoặc URL máy chủ.");
         }
 
         JsonObject resObj;
         try {
             resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         } catch (Exception e) {
-            throw new Exception("Server chưa up");
+            throw new Exception("Máy chủ phản hồi dữ liệu không hợp lệ. Vui lòng kiểm tra lại kết nối hoặc URL máy chủ.");
         }
 
         if (resObj != null && resObj.has("status")) {
@@ -73,14 +73,14 @@ public class AuthAPI {
         }
         
         if (jsonResponse == null || jsonResponse.trim().isEmpty() || jsonResponse.trim().startsWith("<")) {
-            throw new Exception("Server chưa up");
+            throw new Exception("Máy chủ phản hồi dữ liệu không hợp lệ. Vui lòng kiểm tra lại kết nối hoặc URL máy chủ.");
         }
 
         JsonObject resObj;
         try {
             resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         } catch (Exception e) {
-            throw new Exception("Server chưa up");
+            throw new Exception("Máy chủ phản hồi dữ liệu không hợp lệ. Vui lòng kiểm tra lại kết nối hoặc URL máy chủ.");
         }
 
         if (resObj != null && resObj.has("status")) {
