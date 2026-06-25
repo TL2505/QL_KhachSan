@@ -12,8 +12,8 @@ public class Main {
             // Đảm bảo cấu trúc Database đã được tạo hoặc cập nhật đầy đủ
             quanlykhachsan.backend.utils.UpdateDbUtility.main(new String[] {});
 
-            // Khởi tạo Server lắng nghe tại cổng 8080
-            HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+            // Khởi tạo Server lắng nghe tại cổng 8081
+            HttpServer server = HttpServer.create(new InetSocketAddress(8081), 0);
 
             System.out.println("🚀 Đang khởi động Backend Server API...");
 
@@ -64,8 +64,8 @@ public class Main {
             server.setExecutor(null);
             server.start();
 
-            System.out.println("✅ Server đang chạy thành công tại: http://localhost:8080/");
-            System.out.println("👉 Hãy mở Postman và test API: POST http://localhost:8080/api/auth/login");
+            System.out.println("✅ Server đang chạy thành công tại: http://localhost:8081/");
+            System.out.println("👉 Hãy mở Postman và test API: POST http://localhost:8081/api/auth/login");
 
         } catch (IOException e) {
             System.err.println("❌ Lỗi khi khởi động Server: " + e.getMessage());

@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 
 public class HttpUtil {
 
-    private static final String LOCAL_URL  = "http://localhost:8080/api";
+    private static final String LOCAL_URL  = "http://localhost:8081/api";
     private static final String BASE_URL;
 
     static {

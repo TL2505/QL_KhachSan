@@ -13,12 +13,12 @@ public class DBconn {
     }
 
     private static final String HOST = getEnv("DB_HOST", "localhost");
-    private static final String PORT = getEnv("DB_PORT", "3307");
+    private static final String PORT = getEnv("DB_PORT", "3306");
     private static final String DB_NAME = getEnv("DB_NAME", "hotel_prod_db");
     
     private static final String URL = "jdbc:mysql://" + HOST + ":" + PORT + "/" + DB_NAME + "?useUnicode=true&characterEncoding=UTF-8";
     private static final String USER = getEnv("DB_USER", "root");
-    private static final String PASSWORD = getEnv("DB_PASSWORD", "rootpass");
+    private static final String PASSWORD = getEnv("DB_PASSWORD", "");
 
     public static Connection getConnection() throws SQLException {
         try {
