@@ -19,6 +19,16 @@ public class Main {
 
             // --- ĐĂNG KÝ CÁC ROUTE (API ENDPOINTS) TẠI ĐÂY ---
             // Route Đăng nhập và Đăng ký
+            server.createContext("/api/health", exchange -> {
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+                String response = "{\"status\":\"OK\"}";
+                byte[] bytes = response.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (java.io.OutputStream os = exchange.getResponseBody()) {
+                    os.write(bytes);
+                }
+            });
             server.createContext("/api/auth/login", new AuthController());
             server.createContext("/api/auth/register", new AuthController());
             // Route Quản lý phòng

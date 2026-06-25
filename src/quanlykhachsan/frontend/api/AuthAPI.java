@@ -17,12 +17,21 @@ public class AuthAPI {
         try {
             jsonResponse = HttpUtil.sendPost("/auth/login", JsonUtil.getGson().toJson(req));
         } catch (java.net.ConnectException ex) {
-            throw new Exception("Không thể kết nối Backend Server! (Connection Refused). Server đã được bật chưa?");
+            throw new Exception("Server chưa up");
         }
         
-        // Parse response
-        JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
-        if (resObj != null) {
+        if (jsonResponse == null || jsonResponse.trim().isEmpty() || jsonResponse.trim().startsWith("<")) {
+            throw new Exception("Server chưa up");
+        }
+
+        JsonObject resObj;
+        try {
+            resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
+        } catch (Exception e) {
+            throw new Exception("Server chưa up");
+        }
+
+        if (resObj != null && resObj.has("status")) {
             if ("success".equals(resObj.get("status").getAsString())) {
                 JsonObject dataObj = resObj.getAsJsonObject("data");
                 User user = new User();
@@ -45,7 +54,7 @@ public class AuthAPI {
                 throw new Exception(resObj.get("message").getAsString());
             }
         }
-        throw new Exception("Phản hồi cấu trúc JSON từ máy chủ không xác định!");
+        throw new Exception("Server chưa up");
     }
 
     public static String register(User user) throws Exception {
@@ -60,17 +69,27 @@ public class AuthAPI {
         try {
             jsonResponse = HttpUtil.sendPost("/auth/register", JsonUtil.getGson().toJson(req));
         } catch (java.net.ConnectException ex) {
-            throw new Exception("Không thể kết nối Backend Server! (Connection Refused). Server đã được bật chưa?");
+            throw new Exception("Server chưa up");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
-        if (resObj != null) {
+        if (jsonResponse == null || jsonResponse.trim().isEmpty() || jsonResponse.trim().startsWith("<")) {
+            throw new Exception("Server chưa up");
+        }
+
+        JsonObject resObj;
+        try {
+            resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
+        } catch (Exception e) {
+            throw new Exception("Server chưa up");
+        }
+
+        if (resObj != null && resObj.has("status")) {
             if ("success".equals(resObj.get("status").getAsString())) {
                 return resObj.get("message").getAsString();
             } else {
                 throw new Exception(resObj.get("message").getAsString());
             }
         }
-        throw new Exception("Phản hồi cấu trúc JSON từ máy chủ không xác định!");
+        throw new Exception("Server chưa up");
     }
 }

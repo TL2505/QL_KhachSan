@@ -68,8 +68,8 @@ public class HttpUtil {
                 conn.setRequestProperty("ngrok-skip-browser-warning", "true");
                 int code = conn.getResponseCode();
                 conn.disconnect();
-                // Bất kỳ response HTTP hợp lệ nào (kể cả 404) đều chứng tỏ server đang chạy
-                if (code > 0) {
+                // Chỉ chấp nhận response HTTP thành công (2xx) chứng tỏ server đang chạy
+                if (code >= 200 && code < 300) {
                     return true;
                 }
             } catch (Exception ignored) {
