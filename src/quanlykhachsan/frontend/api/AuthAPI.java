@@ -2,8 +2,9 @@ package quanlykhachsan.frontend.api;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import quanlykhachsan.backend.model.User;
+import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.utils.HttpUtil;
+import quanlykhachsan.frontend.utils.JsonUtil;
 
 public class AuthAPI {
 
@@ -14,14 +15,23 @@ public class AuthAPI {
 
         String jsonResponse;
         try {
-            jsonResponse = HttpUtil.sendPost("/auth/login", new Gson().toJson(req));
+            jsonResponse = HttpUtil.sendPost("/auth/login", JsonUtil.getGson().toJson(req));
         } catch (java.net.ConnectException ex) {
-            throw new Exception("Không thể kết nối Backend Server! (Connection Refused). Server đã được bật chưa?");
+            throw new Exception("Server chưa up");
         }
         
-        // Parse response
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
-        if (resObj != null) {
+        if (jsonResponse == null || jsonResponse.trim().isEmpty() || jsonResponse.trim().startsWith("<")) {
+            throw new Exception("Máy chủ phản hồi dữ liệu không hợp lệ. Vui lòng kiểm tra lại kết nối hoặc URL máy chủ.");
+        }
+
+        JsonObject resObj;
+        try {
+            resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
+        } catch (Exception e) {
+            throw new Exception("Máy chủ phản hồi dữ liệu không hợp lệ. Vui lòng kiểm tra lại kết nối hoặc URL máy chủ.");
+        }
+
+        if (resObj != null && resObj.has("status")) {
             if ("success".equals(resObj.get("status").getAsString())) {
                 JsonObject dataObj = resObj.getAsJsonObject("data");
                 User user = new User();
@@ -44,7 +54,7 @@ public class AuthAPI {
                 throw new Exception(resObj.get("message").getAsString());
             }
         }
-        throw new Exception("Phản hồi cấu trúc JSON từ máy chủ không xác định!");
+        throw new Exception("Server chưa up");
     }
 
     public static String register(User user) throws Exception {
@@ -57,19 +67,29 @@ public class AuthAPI {
 
         String jsonResponse;
         try {
-            jsonResponse = HttpUtil.sendPost("/auth/register", new Gson().toJson(req));
+            jsonResponse = HttpUtil.sendPost("/auth/register", JsonUtil.getGson().toJson(req));
         } catch (java.net.ConnectException ex) {
-            throw new Exception("Không thể kết nối Backend Server! (Connection Refused). Server đã được bật chưa?");
+            throw new Exception("Server chưa up");
         }
         
-        JsonObject resObj = new Gson().fromJson(jsonResponse, JsonObject.class);
-        if (resObj != null) {
+        if (jsonResponse == null || jsonResponse.trim().isEmpty() || jsonResponse.trim().startsWith("<")) {
+            throw new Exception("Máy chủ phản hồi dữ liệu không hợp lệ. Vui lòng kiểm tra lại kết nối hoặc URL máy chủ.");
+        }
+
+        JsonObject resObj;
+        try {
+            resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
+        } catch (Exception e) {
+            throw new Exception("Máy chủ phản hồi dữ liệu không hợp lệ. Vui lòng kiểm tra lại kết nối hoặc URL máy chủ.");
+        }
+
+        if (resObj != null && resObj.has("status")) {
             if ("success".equals(resObj.get("status").getAsString())) {
                 return resObj.get("message").getAsString();
             } else {
                 throw new Exception(resObj.get("message").getAsString());
             }
         }
-        throw new Exception("Phản hồi cấu trúc JSON từ máy chủ không xác định!");
+        throw new Exception("Server chưa up");
     }
 }

@@ -1,0 +1,23 @@
+name: Deploy to Local Linux VM
+
+on:
+  push:
+    branches:
+      - refactor/restructure-project
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy with Docker Compose
+        run: |
+          # Hạ hệ thống cũ xuống trước (tùy chọn nhưng an toàn để làm mới mạng)
+          docker compose down
+          # Khởi động và build lại hệ thống mới
+          docker compose up -d --build

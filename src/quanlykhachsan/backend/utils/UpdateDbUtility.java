@@ -1,49 +1,56 @@
 package quanlykhachsan.backend.utils;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
+/**
+ * UpdateDbUtility - Chạy khi server khởi động để đảm bảo
+ * cấu trúc Database luôn đồng bộ với code (auto-migration).
+ *
+ * Mỗi ALTER TABLE đều kiểm tra trước khi thêm → an toàn khi chạy nhiều lần.
+ */
 public class UpdateDbUtility {
+
     public static void main(String[] args) {
-        String[] sqlCommands = {
-            "ALTER TABLE users ADD COLUMN full_name VARCHAR(100) NULL AFTER status",
-            "ALTER TABLE users ADD COLUMN email VARCHAR(100) NULL AFTER full_name",
-            "ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER email",
-            "ALTER TABLE users MODIFY status VARCHAR(50) DEFAULT 'active'",
-            "UPDATE users SET full_name = 'Administrator', email = 'admin@hotel.com', phone = '0987654321', password = '$2a$10$EUiC6sIZD/Un75n20QIKjO3r5xP2eVJ4AB0ZNr/E0guhBY5GyzbFG' WHERE username = 'admin_main'",
-            "UPDATE users SET full_name = 'Nguyen Van A', email = 'nva@hotel.com', phone = '0123456789' WHERE username = 'staff_01'",
-            "ALTER TABLE bookings MODIFY status VARCHAR(50) DEFAULT 'pending'",
-            "ALTER TABLE payments MODIFY payment_method VARCHAR(50) NOT NULL",
-            "ALTER TABLE payments DROP FOREIGN KEY fk_payments_invoices",
-            "ALTER TABLE users DROP COLUMN theme_preference",
-            "CREATE TABLE IF NOT EXISTS messages (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "sender_id INT, " +
-                "receiver_id INT NULL, " +
-                "content TEXT, " +
-                "is_read BOOLEAN DEFAULT FALSE, " +
-                "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                "FOREIGN KEY (sender_id) REFERENCES users(id), " +
-                "FOREIGN KEY (receiver_id) REFERENCES users(id)" +
-            ") ENGINE=InnoDB",
-            "ALTER TABLE messages MODIFY receiver_id INT NULL"
-        };
+        System.out.println("[UpdateDbUtility] Bắt đầu kiểm tra và cập nhật cấu trúc Database...");
+        try (Connection conn = DBconn.getConnection()) {
+            ensureColumn(conn, "bookings", "customer_type",
+                    "VARCHAR(50) NOT NULL DEFAULT 'individual'");
+            ensureColumn(conn, "bookings", "check_out_actual",
+                    "DATETIME NULL DEFAULT NULL");
+            ensureColumn(conn, "users", "theme",
+                    "VARCHAR(20) NOT NULL DEFAULT 'light'");
+            System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra xong.");
+        } catch (SQLException e) {
+            System.err.println("[UpdateDbUtility] ✘ Lỗi kết nối Database: " + e.getMessage());
+            // Không ném exception — server vẫn tiếp tục khởi động
+        }
+    }
 
-        try (Connection con = DBconn.getConnection();
-                Statement st = con.createStatement()) {
-
-            for (String sql : sqlCommands) {
-                try {
-                    st.executeUpdate(sql);
-                    System.out.println("Thực thi thành công: " + sql);
-                } catch (Exception e) {
-                    System.err.println("Bỏ qua lỗi (có thể đã chạy rồi): " + e.getMessage());
+    /**
+     * Thêm cột vào bảng nếu chưa tồn tại.
+     *
+     * @param conn       Connection tới DB
+     * @param table      Tên bảng
+     * @param column     Tên cột cần thêm
+     * @param definition Kiểu dữ liệu và ràng buộc (VD: "VARCHAR(50) NOT NULL DEFAULT 'x'")
+     */
+    private static void ensureColumn(Connection conn, String table, String column, String definition)
+            throws SQLException {
+        DatabaseMetaData meta = conn.getMetaData();
+        try (ResultSet rs = meta.getColumns(null, null, table, column)) {
+            if (rs.next()) {
+                System.out.println("[UpdateDbUtility]   ✓ Cột `" + table + "." + column + "` đã tồn tại.");
+            } else {
+                String sql = "ALTER TABLE `" + table + "` ADD COLUMN `" + column + "` " + definition;
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.executeUpdate(sql);
+                    System.out.println("[UpdateDbUtility]   ➕ Đã thêm cột `" + table + "." + column + "`.");
                 }
             }
-            System.out.println("Cấu trúc Database đã được mở rộng!");
-        } catch (Exception e) {
-            System.err.println("Lỗi kết nối Database: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 }

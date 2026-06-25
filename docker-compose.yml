@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # 1. Trung tâm Dữ liệu
+  db:
+    image: mariadb:11
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: hotel_prod_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/hotel.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  # 2. Công cụ quản lý DB qua Web
+  adminer:
+    image: adminer
+    ports:
+      - "8082:8080"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  # 3. Backend API Server (Vừa mới thêm vào)
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # Báo cho Backend biết là phải trỏ vào dịch vụ 'db' thay vì localhost
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=rootpass
+      - DB_NAME=hotel_prod_db
+    ports:
+      - "8081:8080" # Map cổng 8081 ra ngoài Linux, bên trong chạy 8080
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  db_data:

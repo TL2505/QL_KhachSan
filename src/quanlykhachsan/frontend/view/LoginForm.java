@@ -8,7 +8,7 @@ import java.awt.geom.RoundRectangle2D;
 import quanlykhachsan.frontend.api.AuthAPI;
 import quanlykhachsan.frontend.utils.SessionManagerUtil;
 import quanlykhachsan.frontend.utils.ThemeManager;
-import quanlykhachsan.backend.model.User;
+import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.MainUI;
 
 public class LoginForm extends JFrame {
@@ -33,7 +33,7 @@ public class LoginForm extends JFrame {
 
     public LoginForm() {
         setTitle("Đăng nhập - Hệ thống Quản lý Khách sạn");
-        setSize(480, 580);
+        setSize(480, 640);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -121,6 +121,7 @@ public class LoginForm extends JFrame {
         lblError.setForeground(ERROR_COLOR);
         lblError.setAlignmentX(LEFT_ALIGNMENT);
         lblError.setBorder(new EmptyBorder(3, 8, 3, 8));
+        // Remove fixed sizes to let HTML content determine the height
 
         JLabel lblUsername = new JLabel("Tên đăng nhập");
         lblUsername.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -310,7 +311,8 @@ public class LoginForm extends JFrame {
     }
 
     private void showError(String msg) {
-        lblError.setText("\u26A0 " + msg);
+        // Use HTML for text wrapping to prevent UI breakage
+        lblError.setText("<html><body style='width: 320px'>\u26A0 " + msg + "</body></html>");
         lblError.setForeground(ERROR_COLOR);
     }
 
@@ -353,7 +355,7 @@ public class LoginForm extends JFrame {
                         txtPassword.requestFocus();
                     }
                 } catch (Exception ex) {
-                    showError(ex.getMessage() != null ? ex.getMessage() : "Lỗi kết nối đến máy chủ. Vui lòng thử lại!");
+                    showError(ex.getMessage() != null ? ex.getMessage() : "Lỗi hệ thống!");
                 }
             }
         };

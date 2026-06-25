@@ -92,10 +92,10 @@ public class ThemeManager {
         javax.swing.UIManager.put("OptionPane.textForeground", getTextMain());
         javax.swing.UIManager.put("Panel.background", getBgPanel());
 
-        // Custom ScrollBar UI globally
-        javax.swing.UIManager.put("ScrollBarUI", "quanlykhachsan.frontend.utils.ModernScrollBarUI");
-        javax.swing.UIManager.put("ScrollBar.background", getBgPanel());
-        javax.swing.UIManager.put("ScrollBar.thumb", getTextMuted());
+        // Use default FlatLaf modern scrollbars instead of custom ones which crash JComboBox
+        // javax.swing.UIManager.put("ScrollBarUI", "quanlykhachsan.frontend.utils.ModernScrollBarUI");
+        // javax.swing.UIManager.put("ScrollBar.background", getBgPanel());
+        // javax.swing.UIManager.put("ScrollBar.thumb", getTextMuted());
         
         // FlatLaf TitlePane coloring
         javax.swing.UIManager.put("TitlePane.background", getBgPanel());

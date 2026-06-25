@@ -8,7 +8,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
-import quanlykhachsan.backend.model.Promotion;
+import quanlykhachsan.backend.promotion.Promotion;
 
 public class PromotionAPI {
     private static final Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();

@@ -1,7 +1,7 @@
 package quanlykhachsan.frontend.api;
 
 import com.google.gson.reflect.TypeToken;
-import quanlykhachsan.backend.model.ServiceUsage;
+import quanlykhachsan.backend.hotelservice.ServiceUsage;
 import quanlykhachsan.frontend.utils.HttpUtil;
 
 import java.util.ArrayList;
