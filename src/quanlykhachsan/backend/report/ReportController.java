@@ -14,12 +14,12 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 
 public class ReportController implements HttpHandler {
@@ -46,7 +46,7 @@ public class ReportController implements HttpHandler {
         } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/reports/dashboard")) {
             handleGetDashboardData(exchange);
         } else {
-            sendJson(exchange, 404, buildError("Endpoint không tồn tại"));
+            ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Endpoint không tồn tại"));
         }
     }
 
@@ -55,10 +55,7 @@ public class ReportController implements HttpHandler {
             return;
 
         List<MonthlyRevenue> data = reportDAO.getMonthlyRevenue();
-        JsonObject res = new JsonObject();
-        res.addProperty("status", "success");
-        res.add("data", gson.toJsonTree(data));
-        sendJson(exchange, 200, res.toString());
+        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(data));
     }
 
     private void handleGetTodayStats(HttpExchange exchange) throws IOException {
@@ -66,10 +63,7 @@ public class ReportController implements HttpHandler {
             return;
 
         DailyStats stats = reportDAO.getDailyStats();
-        JsonObject res = new JsonObject();
-        res.addProperty("status", "success");
-        res.add("data", gson.toJsonTree(stats));
-        sendJson(exchange, 200, res.toString());
+        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(stats));
     }
 
     private void handleGetActiveAccounts(HttpExchange exchange) throws IOException {
@@ -77,18 +71,7 @@ public class ReportController implements HttpHandler {
             return;
 
         int activeCount = reportDAO.getActiveAccountCount();
-        JsonObject res = new JsonObject();
-        res.addProperty("status", "success");
-        res.addProperty("data", activeCount);
-        sendJson(exchange, 200, res.toString());
-    }
-
-    private void sendJson(HttpExchange exchange, int statusCode, String json) throws IOException {
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        exchange.sendResponseHeaders(statusCode, bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-        }
+        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(activeCount));
     }
 
     private void handleGetDashboardData(HttpExchange exchange) throws IOException {
@@ -98,21 +81,10 @@ public class ReportController implements HttpHandler {
         try (Reader reader = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)) {
             DashboardFilter filter = gson.fromJson(reader, DashboardFilter.class);
             DashboardData data = reportDAO.getDashboardData(filter);
-            
-            JsonObject res = new JsonObject();
-            res.addProperty("status", "success");
-            res.add("data", gson.toJsonTree(data));
-            sendJson(exchange, 200, res.toString());
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(data));
         } catch (Exception e) {
             e.printStackTrace();
-            sendJson(exchange, 500, buildError("Lỗi xử lý dữ liệu Dashboard"));
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi xử lý dữ liệu Dashboard"));
         }
-    }
-
-    private String buildError(String msg) {
-        JsonObject obj = new JsonObject();
-        obj.addProperty("status", "error");
-        obj.addProperty("message", msg);
-        return gson.toJson(obj);
     }
 }

@@ -2,6 +2,7 @@ package quanlykhachsan.backend.interaction;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -40,7 +41,7 @@ public class ChatController implements HttpHandler {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            sendJson(exchange, 500, "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error(e.getMessage()));
         }
     }
 
@@ -50,7 +51,7 @@ public class ChatController implements HttpHandler {
         Message msg = gson.fromJson(body, Message.class);
 
         chatService.sendMessage(msg);
-        sendJson(exchange, 200, "{\"status\": \"success\", \"message\": \"Zent!\"}");
+        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Zent!"));
     }
 
     private void handleGetHistory(HttpExchange exchange) throws IOException {
@@ -77,7 +78,7 @@ public class ChatController implements HttpHandler {
         int readerId = obj.get("readerId").getAsInt();
         
         chatService.markAsRead(0, readerId); // 0 as placeholder for conversationId
-        sendJson(exchange, 200, "{\"status\": \"success\"}");
+        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success(null));
     }
 
     private Map<String, String> getQueryParams(String query) {
@@ -91,19 +92,6 @@ public class ChatController implements HttpHandler {
     }
 
     private void sendSuccess(HttpExchange exchange, Object data) throws IOException {
-        JsonObject res = new JsonObject();
-        res.addProperty("status", "success");
-        res.add("data", gson.toJsonTree(data));
-        sendJson(exchange, 200, res.toString());
-    }
-
-    private void sendJson(HttpExchange exchange, int statusCode, String json) throws IOException {
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.sendResponseHeaders(statusCode, bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-        }
+        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(data));
     }
 }

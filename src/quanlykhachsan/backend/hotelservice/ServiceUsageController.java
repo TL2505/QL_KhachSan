@@ -1,6 +1,7 @@
 package quanlykhachsan.backend.hotelservice;
 
 import com.google.gson.Gson;
+import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -28,38 +29,30 @@ public class ServiceUsageController implements HttpHandler {
                 String query = exchange.getRequestURI().getQuery();
                 if (query != null && query.contains("bookingId=")) {
                     int bookingId = Integer.parseInt(query.split("=")[1]);
-                    String response = gson.toJson(usageDAO.getUsageByBookingId(bookingId));
-                    sendResponse(exchange, 200, response);
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(usageDAO.getUsageByBookingId(bookingId)));
                 } else {
-                    sendResponse(exchange, 400, "{\"error\": \"Missing bookingId parameter\"}");
+                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Missing bookingId parameter"));
                 }
             } else if ("POST".equals(method)) {
                 ServiceUsage u = gson.fromJson(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8), ServiceUsage.class);
                 usageDAO.addServiceUsage(u);
-                sendResponse(exchange, 201, "{\"message\": \"Service added to booking\"}");
+                ApiResponseUtil.write(exchange, 201, ApiResponseUtil.success("Service added to booking"));
             } else if ("DELETE".equals(method)) {
                 String[] parts = path.split("/");
                 if (parts.length > 3) {
                     int id = Integer.parseInt(parts[3]);
                     usageDAO.deleteServiceUsage(id);
-                    sendResponse(exchange, 200, "{\"message\": \"Service usage removed\"}");
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Service usage removed"));
                 } else {
-                    sendResponse(exchange, 400, "{\"error\": \"Missing ID\"}");
+                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Missing ID"));
                 }
             } else {
-                sendResponse(exchange, 405, "{\"error\": \"Method not allowed\"}");
+                ApiResponseUtil.write(exchange, 405, ApiResponseUtil.error("Method not allowed"));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Internal server error"));
         }
     }
 
-    private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
-        byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
-        exchange.sendResponseHeaders(statusCode, bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-        }
-    }
 }

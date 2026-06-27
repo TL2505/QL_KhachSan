@@ -17,6 +17,7 @@ import java.sql.*;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 
 public class UserController implements HttpHandler {
@@ -63,13 +64,13 @@ public class UserController implements HttpHandler {
             int userId = Integer.parseInt(pathInfo.substring(1));
             handleDeleteUser(exchange, userId);
         } else {
-            sendJson(exchange, 404, buildError("Endpoint không tồn tại"));
+            ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Endpoint không tồn tại"));
         }
     }
 
     private void handleProfileActions(HttpExchange exchange, String path) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod()) && !"PUT".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendJson(exchange, 405, buildError("Method Not Allowed"));
+            ApiResponseUtil.write(exchange, 405, ApiResponseUtil.error("Method Not Allowed"));
             return;
         }
         InputStream is = exchange.getRequestBody();
@@ -81,10 +82,7 @@ public class UserController implements HttpHandler {
         String username = reqObj.has("username") ? reqObj.get("username").getAsString() : null;
 
         if (username == null) {
-            statusCode = 400;
-            resObj.addProperty("status", "error");
-            resObj.addProperty("message", "Thiếu username");
-            sendJson(exchange, statusCode, gson.toJson(resObj));
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu username"));
             return;
         }
 
@@ -96,8 +94,12 @@ public class UserController implements HttpHandler {
 
                 boolean success = authService.updateProfile(username, fullName, email, phone);
                 if (success) {
-                    resObj.addProperty("status", "success");
-                    resObj.addProperty("message", "Cập nhật hồ sơ thành công");
+                    if (success) {
+                        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Cập nhật hồ sơ thành công"));
+                    } else {
+                        ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi khi cập nhật hồ sơ"));
+                    }
+                    return;
                 } else {
                     statusCode = 500;
                     resObj.addProperty("status", "error");
@@ -122,7 +124,7 @@ public class UserController implements HttpHandler {
             resObj.addProperty("status", "error");
             resObj.addProperty("message", "Lỗi hệ thống: " + e.getMessage());
         }
-        sendJson(exchange, statusCode, gson.toJson(resObj));
+        ApiResponseUtil.write(exchange, statusCode, gson.toJson(resObj));
     }
 
     private void handleGetAllUsers(HttpExchange exchange) throws IOException {
@@ -132,18 +134,12 @@ public class UserController implements HttpHandler {
         for (User u : users) {
             u.setPassword("");
         }
-        JsonObject res = new JsonObject();
-        res.addProperty("status", "success");
-        res.add("data", gson.toJsonTree(users));
-        sendJson(exchange, 200, res.toString());
+        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(users));
     }
 
     private void handleGetAllRoles(HttpExchange exchange) throws IOException {
         List<quanlykhachsan.backend.user.Role> roles = userDAO.selectAllRoles();
-        JsonObject res = new JsonObject();
-        res.addProperty("status", "success");
-        res.add("data", gson.toJsonTree(roles));
-        sendJson(exchange, 200, res.toString());
+        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(roles));
     }
 
     private void handleAddUser(HttpExchange exchange) throws IOException {
@@ -154,12 +150,12 @@ public class UserController implements HttpHandler {
             User user = gson.fromJson(body, User.class);
 
             if (user.getUsername() == null || user.getPassword() == null || user.getRoleId() == 0) {
-                sendJson(exchange, 400, buildError("Thiếu thông tin bắt buộc (username, password, role_id)"));
+                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu thông tin bắt buộc (username, password, role_id)"));
                 return;
             }
 
             if (userDAO.findByUsername(user.getUsername()) != null) {
-                sendJson(exchange, 400, buildError("Tên đăng nhập đã tồn tại"));
+                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Tên đăng nhập đã tồn tại"));
                 return;
             }
 
@@ -183,12 +179,9 @@ public class UserController implements HttpHandler {
             }
             
             if (ok) {
-                JsonObject res = new JsonObject();
-                res.addProperty("status", "success");
-                res.addProperty("message", "Thêm người dùng thành công");
-                sendJson(exchange, 201, res.toString());
+                ApiResponseUtil.write(exchange, 201, ApiResponseUtil.success("Thêm người dùng thành công"));
             } else {
-                sendJson(exchange, 500, buildError("Thêm người dùng thất bại."));
+                ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Thêm người dùng thất bại."));
             }
         } catch (java.sql.SQLIntegrityConstraintViolationException e) {
             String dbMsg = e.getMessage().toLowerCase();
@@ -196,9 +189,9 @@ public class UserController implements HttpHandler {
             if (dbMsg.contains("username")) userMsg = "Tên đăng nhập đã tồn tại";
             else if (dbMsg.contains("identity_card") || dbMsg.contains("cccd")) userMsg = "Số CCCD/Passport đã được sử dụng";
             else userMsg += e.getMessage();
-            sendJson(exchange, 400, buildError(userMsg));
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error(userMsg));
         } catch (Exception e) {
-            sendJson(exchange, 500, buildError("Lỗi hệ thống: " + e.getMessage()));
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi hệ thống: " + e.getMessage()));
         }
     }
 
@@ -214,7 +207,7 @@ public class UserController implements HttpHandler {
             User existingUser = users.stream().filter(u -> u.getId() == userId).findFirst().orElse(null);
 
             if (existingUser == null) {
-                sendJson(exchange, 404, buildError("Không tìm thấy người dùng"));
+                ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy người dùng"));
                 return;
             }
 
@@ -248,19 +241,16 @@ public class UserController implements HttpHandler {
 
             userDAO.updateUser(existingUser);
 
-            JsonObject res = new JsonObject();
-            res.addProperty("status", "success");
-            res.addProperty("message", "Cập nhật người dùng thành công");
-            sendJson(exchange, 200, res.toString());
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Cập nhật người dùng thành công"));
         } catch (java.sql.SQLIntegrityConstraintViolationException e) {
             String dbMsg = e.getMessage().toLowerCase();
             String userMsg = "Dữ liệu bị trùng lặp: ";
             if (dbMsg.contains("username")) userMsg = "Tên đăng nhập đã tồn tại";
             else if (dbMsg.contains("identity_card") || dbMsg.contains("cccd")) userMsg = "Số CCCD/Passport đã được sử dụng";
             else userMsg += e.getMessage();
-            sendJson(exchange, 400, buildError(userMsg));
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error(userMsg));
         } catch (Exception e) {
-            sendJson(exchange, 500, buildError("Lỗi hệ thống: " + e.getMessage()));
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi hệ thống: " + e.getMessage()));
         }
     }
 
@@ -271,39 +261,22 @@ public class UserController implements HttpHandler {
         User existingUser = users.stream().filter(u -> u.getId() == userId).findFirst().orElse(null);
         
         if (existingUser == null) {
-            sendJson(exchange, 404, buildError("Không tìm thấy người dùng"));
+            ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy người dùng"));
             return;
         }
 
         try {
             userDAO.deleteUser(existingUser);
-            JsonObject res = new JsonObject();
-            res.addProperty("status", "success");
-            res.addProperty("message", "Xóa người dùng thành công");
-            sendJson(exchange, 200, res.toString());
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Xóa người dùng thành công"));
         } catch (Exception e) {
-            sendJson(exchange, 500, buildError("Lỗi hệ thống khi xóa: " + e.getMessage()));
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi hệ thống khi xóa: " + e.getMessage()));
         }
     }
 
-    private void sendJson(HttpExchange exchange, int statusCode, String json) throws IOException {
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        exchange.sendResponseHeaders(statusCode, bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-        }
-    }
-
-    private String buildError(String msg) {
-        JsonObject obj = new JsonObject();
-        obj.addProperty("status", "error");
-        obj.addProperty("message", msg);
-        return gson.toJson(obj);
-    }
 
     private void handleRegister(HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendJson(exchange, 405, buildError("Method Not Allowed"));
+            ApiResponseUtil.write(exchange, 405, ApiResponseUtil.error("Method Not Allowed"));
             return;
         }
         try {
@@ -329,12 +302,9 @@ public class UserController implements HttpHandler {
 
             boolean success = authService.registerCustomer(user, customer);
             if (success) {
-                JsonObject res = new JsonObject();
-                res.addProperty("status", "success");
-                res.addProperty("message", "Đăng ký thành công");
-                sendJson(exchange, 201, res.toString());
+                ApiResponseUtil.write(exchange, 201, ApiResponseUtil.success("Đăng ký thành công"));
             } else {
-                sendJson(exchange, 400, buildError("Đăng ký thất bại."));
+                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Đăng ký thất bại."));
             }
         } catch (java.sql.SQLIntegrityConstraintViolationException e) {
             String dbMsg = e.getMessage().toLowerCase();
@@ -342,9 +312,9 @@ public class UserController implements HttpHandler {
             if (dbMsg.contains("username")) userMsg = "Tên đăng nhập đã tồn tại";
             else if (dbMsg.contains("identity_card") || dbMsg.contains("cccd")) userMsg = "Số CCCD/Passport đã được sử dụng";
             else userMsg += e.getMessage();
-            sendJson(exchange, 400, buildError(userMsg));
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error(userMsg));
         } catch (Exception e) {
-            sendJson(exchange, 500, buildError("Lỗi hệ thống: " + e.getMessage()));
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi hệ thống: " + e.getMessage()));
         }
     }
 }
