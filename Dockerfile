@@ -17,7 +17,7 @@ RUN mkdir -p build/classes && \
     javac -encoding utf-8 -cp "lib/*:build/classes" -d build/classes @sources.txt
 
 # Mở cửa cho cổng 8080 (Cổng mà Backend của bạn đang lắng nghe)
-EXPOSE 8080
+EXPOSE 8081
 
 # Lệnh khởi động Server ngầm khi container chạy
 CMD ["java", "-cp", "lib/*:build/classes", "quanlykhachsan.backend.Main"]

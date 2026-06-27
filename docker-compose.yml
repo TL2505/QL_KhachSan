@@ -36,7 +36,7 @@ services:
       - DB_PASSWORD=rootpass
       - DB_NAME=hotel_prod_db
     ports:
-      - "8081:8080" # Map cổng 8081 ra ngoài Linux, bên trong chạy 8080
+      - "8081:8081" # Map cổng 8081 ra ngoài Linux, bên trong chạy 8080
     depends_on:
       - db
     restart: unless-stopped
