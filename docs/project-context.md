@@ -14,41 +14,40 @@ Bạn là một lập trình viên Java có kinh nghiệm, đang hỗ trợ xây
   - Thanh toán và hóa đơn
   - Phân quyền người dùng
 
-*Đây là đồ án sinh viên nhưng hướng tới mô hình gần thực tế.*
+*Đây là đồ án sinh viên nhưng hướng tới mô hình thực tế bằng cách áp dụng Containerization (Docker).*
 
 ---
 
 ## 2. Công nghệ sử dụng
 - **Ngôn ngữ:** Java
 - **IDE:** NetBeans
-- **Giao diện:** Java Swing
-- **Backend:** Java (Servlet hoặc Java Core REST)
+- **Giao diện (Frontend):** Java Swing (Desktop Application)
+- **Backend API:** Java Core REST (HttpServer)
 - **Kiến trúc:** MVC + RESTful API
-- **Database:** MySQL (XAMPP)
+- **Database:** MariaDB (Tương thích MySQL)
 - **Dữ liệu trao đổi:** JSON
+- **Môi trường Triển khai (Deployment):** Docker & Docker Compose
 
 ---
 
-## 3. Kiến trúc hệ thống (BẮT BUỘC)
-Hệ thống phải tuân thủ mô hình:
-- **View:** Java Swing (chỉ hiển thị UI)
-- **Controller:** REST API
-- **Service:** Xử lý nghiệp vụ
-- **DAO:** Truy vấn database
-- **Model:** Object Java
+## 3. Kiến trúc hệ thống
+Hệ thống tuân thủ mô hình Client-Server với việc tách biệt hoàn toàn Giao diện và Logic lõi:
+- **Client (View):** Ứng dụng Desktop Java Swing chạy trên máy cá nhân, gửi HTTP Request.
+- **Server (Backend API):** Chạy độc lập bên trong Docker Container (Cổng 8081).
+- **Service & DAO:** Xử lý nghiệp vụ và truy vấn CSDL bên trong Backend Server.
+- **Database:** Chạy trong Docker Container riêng biệt.
 
 **🔄 LUỒNG DỮ LIỆU:**
-`UI` → `API` → `Controller` → `Service` → `DAO` → `MySQL`
+`Java Swing UI` → `HTTP Request (REST API)` → `Controller` → `Service` → `DAO` → `MariaDB`
 
-**⚠️ NGUYÊN TẮC:**
-- Không để UI gọi DAO trực tiếp
-- Không viết logic trong UI
-- Không bỏ qua Service layer
+**⚠️ NGUYÊN TẮC BẮT BUỘC:**
+- Tách rời tuyệt đối: Không để UI gọi DAO trực tiếp, không cấu hình kết nối DB trong mã nguồn UI.
+- UI chỉ có nhiệm vụ hiển thị dữ liệu lấy từ API và bắt sự kiện người dùng.
 
 ---
 
 ## 4. Thiết kế Database (THEO FILE SQL ĐÃ CHO)
-Hệ thống sử dụng database gồm các bảng chính:
+Hệ thống sử dụng database `hotel_prod_db` gồm các bảng chính:
 
 - **Nhóm người dùng:** `roles`, `users`
 - **Nhóm phòng:** `room_types`, `rooms`
@@ -63,12 +62,18 @@ Hệ thống sử dụng database gồm các bảng chính:
 
 ---
 
-## 5. Phân chia PHASE phát triển
+## 5. Cấu trúc Triển khai Docker (CI/CD)
+Toàn bộ hạ tầng Backend được đóng gói bằng `docker-compose.yml` để dễ dàng mang đi deploy trên bất kỳ máy chủ nào (đặc biệt là Linux VM):
+- **`db` (MariaDB):** Chứa cơ sở dữ liệu. Map cổng `3307` ra ngoài.
+- **`adminer`:** Công cụ quản trị CSDL qua giao diện Web. Map cổng `8082` ra ngoài.
+- **`backend`:** Ứng dụng Java API Server. Đọc cấu hình từ file `.env` hoặc tham số môi trường (`DB_HOST=db`). Map cổng `8081` ra ngoài.
+
+---
+
+## 6. Phân chia PHASE phát triển
 
 ### 🟢 PHASE 1 (BẮT BUỘC - CORE)
 Sử dụng các bảng: `users`, `roles`, `rooms`, `customers`, `bookings`, `payments`.
-
-**Chức năng:**
 - Login / Logout
 - Xem phòng
 - Thêm khách
@@ -76,10 +81,8 @@ Sử dụng các bảng: `users`, `roles`, `rooms`, `customers`, `bookings`, `pa
 - Check-in / Check-out
 - Thanh toán cơ bản
 
-### 🔵 PHASE 2 (NÂNG CAO)
+### 🔵 PHASE 2 (NÂNG CAO - ĐÃ HOÀN THÀNH)
 Thêm các bảng: `room_types`, `services`, `service_usage`, `invoices`, cùng với chức năng `TRIGGER`.
-
-**Chức năng:**
 - Sơ đồ phòng (Room Grid)
 - Kiểm tra trùng lịch đặt phòng
 - CRM (Lịch sử khách hàng)
@@ -87,16 +90,13 @@ Thêm các bảng: `room_types`, `services`, `service_usage`, `invoices`, cùng 
 - Dịch vụ (Sử dụng dịch vụ)
 - Hóa đơn (Chốt tiền phòng và dịch vụ)
 
-### 🟠 PHASE 3 (LỰA CHỌN THÊM - OPTIONAL)
-Sử dụng thêm tính năng `VIEW` và phân quyền.
-
-**Chức năng:**
-- Báo cáo doanh thu (dựa trên view `view_monthly_revenue`)
-- Phân quyền (Role-based access dựa trên bảng `roles`)
+### 🟠 PHASE 3 (KIẾN TRÚC DOANH NGHIỆP - ĐÃ HOÀN THÀNH)
+- Dockerize hoàn toàn Backend và Database.
+- Ứng dụng Swing giao tiếp chuẩn mực với API nội bộ thông qua IP/Domain thay vì Localhost.
 
 ---
 
-## 6. Quy tắc nghiệp vụ (QUAN TRỌNG)
+## 7. Quy tắc nghiệp vụ (QUAN TRỌNG)
 - **Chỉ cho đặt phòng nếu:** `room.status = 'available'`
 - **Khi check-in:**
   - `room.status` → `occupied`
@@ -109,37 +109,13 @@ Sử dụng thêm tính năng `VIEW` và phân quyền.
 
 ---
 
-## 7. Quy ước dữ liệu
-
-**ENUM phải dùng đúng:**
-- **room.status:** `available`, `booked`, `occupied`, `maintenance`
-- **booking.status:** `pending`, `confirmed`, `checked_in`, `checked_out`, `cancelled`
-- **payment_method:** `cash`, `credit_card`, `bank_transfer`, `e_wallet`
-
-**Date format:** `YYYY-MM-DD` hoặc `DATETIME` MySQL
-
----
-
 ## 8. API chuẩn
-
-- **AUTH**
-  - `POST /api/auth/login`
-- **ROOM**
-  - `GET /api/rooms`
-  - `PUT /api/rooms/{id}/status`
-- **CUSTOMER**
-  - `POST /api/customers`
-  - `GET /api/customers`
-  - `GET /api/customers/{id}/bookings`
-- **BOOKING**
-  - `POST /api/bookings`
-  - `PUT /api/bookings/checkin/{id}`
-  - `PUT /api/bookings/checkout/{id}`
-- **SERVICE**
-  - `POST /api/service-usage`
-- **PAYMENT & INVOICE**
-  - `POST /api/payments`
-  - `GET /api/invoices/{bookingId}`
+- **AUTH**: `POST /api/auth/login`
+- **ROOM**: `GET /api/rooms`, `PUT /api/rooms/{id}/status`
+- **CUSTOMER**: `POST /api/customers`, `GET /api/customers`, `GET /api/customers/{id}/bookings`
+- **BOOKING**: `POST /api/bookings`, `PUT /api/bookings/checkin/{id}`, `PUT /api/bookings/checkout/{id}`
+- **SERVICE**: `POST /api/service-usage`
+- **PAYMENT & INVOICE**: `POST /api/payments`, `GET /api/invoices/{bookingId}`
 
 **Response JSON chuẩn:**
 ```json
@@ -158,23 +134,14 @@ Sử dụng thêm tính năng `VIEW` và phân quyền.
 - **Tên Hàm / Biến:** Bắt buộc camelCase. VD: `getRoomById()`, `roomList`.
 - **Tránh Conflict lặp file (Duplicate Class):**
   - Luôn `git pull` code mới thay vì code mù.
-  - Luôn kiểm tra (Search, Ctrl+N) xem Class đó (đặc biệt là Model và DAO) đã tồn tại chưa trước khi bấm New Class. 
-  - Nếu đã có thì sửa thêm vào chứ không tạo file trùng chức năng (ví dụ `room.java` bên cạnh `Room.java`).
+  - Luôn kiểm tra xem Class đó (đặc biệt là Model và DAO) đã tồn tại chưa trước khi bấm New Class. 
 - Code theo **OOP**.
 - KHÔNG hardcode SQL trong UI.
 
 ---
 
-## 10. Mục tiêu cuối cùng
-Tạo ra hệ thống:
-- Chạy được đầy đủ flow
-- Đúng kiến trúc MVC
-- Có thể demo mượt
-
----
-
-## 11. Yêu cầu khi trả lời (với tôi)
-- Luôn tuân thủ kiến trúc MVC + REST.
+## 10. Yêu cầu khi trả lời (với tôi)
+- Luôn tuân thủ kiến trúc MVC + REST API.
 - Code đơn giản, dễ hiểu, phù hợp trình độ sinh viên.
 - Không làm quá phức tạp.
 - **Luôn đảm bảo code KHỚP với database đã cho.** (Tương thích 100% với cấu trúc bảng, khóa ngoại, status,... của file SQL).

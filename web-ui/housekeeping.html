@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dọn Phòng - Housekeeping App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-warning mb-4 shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-dark" href="index.html">🧹 Housekeeping App</a>
+            <div class="d-flex align-items-center">
+                <a href="index.html" class="btn btn-sm btn-dark me-2">Quay lại Lễ tân</a>
+                <button class="btn btn-sm btn-outline-dark fw-bold" onclick="logout()">Đăng Xuất</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 600px;">
+        <h4 class="mb-4 text-center fw-bold">Danh sách phòng chờ dọn</h4>
+        
+        <div class="alert alert-warning border-0 shadow-sm">
+            Tích chọn vào phòng đã dọn xong để hệ thống tự động cập nhật trạng thái "Sẵn sàng đón khách" (Available).
+        </div>
+
+        <div id="housekeepingList" class="list-group shadow-sm mt-3">
+            <div class="text-center text-muted p-4">
+                <span class="spinner-border spinner-border-sm"></span> Đang kiểm tra phòng...
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const user = checkAuth();
+            if(user.roleId !== 2 && user.roleId !== 1) { // Staff hoặc Admin
+                alert("Bạn không có quyền dọn phòng!");
+                window.location.href = "login.html";
+            }
+            loadCleaningRooms();
+        });
+
+        async function loadCleaningRooms() {
+            const listDiv = document.getElementById("housekeepingList");
+            try {
+                const response = await fetchApi('/rooms', 'GET');
+                if (response.status === "success") {
+                    listDiv.innerHTML = ""; 
+                    let count = 0;
+                    response.data.forEach(room => {
+                        // Chỉ hiển thị phòng đang dọn hoặc bảo trì
+                        if (room.status === "cleaning" || room.status === "maintenance") {
+                            count++;
+                            const html = `
+                                <label class="list-group-item d-flex gap-3 py-3 align-items-center">
+                                    <input class="form-check-input flex-shrink-0" type="checkbox" style="font-size: 1.5em;" onchange="updateRoomStatus(${room.id}, this)">
+                                    <span class="pt-1 form-checked-content">
+                                        <strong class="d-block mb-1 text-primary">Phòng ${room.roomNumber}</strong>
+                                        <span class="badge bg-warning text-dark">${room.status.toUpperCase()}</span>
+                                    </span>
+                                </label>
+                            `;
+                            listDiv.insertAdjacentHTML('beforeend', html);
+                        }
+                    });
+                    if(count === 0) {
+                        listDiv.innerHTML = `<div class="p-4 text-center text-success fw-bold">Tất cả các phòng đều sạch sẽ!</div>`;
+                    }
+                }
+            } catch (error) {
+                listDiv.innerHTML = `<div class="p-4 text-center text-danger">Lỗi kết nối API!</div>`;
+            }
+        }
+
+        async function updateRoomStatus(roomId, checkbox) {
+            if(!checkbox.checked) return;
+            
+            checkbox.disabled = true;
+            try {
+                // Gọi API cập nhật status -> available (Giả định API hỗ trợ)
+                const res = await fetchApi(`/rooms/${roomId}/status`, 'PUT', { status: 'available' });
+                if(res.status === "success" || res.status === 200 || res.message) {
+                    alert(`Đã cập nhật Phòng ${roomId} thành Trống (Available)!`);
+                    checkbox.parentElement.style.display = 'none'; // Ẩn khỏi danh sách
+                } else {
+                    alert("Lỗi khi cập nhật!");
+                    checkbox.checked = false;
+                    checkbox.disabled = false;
+                }
+            } catch (e) {
+                alert("Lỗi kết nối Máy chủ!");
+                checkbox.checked = false;
+                checkbox.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt phòng Khách sạn - Customer Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success mb-4 shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">🏨 Đặt Phòng Trực Tuyến</a>
+            <div class="d-flex align-items-center text-light">
+                <span id="welcomeMessage" class="me-3 fw-bold"></span>
+                <button class="btn btn-sm btn-outline-light fw-bold" onclick="logout()">Đăng Xuất</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h3 class="mb-4 text-success fw-bold">Tìm phòng trống</h3>
+        
+        <div class="dashboard-card mb-5 border-top border-success border-4">
+            <form id="searchForm" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Ngày nhận phòng</label>
+                    <input type="date" class="form-control" id="checkin">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Ngày trả phòng</label>
+                    <input type="date" class="form-control" id="checkout">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="button" class="btn btn-success w-100 fw-bold" onclick="loadAvailableRooms()">Tìm Kiếm</button>
+                </div>
+            </form>
+        </div>
+
+        <h4 class="mb-3 text-dark fw-bold">Danh sách phòng khả dụng</h4>
+        <div id="roomList" class="row g-4">
+            <!-- Kết quả tìm kiếm sẽ được chèn vào đây -->
+            <div class="col-12 text-center text-muted">
+                <p>Vui lòng bấm Tìm Kiếm để xem phòng trống.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const user = checkAuth();
+            if(user.roleId !== 3) { // Chỉ Customer
+                alert("Đây là khu vực dành riêng cho Khách hàng!");
+                window.location.href = "login.html";
+            }
+            document.getElementById("welcomeMessage").textContent = `Xin chào, ${user.fullName || user.username}!`;
+        });
+
+        async function loadAvailableRooms() {
+            const listDiv = document.getElementById("roomList");
+            listDiv.innerHTML = `<div class="col-12 text-center"><span class="spinner-border spinner-border-sm text-success"></span> Đang tìm phòng...</div>`;
+            
+            try {
+                // Customer chỉ được Get danh sách phòng có status = available
+                const response = await fetchApi('/rooms', 'GET');
+                if (response.status === "success") {
+                    listDiv.innerHTML = ""; 
+                    let count = 0;
+                    response.data.forEach(room => {
+                        if (room.status === "available") {
+                            count++;
+                            const html = `
+                                <div class="col-md-4">
+                                    <div class="card shadow-sm h-100 border-0">
+                                        <div class="card-body text-center">
+                                            <h4 class="fw-bold text-success">Phòng ${room.roomNumber}</h4>
+                                            <p class="text-muted mb-2">Loại phòng: ${room.roomTypeName || 'Tiêu chuẩn'}</p>
+                                            <h5 class="text-danger fw-bold mb-3">${(room.price || 500000).toLocaleString('vi-VN')} ₫ / đêm</h5>
+                                            <button class="btn btn-outline-success w-100 fw-bold" onclick="alert('Chức năng Book phòng đang bảo trì!')">ĐẶT NGAY</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            listDiv.insertAdjacentHTML('beforeend', html);
+                        }
+                    });
+                    if(count === 0) {
+                        listDiv.innerHTML = `<div class="col-12 text-center text-danger fw-bold">Không có phòng trống trong thời gian này!</div>`;
+                    }
+                }
+            } catch (error) {
+                listDiv.innerHTML = `<div class="col-12 text-center text-danger">Lỗi lấy danh sách phòng!</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

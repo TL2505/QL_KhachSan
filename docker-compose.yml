@@ -41,5 +41,18 @@ services:
       - db
     restart: unless-stopped
 
+  # 4. Web Frontend Server (Nginx) phục vụ Kiểm thử Katalon
+  web-frontend:
+    image: nginx:alpine
+    container_name: hotel_web
+    ports:
+      - "80:80"
+    volumes:
+      - ./web-ui:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   db_data:
