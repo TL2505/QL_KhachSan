@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán Hóa đơn</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/shared/css/style.css">
+    <!-- Thư viện html2pdf để xuất Hóa đơn ra file PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        .invoice-panel {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+        .invoice-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+        .invoice-row.fw-bold {
+            font-size: 16px;
+        }
+        .loyalty-box {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        #qrCodeContainer img {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">🏨 Phân hệ Lễ tân</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="/staff/reception.html">Sơ đồ Phòng</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/staff/customers.html">Khách hàng</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/staff/rooms.html">Quản lý Phòng</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/staff/payment.html">Thanh toán</a></li>
+                </ul>
+            </div>
+            <div class="d-flex align-items-center text-light">
+                <span id="welcomeMessage" class="me-3"></span>
+                <button class="btn btn-sm btn-danger fw-bold" onclick="logout()">Đăng Xuất</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <!-- Khu vực 1: Danh sách Đơn đặt phòng -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold text-primary mb-0"><i class="fas fa-list me-2"></i>Danh sách chờ thanh toán</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="loadPaymentData()"><i class="fas fa-sync-alt"></i> Tải lại</button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">ID</th>
+                                        <th>Khách hàng</th>
+                                        <th>Phòng</th>
+                                        <th>Trạng thái</th>
+                                        <th class="pe-3"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentTableBody">
+                                    <tr><td colspan="5" class="text-center py-4">Đang tải dữ liệu...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Khu vực 2: Chi tiết Hóa đơn -->
+            <div class="col-lg-6 mb-4">
+                <div class="invoice-panel" id="invoicePreview">
+                    <h4 class="fw-bold text-primary mb-4 text-center border-bottom pb-3">CHI TIẾT HÓA ĐƠN</h4>
+                    
+                    <div id="invoiceContent">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-file-invoice-dollar fa-3x mb-3 text-light"></i>
+                            <p>Vui lòng chọn một đơn đặt phòng từ danh sách bên trái để tính tiền.</p>
+                        </div>
+                    </div>
+
+                    <!-- Khu vực Thanh toán (Ẩn mặc định) -->
+                    <div id="paymentActionSection" style="display: none; margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px;">
+                        <h6 class="fw-bold mb-3">Phương thức thanh toán:</h6>
+                        <select class="form-select mb-3" id="paymentMethod" onchange="toggleQR()">
+                            <option value="Tiền mặt (Cash)">Tiền mặt (Cash)</option>
+                            <option value="Chuyển khoản">Chuyển khoản (VietQR)</option>
+                            <option value="Thẻ tín dụng (Credit Card)">Thẻ tín dụng (Credit Card)</option>
+                        </select>
+
+                        <div id="qrCodeContainer" class="text-center mb-3" style="display:none;">
+                            <p class="text-muted small mb-2">Sử dụng App Ngân hàng để quét mã QR:</p>
+                            <img id="vietQrImg" src="" alt="Mã QR Chuyển Khoản" style="max-width: 250px;">
+                        </div>
+
+                        <button class="btn btn-success w-100 fw-bold py-2 mb-2" id="btnConfirmPay" onclick="processPayment()">XÁC NHẬN THANH TOÁN</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Xem trước Hóa Đơn PDF (Hiển thị sau khi thanh toán thành công) -->
+    <div class="modal fade" id="invoicePrintModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-check-circle me-2"></i>Thanh toán thành công</h5>
+                    <button type="button" class="btn-close btn-close-white" onclick="closePrintModal()"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <!-- Đây là nội dung HTML sẽ được convert sang PDF -->
+                    <div id="printableInvoice" class="bg-white p-5 border shadow-sm mx-auto" style="max-width: 700px; color: #000;">
+                        <!-- Nội dung hóa đơn sẽ được render bằng JS -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closePrintModal()">Đóng</button>
+                    <button type="button" class="btn btn-primary fw-bold" onclick="exportPDF()"><i class="fas fa-file-pdf me-2"></i>In Hóa đơn (PDF)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/shared/js/api.js"></script>
+    <script src="/staff/payment.js"></script>
+</body>
+</html>
