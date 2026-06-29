@@ -51,7 +51,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const user = checkAuth();
-            if(user.roleId !== 3) { // Chỉ Customer
+            if(user.role !== 'CUSTOMER') { // Chỉ Customer
                 alert("Đây là khu vực dành riêng cho Khách hàng!");
                 window.location.href = "login.html";
             }
