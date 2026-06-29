@@ -279,7 +279,7 @@ async function processPayment() {
             // Ghi chú: Desktop dùng LoyaltyAPI.redeemPoints(customerId, points, ...). 
             await fetchApi('/loyalty/redeem', 'POST', {
                 customerId: selectedBooking.customerId,
-                points: pointsToRedeem,
+                pointsToRedeem: pointsToRedeem,
                 discountAmount: redeemDiscount,
                 description: `Đổi điểm tại hóa đơn #${selectedBooking.id}`
             });
