@@ -118,7 +118,7 @@ public class BookingController implements HttpHandler {
                 
                 if (b != null) {
                     bookingService.updateBookingStatus(bookingId, "checked_out");
-                    roomService.updateRoomStatus(b.getRoomId(), "available");
+                    roomService.updateRoomStatus(b.getRoomId(), "cleaning"); // Đổi từ available sang cleaning
 
                     // Cộng điểm tích lũy cho khách hàng sau khi check-out
                     try {

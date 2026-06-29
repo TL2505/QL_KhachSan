@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý Lễ tân - Hệ Thống Khách Sạn</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/shared/css/style.css">
 </head>
 <body>
@@ -24,7 +25,27 @@
             <!-- Khu vực 1: Danh sách phòng -->
             <div class="col-md-8">
                 <div class="dashboard-card">
-                    <h4 class="fw-bold mb-4 text-primary">Sơ đồ Trạng thái Phòng</h4>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold text-primary mb-0">Sơ đồ Trạng thái Phòng</h4>
+                        
+                        <!-- Filter Bar -->
+                        <div class="d-flex gap-2">
+                            <select id="filterFloor" class="form-select form-select-sm w-auto" onchange="loadRooms()">
+                                <option value="all">Tất cả Tầng</option>
+                                <option value="1">Tầng 1</option>
+                                <option value="2">Tầng 2</option>
+                                <option value="3">Tầng 3</option>
+                            </select>
+                            <select id="filterStatus" class="form-select form-select-sm w-auto" onchange="loadRooms()">
+                                <option value="all">Tất cả Trạng thái</option>
+                                <option value="available">🟢 Trống</option>
+                                <option value="occupied">🔴 Đang ở</option>
+                                <option value="cleaning">🟡 Đang dọn</option>
+                                <option value="maintenance">🛠️ Bảo trì</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div id="roomList" class="row g-3">
                         <div class="col-12 text-center text-muted">
                             <span class="spinner-border spinner-border-sm"></span> Đang tải dữ liệu phòng...
@@ -58,7 +79,29 @@
         </div>
     </div>
 
+    <!-- Room Action Modal (Contextual) -->
+    <div class="modal fade" id="roomActionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold" id="roomModalTitle">Thông tin Phòng</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="roomModalContent">
+                        <div class="text-center text-muted"><span class="spinner-border spinner-border-sm"></span> Đang tải...</div>
+                    </div>
+                </div>
+                <div class="modal-footer" id="roomModalFooter">
+                    <!-- Các nút tương tác sẽ được JS render theo ngữ cảnh -->
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/shared/js/api.js"></script>
     <script src="/staff/reception.js"></script>
 </body>
