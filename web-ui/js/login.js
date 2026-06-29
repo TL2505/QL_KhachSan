@@ -28,11 +28,11 @@ document.addEventListener("DOMContentLoaded", function() {
                     localStorage.setItem("token", user.token || "dummy-token-123");
                     
                     // Phân quyền Điều hướng (RBAC Routing)
-                    if (user.roleId === 1) { // ADMIN
+                    if (user.role === 'ADMIN') { 
                         window.location.href = "admin.html";
-                    } else if (user.roleId === 3) { // CUSTOMER
+                    } else if (user.role === 'CUSTOMER') { 
                         window.location.href = "customer.html";
-                    } else { // STAFF (roleId = 2)
+                    } else { // STAFF
                         window.location.href = "index.html";
                     }
                 } else {

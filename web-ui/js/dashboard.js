@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function() {
     // 1. Kiểm tra đăng nhập
     const user = checkAuth();
-    document.getElementById("welcomeMessage").textContent = `Xin chào, ${user.fullName || user.username} (${user.roleId === 1 ? 'Admin' : 'Staff'})`;
+    document.getElementById("welcomeMessage").textContent = `Xin chào, ${user.fullName || user.username} (${user.role === 'ADMIN' ? 'Admin' : 'Staff'})`;
 
     // 2. Load danh sách phòng
     loadRooms();

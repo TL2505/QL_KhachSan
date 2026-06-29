@@ -37,7 +37,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const user = checkAuth();
-            if(user.roleId !== 2 && user.roleId !== 1) { // Staff hoặc Admin
+            if(user.role !== 'STAFF' && user.role !== 'ADMIN') { // Staff hoặc Admin
                 alert("Bạn không có quyền dọn phòng!");
                 window.location.href = "login.html";
             }

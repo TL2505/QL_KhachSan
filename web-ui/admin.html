@@ -59,7 +59,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const user = checkAuth();
-            if(user.roleId !== 1) { // Chỉ Admin mới được vào đây
+            if(user.role !== 'ADMIN') { // Chỉ Admin mới được vào đây
                 alert("Truy cập trái phép!");
                 window.location.href = "login.html";
             }
