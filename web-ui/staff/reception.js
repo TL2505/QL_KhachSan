@@ -175,7 +175,8 @@ async function openRoomModal(roomId, status, roomNumber) {
 
     // Nếu phòng Đang ở (Occupied) hoặc Đã đặt (Booked) -> Gọi API lấy Booking hiện tại
     try {
-        const res = await fetchApi(`/bookings/room/${roomId}`);
+        // Thêm timestamp để vô hiệu hóa Cache của trình duyệt (tránh lỗi hiển thị data cũ)
+        const res = await fetchApi(`/bookings/room/${roomId}?_t=${new Date().getTime()}`);
         if (res.status === "success" && res.data) {
             const b = res.data;
             const checkInDate = new Date(b.checkInDate).toLocaleDateString('vi-VN');
@@ -192,7 +193,7 @@ async function openRoomModal(roomId, status, roomNumber) {
             `;
 
             let actionBtn = "";
-            if (b.status === "booked" || b.status === "pending") {
+            if (b.status === "booked" || b.status === "pending" || b.status === "confirmed") {
                 actionBtn = `<button type="button" class="btn btn-success fw-bold" onclick="handleCheckIn(${b.id})">Check-in Khách</button>`;
             } else if (b.status === "checked_in") {
                 actionBtn = `<button type="button" class="btn btn-danger fw-bold" onclick="handleCheckOut(${b.id})">Thanh toán & Check-out</button>`;

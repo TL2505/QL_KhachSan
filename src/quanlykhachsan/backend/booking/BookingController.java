@@ -147,7 +147,7 @@ public class BookingController implements HttpHandler {
                 quanlykhachsan.backend.booking.Booking activeBooking = null;
                 for (quanlykhachsan.backend.booking.Booking b : bookingService.getAllBookings()) {
                     if (b.getRoomId() == roomId &&
-                        (b.getStatus().equals("checked_in") || b.getStatus().equals("booked") || b.getStatus().equals("pending"))) {
+                        (b.getStatus().equals("checked_in") || b.getStatus().equals("booked") || b.getStatus().equals("pending") || b.getStatus().equals("confirmed"))) {
                         activeBooking = b;
                         break;
                     }
