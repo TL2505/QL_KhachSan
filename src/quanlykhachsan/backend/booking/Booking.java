@@ -1,6 +1,8 @@
 package quanlykhachsan.backend.booking;
 
 import java.util.Date;
+import quanlykhachsan.backend.enums.BookingStatus;
+import com.google.gson.annotations.SerializedName;
 
 public class Booking {
     private int id;
@@ -9,20 +11,22 @@ public class Booking {
     private Date checkInDate;
     private Date checkOutDate;
     private double totalPrice;
-    private String status;
+    
+    @SerializedName("status")
+    private BookingStatus statusEnum;
     private Date createdAt;
 
     public Booking() {
     }
 
-    public Booking(int id, int customerId, int roomId, Date checkInDate, Date checkOutDate, double totalPrice, String status) {
+    public Booking(int id, int customerId, int roomId, Date checkInDate, Date checkOutDate, double totalPrice, BookingStatus statusEnum) {
         this.id = id;
         this.customerId = customerId;
         this.roomId = roomId;
         this.checkInDate = checkInDate;
         this.checkOutDate = checkOutDate;
         this.totalPrice = totalPrice;
-        this.status = status;
+        this.statusEnum = statusEnum;
     }
 
     public int getId() { return id; }
@@ -37,8 +41,14 @@ public class Booking {
     public void setCheckOutDate(Date checkOutDate) { this.checkOutDate = checkOutDate; }
     public double getTotalPrice() { return totalPrice; }
     public void setTotalPrice(double totalPrice) { this.totalPrice = totalPrice; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    
+    // Core Enum Methods
+    public BookingStatus getStatusEnum() { return statusEnum; }
+    public void setStatusEnum(BookingStatus statusEnum) { this.statusEnum = statusEnum; }
+
+    // Backward Compatibility for Swing UI (Returns String)
+    public String getStatus() { return statusEnum != null ? statusEnum.name().toLowerCase() : null; }
+    public void setStatus(String status) { this.statusEnum = BookingStatus.fromString(status); }
 
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }

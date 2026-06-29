@@ -10,6 +10,8 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.InputStreamReader;
+import quanlykhachsan.backend.enums.BookingStatus;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -146,8 +148,8 @@ public class BookingController implements HttpHandler {
                 // Find the active booking for this room (checked_in, booked, or pending)
                 quanlykhachsan.backend.booking.Booking activeBooking = null;
                 for (quanlykhachsan.backend.booking.Booking b : bookingService.getAllBookings()) {
-                    if (b.getRoomId() == roomId &&
-                        (b.getStatus().equals("checked_in") || b.getStatus().equals("booked") || b.getStatus().equals("pending") || b.getStatus().equals("confirmed"))) {
+                    if (b.getRoomId() == roomId && b.getStatusEnum() != null &&
+                        (b.getStatusEnum() == BookingStatus.CHECKED_IN || b.getStatusEnum() == BookingStatus.CONFIRMED || b.getStatusEnum() == BookingStatus.PENDING)) {
                         activeBooking = b;
                         break;
                     }
