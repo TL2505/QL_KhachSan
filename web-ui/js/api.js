@@ -36,13 +36,15 @@ async function fetchApi(endpoint, method = 'GET', bodyData = null) {
         
         // Nếu Server báo lỗi 403 (Cấm truy cập do phân quyền) hoặc 401 (Hết hạn Token)
         if (response.status === 401 || response.status === 403) {
-            alert("Bạn không có quyền truy cập chức năng này hoặc phiên đăng nhập đã hết hạn!");
-            if(response.status === 401) {
-                localStorage.removeItem("user");
-                localStorage.removeItem("token");
-                window.location.href = "login.html";
+            if (endpoint !== '/auth/login') {
+                alert("Bạn không có quyền truy cập chức năng này hoặc phiên đăng nhập đã hết hạn!");
+                if(response.status === 401) {
+                    localStorage.removeItem("user");
+                    localStorage.removeItem("token");
+                    window.location.href = "login.html";
+                }
+                throw new Error(data.message || "Forbidden");
             }
-            throw new Error(data.message || "Forbidden");
         }
 
         return data;
