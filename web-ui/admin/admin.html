@@ -32,9 +32,9 @@
             <!-- Khu vực 1: Báo cáo tài chính -->
             <div class="col-md-8">
                 <div class="dashboard-card border-top border-danger border-4">
-                    <h4 class="fw-bold mb-4 text-danger">Báo cáo Doanh thu (Giả lập)</h4>
-                    <div style="height: 300px; background: repeating-linear-gradient(45deg, #f8f9fa, #f8f9fa 10px, #e9ecef 10px, #e9ecef 20px);" class="rounded border d-flex align-items-center justify-content-center">
-                        <span class="text-muted fw-bold">[Khu vực render Biểu đồ Chart.js]</span>
+                    <h4 class="fw-bold mb-4 text-danger">Báo cáo Doanh thu (Monthly Revenue)</h4>
+                    <div style="height: 300px;" class="rounded d-flex align-items-center justify-content-center">
+                        <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -43,28 +43,92 @@
             <div class="col-md-4">
                 <div class="dashboard-card mb-4 bg-danger text-white">
                     <h5 class="fw-bold">Tổng doanh thu tháng</h5>
-                    <h2 class="display-6 fw-bold">125,500,000 ₫</h2>
+                    <h2 class="display-6 fw-bold" id="totalRevenue">Đang tải...</h2>
                 </div>
                 
                 <div class="dashboard-card border-top border-dark border-4">
                     <h5 class="fw-bold mb-3 text-dark">Quản lý Nhân sự</h5>
                     <p class="text-muted small">Thêm, sửa, khóa tài khoản STAFF.</p>
-                    <button class="btn btn-dark w-100 fw-bold" onclick="alert('Tính năng đang phát triển!')">Quản lý User & Role</button>
+                    <button class="btn btn-dark w-100 fw-bold" data-bs-toggle="modal" data-bs-target="#userModal" onclick="loadUsers()">Quản lý User & Role</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modal Quản lý User -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold">Quản lý Nhân sự (Staff & Customer)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h6 class="fw-bold text-primary">Danh sách Tài khoản</h6>
+                        <button class="btn btn-sm btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addUserModal">+ Thêm Nhân Sự</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên đăng nhập</th>
+                                    <th>Họ Tên</th>
+                                    <th>Quyền</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <tr><td colspan="5" class="text-center text-muted">Đang tải dữ liệu...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thêm Nhân Sự -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold">Thêm Nhân Sự Mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tên đăng nhập</label>
+                            <input type="text" class="form-control" id="addUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mật khẩu</label>
+                            <input type="password" class="form-control" id="addPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Họ và tên</label>
+                            <input type="text" class="form-control" id="addFullName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Vai trò (Role)</label>
+                            <select class="form-select" id="addRole" required>
+                                <option value="1">Admin</option>
+                                <option value="2" selected>Staff (Lễ tân/Buồng phòng)</option>
+                                <option value="3">Customer</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold" id="btnAddUser">Tạo Tài Khoản</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/shared/js/api.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const user = checkAuth();
-            if(user.role !== 'ADMIN') { // Chỉ Admin mới được vào đây
-                alert("Truy cập trái phép!");
-                window.location.href = "/shared/login.html";
-            }
-            document.getElementById("welcomeMessage").textContent = `Xin chào Sếp, ${user.fullName || user.username}!`;
-        });
-    </script>
+    <script src="/admin/admin.js"></script>
 </body>
 </html>

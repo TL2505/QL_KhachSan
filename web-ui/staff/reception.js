@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function() {
             
             const name = document.getElementById("custName").value;
             const phone = document.getElementById("custPhone").value;
-            const email = document.getElementById("custEmail").value;
+            const cccd = document.getElementById("custCccd").value;
 
             msgBox.classList.add("d-none");
             btnCustomer.disabled = true;
@@ -25,9 +25,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
             try {
                 const result = await fetchApi('/customers', 'POST', {
-                    fullName: name,
+                    name: name,
                     phone: phone,
-                    email: email
+                    cccd: cccd
                 });
 
                 if (result.status === "success") {
