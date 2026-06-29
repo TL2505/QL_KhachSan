@@ -54,6 +54,10 @@ public class AuthController implements HttpHandler {
                     resObj.addProperty("status", "success");
                     resObj.addProperty("message", "Đăng nhập thành công");
                     
+                    // Tạo JWT Token
+                    String token = quanlykhachsan.backend.utils.JwtUtil.generateToken(user.getId(), roleStr, user.getCustomerId());
+                    resObj.addProperty("token", token);
+                    
                     JsonObject dataObj = new JsonObject();
                     dataObj.addProperty("userId", user.getId());
                     dataObj.addProperty("username", user.getUsername());

@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng ký Tài khoản Khách hàng</title>
+    <title>Hệ thống Khách sạn - Đăng ký Khách hàng</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/shared/css/style.css">
 </head>
 <body class="d-flex align-items-center justify-content-center">
 
@@ -37,11 +37,11 @@
         </form>
 
         <div class="mt-4 text-center">
-            <a href="login.html" class="text-decoration-none">Đã có tài khoản? Đăng nhập ngay</a>
+            <a href="/shared/login.html" class="text-decoration-none">Đã có tài khoản? Đăng nhập ngay</a>
         </div>
     </div>
 
-    <script src="js/api.js"></script>
+    <script src="/shared/js/api.js"></script>
     <script>
         document.getElementById("registerForm").addEventListener("submit", async function(e) {
             e.preventDefault();
@@ -65,7 +65,7 @@
                 if(res.status === "success" || res.message === "Đăng ký thành công") {
                     msg.className = "alert alert-success";
                     msg.textContent = "Đăng ký thành công! Đang chuyển về trang đăng nhập...";
-                    setTimeout(() => window.location.href = "login.html", 2000);
+                    setTimeout(() => window.location.href = "/shared/login.html", 2000);
                 } else {
                     msg.className = "alert alert-danger";
                     msg.textContent = res.message || "Đăng ký thất bại!";

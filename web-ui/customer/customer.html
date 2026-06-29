@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đặt phòng Khách sạn - Customer Portal</title>
+    <title>Dịch vụ Đặt phòng Khách sạn</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/shared/css/style.css">
 </head>
 <body class="bg-light">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-success mb-4 shadow">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">🏨 Đặt Phòng Trực Tuyến</a>
+            <a class="navbar-brand fw-bold" href="#">🏨 Hệ thống Đặt phòng Trực tuyến</a>
             <div class="d-flex align-items-center text-light">
                 <span id="welcomeMessage" class="me-3 fw-bold"></span>
                 <button class="btn btn-sm btn-outline-light fw-bold" onclick="logout()">Đăng Xuất</button>
@@ -47,13 +47,13 @@
         </div>
     </div>
 
-    <script src="js/api.js"></script>
+    <script src="/shared/js/api.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const user = checkAuth();
             if(user.role !== 'CUSTOMER') { // Chỉ Customer
                 alert("Đây là khu vực dành riêng cho Khách hàng!");
-                window.location.href = "login.html";
+                window.location.href = "/shared/login.html";
             }
             document.getElementById("welcomeMessage").textContent = `Xin chào, ${user.fullName || user.username}!`;
         });
@@ -78,7 +78,7 @@
                                             <h4 class="fw-bold text-success">Phòng ${room.roomNumber}</h4>
                                             <p class="text-muted mb-2">Loại phòng: ${room.roomTypeName || 'Tiêu chuẩn'}</p>
                                             <h5 class="text-danger fw-bold mb-3">${(room.price || 500000).toLocaleString('vi-VN')} ₫ / đêm</h5>
-                                            <button class="btn btn-outline-success w-100 fw-bold" onclick="alert('Chức năng Book phòng đang bảo trì!')">ĐẶT NGAY</button>
+                                            <button class="btn btn-outline-success w-100 fw-bold" onclick="bookRoom(${room.id})">ĐẶT NGAY</button>
                                         </div>
                                     </div>
                                 </div>
@@ -92,6 +92,42 @@
                 }
             } catch (error) {
                 listDiv.innerHTML = `<div class="col-12 text-center text-danger">Lỗi lấy danh sách phòng!</div>`;
+            }
+        }
+
+        async function bookRoom(roomId) {
+            const checkin = document.getElementById("checkin").value;
+            const checkout = document.getElementById("checkout").value;
+            
+            if (!checkin || !checkout) {
+                alert("Vui lòng chọn ngày Nhận phòng và Trả phòng trước khi đặt!");
+                return;
+            }
+
+            const user = checkAuth();
+            if (!user.customerId) {
+                alert("Lỗi: Không tìm thấy thông tin Khách hàng của bạn trong hệ thống. Vui lòng liên hệ lễ tân.");
+                return;
+            }
+
+            if (confirm(`Bạn có chắc chắn muốn đặt Phòng này từ ${checkin} đến ${checkout} không?`)) {
+                try {
+                    const response = await fetchApi('/bookings', 'POST', {
+                        customerId: user.customerId,
+                        roomId: roomId,
+                        checkInDate: checkin,
+                        checkOutDate: checkout
+                    });
+
+                    if (response.status === "success") {
+                        alert("🎉 Đặt phòng thành công! Mã booking của bạn là: #" + response.bookingId);
+                        loadAvailableRooms(); // Tải lại danh sách
+                    } else {
+                        alert("Lỗi đặt phòng: " + response.message);
+                    }
+                } catch (e) {
+                    alert("Không thể kết nối đến máy chủ!");
+                }
             }
         }
     </script>

@@ -41,7 +41,7 @@ async function fetchApi(endpoint, method = 'GET', bodyData = null) {
                 if(response.status === 401) {
                     localStorage.removeItem("user");
                     localStorage.removeItem("token");
-                    window.location.href = "login.html";
+                    window.location.href = "/shared/login.html";
                 }
                 throw new Error(data.message || "Forbidden");
             }
@@ -58,7 +58,7 @@ async function fetchApi(endpoint, method = 'GET', bodyData = null) {
 function checkAuth() {
     const user = localStorage.getItem("user");
     if (!user) {
-        window.location.href = "login.html";
+        window.location.href = "/shared/login.html";
     }
     return JSON.parse(user);
 }
@@ -67,5 +67,5 @@ function checkAuth() {
 function logout() {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    window.location.href = "login.html";
+    window.location.href = "/shared/login.html";
 }

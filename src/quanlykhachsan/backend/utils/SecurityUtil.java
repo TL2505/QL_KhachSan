@@ -16,14 +16,33 @@ public class SecurityUtil {
      * @return true if authorized, false otherwise
      */
     public static boolean hasPermission(HttpExchange exchange, int... allowedRoles) throws IOException {
-        String roleHeader = exchange.getRequestHeaders().getFirst("X-User-Role");
+        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
         
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            sendError(exchange, 401, "Yêu cầu đăng nhập.");
+            return false;
+        }
+
+        String token = authHeader.substring(7); // Bỏ chữ "Bearer "
+        com.google.gson.JsonObject payload = JwtUtil.verifyToken(token);
+        
+        if (payload == null) {
+            sendError(exchange, 401, "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
+            return false;
+        }
+
         try {
-            int roleId = (roleHeader != null) ? Integer.parseInt(roleHeader) : -1;
+            // Lấy role chuỗi từ token và quy đổi về roleId để check
+            String roleStr = payload.get("role").getAsString();
+            int roleId = -1;
+            if ("ADMIN".equals(roleStr)) roleId = 1;
+            else if ("STAFF".equals(roleStr)) roleId = 2;
+            else if ("CUSTOMER".equals(roleStr)) roleId = 3;
+
             for (int allowedRole : allowedRoles) {
                 if (roleId == allowedRole) return true;
             }
-        } catch (NumberFormatException e) {}
+        } catch (Exception e) {}
 
         sendError(exchange, 403, "Bạn không có quyền thực hiện hành động này.");
         return false;

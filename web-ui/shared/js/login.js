@@ -25,15 +25,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (data.status === "success") {
                     const user = data.data;
                     localStorage.setItem("user", JSON.stringify(user));
-                    localStorage.setItem("token", user.token || "dummy-token-123");
+                    localStorage.setItem("token", data.token);
                     
                     // Phân quyền Điều hướng (RBAC Routing)
                     if (user.role === 'ADMIN') { 
-                        window.location.href = "admin.html";
+                        window.location.href = "/admin/admin.html";
                     } else if (user.role === 'CUSTOMER') { 
-                        window.location.href = "customer.html";
+                        window.location.href = "/customer/customer.html";
                     } else { // STAFF
-                        window.location.href = "index.html";
+                        window.location.href = "/staff/reception.html";
                     }
                 } else {
                     showError(data.message || "Đăng nhập thất bại.");
