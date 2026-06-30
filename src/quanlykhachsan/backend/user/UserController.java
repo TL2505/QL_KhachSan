@@ -19,6 +19,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
+import quanlykhachsan.backend.user.dto.UserResponse;
+import quanlykhachsan.backend.user.dto.UserCreateRequest;
+import quanlykhachsan.backend.user.dto.UserUpdateRequest;
+import quanlykhachsan.backend.user.UserMapper;
 
 public class UserController implements HttpHandler {
 
@@ -130,11 +134,17 @@ public class UserController implements HttpHandler {
     private void handleGetAllUsers(HttpExchange exchange) throws IOException {
         if (!SecurityUtil.checkAdmin(exchange)) return;
         List<User> users = userDAO.selectUser();
-        // Remove passwords before returning to frontend
+        List<quanlykhachsan.backend.user.Role> roles = userDAO.selectAllRoles();
+        List<UserResponse> dtoList = new java.util.ArrayList<>();
         for (User u : users) {
-            u.setPassword("");
+            String rName = roles.stream()
+                .filter(r -> r.getId() == u.getRoleId())
+                .map(quanlykhachsan.backend.user.Role::getName)
+                .findFirst()
+                .orElse("unknown");
+            dtoList.add(UserMapper.toUserResponse(u, rName));
         }
-        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(users));
+        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dtoList));
     }
 
     private void handleGetAllRoles(HttpExchange exchange) throws IOException {
@@ -147,18 +157,19 @@ public class UserController implements HttpHandler {
         try {
             InputStream is = exchange.getRequestBody();
             String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            User user = gson.fromJson(body, User.class);
+            UserCreateRequest req = gson.fromJson(body, UserCreateRequest.class);
 
-            if (user.getUsername() == null || user.getPassword() == null || user.getRoleId() == 0) {
+            if (req.getUsername() == null || req.getPassword() == null || req.getRoleId() == 0) {
                 ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu thông tin bắt buộc (username, password, role_id)"));
                 return;
             }
 
-            if (userDAO.findByUsername(user.getUsername()) != null) {
+            if (userDAO.findByUsername(req.getUsername()) != null) {
                 ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Tên đăng nhập đã tồn tại"));
                 return;
             }
 
+            User user = UserMapper.toUser(req);
             int customerRoleId = userDAO.getRoleIdByName("customer");
             boolean ok;
             if (user.getRoleId() == customerRoleId && customerRoleId != -1) {
@@ -200,7 +211,7 @@ public class UserController implements HttpHandler {
         try {
             InputStream is = exchange.getRequestBody();
             String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            User reqUser = gson.fromJson(body, User.class);
+            UserUpdateRequest req = gson.fromJson(body, UserUpdateRequest.class);
 
             // Need to get the existing user from DB to keep the old password if not changed
             List<User> users = userDAO.selectUser();
@@ -212,14 +223,14 @@ public class UserController implements HttpHandler {
             }
 
             // Update fields
-            existingUser.setFullName(reqUser.getFullName());
-            existingUser.setEmail(reqUser.getEmail());
-            existingUser.setPhone(reqUser.getPhone());
-            existingUser.setRoleId(reqUser.getRoleId());
-            existingUser.setStatus(reqUser.getStatus());
+            existingUser.setFullName(req.getFullName());
+            existingUser.setEmail(req.getEmail());
+            existingUser.setPhone(req.getPhone());
+            existingUser.setRoleId(req.getRoleId());
+            existingUser.setStatus(req.getStatus());
 
-            if (reqUser.getPassword() != null && !reqUser.getPassword().trim().isEmpty()) {
-                existingUser.setPassword(SecurityUtil.hashPassword(reqUser.getPassword()));
+            if (req.getPassword() != null && !req.getPassword().trim().isEmpty()) {
+                existingUser.setPassword(SecurityUtil.hashPassword(req.getPassword()));
             }
 
             int customerRoleId = userDAO.getRoleIdByName("customer");

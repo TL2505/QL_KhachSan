@@ -58,7 +58,7 @@ public class Main {
             // Route Khuyến mãi (Promotion)
             server.createContext("/api/promotions", new quanlykhachsan.backend.promotion.PromotionController());
             // Route Khách hàng thân thiết (Loyalty)
-            server.createContext("/api/loyalty", new quanlykhachsan.backend.controller.LoyaltyController());
+            server.createContext("/api/loyalty", new quanlykhachsan.backend.customer.LoyaltyController());
 
             // Thiết lập cấu hình mặc định và chạy server
             server.setExecutor(null);

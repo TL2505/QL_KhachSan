@@ -1,4 +1,4 @@
-package quanlykhachsan.backend.controller.dto;
+package quanlykhachsan.backend.customer.dto;
 
 public class LoyaltyRedeemRequest {
     private Integer customerId;

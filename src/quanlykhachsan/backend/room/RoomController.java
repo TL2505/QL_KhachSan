@@ -18,6 +18,7 @@ import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.room.dto.RoomCreateRequest;
 import quanlykhachsan.backend.room.dto.RoomStatusUpdateRequest;
+import quanlykhachsan.backend.room.dto.RoomResponse;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -74,7 +75,11 @@ public class RoomController implements HttpHandler {
 
     private void handleGetAll(HttpExchange exchange) throws IOException {
         List<Room> rooms = roomService.getAllRooms();
-        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(rooms));
+        List<RoomResponse> dtoList = new java.util.ArrayList<>();
+        for (Room r : rooms) {
+            dtoList.add(RoomMapper.toRoomResponse(r));
+        }
+        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dtoList));
     }
 
     private void handleUpdateStatus(HttpExchange exchange, int roomId) throws IOException {
@@ -184,7 +189,11 @@ public class RoomController implements HttpHandler {
             java.util.Date checkOut = sdf.parse(checkOutStr);
 
             List<Room> availableRooms = roomService.findAvailableRooms(checkIn, checkOut);
-            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(availableRooms));
+            List<RoomResponse> dtoList = new java.util.ArrayList<>();
+            for (Room r : availableRooms) {
+                dtoList.add(RoomMapper.toRoomResponse(r));
+            }
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dtoList));
         } catch (Exception e) {
             ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi tìm kiếm: " + e.getMessage()));
         }

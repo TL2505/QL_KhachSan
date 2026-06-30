@@ -15,6 +15,8 @@ import com.google.gson.JsonObject;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.customer.dto.CustomerCreateRequest;
+import quanlykhachsan.backend.customer.dto.CustomerResponse;
+import quanlykhachsan.backend.customer.CustomerMapper;
 
 public class CustomerController implements HttpHandler {
 
@@ -36,14 +38,19 @@ public class CustomerController implements HttpHandler {
                     int id = Integer.parseInt(parts[3]);
                     Customer c = customerService.getCustomerById(id);
                     if (c != null) {
-                        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(c));
+                        CustomerResponse dto = CustomerMapper.toCustomerResponse(c);
+                        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dto));
                     } else {
                         ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy khách hàng!"));
                     }
                 } else {
                     // GET /api/customers
                     List<Customer> customers = customerService.getAllCustomers();
-                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(customers));
+                    List<CustomerResponse> dtoList = new java.util.ArrayList<>();
+                    for (Customer c : customers) {
+                        dtoList.add(CustomerMapper.toCustomerResponse(c));
+                    }
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dtoList));
                 }
             } 
             // 2. POST /api/customers

@@ -8,8 +8,11 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
+import quanlykhachsan.backend.utils.ApiResponseUtil;
+import quanlykhachsan.backend.interaction.dto.ReviewCreateRequest;
+import quanlykhachsan.backend.interaction.dto.ReviewResponse;
+import quanlykhachsan.backend.interaction.ReviewMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,12 +59,20 @@ public class ReviewController implements HttpHandler {
         if (!SecurityUtil.hasPermission(exchange, 1, 2))
             return;
         List<Review> list = reviewService.getAllReviews();
-        sendSuccess(exchange, list);
+        List<ReviewResponse> dtoList = new java.util.ArrayList<>();
+        for (Review r : list) {
+            dtoList.add(ReviewMapper.toReviewResponse(r));
+        }
+        sendSuccess(exchange, dtoList);
     }
 
     private void handleGetByRoom(HttpExchange exchange, int roomId) throws IOException {
         List<Review> list = reviewService.getReviewsByRoom(roomId);
-        sendSuccess(exchange, list);
+        List<ReviewResponse> dtoList = new java.util.ArrayList<>();
+        for (Review r : list) {
+            dtoList.add(ReviewMapper.toReviewResponse(r));
+        }
+        sendSuccess(exchange, dtoList);
     }
 
     private void handlePost(HttpExchange exchange) throws IOException {
@@ -70,7 +81,8 @@ public class ReviewController implements HttpHandler {
 
         InputStream is = exchange.getRequestBody();
         String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        Review review = gson.fromJson(body, Review.class);
+        ReviewCreateRequest req = gson.fromJson(body, ReviewCreateRequest.class);
+        Review review = ReviewMapper.toReview(req);
 
         if (reviewService.addReview(review)) {
             ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Đánh giá thành công!"));

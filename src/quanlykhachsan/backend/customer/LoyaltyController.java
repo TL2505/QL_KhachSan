@@ -1,4 +1,4 @@
-package quanlykhachsan.backend.controller;
+package quanlykhachsan.backend.customer;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -11,11 +11,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
-import quanlykhachsan.backend.customer.Customer;
-import quanlykhachsan.backend.customer.LoyaltyHistory;
-import quanlykhachsan.backend.customer.CustomerService;
-import quanlykhachsan.backend.customer.LoyaltyService;
-import quanlykhachsan.backend.controller.dto.LoyaltyRedeemRequest;
+import quanlykhachsan.backend.customer.dto.LoyaltyRedeemRequest;
 import quanlykhachsan.backend.utils.SecurityUtil;
 
 public class LoyaltyController implements HttpHandler {
@@ -77,5 +73,4 @@ public class LoyaltyController implements HttpHandler {
             ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi Server: " + e.getMessage()));
         }
     }
-
 }
