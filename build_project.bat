@@ -17,4 +17,6 @@ javac -encoding utf-8 -cp "lib/*;build/classes" -sourcepath src -d build/classes
 javac -encoding utf-8 -cp "lib/*;build/classes" -sourcepath src -d build/classes src/quanlykhachsan/frontend/view/staff/*.java
 javac -encoding utf-8 -cp "lib/*;build/classes" -sourcepath src -d build/classes src/quanlykhachsan/frontend/view/customer/*.java
 javac -encoding utf-8 -cp "lib/*;build/classes" -sourcepath src -d build/classes src/quanlykhachsan/frontend/MainUI.java
+javac -encoding utf-8 -cp "lib/*;build/classes" -sourcepath src -d build/classes src/quanlykhachsan/Quanlykhachsan.java
 echo Compile Completed!!
+

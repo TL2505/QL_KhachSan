@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # 1. Trung tâm Dữ liệu (MariaDB)
+  db:
+    image: mariadb:11
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: hotel_prod_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/hotel.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  # 2. Công cụ quản lý DB qua Web (Adminer)
+  adminer:
+    image: adminer
+    ports:
+      - "8082:8080"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  # 3. Backend API Server (Java HTTPServer)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=rootpass
+      - DB_NAME=hotel_prod_db
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  # 4. Web UI (Vanilla HTML/JS - Node static server)
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./web-ui:/app
+    command: node server.js
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db_data:

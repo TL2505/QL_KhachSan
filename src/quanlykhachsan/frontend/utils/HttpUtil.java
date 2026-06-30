@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 
 public class HttpUtil {
 
-    private static final String LOCAL_URL  = "http://localhost:8080/api";
+    private static final String LOCAL_URL  = "http://localhost:8081/api";
     private static final String BASE_URL;
 
     static {
@@ -67,9 +67,15 @@ public class HttpUtil {
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("ngrok-skip-browser-warning", "true");
                 int code = conn.getResponseCode();
+                String ngrokError = conn.getHeaderField("Ngrok-Error-Code");
                 conn.disconnect();
-                // Bất kỳ response HTTP hợp lệ nào (kể cả 404) đều chứng tỏ server đang chạy
-                if (code > 0) {
+                // Nếu ngrok trả về lỗi (ví dụ tunnel offline), bỏ qua URL này
+                if (ngrokError != null) {
+                    continue;
+                }
+
+                // Chỉ chấp nhận response HTTP thành công (2xx) chứng tỏ server đang chạy
+                if (code >= 200 && code < 300) {
                     return true;
                 }
             } catch (Exception ignored) {

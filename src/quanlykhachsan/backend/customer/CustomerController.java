@@ -12,7 +12,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
+import quanlykhachsan.backend.customer.dto.CustomerCreateRequest;
+import quanlykhachsan.backend.customer.dto.CustomerResponse;
+import quanlykhachsan.backend.customer.CustomerMapper;
 
 public class CustomerController implements HttpHandler {
 
@@ -34,20 +38,19 @@ public class CustomerController implements HttpHandler {
                     int id = Integer.parseInt(parts[3]);
                     Customer c = customerService.getCustomerById(id);
                     if (c != null) {
-                        JsonObject resObj = new JsonObject();
-                        resObj.addProperty("status", "success");
-                        resObj.add("data", gson.toJsonTree(c));
-                        sendResponse(exchange, 200, gson.toJson(resObj));
+                        CustomerResponse dto = CustomerMapper.toCustomerResponse(c);
+                        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dto));
                     } else {
-                        sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy khách hàng!\"}");
+                        ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy khách hàng!"));
                     }
                 } else {
                     // GET /api/customers
                     List<Customer> customers = customerService.getAllCustomers();
-                    JsonObject resObj = new JsonObject();
-                    resObj.addProperty("status", "success");
-                    resObj.add("data", gson.toJsonTree(customers));
-                    sendResponse(exchange, 200, gson.toJson(resObj));
+                    List<CustomerResponse> dtoList = new java.util.ArrayList<>();
+                    for (Customer c : customers) {
+                        dtoList.add(CustomerMapper.toCustomerResponse(c));
+                    }
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dtoList));
                 }
             } 
             // 2. POST /api/customers
@@ -59,7 +62,7 @@ public class CustomerController implements HttpHandler {
                 String path = exchange.getRequestURI().getPath();
                 String[] parts = path.split("/");
                 if (parts.length < 4) {
-                    sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu ID khách hàng!\"}");
+                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu ID khách hàng!"));
                     return;
                 }
                 int id = Integer.parseInt(parts[3]);
@@ -70,7 +73,7 @@ public class CustomerController implements HttpHandler {
                 String path = exchange.getRequestURI().getPath();
                 String[] parts = path.split("/");
                 if (parts.length < 4) {
-                    sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu ID khách hàng!\"}");
+                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu ID khách hàng!"));
                     return;
                 }
                 int id = Integer.parseInt(parts[3]);
@@ -81,7 +84,7 @@ public class CustomerController implements HttpHandler {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}");
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error(e.getMessage()));
         }
     }
 
@@ -89,14 +92,14 @@ public class CustomerController implements HttpHandler {
         if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
         InputStream is = exchange.getRequestBody();
         String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
+        CustomerCreateRequest req = gson.fromJson(requestBody, CustomerCreateRequest.class);
         
-        String name = reqObj.has("name") ? reqObj.get("name").getAsString() : null;
-        String phone = reqObj.has("phone") ? reqObj.get("phone").getAsString() : null;
-        String cccd = reqObj.has("cccd") ? reqObj.get("cccd").getAsString() : null;
+        String name = req.getName();
+        String phone = req.getPhone();
+        String cccd = req.getCccd();
 
         if (name == null || phone == null || cccd == null) {
-            sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu thông tin!\"}");
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu thông tin!"));
             return;
         }
 
@@ -106,9 +109,9 @@ public class CustomerController implements HttpHandler {
         c.setIdentityCard(cccd);
 
         if (customerService.addCustomer(c)) {
-            sendResponse(exchange, 200, "{\"status\": \"success\", \"message\": \"Thêm khách hàng thành công!\"}");
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Thêm khách hàng thành công!"));
         } else {
-            sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"Không thể thêm khách hàng!\"}");
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Không thể thêm khách hàng!"));
         }
     }
 
@@ -116,15 +119,15 @@ public class CustomerController implements HttpHandler {
         if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
         InputStream is = exchange.getRequestBody();
         String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
+        CustomerCreateRequest req = gson.fromJson(requestBody, CustomerCreateRequest.class);
         
-        String name = reqObj.has("name") ? reqObj.get("name").getAsString() : null;
-        String phone = reqObj.has("phone") ? reqObj.get("phone").getAsString() : null;
-        String cccd = reqObj.has("cccd") ? reqObj.get("cccd").getAsString() : null;
+        String name = req.getName();
+        String phone = req.getPhone();
+        String cccd = req.getCccd();
 
         Customer c = customerService.getCustomerById(id);
         if (c == null) {
-            sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy ID: " + id + "\"}");
+            ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy ID: " + id));
             return;
         }
 
@@ -133,9 +136,9 @@ public class CustomerController implements HttpHandler {
         if (cccd != null) c.setIdentityCard(cccd);
 
         if (customerService.updateCustomer(c)) {
-            sendResponse(exchange, 200, "{\"status\": \"success\", \"message\": \"Cập nhật thành công!\"}");
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Cập nhật thành công!"));
         } else {
-            sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"Cập nhật thất bại!\"}");
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Cập nhật thất bại!"));
         }
     }
 
@@ -143,24 +146,15 @@ public class CustomerController implements HttpHandler {
         if (!SecurityUtil.checkAdmin(exchange)) return;
         Customer c = customerService.getCustomerById(id);
         if (c == null) {
-            sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy khách hàng ID: " + id + "\"}");
+            ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy khách hàng ID: " + id));
             return;
         }
 
         if (customerService.deleteCustomer(id)) {
-            sendResponse(exchange, 200, "{\"status\": \"success\", \"message\": \"Xóa khách hàng thành công!\"}");
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Xóa khách hàng thành công!"));
         } else {
-            sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"Không thể xóa khách hàng này (Có thể do đang có lịch sử đặt phòng)\"}");
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Không thể xóa khách hàng này (Có thể do đang có lịch sử đặt phòng)"));
         }
     }
 
-    private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
-        exchange.sendResponseHeaders(statusCode, bytes.length);
-        OutputStream os = exchange.getResponseBody();
-        os.write(bytes);
-        os.close();
-    }
 }

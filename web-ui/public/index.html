@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Khách Sạn Aurelia</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <!-- ==================== 1. AUTHENTICATION PAGES ==================== -->
+    <div id="auth-page" class="auth-wrapper">
+        <!-- Login Card -->
+        <div id="login-card" class="auth-card">
+            <div class="auth-header">
+                <h1>Aurelia Hotel</h1>
+                <p>Đăng nhập hệ thống quản lý</p>
+            </div>
+            
+            <div id="login-error" class="form-group" style="color: var(--danger); font-size: 14px; text-align: center; display: none;"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="login-username">Tên đăng nhập</label>
+                    <input class="form-input" type="text" id="login-username" placeholder="Nhập tên đăng nhập" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Mật khẩu</label>
+                    <input class="form-input" type="password" id="login-password" placeholder="Nhập mật khẩu" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
+            </form>
+            
+            <div class="mt-4 text-right" style="font-size: 14px;">
+                Chưa có tài khoản? <a href="#" id="to-register" class="text-gold">Đăng ký ngay</a>
+            </div>
+            
+            <!-- Connection Settings -->
+            <div class="mt-4 pt-4" style="border-top: 1px dashed var(--border); text-align: center;">
+                <a href="#" id="btn-config-api" class="text-muted" style="font-size: 13px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i data-lucide="settings" style="width: 14px; height: 14px;"></i> Cấu hình kết nối API
+                </a>
+            </div>
+        </div>
+
+        <!-- Register Card -->
+        <div id="register-card" class="auth-card" style="display: none;">
+            <div class="auth-header">
+                <h1>Đăng Ký Thành Viên</h1>
+                <p>Trở thành thành viên thân thiết</p>
+            </div>
+
+            <div id="register-error" class="form-group" style="color: var(--danger); font-size: 14px; text-align: center; display: none;"></div>
+            <div id="register-success" class="form-group" style="color: var(--success); font-size: 14px; text-align: center; display: none;"></div>
+
+            <form id="register-form">
+                <div class="form-group">
+                    <label class="form-label" for="reg-username">Tên đăng nhập *</label>
+                    <input class="form-input" type="text" id="reg-username" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-password">Mật khẩu *</label>
+                    <input class="form-input" type="password" id="reg-password" required autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-name">Họ và tên *</label>
+                    <input class="form-input" type="text" id="reg-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-identity">Số CCCD / Passport *</label>
+                    <input class="form-input" type="text" id="reg-identity" placeholder="Ví dụ: 012345678901" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-phone">Số điện thoại</label>
+                    <input class="form-input" type="text" id="reg-phone">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-email">Email</label>
+                    <input class="form-input" type="email" id="reg-email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-address">Địa chỉ</label>
+                    <input class="form-input" type="text" id="reg-address">
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">Đăng ký tài khoản</button>
+            </form>
+            
+            <div class="mt-4 text-right" style="font-size: 14px;">
+                Đã có tài khoản? <a href="#" id="to-login" class="text-gold">Đăng nhập</a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================== 2. MAIN APP SHELL ==================== -->
+    <div id="app-page" class="app-container" style="display: none;">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i data-lucide="hotel" class="text-gold" style="width: 24px; height: 24px;"></i>
+                <h2>AURELIA</h2>
+            </div>
+            
+            <!-- Dynamic Navigation Links loaded based on User Roles -->
+            <ul id="sidebar-menu" class="sidebar-menu">
+                <!-- Loaded via JS -->
+            </ul>
+            
+            <!-- Bottom Logged-in User Profile Summary -->
+            <div class="sidebar-user">
+                <div class="flex-row justify-between">
+                    <div>
+                        <div id="user-display-name" class="user-info-name">Loading...</div>
+                        <div id="user-display-role" class="user-info-role">Guest</div>
+                    </div>
+                    <a href="#" id="btn-logout" title="Đăng xuất" style="color: var(--danger);">
+                        <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Display Content Area -->
+        <main class="main-content">
+            <header class="top-nav">
+                <div class="flex-row">
+                    <i data-lucide="activity" class="text-gold" style="width: 16px; height: 16px;"></i>
+                    <span id="connection-status" style="font-size: 13px; color: var(--success);">Đang kết nối API Backend</span>
+                </div>
+                <div class="flex-row">
+                    <span id="active-api-url" class="text-muted" style="font-size: 12px; font-family: monospace;">http://localhost:8081/api</span>
+                </div>
+            </header>
+            
+            <!-- Inner View Loader Container -->
+            <div id="view-container" class="content-body">
+                <!-- Dynamically injected layouts -->
+            </div>
+        </main>
+    </div>
+
+
+    <!-- ==================== 3. MODALS & POPUPS ==================== -->
+    
+    <!-- API Config Modal -->
+    <div id="modal-api-config" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Cấu hình Kết nối API</h2>
+                <button class="modal-close" onclick="closeModal('modal-api-config')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="config-api-input">Địa chỉ API Server (Backend Java)</label>
+                <input class="form-input" type="text" id="config-api-input" placeholder="http://localhost:8081/api">
+                <p class="text-muted mt-4" style="font-size: 12px; line-height: 1.4;">
+                    * Lưu ý: Nếu bạn sử dụng ngrok để gọi API từ Internet (cloud), hãy nhập link ngrok của bạn (Ví dụ: <code>https://your-domain.ngrok-free.dev/api</code>).
+                </p>
+            </div>
+            <div class="flex-row mt-4" style="justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-api-config')">Hủy</button>
+                <button type="button" id="btn-save-api-config" class="btn btn-primary">Lưu cấu hình</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Global Shared Dialog (Injected Dynamically when needed) -->
+    <div id="global-modal" class="modal-overlay">
+        <div id="global-modal-content" class="modal-content">
+            <!-- Content loaded via js -->
+        </div>
+    </div>
+
+
+    <!-- ==================== 4. RUNTIME SCRIPTS ==================== -->
+    <!-- Load App shell logic first -->
+    <script type="module" src="app.js"></script>
+
+    <!-- Modal Helper Utilities -->
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+    </script>
+
+</body>
+</html>

@@ -8,8 +8,10 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.booking.BookingService;
+import quanlykhachsan.backend.booking.dto.PaymentCreateRequest;
 import quanlykhachsan.backend.customer.LoyaltyService;
 import quanlykhachsan.backend.utils.SecurityUtil;
 
@@ -33,27 +35,22 @@ public class PaymentController implements HttpHandler {
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
                 Gson gson = JsonUtil.getGson();
-                JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
+                PaymentCreateRequest req = gson.fromJson(requestBody, PaymentCreateRequest.class);
 
-                String bookingIdStr = reqObj.has("bookingId") ? reqObj.get("bookingId").getAsString() : null;
-                String amountStr = reqObj.has("amount") ? reqObj.get("amount").getAsString() : null;
-                String paymentMethod = reqObj.has("paymentMethod") ? reqObj.get("paymentMethod").getAsString() : null;
-                String customerIdStr = reqObj.has("customerId") ? reqObj.get("customerId").getAsString() : null;
-
-                if (bookingIdStr == null || amountStr == null || paymentMethod == null) {
-                    sendResponse(exchange, 400, "{\"status\": \"error\", \"message\": \"Thiếu thông tin thanh toán!\"}");
+                if (req.getBookingId() == null || req.getAmount() == null || req.getPaymentMethod() == null) {
+                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu thông tin thanh toán!"));
                     return;
                 }
 
-                int bookingId = Integer.parseInt(bookingIdStr);
-                double amount = Double.parseDouble(amountStr);
-                boolean success = bookingService.processPayment(bookingId, amount, paymentMethod);
+                int bookingId = req.getBookingId();
+                double amount = req.getAmount();
+                boolean success = bookingService.processPayment(bookingId, amount, req.getPaymentMethod());
 
                 if (success) {
                     // Award loyalty points
                     int earnedPoints = 0;
-                    if (customerIdStr != null) {
-                        int customerId = Integer.parseInt(customerIdStr);
+                    if (req.getCustomerId() != null) {
+                        int customerId = req.getCustomerId();
                         loyaltyService.addPoints(customerId, amount, "Thanh toán đơn đặt phòng #" + bookingId);
                         earnedPoints = (int) (amount / 1000);
                     }
@@ -68,9 +65,9 @@ public class PaymentController implements HttpHandler {
                     dataObj.addProperty("earnedPoints", earnedPoints);
                     resObj.add("data", dataObj);
 
-                    sendResponse(exchange, 200, gson.toJson(resObj));
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(resObj));
                 } else {
-                    sendResponse(exchange, 404, "{\"status\": \"error\", \"message\": \"Không tìm thấy đơn đặt phòng ID: " + bookingId + "\"}");
+                    ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy đơn đặt phòng ID: " + bookingId));
                 }
 
             } else {
@@ -79,18 +76,8 @@ public class PaymentController implements HttpHandler {
 
         } catch (Exception e) {
             e.printStackTrace();
-            sendResponse(exchange, 500, "{\"status\": \"error\", \"message\": \"Lỗi Server Payment: " + e.getMessage() + "\"}");
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi Server Payment: " + e.getMessage()));
         }
-    }
-
-    private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
-        exchange.sendResponseHeaders(statusCode, bytes.length);
-        OutputStream os = exchange.getResponseBody();
-        os.write(bytes);
-        os.close();
     }
 
 }
