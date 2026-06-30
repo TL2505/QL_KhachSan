@@ -1,0 +1,26 @@
+# Normalize line endings: use LF on all platforms (important for Docker/Linux deploy)
+* text=auto eol=lf
+
+# Force LF for web and Java source files
+*.java text eol=lf
+*.js   text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.md   text eol=lf
+*.sql  text eol=lf
+*.sh   text eol=lf
+
+# Windows batch scripts keep CRLF
+*.bat  text eol=crlf
+
+# Binary files - no line ending conversion
+*.png  binary
+*.jpg  binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.class binary
+*.jar  binary

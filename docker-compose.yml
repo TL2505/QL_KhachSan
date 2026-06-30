@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. Trung tâm Dữ liệu
+  # 1. Trung tâm Dữ liệu (MariaDB)
   db:
     image: mariadb:11
     environment:
@@ -14,7 +14,7 @@ services:
       - ./database/hotel.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
 
-  # 2. Công cụ quản lý DB qua Web
+  # 2. Công cụ quản lý DB qua Web (Adminer)
   adminer:
     image: adminer
     ports:
@@ -23,22 +23,36 @@ services:
       - db
     restart: unless-stopped
 
-  # 3. Backend API Server (Vừa mới thêm vào)
+  # 3. Backend API Server (Java HTTPServer)
   backend:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     environment:
-      # Báo cho Backend biết là phải trỏ vào dịch vụ 'db' thay vì localhost
       - DB_HOST=db
       - DB_PORT=3306
       - DB_USER=root
       - DB_PASSWORD=rootpass
       - DB_NAME=hotel_prod_db
     ports:
-      - "8081:8081" # Map cổng 8081 ra ngoài Linux, bên trong chạy 8080
+      - "8081:8081"
     depends_on:
       - db
+    restart: unless-stopped
+
+  # 4. Web UI (Vanilla HTML/JS - Node static server)
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./web-ui:/app
+    command: node server.js
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:

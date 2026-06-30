@@ -18,12 +18,25 @@ public class SecurityUtil {
     public static boolean hasPermission(HttpExchange exchange, int... allowedRoles) throws IOException {
         String roleHeader = exchange.getRequestHeaders().getFirst("X-User-Role");
         
-        try {
-            int roleId = (roleHeader != null) ? Integer.parseInt(roleHeader) : -1;
-            for (int allowedRole : allowedRoles) {
-                if (roleId == allowedRole) return true;
+        int roleId = -1;
+        if (roleHeader != null) {
+            roleHeader = roleHeader.trim();
+            if (roleHeader.equalsIgnoreCase("ADMIN")) {
+                roleId = 1;
+            } else if (roleHeader.equalsIgnoreCase("STAFF")) {
+                roleId = 2;
+            } else if (roleHeader.equalsIgnoreCase("CUSTOMER")) {
+                roleId = 3;
+            } else {
+                try {
+                    roleId = Integer.parseInt(roleHeader);
+                } catch (NumberFormatException e) {}
             }
-        } catch (NumberFormatException e) {}
+        }
+        
+        for (int allowedRole : allowedRoles) {
+            if (roleId == allowedRole) return true;
+        }
 
         sendError(exchange, 403, "Bạn không có quyền thực hiện hành động này.");
         return false;
