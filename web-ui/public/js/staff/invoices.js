@@ -86,7 +86,7 @@ export async function renderInvoices(container, session) {
     
     
     
-    const btnSearch = document.getElementById("btn-search");
+    
     
     
     let allInvoices = [];
@@ -96,10 +96,10 @@ export async function renderInvoices(container, session) {
 
     const renderTable = () => {
         const list = currentDisplayList;
-        const body = document.getElementById("staff-invoices-body") || document.getElementById("staff-payments-body");
-        body.innerHTML = "";
+        const tbody = document.getElementById("staff-invoices-body") || document.getElementById("staff-payments-body");
+        tbody.innerHTML = "";
         if (!list || list.length === 0) {
-            body.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">Không tìm thấy hóa đơn nào.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">Không tìm thấy hóa đơn nào.</td></tr>`;
             const paginationContainer = document.getElementById("pagination-invoices");
             if (paginationContainer) paginationContainer.innerHTML = '';
             return;
@@ -139,7 +139,7 @@ export async function renderInvoices(container, session) {
                     <button class="btn-icon btn-view-invoice" data-id="${i.id}" title="Chi tiết"><i data-lucide="file-text" style="width:14px;height:14px;pointer-events:none;"></i></button>
                 </td>
             `;
-            body.appendChild(tr);
+            tbody.appendChild(tr);
         });
         if(window.lucide) lucide.createIcons();
 
@@ -345,8 +345,8 @@ const getFilters = () => {
             applyFilters();
         } catch (e) {
             console.error(e);
-            const body = document.getElementById("staff-invoices-body") || document.getElementById("staff-payments-body");
-            if (body) body.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger);">Lỗi khi tải dữ liệu: ${e.message}</td></tr>`;
+            const errTbody = document.getElementById("staff-invoices-body") || document.getElementById("staff-payments-body");
+            if (errTbody) errTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger);">Lỗi khi tải dữ liệu: ${e.message}</td></tr>`;
         }
     };
 
