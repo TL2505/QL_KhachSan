@@ -6,71 +6,6 @@ let currentInvoices = [];
 
 export async function renderInvoices(container, session) {
     container.innerHTML = `
-        <style>
-            .filter-toolbar {
-                display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: var(--bg-card); padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            }
-            .filter-group {
-                display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px;
-            }
-            .filter-group label {
-                font-size: 0.85rem; font-weight: 500; color: var(--text-muted);
-            }
-            .filter-group input, .filter-group select {
-                padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-body); color: var(--text-color);
-            }
-            .filter-group option {
-                background-color: var(--bg-card, #1e293b);
-                color: var(--text-color, #fff);
-            }
-            .skeleton-row td {
-                padding: 15px; border-bottom: 1px solid var(--border-color);
-            }
-            .skeleton-box {
-                height: 20px; background: linear-gradient(90deg, var(--border-color) 25%, var(--bg-body) 50%, var(--border-color) 75%);
-                background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 4px;
-            }
-            @keyframes loading {
-                0% { background-position: 200% 0; }
-                100% { background-position: -200% 0; }
-            }
-            .btn-action {
-                padding: 4px 10px; font-size: 0.85rem; background: var(--primary-color, #4f46e5); color: white; border: none; border-radius: 4px; cursor: pointer;
-            }
-            .btn-action:hover { opacity: 0.9; }
-
-            /* Modal Styles */
-            .modal-overlay {
-                position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); 
-                backdrop-filter: blur(8px); z-index: 9999; display: none; align-items: center; justify-content: center;
-                opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
-            }
-            .modal-overlay.active { display: flex; opacity: 1; pointer-events: auto; }
-            .modal-glass {
-                background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(20px);
-                border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
-                width: 90%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-                transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            .modal-overlay.active .modal-glass { transform: translateY(0); }
-            .modal-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
-            .modal-header h2 { margin: 0; font-size: 1.25rem; color: #fff; }
-            .btn-close { background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; padding: 0; }
-            .btn-close:hover { color: #fff; }
-            .modal-body { padding: 20px; color: #cbd5e1; }
-            .invoice-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-            .invoice-meta .label { color: #64748b; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;}
-            .invoice-meta strong { color: #f8fafc; font-size: 1rem; }
-            .invoice-breakdown { background: rgba(15, 23, 42, 0.6); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
-            .breakdown-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem; }
-            .breakdown-row:last-child { margin-bottom: 0; }
-            .breakdown-row.text-success { color: #10b981; }
-            .breakdown-row.final-total { font-size: 1.25rem; font-weight: 700; color: #fff; margin-top: 15px; }
-            .modal-footer { padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end; gap: 12px; }
-            .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
-            .btn-secondary:hover { background: rgba(255,255,255,0.2); }
-        </style>
-        
         <div class="page-header">
             <h1>Hóa Đơn Doanh Thu</h1>
             <p>Báo cáo doanh số giao dịch thanh toán của khách hàng.</p>
@@ -128,36 +63,6 @@ export async function renderInvoices(container, session) {
             </div>
         </div>
 
-        <!-- Modal Overlay -->
-        <div id="payment-modal-overlay" class="modal-overlay">
-            <div class="modal-glass">
-                <div class="modal-header">
-                    <h2 id="modal-title">Chi Tiết Hóa Đơn</h2>
-                    <button class="btn-close" id="btn-close-modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="invoice-meta">
-                        <div><span class="label">Khách hàng</span> <strong id="md-customer"></strong></div>
-                        <div><span class="label">Phòng</span> <strong id="md-room"></strong></div>
-                        <div><span class="label">Mã đơn thuê</span> <strong id="md-booking"></strong></div>
-                        <div><span class="label">Trạng thái</span> <strong id="md-status"></strong></div>
-                        <div style="grid-column: span 2;"><span class="label">Ngày xuất</span> <strong id="md-date"></strong></div>
-                    </div>
-                    <div class="invoice-breakdown">
-                        <div class="breakdown-row"><span>Tiền phòng</span><strong id="md-room-fee"></strong></div>
-                        <div class="breakdown-row"><span>Tiền dịch vụ</span><strong id="md-service-fee"></strong></div>
-                        <div class="breakdown-row text-success"><span>Khuyến mãi</span><strong id="md-discount"></strong></div>
-                        <div class="breakdown-row"><span>Thuế VAT</span><strong id="md-tax"></strong></div>
-                        <hr style="border:0; border-top:1px dashed rgba(255,255,255,0.2); margin:15px 0;">
-                        <div class="breakdown-row final-total"><span>TỔNG THANH TOÁN</span><span id="md-final-total"></span></div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" id="btn-close-modal-2">Đóng</button>
-                    <button class="btn btn-primary" id="btn-print-pdf-real">In Hóa Đơn PDF</button>
-                </div>
-            </div>
-        </div>
     `;
 
     const body = document.getElementById("staff-payments-body");
@@ -166,19 +71,6 @@ export async function renderInvoices(container, session) {
     const pageInfo = document.getElementById("page-info");
     const btnSearch = document.getElementById("btn-search");
     
-    const modalOverlay = document.getElementById("payment-modal-overlay");
-    const btnCloseModal1 = document.getElementById("btn-close-modal");
-    const btnCloseModal2 = document.getElementById("btn-close-modal-2");
-    const btnPrintPdf = document.getElementById("btn-print-pdf-real");
-    
-    let currentModalInvoiceId = null;
-
-    btnPrintPdf.addEventListener("click", () => {
-        if (currentModalInvoiceId) {
-            window.open(getApiBaseUrl() + "/invoices/" + currentModalInvoiceId + "/pdf", "_blank");
-        }
-    });
-
     const getFilters = () => {
         return {
             keyword: document.getElementById("filter-keyword").value.trim(),
@@ -192,43 +84,55 @@ export async function renderInvoices(container, session) {
         return amount != null ? Number(amount).toLocaleString('vi-VN') + ' đ' : '0 đ';
     };
 
-    const closeModal = () => {
-        modalOverlay.classList.remove('active');
-        setTimeout(() => modalOverlay.style.display = 'none', 300);
-    };
-
-    btnCloseModal1.addEventListener('click', closeModal);
-    btnCloseModal2.addEventListener('click', closeModal);
-    modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) closeModal();
-    });
-
     const openModal = (invoiceId) => {
         const inv = currentInvoices.find(i => i.id == invoiceId);
         if (!inv) return;
 
-        document.getElementById('modal-title').textContent = `Hóa Đơn #${inv.id}`;
-        document.getElementById('md-customer').textContent = inv.customerName || 'Khách vãng lai';
-        document.getElementById('md-room').textContent = `#${inv.roomNumber || 'N/A'}`;
-        document.getElementById('md-booking').textContent = `#${inv.bookingId}`;
+        const modal = document.getElementById('global-modal');
+        const content = document.getElementById('global-modal-content');
         
-        let statusText = "Khác";
-        if (inv.status === 'paid') statusText = "Đã thanh toán";
-        else if (inv.status === 'pending') statusText = "Chờ thanh toán";
-        else if (inv.status === 'cancelled') statusText = "Đã hủy";
-        document.getElementById('md-status').textContent = statusText;
+        let statusText = 'Khác';
+        if (inv.status === 'paid') statusText = 'Đã thanh toán';
+        else if (inv.status === 'pending') statusText = 'Chờ thanh toán';
+        else if (inv.status === 'cancelled') statusText = 'Đã hủy';
 
-        document.getElementById('md-date').textContent = inv.issueDate ? new Date(inv.issueDate).toLocaleString('vi-VN') : 'N/A';
+        const dateStr = inv.issueDate ? new Date(inv.issueDate).toLocaleString('vi-VN') : 'N/A';
+
+        content.innerHTML = `
+            <div class="modal-header">
+                <h2>Chi Tiết Hóa Đơn #${inv.id}</h2>
+                <button class="modal-close" onclick="closeModal('global-modal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top:10px;">
+                <div class="grid grid-cols-2" style="gap:15px; margin-bottom:25px;">
+                    <div><span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;">Khách hàng</span><br><strong>${inv.customerName || 'Khách vãng lai'}</strong></div>
+                    <div><span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;">Phòng</span><br><strong>#${inv.roomNumber || 'N/A'}</strong></div>
+                    <div><span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;">Mã đơn thuê</span><br><strong>#${inv.bookingId}</strong></div>
+                    <div><span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;">Trạng thái</span><br><strong>${statusText}</strong></div>
+                    <div style="grid-column: span 2;"><span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;">Ngày xuất</span><br><strong>${dateStr}</strong></div>
+                </div>
+                <div style="background:var(--bg-input); padding:20px; border-radius:8px; border:1px solid var(--border);">
+                    <div class="flex-row" style="justify-content:space-between; margin-bottom:12px; font-size:14px;"><span>Tiền phòng</span><strong>${formatCurrency(inv.totalRoomFee)}</strong></div>
+                    <div class="flex-row" style="justify-content:space-between; margin-bottom:12px; font-size:14px;"><span>Tiền dịch vụ</span><strong>${formatCurrency(inv.totalServiceFee)}</strong></div>
+                    <div class="flex-row" style="justify-content:space-between; margin-bottom:12px; font-size:14px; color:var(--success);"><span>Khuyến mãi</span><strong>-${formatCurrency(inv.discount)}</strong></div>
+                    <div class="flex-row" style="justify-content:space-between; margin-bottom:12px; font-size:14px;"><span>Thuế VAT</span><strong>${formatCurrency(inv.taxAmount)}</strong></div>
+                    <hr style="border:0; border-top:1px dashed var(--border); margin:15px 0;">
+                    <div class="flex-row" style="justify-content:space-between; font-size:18px; font-weight:700;"><span>TỔNG THANH TOÁN</span><span>${formatCurrency(inv.finalTotal)}</span></div>
+                </div>
+            </div>
+            <div class="flex-row" style="justify-content:flex-end; margin-top:20px;">
+                <button class="btn btn-secondary" onclick="closeModal('global-modal')">Đóng</button>
+                <button class="btn btn-primary" id="btn-print-pdf-real">
+                    <i data-lucide="printer" style="width:16px;height:16px;"></i> In Hóa Đơn PDF
+                </button>
+            </div>
+        `;
+        if(window.lucide) lucide.createIcons();
+        modal.classList.add('active');
         
-        document.getElementById('md-room-fee').textContent = formatCurrency(inv.totalRoomFee);
-        document.getElementById('md-service-fee').textContent = formatCurrency(inv.totalServiceFee);
-        document.getElementById('md-discount').textContent = "-" + formatCurrency(inv.discount);
-        document.getElementById('md-tax').textContent = formatCurrency(inv.taxAmount);
-        document.getElementById('md-final-total').textContent = formatCurrency(inv.finalTotal);
-
-        currentModalInvoiceId = inv.id;
-        modalOverlay.style.display = 'flex';
-        requestAnimationFrame(() => modalOverlay.classList.add('active'));
+        document.getElementById('btn-print-pdf-real').addEventListener('click', () => {
+            window.open(getApiBaseUrl() + '/invoices/' + inv.id + '/pdf', '_blank');
+        });
     };
 
     const showSkeleton = () => {
@@ -285,11 +189,12 @@ export async function renderInvoices(container, session) {
                     <td style="font-weight: 600; color: var(--success);">${formatCurrency(i.finalTotal)}</td>
                     <td>${dateStr}<br>${statusBadge}</td>
                     <td style="text-align: center;">
-                        <button class="btn-action btn-view-invoice" data-id="${i.id}">Chi tiết</button>
+                        <button class="btn-icon btn-view-invoice" data-id="${i.id}" title="Chi tiết"><i data-lucide="file-text" style="width:14px;height:14px;pointer-events:none;"></i></button>
                     </td>
                 `;
                 body.appendChild(tr);
             });
+            if(window.lucide) lucide.createIcons();
 
             btnNext.disabled = currentInvoices.length < limit;
 
