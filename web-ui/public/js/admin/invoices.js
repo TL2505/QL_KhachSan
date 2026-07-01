@@ -24,19 +24,30 @@ export async function renderInvoices(container, session) {
                     </tbody>
                 </table>
             </div>
+            <div id="pagination-admin-invoices"></div>
         </div>
     `;
 
-    try {
-        const list = await api.get("/invoices");
+    let allInvoices = [];
+    let currentPage = 1;
+    let itemsPerPage = 10;
+
+    const renderTable = () => {
         const body = document.getElementById("admin-invoices-body");
         body.innerHTML = "";
-        if (!list || list.length === 0) {
+        
+        if (!allInvoices || allInvoices.length === 0) {
             body.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Không tìm thấy bản ghi hóa đơn nào.</td></tr>`;
+            const paginationContainer = document.getElementById("pagination-admin-invoices");
+            if (paginationContainer) paginationContainer.innerHTML = '';
             return;
         }
 
-        list.forEach(i => {
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginatedList = allInvoices.slice(start, end);
+
+        paginatedList.forEach(i => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>#${i.id}</td>
@@ -48,7 +59,34 @@ export async function renderInvoices(container, session) {
             `;
             body.appendChild(tr);
         });
+
+        if (window.renderPaginationComponent) {
+            window.renderPaginationComponent(
+                "pagination-admin-invoices",
+                allInvoices.length,
+                itemsPerPage,
+                currentPage,
+                (newPage) => {
+                    currentPage = newPage;
+                    renderTable();
+                },
+                (newItemsPerPage) => {
+                    itemsPerPage = newItemsPerPage;
+                    currentPage = 1;
+                    renderTable();
+                }
+            );
+        }
+    };
+
+    try {
+        const list = await api.get("/invoices");
+        allInvoices = list;
+        currentPage = 1;
+        renderTable();
     } catch (e) {
         console.error(e);
+        const body = document.getElementById("admin-invoices-body");
+        if (body) body.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">${e.message}</td></tr>`;
     }
 }
