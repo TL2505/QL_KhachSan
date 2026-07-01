@@ -81,6 +81,7 @@ public class BookingDAOImpl implements BookingDAO {
                 b.setCheckOutDate(rs.getTimestamp("check_out_date"));
                 b.setTotalPrice(rs.getDouble("total_price"));
                 b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
                 list.add(b);
             }
         } catch (Exception e) {

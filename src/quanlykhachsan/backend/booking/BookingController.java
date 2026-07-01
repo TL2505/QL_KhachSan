@@ -61,8 +61,22 @@ public class BookingController implements HttpHandler {
 
                 // Lấy thông tin phòng để kiểm tra trạng thái và tính giá tạm tính
                 quanlykhachsan.backend.room.Room room = roomService.getRoomById(roomId);
-                if (room == null || !"available".equals(room.getStatus())) {
-                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Phòng không tồn tại hoặc đã được đặt!"));
+                if (room == null) {
+                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Phòng không tồn tại!"));
+                    return;
+                }
+
+                String st = room.getStatus() != null ? room.getStatus().toLowerCase() : "available";
+                if (!"available".equals(st)) {
+                    if (st.equals("maintenance")) {
+                        ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Phòng đang được bảo trì!"));
+                    } else if (st.equals("cleaning")) {
+                        ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Phòng đang dọn dẹp!"));
+                    } else if (st.equals("booked") || st.equals("occupied") || st.equals("pending")) {
+                        ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Phòng đã được đặt hoặc đang có khách!"));
+                    } else {
+                        ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Phòng không khả dụng!"));
+                    }
                     return;
                 }
 
@@ -130,6 +144,18 @@ public class BookingController implements HttpHandler {
                     }
 
                     ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Check-out thành công"));
+                } else {
+                    ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy Booking ID"));
+                }
+            }
+            // 4. DELETE /api/bookings/{id}
+            else if ("DELETE".equalsIgnoreCase(method) && path.matches("/api/bookings/\\d+")) {
+                int bookingId = Integer.parseInt(path.substring("/api/bookings/".length()));
+                Booking b = bookingService.getBookingById(bookingId);
+                if (b != null) {
+                    bookingService.cancelBooking(bookingId);
+                    roomService.updateRoomStatus(b.getRoomId(), "available");
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Hủy đặt phòng thành công"));
                 } else {
                     ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy Booking ID"));
                 }

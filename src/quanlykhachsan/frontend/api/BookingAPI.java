@@ -117,6 +117,17 @@ public class BookingAPI {
         return null;
     }
 
+    public static boolean cancelBooking(int bookingId) {
+        try {
+            String jsonResponse = HttpUtil.sendDelete("/bookings/" + bookingId);
+            JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
+            return resObj != null && "success".equals(resObj.get("status").getAsString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public static boolean processPayment(int bookingId, int customerId, double amount, String paymentMethod) {
         try {
             JsonObject req = new JsonObject();

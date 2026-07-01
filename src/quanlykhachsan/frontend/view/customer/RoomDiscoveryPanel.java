@@ -40,46 +40,80 @@ public class RoomDiscoveryPanel extends JPanel {
     }
 
     private void initUI() {
-        // --- Search Bar Section ---
-        JPanel searchBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 15));
+        JPanel searchBar = new JPanel(new GridBagLayout());
         searchBar.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
-        searchBar.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_C));
+        searchBar.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(16, 16, 16, 16)));
 
-        // Dates
-        searchBar.add(new JLabel("Ngày nhận:"));
-        txtCheckIn = new JTextField(10);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridy = 0;
+
+        gbc.gridx = 0;
+        gbc.weightx = 0;
+        searchBar.add(createInlineLabel("Ngày nhận:"), gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 0.18;
+        txtCheckIn = createSearchField(12);
         txtCheckIn.setText(sdf.format(new Date()));
-        searchBar.add(txtCheckIn);
+        searchBar.add(txtCheckIn, gbc);
 
-        searchBar.add(new JLabel("Ngày trả:"));
-        txtCheckOut = new JTextField(10);
+        gbc.gridx = 2;
+        gbc.weightx = 0;
+        searchBar.add(createInlineLabel("Ngày trả:"), gbc);
+        gbc.gridx = 3;
+        gbc.weightx = 0.18;
+        txtCheckOut = createSearchField(12);
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_YEAR, 1);
         txtCheckOut.setText(sdf.format(cal.getTime()));
-        searchBar.add(txtCheckOut);
+        searchBar.add(txtCheckOut, gbc);
 
-        // Room Type
-        searchBar.add(new JLabel("Loại phòng:"));
-        cbRoomType = new JComboBox<>(new String[]{"Tất cả", "Standard", "Deluxe", "Family"});
-        searchBar.add(cbRoomType);
+        gbc.gridx = 4;
+        gbc.weightx = 0;
+        searchBar.add(createInlineLabel("Loại phòng:"), gbc);
+        gbc.gridx = 5;
+        gbc.weightx = 0.14;
+        cbRoomType = createSearchCombo(new String[]{"Tất cả", "Standard", "Deluxe", "Family"});
+        searchBar.add(cbRoomType, gbc);
 
-        // Status Filter
-        searchBar.add(new JLabel("Trạng thái:"));
-        cbStatus = new JComboBox<>(new String[]{"Tất cả", "Trống", "Đang có khách", "Bảo trì", "Đang dọn dẹp"});
-        searchBar.add(cbStatus);
+        gbc.gridx = 6;
+        gbc.weightx = 0;
+        searchBar.add(createInlineLabel("Trạng thái:"), gbc);
+        gbc.gridx = 7;
+        gbc.weightx = 0.14;
+        cbStatus = createSearchCombo(new String[]{"Tất cả", "Trống", "Đang có khách", "Bảo trì", "Đang dọn dẹp"});
+        searchBar.add(cbStatus, gbc);
 
-        // Price Filter
-        searchBar.add(new JLabel("Giá:"));
-        cbPrice = new JComboBox<>(new String[]{"Mọi mức giá", "Dưới 500.000đ", "500k - 1 Triệu", "Trên 1 Triệu"});
-        searchBar.add(cbPrice);
+        gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.weightx = 0;
+        searchBar.add(createInlineLabel("Giá:"), gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 0.16;
+        cbPrice = createSearchCombo(new String[]{"Mọi mức giá", "Dưới 500.000đ", "500k - 1 Triệu", "Trên 1 Triệu"});
+        searchBar.add(cbPrice, gbc);
 
-        JButton btnSearch = new JButton("Tìm phòng trống");
+        gbc.gridx = 2;
+        gbc.weightx = 1;
+        gbc.gridwidth = 4;
+        JPanel empty = new JPanel();
+        empty.setOpaque(false);
+        searchBar.add(empty, gbc);
+
+        gbc.gridx = 6;
+        gbc.weightx = 0;
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.EAST;
+        JButton btnSearch = new JButton("Tìm phòng");
         btnSearch.setBackground(PRIMARY);
         btnSearch.setForeground(Color.WHITE);
         btnSearch.setFocusPainted(false);
         btnSearch.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnSearch.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnSearch.addActionListener(e -> performSearch());
-        searchBar.add(btnSearch);
+        searchBar.add(btnSearch, gbc);
 
         // Auto-search on Enter or changes
         txtCheckIn.addActionListener(e -> performSearch());
@@ -88,15 +122,34 @@ public class RoomDiscoveryPanel extends JPanel {
         cbStatus.addActionListener(e -> performSearch());
         cbPrice.addActionListener(e -> performSearch());
 
-        // --- Results Section ---
-        JPanel contentPanel = new JPanel(new BorderLayout());
+        // Auto-search on Enter or changes
+        txtCheckIn.addActionListener(e -> performSearch());
+        txtCheckOut.addActionListener(e -> performSearch());
+        cbRoomType.addActionListener(e -> performSearch());
+        cbStatus.addActionListener(e -> performSearch());
+        cbPrice.addActionListener(e -> performSearch());
+
+        JPanel contentPanel = new JPanel(new BorderLayout(18, 18));
         contentPanel.setOpaque(false);
         contentPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JPanel titleRow = new JPanel(new BorderLayout());
+        titleRow.setOpaque(false);
+        JLabel heading = new JLabel("Sơ đồ phòng hiện tại");
+        heading.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        heading.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+        JLabel desc = new JLabel("Xem trạng thái phòng và chọn phòng phù hợp với nhu cầu của bạn.");
+        desc.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        desc.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
+        titleRow.add(heading, BorderLayout.WEST);
+        titleRow.add(desc, BorderLayout.SOUTH);
 
         lblResults = new JLabel("Vui lòng chọn ngày để tìm kiếm các phòng khả dụng.");
         lblResults.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         lblResults.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
-        contentPanel.add(lblResults, BorderLayout.NORTH);
+
+        contentPanel.add(titleRow, BorderLayout.NORTH);
+        contentPanel.add(lblResults, BorderLayout.SOUTH);
 
         gridPanel = new JPanel(new WrapLayout(FlowLayout.LEADING, 20, 20));
         gridPanel.setOpaque(false);
@@ -110,6 +163,33 @@ public class RoomDiscoveryPanel extends JPanel {
 
         add(contentPanel, BorderLayout.CENTER);
         add(searchBar, BorderLayout.NORTH);
+    }
+
+    private JLabel createInlineLabel(String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lbl.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+        return lbl;
+    }
+
+    private JTextField createSearchField(int cols) {
+        JTextField field = new JTextField(cols);
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        field.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
+        field.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+        field.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(8, 8, 8, 8)));
+        field.setPreferredSize(new Dimension(120, 32));
+        return field;
+    }
+
+    private JComboBox<String> createSearchCombo(String[] options) {
+        JComboBox<String> combo = new JComboBox<>(options);
+        combo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        combo.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
+        combo.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+        combo.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(6, 8, 6, 8)));
+        combo.setPreferredSize(new Dimension(140, 32));
+        return combo;
     }
 
     private void performSearch() {
@@ -177,110 +257,107 @@ public class RoomDiscoveryPanel extends JPanel {
     }
 
     private JPanel createRoomCard(Room r) {
-        JPanel card = new JPanel();
-        card.setPreferredSize(new Dimension(280, 360));
-        card.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
-        card.setLayout(new BorderLayout());
-        card.setBorder(new LineBorder(BORDER_C, 1, true));
+        JPanel card = new JPanel(new BorderLayout());
+        card.setPreferredSize(new Dimension(200, 140));
+        card.setBorder(new EmptyBorder(6, 6, 6, 6));
 
-        // Top: Image placeholder/Icon
-        JPanel imgPanel = new JPanel(new GridBagLayout());
-        imgPanel.setPreferredSize(new Dimension(280, 160));
-        imgPanel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
-        JLabel lblIcon = new JLabel("HOTEL ROOM"); 
-        lblIcon.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lblIcon.setForeground(new Color(148, 163, 184));
-        imgPanel.add(lblIcon);
-        card.add(imgPanel, BorderLayout.NORTH);
-
-        // Center: Details
-        JPanel details = new JPanel();
-        details.setLayout(new BoxLayout(details, BoxLayout.Y_AXIS));
-        details.setBorder(new EmptyBorder(15, 15, 15, 15));
-        details.setOpaque(false);
-
-        JLabel name = new JLabel("Phòng " + r.getRoomNumber());
-        name.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        details.add(name);
-        details.add(Box.createVerticalStrut(5));
-
-        JLabel price = new JLabel(nf.format(r.getPrice()) + " / đêm");
-        price.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        price.setForeground(PRIMARY);
-        details.add(price);
-        details.add(Box.createVerticalStrut(10));
-
-        JLabel amenities = new JLabel("<html>Tiện nội: Wifi, Điều hòa, TV, Nước nóng...</html>");
-        amenities.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        amenities.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
-        details.add(amenities);
-
-        card.add(details, BorderLayout.CENTER);
-
-        // Bottom: Action
-        JButton btnBook = new JButton("Đặt ngay");
-        btnBook.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnBook.setPreferredSize(new Dimension(0, 45));
-        btnBook.setFocusPainted(false);
-        
         String st = r.getStatus() != null ? r.getStatus().toLowerCase() : "available";
-        if (st.equals("available")) {
-            btnBook.setBackground(PRIMARY);
-            btnBook.setForeground(Color.WHITE);
-            btnBook.addActionListener(e -> {
-                Window owner = SwingUtilities.getWindowAncestor(this);
-                BookingWizardDialog dialog = new BookingWizardDialog(owner, currentUser, r, lastCin, lastCout);
-                dialog.setVisible(true);
-                performSearch(); // Refresh list after potential booking
-            });
-            // Also color the top image badge
-            imgPanel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249)); // pale blue
-        } else {
-            btnBook.setEnabled(false);
-            btnBook.setForeground(Color.WHITE);
-            boolean isDark = quanlykhachsan.frontend.utils.ThemeManager.isDarkMode();
-            if (st.equals("booked")) {
-               btnBook.setText("ĐÃ TẠO ĐẶT CHỖ");
-               btnBook.setBackground(new Color(234, 179, 8)); // Yellow
-               imgPanel.setBackground(isDark ? new Color(133, 77, 14) : new Color(254, 249, 195));
-            } else if (st.equals("occupied")) {
-               btnBook.setText("ĐANG CÓ KHÁCH");
-               btnBook.setBackground(new Color(220, 38, 38)); // Red
-               imgPanel.setBackground(isDark ? new Color(127, 29, 29) : new Color(254, 226, 226));
-            } else if (st.equals("maintenance")) {
-               btnBook.setText("ĐANG BẢO TRÌ");
-               btnBook.setBackground(new Color(156, 163, 175)); // Gray
-               imgPanel.setBackground(isDark ? new Color(55, 65, 81) : new Color(243, 244, 246));
-            } else if (st.equals("cleaning")) {
-               btnBook.setText("ĐANG DỌN DẸP");
-               btnBook.setBackground(new Color(56, 189, 248)); // Sky Blue
-               imgPanel.setBackground(isDark ? new Color(12, 74, 110) : new Color(224, 242, 254));
-            } else {
-               btnBook.setText("KHÔNG KHẢ DỤNG");
-               btnBook.setBackground(Color.GRAY);
-            }
+        Color tileBg;
+        Color tileFg = Color.WHITE;
+        switch (st) {
+            case "booked":
+                tileBg = new Color(203, 103, 2);
+                break;
+            case "occupied":
+                tileBg = new Color(220, 38, 38);
+                break;
+            case "maintenance":
+                tileBg = new Color(107, 114, 128);
+                break;
+            case "cleaning":
+                tileBg = new Color(59, 130, 246);
+                break;
+            default:
+                tileBg = new Color(16, 185, 129);
+                break;
         }
-        
-        card.add(btnBook, BorderLayout.SOUTH);
 
-        // Click on room card to show details
+        JPanel tile = new JPanel(new BorderLayout(8, 8));
+        tile.setBackground(tileBg);
+        tile.setOpaque(true);
+        tile.setBorder(new LineBorder(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor(), 1, true));
+
+        JLabel lblNumber = new JLabel(r.getRoomNumber(), SwingConstants.CENTER);
+        lblNumber.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblNumber.setForeground(tileFg);
+        tile.add(lblNumber, BorderLayout.CENTER);
+
+        String typeName = "";
+        try {
+            if (r.getRoomTypeId() > 0) {
+                quanlykhachsan.backend.room.RoomType rt = RoomAPI.getRoomType(r.getRoomTypeId());
+                if (rt != null && rt.getName() != null) typeName = rt.getName();
+            }
+        } catch (Exception ex) {
+            // fallback to empty
+        }
+
+        String statusText;
+        switch (st) {
+            case "booked":
+                statusText = "Đã đặt";
+                break;
+            case "occupied":
+                statusText = "Có khách";
+                break;
+            case "maintenance":
+                statusText = "Bảo trì";
+                break;
+            case "cleaning":
+                statusText = "Đang dọn";
+                break;
+            default:
+                statusText = "Trống";
+                break;
+        }
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        bottom.setOpaque(false);
+
+        JLabel lblStatus = new JLabel(statusText, SwingConstants.CENTER);
+        lblStatus.setOpaque(true);
+        lblStatus.setBackground(new Color(255, 255, 255, 90));
+        lblStatus.setForeground(tileFg);
+        lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblStatus.setBorder(new EmptyBorder(6, 12, 6, 12));
+        bottom.add(lblStatus);
+
+        tile.add(bottom, BorderLayout.SOUTH);
+        tile.setToolTipText("Phòng " + r.getRoomNumber() + " - " + statusText);
+
+        card.add(tile, BorderLayout.CENTER);
+
+        // Keep click behavior: open details (and booking available from detail dialog)
         java.awt.event.MouseAdapter cardClickListener = new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                Window owner = SwingUtilities.getWindowAncestor(RoomDiscoveryPanel.this);
-                RoomDetailDialog dialog = new RoomDetailDialog((Frame) owner, r, currentUser);
-                dialog.setVisible(true);
-                performSearch(); // Refresh list after dialog closes
+                System.out.println("[UI] room tile clicked: " + r.getRoomNumber());
+                try {
+                    Window w = SwingUtilities.getWindowAncestor(RoomDiscoveryPanel.this);
+                    Frame ownerFrame = (w instanceof Frame) ? (Frame) w : null;
+                    RoomDetailDialog dialog = new RoomDetailDialog(ownerFrame, r, currentUser);
+                    dialog.setVisible(true);
+                    performSearch(); // Refresh list after dialog closes
+                } catch (Throwable ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(RoomDiscoveryPanel.this, "Lỗi khi mở chi tiết phòng: " + ex.getMessage());
+                }
             }
         };
-        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        card.addMouseListener(cardClickListener);
-        imgPanel.addMouseListener(cardClickListener);
-        lblIcon.addMouseListener(cardClickListener);
-        details.addMouseListener(cardClickListener);
-        name.addMouseListener(cardClickListener);
-        price.addMouseListener(cardClickListener);
-        amenities.addMouseListener(cardClickListener);
+        tile.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        tile.addMouseListener(cardClickListener);
+        lblNumber.addMouseListener(cardClickListener);
+        lblStatus.addMouseListener(cardClickListener);
 
         return card;
     }

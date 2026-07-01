@@ -48,14 +48,17 @@ public class RoomDetailDialog extends JDialog {
         this.room = room;
         this.currentUser = user;
         
-        setSize(460, 500);
+        setSize(980, 620);
+        setMinimumSize(new Dimension(980, 620));
+        setResizable(false);
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout());
         getContentPane().setBackground(BG);
 
         initUI();
         loadData();
-    }    private void initUI() {
+    }
+    private void initUI() {
         // --- Header ---
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(ThemeManager.getCardBg());
@@ -73,133 +76,180 @@ public class RoomDetailDialog extends JDialog {
         header.add(lblStatus, BorderLayout.EAST);
 
         add(header, BorderLayout.NORTH);
-
-        // --- Content ---
-        JPanel content = new JPanel();
-        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        // --- Content (3-column layout): Image | Info | Booking ---
+        JPanel content = new JPanel(new GridBagLayout());
         content.setBackground(BG);
-        content.setBorder(new EmptyBorder(20, 25, 20, 25));
+        content.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Info Section (Static Info Card)
-        JPanel infoCard = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g;
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(CARD_BG);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-                g2.setColor(BORDER);
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 16, 16);
-            }
-        };
-        infoCard.setLayout(new BoxLayout(infoCard, BoxLayout.Y_AXIS));
-        infoCard.setOpaque(false);
-        infoCard.setBorder(new EmptyBorder(16, 20, 16, 20));
+        // Left: Image + thumbnails
+        JPanel leftCol = new JPanel(new BorderLayout(0, 8));
+        leftCol.setOpaque(false);
+        leftCol.setPreferredSize(new Dimension(300, 300));
+        leftCol.setMaximumSize(new Dimension(300, Integer.MAX_VALUE));
 
-        lblTypeName = new JLabel("Đang tải loại phòng...");
-        lblTypeName.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        lblTypeName.setForeground(ThemeManager.getTextMain());
-        infoCard.add(lblTypeName);
-        infoCard.add(Box.createVerticalStrut(6));
+        JLabel mainImage = new JLabel("", SwingConstants.CENTER);
+        mainImage.setPreferredSize(new Dimension(300, 300));
+        mainImage.setOpaque(true);
+        mainImage.setBackground(new Color(230, 230, 230));
+        mainImage.setBorder(new LineBorder(BORDER, 1, true));
+        mainImage.setText("HÌNH ẢNH PHÒNG");
+        mainImage.setForeground(new Color(120, 120, 120));
+        mainImage.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        leftCol.add(mainImage, BorderLayout.CENTER);
 
-        lblCapacity = new JLabel("👥 Sức chứa: -- người");
-        lblCapacity.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        lblCapacity.setForeground(MUTED);
-        infoCard.add(lblCapacity);
-        infoCard.add(Box.createVerticalStrut(10));
+        JPanel thumbs = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        thumbs.setOpaque(false);
+        for (int i = 0; i < 4; i++) {
+            JLabel t = new JLabel("", SwingConstants.CENTER);
+            t.setPreferredSize(new Dimension(60, 50));
+            t.setOpaque(true);
+            t.setBackground(new Color(245, 245, 245));
+            t.setBorder(new LineBorder(BORDER, 1, true));
+            thumbs.add(t);
+        }
+        leftCol.add(thumbs, BorderLayout.SOUTH);
 
-        lblDescription = new JLabel("<html><i>Đang tải mô tả chi tiết...</i></html>");
+        // Center: Details (type, amenities, description, specs)
+        JPanel centerCol = new JPanel();
+        centerCol.setLayout(new BoxLayout(centerCol, BoxLayout.Y_AXIS));
+        centerCol.setOpaque(false);
+        centerCol.setPreferredSize(new Dimension(340, 0));
+        centerCol.setMaximumSize(new Dimension(340, Integer.MAX_VALUE));
+
+        JPanel titleRow = new JPanel(new BorderLayout());
+        titleRow.setOpaque(false);
+        JLabel roomTitle = new JLabel("Phòng " + room.getRoomNumber());
+        roomTitle.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        roomTitle.setForeground(ThemeManager.getTextMain());
+        titleRow.add(roomTitle, BorderLayout.WEST);
+        titleRow.add(createStatusBadge(room.getStatus()), BorderLayout.EAST);
+        centerCol.add(titleRow);
+        centerCol.add(Box.createVerticalStrut(12));
+
+        // Amenities grid
+        JPanel am = new JPanel(new GridLayout(0, 2, 8, 6));
+        am.setOpaque(false);
+        String[] amenities = {"Wifi miễn phí", "TV màn hình phẳng", "Điều hòa", "Bình đun nước", "Tủ lạnh mini", "Máy sấy tóc", "Dép đi trong phòng", "Ban công"};
+        for (String a : amenities) {
+            JLabel la = new JLabel("• " + a);
+            la.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            la.setForeground(ThemeManager.getTextMuted());
+            am.add(la);
+        }
+        centerCol.add(am);
+        centerCol.add(Box.createVerticalStrut(12));
+
+        lblDescription = new JLabel("<html>Mô tả: Phòng rộng rãi, tiện nghi đầy đủ, phù hợp cho cặp đôi hoặc công tác.</html>");
         lblDescription.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblDescription.setForeground(ThemeManager.getTextMuted());
-        infoCard.add(lblDescription);
+        centerCol.add(lblDescription);
+        centerCol.add(Box.createVerticalStrut(12));
 
-        content.add(infoCard);
-        content.add(Box.createVerticalStrut(20));
+        // Ensure spec labels exist
+        lblTypeName = new JLabel("Đang tải loại phòng...");
+        lblTypeName.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblTypeName.setForeground(ThemeManager.getTextMain());
+        lblCapacity = new JLabel("👥 Sức chứa: -- người");
+        lblCapacity.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblCapacity.setForeground(ThemeManager.getTextMain());
 
-        // Booking Controls (Side-by-Side Date Fields)
-        JPanel datePanel = new JPanel(new GridLayout(1, 2, 15, 0));
-        datePanel.setOpaque(false);
+        // Specs table
+        JPanel specs = new JPanel(new GridLayout(0, 2, 6, 8));
+        specs.setOpaque(false);
+        specs.add(makeSpecLabel("Loại phòng:")); specs.add(makeSpecValue(lblTypeName));
+        specs.add(makeSpecLabel("Sức chứa:")); specs.add(makeSpecValue(lblCapacity));
+        specs.add(makeSpecLabel("Diện tích:")); specs.add(makeSpecValue(new JLabel("-- m²")));
+        centerCol.add(specs);
 
-        JPanel pIn = new JPanel();
-        pIn.setLayout(new BoxLayout(pIn, BoxLayout.Y_AXIS));
-        pIn.setOpaque(false);
-        pIn.add(makeLabel("📅 Ngày Nhận"));
-        txtCheckIn = new JTextField(sdf.format(new Date()));
-        styleTextField(txtCheckIn);
-        pIn.add(txtCheckIn);
-        datePanel.add(pIn);
+        // Right: Booking box (sticky)
+        JPanel rightCol = new JPanel();
+        rightCol.setLayout(new BoxLayout(rightCol, BoxLayout.Y_AXIS));
+        rightCol.setOpaque(false);
+        rightCol.setPreferredSize(new Dimension(220, 0));
+        rightCol.setMaximumSize(new Dimension(240, Integer.MAX_VALUE));
 
-        JPanel pOut = new JPanel();
-        pOut.setLayout(new BoxLayout(pOut, BoxLayout.Y_AXIS));
-        pOut.setOpaque(false);
-        pOut.add(makeLabel("📅 Ngày Trả"));
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_MONTH, 1);
-        txtCheckOut = new JTextField(sdf.format(cal.getTime()));
-        styleTextField(txtCheckOut);
-        pOut.add(txtCheckOut);
-        datePanel.add(pOut);
-
-        content.add(datePanel);
-        content.add(Box.createVerticalStrut(20));
-
-        // Pricing Section (Invoice ticket style)
-        JPanel priceCard = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
+        JPanel bookingBox = new JPanel() {
+            @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(CARD_BG);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 g2.setColor(BORDER);
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 16, 16);
-                // Dash separator line above total payment
-                g2.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{4}, 0));
-                g2.setColor(BORDER);
-                g2.drawLine(15, getHeight() - 40, getWidth() - 15, getHeight() - 40);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 12, 12);
             }
         };
-        priceCard.setLayout(new BorderLayout());
-        priceCard.setOpaque(false);
-        priceCard.setBorder(new EmptyBorder(16, 20, 16, 20));
+        bookingBox.setOpaque(false);
+        bookingBox.setLayout(new BoxLayout(bookingBox, BoxLayout.Y_AXIS));
+        bookingBox.setBorder(new EmptyBorder(16, 16, 16, 16));
 
-        JPanel pricePane = new JPanel(new GridLayout(3, 2, 0, 8));
-        pricePane.setOpaque(false);
-
-        JLabel lblUnit = new JLabel("Đơn giá / đêm:");
-        lblUnit.setForeground(ThemeManager.getTextMuted());
-        pricePane.add(lblUnit);
-        
         lblPrice = new JLabel(formatPrice(room.getPrice()));
+        lblPrice.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblPrice.setForeground(ThemeManager.getTextMain());
-        lblPrice.setHorizontalAlignment(SwingConstants.RIGHT);
-        pricePane.add(lblPrice);
+        lblPrice.setAlignmentX(Component.LEFT_ALIGNMENT);
+        bookingBox.add(lblPrice);
+        bookingBox.add(Box.createVerticalStrut(6));
 
-        JLabel lblPromo = new JLabel("Khuyến mãi áp dụng:");
-        lblPromo.setForeground(ThemeManager.getTextMuted());
-        pricePane.add(lblPromo);
-        
-        lblDiscountValue = new JLabel("- " + formatPrice(0));
-        lblDiscountValue.setForeground(DANGER);
-        lblDiscountValue.setHorizontalAlignment(SwingConstants.RIGHT);
-        pricePane.add(lblDiscountValue);
+        // Dates
+        JPanel dates = new JPanel();
+        dates.setOpaque(false);
+        dates.setLayout(new GridLayout(2, 1, 6, 6));
+        JPanel pIn = new JPanel(new BorderLayout()); pIn.setOpaque(false); pIn.add(makeLabel("Ngày nhận"), BorderLayout.NORTH);
+        txtCheckIn = new JTextField(sdf.format(new Date())); styleTextField(txtCheckIn); pIn.add(txtCheckIn, BorderLayout.CENTER);
+        dates.add(pIn);
+        JPanel pOut = new JPanel(new BorderLayout()); pOut.setOpaque(false); pOut.add(makeLabel("Ngày trả"), BorderLayout.NORTH);
+        Calendar cal = Calendar.getInstance(); cal.add(Calendar.DAY_OF_MONTH, 1);
+        txtCheckOut = new JTextField(sdf.format(cal.getTime())); styleTextField(txtCheckOut); pOut.add(txtCheckOut, BorderLayout.CENTER);
+        dates.add(pOut);
+        bookingBox.add(dates);
+        bookingBox.add(Box.createVerticalStrut(8));
 
-        JLabel lblTotalText = new JLabel("💰 TỔNG THANH TOÁN (10% VAT):");
-        lblTotalText.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lblTotalText.setForeground(ThemeManager.getTextMain());
-        pricePane.add(lblTotalText);
+        // Guests selector
+        bookingBox.add(makeLabel("Số lượng khách"));
+        JComboBox<String> cbGuests = new JComboBox<>(new String[]{"1 người", "2 người", "3 người"});
+        cbGuests.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        bookingBox.add(cbGuests);
+        bookingBox.add(Box.createVerticalStrut(12));
 
-        lblTotalFinal = new JLabel(formatPrice(room.getPrice()));
-        lblTotalFinal.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lblTotalFinal.setForeground(PRIMARY);
-        lblTotalFinal.setHorizontalAlignment(SwingConstants.RIGHT);
-        pricePane.add(lblTotalFinal);
+        // Total and button
+        JPanel totalRow = new JPanel(new BorderLayout()); totalRow.setOpaque(false);
+        JLabel ttl = new JLabel("Tổng tạm tính:"); ttl.setForeground(ThemeManager.getTextMuted()); totalRow.add(ttl, BorderLayout.WEST);
+        lblTotalFinal = new JLabel(formatPrice(room.getPrice())); lblTotalFinal.setFont(new Font("Segoe UI", Font.BOLD, 18)); lblTotalFinal.setForeground(PRIMARY); totalRow.add(lblTotalFinal, BorderLayout.EAST);
+        bookingBox.add(totalRow);
+        bookingBox.add(Box.createVerticalStrut(12));
 
-        priceCard.add(pricePane, BorderLayout.CENTER);
-        content.add(priceCard);
+        btnPay = new JButton("💳 Thanh toán & Đặt ngay");
+        btnPay.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnPay.setBackground(PRIMARY);
+        btnPay.setForeground(Color.WHITE);
+        btnPay.setFocusPainted(false);
+        btnPay.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnPay.putClientProperty("Button.arc", 12);
+        btnPay.addActionListener(e -> processInstantBooking());
+        btnPay.setAlignmentX(Component.CENTER_ALIGNMENT);
+        bookingBox.add(btnPay);
 
-        // Wrap everything in a main scroll pane if it gets too long
-        JScrollPane mainScroll = new JScrollPane(content);
+        rightCol.add(bookingBox);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        content.add(leftCol, gbc);
+
+        gbc.gridx = 1;
+        gbc.insets = new Insets(0, 12, 0, 12);
+        gbc.weightx = 0.6;
+        content.add(centerCol, gbc);
+
+        gbc.gridx = 2;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.weightx = 0.4;
+        content.add(rightCol, gbc);
+
+        JScrollPane mainScroll = new JScrollPane(content, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         mainScroll.setBorder(null);
         mainScroll.setOpaque(false);
         mainScroll.getViewport().setOpaque(false);
@@ -218,17 +268,7 @@ public class RoomDetailDialog extends JDialog {
         btnCancel.putClientProperty("Button.arc", 12);
         btnCancel.addActionListener(e -> dispose());
 
-        btnPay = new JButton("💳 Thanh toán & Đặt ngay");
-        btnPay.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnPay.setBackground(PRIMARY);
-        btnPay.setForeground(Color.WHITE);
-        btnPay.setFocusPainted(false);
-        btnPay.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnPay.putClientProperty("Button.arc", 12);
-        btnPay.addActionListener(e -> processInstantBooking());
-
         actions.add(btnCancel);
-        actions.add(btnPay);
         add(actions, BorderLayout.SOUTH);
 
         // Live update pricing when dates change
@@ -315,20 +355,79 @@ public class RoomDetailDialog extends JDialog {
         new SwingWorker<String, Void>() {
             @Override
             protected String doInBackground() {
-                // 1. Create Booking
+                // Pre-check current room status to give immediate, clear messages without relying on server-side text
+                try {
+                    // 1) Check active booking for this room
+                    quanlykhachsan.backend.booking.Booking active = BookingAPI.getActiveBookingByRoom(room.getId());
+                    if (active != null) {
+                        return "Phòng đã được đặt hoặc đang có khách!";
+                    }
+                } catch (Exception ex) {
+                    // ignore and continue to server-side booking attempt
+                }
+
+                try {
+                    // 2) Refresh room list to inspect status
+                    java.util.List<quanlykhachsan.backend.room.Room> all = RoomAPI.getAllRooms();
+                    for (quanlykhachsan.backend.room.Room rr : all) {
+                        if (rr.getId() == room.getId()) {
+                            String st = rr.getStatus() != null ? rr.getStatus().toLowerCase() : "available";
+                            if ("maintenance".equals(st)) return "Phòng đang được bảo trì!";
+                            if ("cleaning".equals(st)) return "Phòng đang dọn dẹp!";
+                            break;
+                        }
+                    }
+                } catch (Exception ex) {
+                    // ignore
+                }
+
+                // 3. Create Booking
                 JsonObject res = BookingAPI.bookRoom(currentUser.getCustomerId(), room.getId(), in, out);
-                if (res != null && "success".equals(res.get("status").getAsString())) {
-                    int bookingId = res.get("bookingId").getAsInt();
-                    
+                System.out.println("[DEBUG] bookRoom response: " + (res != null ? res.toString() : "null"));
+                if (res == null) return "Lỗi kết nối";
+
+                String status = res.has("status") && !res.get("status").isJsonNull() ? res.get("status").getAsString() : "error";
+                if ("success".equals(status)) {
+                    // bookingId is inside data.bookingId
+                    int bookingId = -1;
+                    try {
+                        if (res.has("data") && res.get("data").isJsonObject()) {
+                            JsonObject data = res.getAsJsonObject("data");
+                            if (data.has("bookingId") && !data.get("bookingId").isJsonNull()) {
+                                bookingId = data.get("bookingId").getAsInt();
+                            }
+                        }
+                    } catch (Exception ex) {
+                        // parsing issue
+                    }
+
+                    if (bookingId <= 0) {
+                        // Unexpected but booking may have been created; return informative message
+                        return "Đã tạo đặt chỗ nhưng không lấy được ID booking. Vui lòng kiểm tra lịch sử đặt phòng.";
+                    }
+
                     // 2. Immediate Payment (Fast flow)
                     String totalStr = lblTotalFinal.getText().replaceAll("[^\\d]", "");
                     double finalAmount = Double.parseDouble(totalStr);
-                    
-                    boolean payOk = PaymentAPI.processPayment(bookingId, finalAmount, "Cash (Fast Pay)");
+
+                    String payResp = PaymentAPI.pay(bookingId, finalAmount, "Cash (Fast Pay)", currentUser.getCustomerId());
+                    System.out.println("[DEBUG] payment response: " + payResp);
+                    boolean payOk = payResp != null && payResp.startsWith("Success");
                     if (payOk) return "Success";
                     else return "Đặt phòng thành công nhưng lỗi thanh toán. Vui lòng liên hệ lễ tân.";
+                } else {
+                    // Return mapped error message from server if available
+                    try {
+                        String raw = null;
+                        if (res.has("message") && !res.get("message").isJsonNull()) raw = res.get("message").getAsString();
+                        else if (res.has("data") && res.get("data").isJsonObject()) {
+                            JsonObject inner = res.getAsJsonObject("data");
+                            if (inner.has("message") && !inner.get("message").isJsonNull()) raw = inner.get("message").getAsString();
+                        }
+                        if (raw != null) return mapServerBookingMessage(raw);
+                    } catch (Exception ex) {}
+                    return "Lỗi đặt phòng: server trả về trạng thái không thành công";
                 }
-                return res != null ? res.get("message").getAsString() : "Lỗi kết nối";
             }
             @Override
             protected void done() {
@@ -387,6 +486,30 @@ public class RoomDetailDialog extends JDialog {
             case "cleaning":       return "Đang dọn dẹp";
             default:               return status;
         }
+    }
+
+    private String mapServerBookingMessage(String raw) {
+        if (raw == null) return "Lỗi đặt phòng";
+        String lower = raw.toLowerCase();
+        if (lower.contains("bảo trì") || lower.contains("maintenance")) return "Phòng đang được bảo trì!";
+        if (lower.contains("dọn") || lower.contains("clean")) return "Phòng đang dọn dẹp!";
+        if (lower.contains("đặt") || lower.contains("booked") || lower.contains("đã được đặt")) return "Phòng đã được đặt rồi";
+        if (lower.contains("không tồn tại") || lower.contains("not exist") || lower.contains("not found")) return "Phòng không tồn tại!";
+        // Default: return server message unchanged
+        return raw;
+    }
+
+    private JLabel makeSpecLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        l.setForeground(ThemeManager.getTextMuted());
+        return l;
+    }
+
+    private JLabel makeSpecValue(JLabel v) {
+        v.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        v.setForeground(ThemeManager.getTextMain());
+        return v;
     }
 
     private BadgeLabel createStatusBadge(String status) {
