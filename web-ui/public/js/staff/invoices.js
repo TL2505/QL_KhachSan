@@ -58,7 +58,7 @@ export async function renderInvoices(container, session) {
         </div>
 
         <div class="card">
-            <div class="table-container">
+            <div class="table-container" style="overflow-x: hidden;">
                 <table class="table">
                     <thead>
                         <tr>
