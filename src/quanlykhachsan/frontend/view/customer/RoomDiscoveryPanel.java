@@ -263,6 +263,25 @@ public class RoomDiscoveryPanel extends JPanel {
         
         card.add(btnBook, BorderLayout.SOUTH);
 
+        // Click on room card to show details
+        java.awt.event.MouseAdapter cardClickListener = new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                Window owner = SwingUtilities.getWindowAncestor(RoomDiscoveryPanel.this);
+                RoomDetailDialog dialog = new RoomDetailDialog((Frame) owner, r, currentUser);
+                dialog.setVisible(true);
+                performSearch(); // Refresh list after dialog closes
+            }
+        };
+        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        card.addMouseListener(cardClickListener);
+        imgPanel.addMouseListener(cardClickListener);
+        lblIcon.addMouseListener(cardClickListener);
+        details.addMouseListener(cardClickListener);
+        name.addMouseListener(cardClickListener);
+        price.addMouseListener(cardClickListener);
+        amenities.addMouseListener(cardClickListener);
+
         return card;
     }
 
