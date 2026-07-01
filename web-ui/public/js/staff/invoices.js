@@ -11,30 +11,47 @@ export async function renderInvoices(container, session) {
             <p>Báo cáo doanh số giao dịch thanh toán của khách hàng.</p>
         </div>
         
-        <div class="filter-toolbar">
-            <div class="filter-group">
-                <label>Tìm kiếm (Mã HĐ, Tên, Phòng)</label>
-                <input type="text" id="filter-keyword" placeholder="Nhập từ khóa...">
-            </div>
-            <div class="filter-group">
-                <label>Trạng thái</label>
-                <select id="filter-status">
-                    <option value="all">Tất cả</option>
-                    <option value="paid">Đã thanh toán</option>
-                    <option value="pending">Chờ thanh toán</option>
-                    <option value="cancelled">Đã hủy</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Từ ngày</label>
-                <input type="date" id="filter-from-date">
-            </div>
-            <div class="filter-group">
-                <label>Đến ngày</label>
-                <input type="date" id="filter-to-date">
-            </div>
-            <div class="filter-group" style="flex: 0; justify-content: flex-end;">
-                <button id="btn-search" class="btn" style="padding: 9px 20px; white-space: nowrap;">Lọc dữ liệu</button>
+        <!-- Lọc dữ liệu -->
+        <div class="card" style="padding: 20px; margin-bottom: 24px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+                <div style="flex: 1; min-width: 250px;">
+                    <label style="display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Tìm kiếm (Mã HĐ, Tên, Phòng)</label>
+                    <div style="position: relative;">
+                        <i data-lucide="search" style="width: 16px; height: 16px; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"></i>
+                        <input id="filter-keyword" class="form-input" type="text" placeholder="Nhập từ khóa..." style="padding-left: 38px; width: 100%; margin: 0;">
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Trạng thái</label>
+                    <div style="position: relative;">
+                        <select id="filter-status" class="form-input" style="width: 100%; margin: 0; appearance: none; padding-right: 36px;">
+                            <option value="all">Tất cả</option>
+                            <option value="paid">Đã thanh toán</option>
+                            <option value="pending">Chờ thanh toán</option>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
+                        <i data-lucide="chevron-down" style="width: 16px; height: 16px; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"></i>
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 140px;">
+                    <label style="display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Từ ngày</label>
+                    <div style="position: relative;">
+                        <i data-lucide="calendar" style="width: 16px; height: 16px; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"></i>
+                        <input type="date" id="filter-from-date" class="form-input" style="width: 100%; margin: 0; padding-left: 38px;">
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 140px;">
+                    <label style="display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Đến ngày</label>
+                    <div style="position: relative;">
+                        <i data-lucide="calendar" style="width: 16px; height: 16px; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"></i>
+                        <input type="date" id="filter-to-date" class="form-input" style="width: 100%; margin: 0; padding-left: 38px;">
+                    </div>
+                </div>
+                <div style="flex-shrink: 0;">
+                    <button id="btn-search" class="btn btn-primary" style="padding: 10px 20px; display: flex; align-items: center; gap: 8px; height: 42px;">
+                        <i data-lucide="filter" style="width: 16px; height: 16px;"></i> Lọc dữ liệu
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -64,6 +81,7 @@ export async function renderInvoices(container, session) {
         </div>
 
     `;
+    if(window.lucide) lucide.createIcons();
 
     const body = document.getElementById("staff-payments-body");
     const btnPrev = document.getElementById("btn-prev-page");
@@ -140,12 +158,13 @@ export async function renderInvoices(container, session) {
         for (let i = 0; i < 5; i++) {
             skeletonHTML += `
                 <tr class="skeleton-row">
-                    <td><div class="skeleton-box" style="width: 50px;"></div></td>
-                    <td><div class="skeleton-box" style="width: 80px;"></div></td>
-                    <td><div class="skeleton-box" style="width: 150px;"></div></td>
-                    <td><div class="skeleton-box" style="width: 120px;"></div></td>
-                    <td><div class="skeleton-box" style="width: 100px;"></div></td>
-                    <td><div class="skeleton-box" style="width: 80px; margin: auto;"></div></td>
+                    <td><div class="skeleton-block" style="width: 50px; height: 20px; border-radius: 4px;"></div></td>
+                    <td><div class="skeleton-block" style="width: 80px; height: 20px; border-radius: 4px;"></div></td>
+                    <td><div class="skeleton-block" style="width: 100px; height: 20px; border-radius: 4px;"></div></td>
+                    <td><div class="skeleton-block" style="width: 150px; height: 20px; border-radius: 4px;"></div></td>
+                    <td><div class="skeleton-block" style="width: 120px; height: 20px; border-radius: 4px;"></div></td>
+                    <td><div class="skeleton-block" style="width: 100px; height: 20px; border-radius: 4px;"></div></td>
+                    <td><div class="skeleton-block" style="width: 32px; height: 32px; margin: auto; border-radius: 6px;"></div></td>
                 </tr>
             `;
         }
