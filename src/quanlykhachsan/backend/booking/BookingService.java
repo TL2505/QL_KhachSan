@@ -69,6 +69,15 @@ public class BookingService {
         return false;
     }
 
+    public boolean cancelBooking(int bookingId) {
+        Booking b = getBookingById(bookingId);
+        if (b != null) {
+            bookingDAO.deleteBooking(b);
+            return true;
+        }
+        return false;
+    }
+
     public boolean processPayment(int bookingId, double amount, String method) {
         Booking b = getBookingById(bookingId);
         if (b != null) {

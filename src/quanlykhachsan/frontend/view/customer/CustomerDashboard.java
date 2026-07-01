@@ -7,18 +7,19 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 import quanlykhachsan.frontend.api.BookingAPI;
 import quanlykhachsan.frontend.api.CustomerAPI;
-import quanlykhachsan.frontend.api.LoyaltyAPI;
 import quanlykhachsan.frontend.api.PromotionAPI;
 import quanlykhachsan.backend.promotion.Promotion;
 import quanlykhachsan.backend.booking.Booking;
 import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.view.ChatDialog;
+import quanlykhachsan.frontend.view.customer.CustomerNotificationDialog;
 
 public class CustomerDashboard extends JPanel {
 
@@ -27,9 +28,11 @@ public class CustomerDashboard extends JPanel {
 
     private JLabel lblName, lblTier, lblPoints, lblNextTierMsg;
     private JProgressBar progressTier;
-    private JTable tblBookings;
-    private DefaultTableModel tblModel;
+    private JButton btnNotifications;
+    private JLabel lblBookedCount, lblStayedCount, lblSpendTotal, lblPointsSummary;
     private JPanel promoPanel;
+    private JPanel activeBookingPanel;
+    private Booking activeBooking;
 
     private final Color PRIMARY    = new Color(37, 99, 235);
     private final Color BG         = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
@@ -41,6 +44,7 @@ public class CustomerDashboard extends JPanel {
     private final Color VIP_C      = new Color(139, 92, 246);
 
     private SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+    private SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm");
     private NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 
     public CustomerDashboard(User user) {
@@ -54,23 +58,31 @@ public class CustomerDashboard extends JPanel {
     }
 
     private void initUI() {
-        // --- Top: Welcome & Cards ---
-        JPanel topPanel = new JPanel(new BorderLayout(20, 0));
-        topPanel.setOpaque(false);
+        JPanel headerPanel = new JPanel(new BorderLayout(20, 20));
+        headerPanel.setOpaque(false);
 
         JPanel welcomeBox = new JPanel(new GridLayout(2, 1));
         welcomeBox.setOpaque(false);
-        JLabel lblWelcome = new JLabel("Chào mừng trở lại,");
+        JLabel lblWelcome = new JLabel("Khách hàng thân thiết,");
         lblWelcome.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         lblWelcome.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         lblName = new JLabel("Đang tải...");
-        lblName.setFont(new Font("Segoe UI", Font.BOLD, 30));
+        lblName.setFont(new Font("Segoe UI", Font.BOLD, 32));
         lblName.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         welcomeBox.add(lblWelcome);
         welcomeBox.add(lblName);
-        topPanel.add(welcomeBox, BorderLayout.WEST);
 
-        // Chat Button
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actions.setOpaque(false);
+        btnNotifications = createNotificationButton();
+        JButton btnReload = new JButton("🔄 Tải lại");
+        btnReload.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnReload.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor());
+        btnReload.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+        btnReload.setFocusPainted(false);
+        btnReload.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnReload.addActionListener(e -> loadData());
+
         JButton btnChat = new JButton("Chat hỗ trợ trực tuyến");
         btnChat.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnChat.setBackground(PRIMARY);
@@ -81,40 +93,38 @@ public class CustomerDashboard extends JPanel {
             ChatDialog dialog = new ChatDialog((Frame) SwingUtilities.getWindowAncestor(this), currentUser);
             dialog.setVisible(true);
         });
-        
-        JButton btnReload = new JButton("🔄 Tải lại");
-        btnReload.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnReload.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor());
-        btnReload.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
-        btnReload.setFocusPainted(false);
-        btnReload.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnReload.addActionListener(e -> loadData());
 
-        JPanel chatWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        chatWrapper.setOpaque(false);
-        chatWrapper.add(btnReload);
-        chatWrapper.add(btnChat);
-        topPanel.add(chatWrapper, BorderLayout.EAST);
+        actions.add(btnNotifications);
+        actions.add(btnReload);
+        actions.add(btnChat);
 
-        add(topPanel, BorderLayout.NORTH);
+        headerPanel.add(welcomeBox, BorderLayout.WEST);
+        headerPanel.add(actions, BorderLayout.EAST);
 
-        // --- Center: Grid of Info ---
+        JPanel headerCard = new JPanel(new BorderLayout(0, 10));
+        headerCard.setBackground(CARD_BG);
+        headerCard.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(20, 20, 20, 20)));
+        headerCard.add(headerPanel, BorderLayout.NORTH);
+
+        JLabel headerDescription = new JLabel("Theo dõi đặt phòng, điểm thành viên và ưu đãi mới nhất ngay tại bảng điều khiển của bạn.");
+        headerDescription.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        headerDescription.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
+        headerCard.add(headerDescription, BorderLayout.SOUTH);
+
+        add(headerCard, BorderLayout.NORTH);
+
         JPanel mainGrid = new JPanel(new BorderLayout(20, 20));
         mainGrid.setOpaque(false);
 
-        // Left Col: Loyalty Card
         mainGrid.add(buildLoyaltyCard(), BorderLayout.WEST);
 
-        // Center Col: Booking History
         JPanel centerCol = new JPanel(new BorderLayout(0, 20));
         centerCol.setOpaque(false);
-        centerCol.add(buildBookingHistoryPanel(), BorderLayout.CENTER);
-        
-        // Bottom Section: Promotions
+        centerCol.add(buildStatsPanel(), BorderLayout.NORTH);
+        centerCol.add(buildCurrentBookingSection(), BorderLayout.CENTER);
         centerCol.add(buildPromotionsSection(), BorderLayout.SOUTH);
 
         mainGrid.add(centerCol, BorderLayout.CENTER);
-
         add(mainGrid, BorderLayout.CENTER);
     }
 
@@ -186,57 +196,252 @@ public class CustomerDashboard extends JPanel {
         return card;
     }
 
-    private JPanel buildBookingHistoryPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 15));
+    private JPanel buildStatsPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEADING, 18, 12));
         panel.setOpaque(false);
+        panel.setBorder(new EmptyBorder(0, 0, 0, 0));
 
-        JLabel t = new JLabel("Lịch sử Đặt phòng của bạn");
-        t.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        t.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
-        panel.add(t, BorderLayout.NORTH);
+        lblBookedCount = new JLabel("0 lần", SwingConstants.CENTER);
+        lblStayedCount = new JLabel("0 lần", SwingConstants.CENTER);
+        lblSpendTotal = new JLabel("0 đ", SwingConstants.CENTER);
+        lblPointsSummary = new JLabel("0", SwingConstants.CENTER);
 
-        tblModel = new DefaultTableModel(new String[]{"Ngày đặt", "Phòng", "Thời gian", "Tổng tiền", "Trạng thái", "Hành động"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return c == 5; }
-        };
-        tblBookings = new JTable(tblModel);
-        styleTable(tblBookings);
-
-        JScrollPane scroll = new JScrollPane(tblBookings);
-        scroll.setBorder(new LineBorder(BORDER_C, 1, true));
-        scroll.getViewport().setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
-        panel.add(scroll, BorderLayout.CENTER);
+        panel.add(makeStatCard("🛎️ Đã đặt phòng", lblBookedCount));
+        panel.add(makeStatCard("🏨 Đã lưu trú", lblStayedCount));
+        panel.add(makeStatCard("💰 Tổng chi tiêu", lblSpendTotal));
+        panel.add(makeStatCard("⭐ Điểm tích lũy", lblPointsSummary));
 
         return panel;
     }
 
-    private void styleTable(JTable table) {
-        table.setRowHeight(45);
-        table.setShowGrid(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        table.getTableHeader().setPreferredSize(new Dimension(0, 40));
-        table.getTableHeader().setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBgPanel());
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        table.getColumnModel().getColumn(4).setCellRenderer(new StatusRenderer());
-        
-        table.getColumnModel().getColumn(5).setCellRenderer(new ActionBtnRenderer());
-        table.getColumnModel().getColumn(5).setCellEditor(new ActionBtnEditor());
+    private JPanel makeStatCard(String title, JLabel valueLabel) {
+        JPanel card = new JPanel();
+        card.setLayout(new BorderLayout(0, 14));
+        card.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
+        card.setPreferredSize(new Dimension(180, 120));
+        card.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(18, 18, 18, 18)));
+
+        JLabel lblTitle = new JLabel(title);
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
+
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        valueLabel.setForeground(PRIMARY);
+
+        card.add(lblTitle, BorderLayout.NORTH);
+        card.add(valueLabel, BorderLayout.CENTER);
+
+        return card;
+    }
+
+    private JButton createNotificationButton() {
+        JButton btn = new JButton("🔔 Thông báo");
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor());
+        btn.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> {
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            CustomerNotificationDialog dialog = new CustomerNotificationDialog(owner);
+            dialog.setVisible(true);
+        });
+        return btn;
+    }
+
+    private JPanel buildCurrentBookingSection() {
+        JPanel wrapper = new JPanel(new BorderLayout(0, 15));
+        wrapper.setOpaque(false);
+
+        JPanel heading = new JPanel(new BorderLayout());
+        heading.setOpaque(false);
+        JLabel title = new JLabel("ĐẶT PHÒNG HIỆN TẠI");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+        JLabel subtitle = new JLabel("Xem nhanh đơn đang xử lý và trạng thái đặt phòng mới nhất.");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subtitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
+
+        heading.add(title, BorderLayout.NORTH);
+        heading.add(subtitle, BorderLayout.SOUTH);
+        wrapper.add(heading, BorderLayout.NORTH);
+
+        activeBookingPanel = new JPanel(new BorderLayout());
+        activeBookingPanel.setOpaque(false);
+        updateActiveBooking(null);
+        wrapper.add(activeBookingPanel, BorderLayout.CENTER);
+
+        return wrapper;
+    }
+
+    private void updateActiveBooking(Booking booking) {
+        activeBooking = booking;
+        activeBookingPanel.removeAll();
+        if (booking == null) {
+            JPanel empty = new JPanel();
+            empty.setLayout(new BorderLayout());
+            empty.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
+            empty.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(20, 20, 20, 20)));
+            JLabel lblEmpty = new JLabel("Chưa có đơn đặt phòng đang hoạt động.", SwingConstants.CENTER);
+            lblEmpty.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            lblEmpty.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
+            empty.add(lblEmpty, BorderLayout.CENTER);
+            activeBookingPanel.add(empty, BorderLayout.CENTER);
+        } else {
+            activeBookingPanel.add(makeCurrentBookingCard(booking), BorderLayout.CENTER);
+        }
+        activeBookingPanel.revalidate();
+        activeBookingPanel.repaint();
+    }
+
+    private JPanel makeCurrentBookingCard(Booking booking) {
+        JPanel card = new JPanel(new BorderLayout(18, 18));
+        card.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
+        card.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(22, 22, 22, 22)));
+
+        JPanel header = new JPanel(new BorderLayout(10, 0));
+        header.setOpaque(false);
+        JLabel lblRoom = new JLabel("Phòng #" + booking.getRoomId());
+        lblRoom.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        lblRoom.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+
+        JLabel lblStatus = new JLabel(renderStatusLabel(booking.getStatus()), SwingConstants.CENTER);
+        lblStatus.setOpaque(true);
+        lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblStatus.setBorder(new EmptyBorder(8, 16, 8, 16));
+        lblStatus.setBackground(getStatusBackground(booking.getStatus()));
+        lblStatus.setForeground(Color.WHITE);
+
+        header.add(lblRoom, BorderLayout.WEST);
+        header.add(lblStatus, BorderLayout.EAST);
+        card.add(header, BorderLayout.NORTH);
+
+        JPanel details = new JPanel(new GridLayout(2, 2, 16, 16));
+        details.setOpaque(false);
+
+        details.add(createInfoBlock("Check-in", booking.getCheckInDate() != null ? sdf.format(booking.getCheckInDate()) : "---"));
+        details.add(createInfoBlock("Check-out", booking.getCheckOutDate() != null ? sdf.format(booking.getCheckOutDate()) : "---"));
+        details.add(createInfoBlock("Ngày đặt", booking.getCreatedAt() != null ? sdf.format(booking.getCreatedAt()) : "---"));
+        details.add(createInfoBlock("Tổng tiền", nf.format(booking.getTotalPrice())));
+
+        card.add(details, BorderLayout.CENTER);
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        actions.setOpaque(false);
+
+        JButton btnView = new JButton("Xem chi tiết");
+        btnView.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnView.setBackground(PRIMARY);
+        btnView.setForeground(Color.WHITE);
+        btnView.setFocusPainted(false);
+        btnView.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnView.addActionListener(e -> {
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            BookingDetailDialog dialog = new BookingDetailDialog(owner, booking);
+            dialog.setVisible(true);
+        });
+        actions.add(btnView);
+
+        JButton btnCancel = new JButton("Hủy đơn");
+        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnCancel.setBackground(new Color(239, 68, 68));
+        btnCancel.setForeground(Color.WHITE);
+        btnCancel.setFocusPainted(false);
+        btnCancel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnCancel.addActionListener(e -> cancelCurrentBooking());
+        actions.add(btnCancel);
+
+        card.add(actions, BorderLayout.SOUTH);
+        return card;
+    }
+
+    private String renderStatusLabel(String status) {
+        if (status == null) return "---";
+        switch (status.toLowerCase()) {
+            case "pending": return "🟡 Chờ xác nhận";
+            case "booked": return "🟡 Đã đặt";
+            case "checked_in": return "🟢 Đang lưu trú";
+            case "checked_out": return "⚪ Đã trả phòng";
+            case "paid": return "🟢 Đã thanh toán";
+            case "cancelled": return "🔴 Đã hủy";
+            default: return status;
+        }
+    }
+
+    private Color getStatusBackground(String status) {
+        if (status == null) return new Color(107, 114, 128);
+        switch (status.toLowerCase()) {
+            case "pending":
+            case "booked":
+                return new Color(245, 158, 11);
+            case "checked_in":
+                return new Color(37, 99, 235);
+            case "checked_out":
+            case "paid":
+                return SUCCESS;
+            case "cancelled":
+                return new Color(239, 68, 68);
+            default:
+                return new Color(107, 114, 128);
+        }
+    }
+
+    private JPanel createInfoBlock(String label, String value) {
+        JPanel block = new JPanel(new BorderLayout(0, 6));
+        block.setOpaque(false);
+
+        JLabel lblTitle = new JLabel(label);
+        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
+
+        JLabel lblValue = new JLabel(value);
+        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblValue.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
+
+        block.add(lblTitle, BorderLayout.NORTH);
+        block.add(lblValue, BorderLayout.CENTER);
+        return block;
+    }
+
+    private void cancelCurrentBooking() {
+        if (activeBooking == null) return;
+        String status = activeBooking.getStatus();
+        if (status == null || !(status.equalsIgnoreCase("pending") || status.equalsIgnoreCase("booked"))) {
+            JOptionPane.showMessageDialog(this, "Không thể hủy đơn này vì đơn đã được xử lý hoặc đang lưu trú.", "Không thể hủy", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn hủy đơn đặt phòng này?", "Xác nhận hủy", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        boolean success = BookingAPI.cancelBooking(activeBooking.getId());
+        if (success) {
+            JOptionPane.showMessageDialog(this, "Đã hủy đơn đặt phòng.");
+            loadData();
+        } else {
+            JOptionPane.showMessageDialog(this, "Hủy đơn thất bại, vui lòng thử lại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private JPanel buildPromotionsSection() {
-        JPanel panel = new JPanel(new BorderLayout(0, 10));
+        JPanel panel = new JPanel(new BorderLayout(0, 12));
         panel.setOpaque(false);
-        panel.setPreferredSize(new Dimension(0, 200));
+        panel.setPreferredSize(new Dimension(0, 240));
 
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
         JLabel t = new JLabel("Ưu đãi hấp dẫn dành cho bạn");
         t.setFont(new Font("Segoe UI", Font.BOLD, 16));
         t.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
-        panel.add(t, BorderLayout.NORTH);
+        JLabel subtitle = new JLabel("Các ưu đãi riêng cho khách hàng thân thiết sẽ hiển thị tại đây.");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        subtitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
 
-        promoPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 15, 0));
+        header.add(t, BorderLayout.NORTH);
+        header.add(subtitle, BorderLayout.SOUTH);
+        panel.add(header, BorderLayout.NORTH);
+
+        promoPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 18, 18));
         promoPanel.setOpaque(false);
 
         JScrollPane scroll = new JScrollPane(promoPanel);
@@ -254,39 +459,64 @@ public class CustomerDashboard extends JPanel {
         if (currentUser.getCustomerId() == null) {
             lblName.setText(currentUser.getFullName());
             lblTier.setText("CHƯA LIÊN KẾT KH");
+            updateStats(java.util.Collections.emptyList());
+            updateActiveBooking(null);
+            loadPromotions();
             return;
         }
 
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
+            private List<Booking> bookings;
             @Override
             protected Void doInBackground() {
                 customerData = CustomerAPI.getCustomerById(currentUser.getCustomerId());
-                List<Booking> bookings = BookingAPI.getBookingsByCustomer(currentUser.getCustomerId());
-                
-                SwingUtilities.invokeLater(() -> {
-                    if (customerData != null) {
-                        lblName.setText(customerData.getFullName());
-                        updateLoyaltyUI(customerData);
-                    }
-                    
-                    tblModel.setRowCount(0);
-                    for (Booking b : bookings) {
-                        tblModel.addRow(new Object[]{
-                            b.getCreatedAt() != null ? sdf.format(b.getCreatedAt()) : "---",
-                            "Phòng #" + b.getRoomId(), 
-                            sdf.format(b.getCheckInDate()) + " - " + sdf.format(b.getCheckOutDate()),
-                            nf.format(b.getTotalPrice()),
-                            b.getStatus(),
-                            b // Passing the whole object for the editor
-                        });
-                    }
-                });
+                bookings = BookingAPI.getBookingsByCustomer(currentUser.getCustomerId());
                 return null;
+            }
+
+            @Override
+            protected void done() {
+                if (customerData != null) {
+                    lblName.setText(customerData.getFullName());
+                    updateLoyaltyUI(customerData);
+                }
+                updateStats(bookings);
+                updateActiveBooking(findCurrentBooking(bookings));
             }
         };
         worker.execute();
-        
         loadPromotions();
+    }
+
+    private Booking findCurrentBooking(List<Booking> bookings) {
+        if (bookings == null || bookings.isEmpty()) return null;
+
+        for (Booking b : bookings) {
+            if (b.getStatus() != null && (b.getStatus().equalsIgnoreCase("pending") || b.getStatus().equalsIgnoreCase("booked") || b.getStatus().equalsIgnoreCase("checked_in"))) {
+                return b;
+            }
+        }
+
+        Date now = new Date();
+        Booking upcoming = null;
+        for (Booking b : bookings) {
+            if (b.getCheckInDate() != null && b.getCheckInDate().after(now)) {
+                if (upcoming == null || b.getCheckInDate().before(upcoming.getCheckInDate())) {
+                    upcoming = b;
+                }
+            }
+        }
+        if (upcoming != null) return upcoming;
+
+        Booking latest = null;
+        for (Booking b : bookings) {
+            if (b.getCheckInDate() != null) {
+                if (latest == null || b.getCheckInDate().after(latest.getCheckInDate())) {
+                    latest = b;
+                }
+            }
+        }
+        return latest;
     }
 
     private void loadPromotions() {
@@ -306,6 +536,24 @@ public class CustomerDashboard extends JPanel {
                 promoPanel.repaint();
             }
         }.execute();
+    }
+
+    private void updateStats(List<Booking> bookings) {
+        int booked = bookings != null ? bookings.size() : 0;
+        int stayed = 0;
+        double total = 0;
+        if (bookings != null) {
+            for (Booking b : bookings) {
+                if (b.getStatus() != null && (b.getStatus().equalsIgnoreCase("checked_out") || b.getStatus().equalsIgnoreCase("paid"))) {
+                    stayed++;
+                }
+                total += b.getTotalPrice();
+            }
+        }
+        lblBookedCount.setText(booked + " lần");
+        lblStayedCount.setText(stayed + " lần");
+        lblSpendTotal.setText(nf.format(total));
+        lblPointsSummary.setText(customerData != null ? String.format("%,d", customerData.getLoyaltyPoints()) : "0");
     }
 
     private JPanel makePromotionCard(Promotion p) {

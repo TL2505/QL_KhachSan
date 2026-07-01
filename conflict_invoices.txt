@@ -1,0 +1,283 @@
+--- CONFLICT START LINE 124 ---
+            <div class="pagination" style="display: flex; justify-content: space-between; padding: 15px; align-items: center; border-top: 1px solid var(--border-color, #eee);">
+                <button id="btn-prev-page" class="btn" disabled style="padding: 5px 15px; cursor: pointer;">Trang trước</button>
+                <span id="page-info" style="font-weight: 500;">Trang 1</span>
+                <button id="btn-next-page" class="btn" style="padding: 5px 15px; cursor: pointer;">Trang tiếp</button>
+            </div>
+        </div>
+
+        <!-- Modal Overlay -->
+        <div id="invoice-modal-overlay" class="modal-overlay">
+            <div class="modal-glass">
+                <div class="modal-header">
+                    <h2 id="modal-title">Chi Tiết Hóa Đơn</h2>
+                    <button class="btn-close" id="btn-close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="invoice-meta">
+                        <div><span class="label">Khách hàng</span> <strong id="md-customer"></strong></div>
+                        <div><span class="label">Phòng</span> <strong id="md-room"></strong></div>
+                        <div><span class="label">Mã đơn thuê</span> <strong id="md-booking"></strong></div>
+                        <div><span class="label">Trạng thái</span> <strong id="md-status"></strong></div>
+                        <div style="grid-column: span 2;"><span class="label">Ngày xuất</span> <strong id="md-date"></strong></div>
+                    </div>
+                    <div class="invoice-breakdown">
+                        <div class="breakdown-row"><span>Tiền phòng</span><strong id="md-room-fee"></strong></div>
+                        <div class="breakdown-row"><span>Tiền dịch vụ</span><strong id="md-service-fee"></strong></div>
+                        <div class="breakdown-row text-success"><span>Khuyến mãi</span><strong id="md-discount"></strong></div>
+                        <div class="breakdown-row"><span>Thuế VAT</span><strong id="md-tax"></strong></div>
+                        <hr style="border:0; border-top:1px dashed rgba(255,255,255,0.2); margin:15px 0;">
+                        <div class="breakdown-row final-total"><span>TỔNG THANH TOÁN</span><span id="md-final-total"></span></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="btn-close-modal-2">Đóng</button>
+                    <button class="btn btn-primary" id="btn-print-pdf-real">In Hóa Đơn PDF</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const body = document.getElementById("admin-invoices-body");
+    const btnPrev = document.getElementById("btn-prev-page");
+    const btnNext = document.getElementById("btn-next-page");
+    const pageInfo = document.getElementById("page-info");
+    const btnSearch = document.getElementById("btn-search");
+
+    const modalOverlay = document.getElementById("invoice-modal-overlay");
+    const btnCloseModal1 = document.getElementById("btn-close-modal");
+    const btnCloseModal2 = document.getElementById("btn-close-modal-2");
+    const btnPrintPdf = document.getElementById("btn-print-pdf-real");
+
+    let currentModalInvoiceId = null;
+
+    btnPrintPdf.addEventListener("click", () => {
+        if (currentModalInvoiceId) {
+            window.open(getApiBaseUrl() + "/invoices/" + currentModalInvoiceId + "/pdf", "_blank");
+        }
+    });
+
+    const getFilters = () => {
+        return {
+            keyword: document.getElementById("filter-keyword").value.trim(),
+            status: document.getElementById("filter-status").value,
+            fromDate: document.getElementById("filter-from-date").value,
+            toDate: document.getElementById("filter-to-date").value
+        };
+    };
+
+    const formatCurrency = (amount) => {
+        return amount != null ? Number(amount).toLocaleString('vi-VN') + ' đ' : '0 đ';
+    };
+
+    const closeModal = () => {
+        modalOverlay.classList.remove('active');
+        setTimeout(() => modalOverlay.style.display = 'none', 300);
+    };
+
+    btnCloseModal1.addEventListener('click', closeModal);
+    btnCloseModal2.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
+    });
+
+    const openModal = (invoiceId) => {
+        const inv = currentInvoices.find(i => i.id == invoiceId);
+        if (!inv) return;
+
+        document.getElementById('modal-title').textContent = `Hóa Đơn #${inv.id}`;
+        document.getElementById('md-customer').textContent = inv.customerName || 'Khách vãng lai';
+        document.getElementById('md-room').textContent = `#${inv.roomNumber || 'N/A'}`;
+        document.getElementById('md-booking').textContent = `#${inv.bookingId}`;
+
+        let statusText = "Khác";
+        if (inv.status === 'paid') statusText = "Đã thanh toán";
+        else if (inv.status === 'pending') statusText = "Chờ thanh toán";
+        else if (inv.status === 'cancelled') statusText = "Đã hủy";
+        document.getElementById('md-status').textContent = statusText;
+
+        document.getElementById('md-date').textContent = inv.issueDate ? new Date(inv.issueDate).toLocaleString('vi-VN') : 'N/A';
+
+        document.getElementById('md-room-fee').textContent = formatCurrency(inv.totalRoomFee);
+        document.getElementById('md-service-fee').textContent = formatCurrency(inv.totalServiceFee);
+        document.getElementById('md-discount').textContent = "-" + formatCurrency(inv.discount);
+        document.getElementById('md-tax').textContent = formatCurrency(inv.taxAmount);
+        document.getElementById('md-final-total').textContent = formatCurrency(inv.finalTotal);
+
+        currentModalInvoiceId = inv.id;
+        modalOverlay.style.display = 'flex';
+        requestAnimationFrame(() => modalOverlay.classList.add('active'));
+    };
+
+    const showSkeleton = () => {
+        let skeletonHTML = "";
+        for (let i = 0; i < 5; i++) {
+            skeletonHTML += `
+                <tr class="skeleton-row">
+                    <td><div class="skeleton-box" style="width: 50px;"></div></td>
+                    <td><div class="skeleton-box" style="width: 80px;"></div></td>
+                    <td><div class="skeleton-box" style="width: 100px;"></div></td>
+                    <td><div class="skeleton-box" style="width: 150px;"></div></td>
+                    <td><div class="skeleton-box" style="width: 120px;"></div></td>
+                    <td><div class="skeleton-box" style="width: 100px;"></div></td>
+                    <td><div class="skeleton-box" style="width: 80px; margin: auto;"></div></td>
+                </tr>
+            `;
+        }
+        body.innerHTML = skeletonHTML;
+    };
+
+    const loadData = async () => {
+        showSkeleton();
+        try {
+            const filters = getFilters();
+            let query = `?page=${currentPage}&limit=${limit}`;
+            if (filters.keyword) query += `&keyword=${encodeURIComponent(filters.keyword)}`;
+            if (filters.status) query += `&status=${encodeURIComponent(filters.status)}`;
+            if (filters.fromDate) query += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
+            if (filters.toDate) query += `&toDate=${encodeURIComponent(filters.toDate)}`;
+
+            currentInvoices = await api.get(`/invoices${query}`);
+            body.innerHTML = "";
+            if (!currentInvoices || currentInvoices.length === 0) {
+                body.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">Không tìm thấy bản ghi hóa đơn nào phù hợp.</td></tr>`;
+                btnNext.disabled = true;
+                return;
+            }
+
+            btnNext.disabled = currentInvoices.length < limit;
+
+            currentInvoices.forEach(i => {
+                const tr = document.createElement("tr");
+                const dateStr = i.issueDate ? new Date(i.issueDate).toLocaleString('vi-VN') : 'N/A';
+                const amountStr = formatCurrency(i.finalTotal);
+
+                let statusColor = "var(--text-muted)";
+                let statusText = "Khác";
+                if (i.status === 'paid') { statusColor = "var(--success)"; statusText = "Đã thanh toán"; }
+                else if (i.status === 'pending') { statusColor = "var(--warning, #f59e0b)"; statusText = "Chờ thanh toán"; }
+                else if (i.status === 'cancelled') { statusColor = "var(--danger, #ef4444)"; statusText = "Đã hủy"; }
+
+                tr.innerHTML = `
+                    <td>#${i.id}</td>
+                    <td>Đơn thuê #${i.bookingId}</td>
+                    <td><strong>Phòng #${i.roomNumber || 'N/A'}</strong></td>
+                    <td>${i.customerName || 'Khách vãng lai'}</td>
+                    <td>
+                        <div style="font-weight: 600; color: ${statusColor};">${amountStr}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${statusText}</div>
+                    </td>
+                    <td>${dateStr}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-action btn-detail" data-id="${i.id}">Chi tiết</button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+
+            document.querySelectorAll('.btn-detail').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    openModal(e.target.getAttribute('data-id'));
+                });
+            });
+
+        } catch (e) {
+            console.error(e);
+            body.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ff4d4f; padding: 30px;">Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.</td></tr>`;
+        }
+    };
+
+    btnSearch.addEventListener('click', () => {
+        currentPage = 1;
+        pageInfo.textContent = `Trang ${currentPage}`;
+        btnPrev.disabled = true;
+        loadData();
+    });
+
+    btnPrev.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            pageInfo.textContent = `Trang ${currentPage}`;
+            btnPrev.disabled = currentPage === 1;
+            loadData();
+        }
+    });
+
+    btnNext.addEventListener('click', () => {
+        currentPage++;
+        pageInfo.textContent = `Trang ${currentPage}`;
+        btnPrev.disabled = false;
+        loadData();
+    });
+
+    currentPage = 1;
+    btnPrev.disabled = true;
+    pageInfo.textContent = `Trang ${currentPage}`;
+    loadData();
+--- SEP ---
+            <div id="pagination-admin-invoices"></div>
+        </div>
+    `;
+
+    let allInvoices = [];
+    let currentPage = 1;
+    let itemsPerPage = 10;
+
+    const renderTable = () => {
+        const body = document.getElementById("admin-invoices-body");
+        body.innerHTML = "";
+
+        if (!allInvoices || allInvoices.length === 0) {
+            body.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Không tìm thấy bản ghi hóa đơn nào.</td></tr>`;
+            const paginationContainer = document.getElementById("pagination-admin-invoices");
+            if (paginationContainer) paginationContainer.innerHTML = '';
+            return;
+        }
+
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginatedList = allInvoices.slice(start, end);
+
+        paginatedList.forEach(i => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>#${i.id}</td>
+                <td>Đơn thuê #${i.bookingId}</td>
+                <td><strong>Phòng #${i.roomId}</strong></td>
+                <td>Khách hàng #${i.customerId || 'Guest'}</td>
+                <td style="font-weight: 600; color: var(--success);">${Number(i.amount).toLocaleString('vi-VN')} đ</td>
+                <td>${i.invoiceDate}</td>
+            `;
+            body.appendChild(tr);
+        });
+
+        if (window.renderPaginationComponent) {
+            window.renderPaginationComponent(
+                "pagination-admin-invoices",
+                allInvoices.length,
+                itemsPerPage,
+                currentPage,
+                (newPage) => {
+                    currentPage = newPage;
+                    renderTable();
+                },
+                (newItemsPerPage) => {
+                    itemsPerPage = newItemsPerPage;
+                    currentPage = 1;
+                    renderTable();
+                }
+            );
+        }
+    };
+
+    try {
+        const list = await api.get("/invoices");
+        allInvoices = list;
+        currentPage = 1;
+        renderTable();
+    } catch (e) {
+        console.error(e);
+        const body = document.getElementById("admin-invoices-body");
+        if (body) body.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">${e.message}</td></tr>`;
+    }
+--- CONFLICT END LINE 406 ---

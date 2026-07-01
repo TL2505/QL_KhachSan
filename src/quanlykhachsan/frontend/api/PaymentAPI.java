@@ -17,12 +17,26 @@ public class PaymentAPI {
 
             String jsonResponse = HttpUtil.sendPost("/payments", JsonUtil.getGson().toJson(req));
             JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
-            
+
             if (resObj != null) {
-                if ("success".equals(resObj.get("status").getAsString())) {
-                    return "Success: " + resObj.get("message").getAsString();
+                String status = resObj.has("status") && !resObj.get("status").isJsonNull() ? resObj.get("status").getAsString() : "error";
+                String message = null;
+                try {
+                    if (resObj.has("message") && !resObj.get("message").isJsonNull()) message = resObj.get("message").getAsString();
+                } catch (Exception ignored) {}
+                if (message == null && resObj.has("data") && resObj.get("data").isJsonObject()) {
+                    JsonObject inner = resObj.getAsJsonObject("data");
+                    try {
+                        if (inner.has("message") && !inner.get("message").isJsonNull()) message = inner.get("message").getAsString();
+                    } catch (Exception ignored) {}
+                }
+
+                if (message == null) message = "(no message)";
+
+                if ("success".equalsIgnoreCase(status)) {
+                    return "Success: " + message;
                 } else {
-                    return "Error: " + resObj.get("message").getAsString();
+                    return "Error: " + message;
                 }
             }
         } catch (Exception e) {

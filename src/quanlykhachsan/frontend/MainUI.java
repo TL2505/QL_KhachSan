@@ -17,6 +17,7 @@ import quanlykhachsan.frontend.view.admin.PromotionForm;
 import quanlykhachsan.frontend.view.customer.CustomerPromotionView;
 import quanlykhachsan.frontend.view.admin.AdminDashboard;
 import quanlykhachsan.frontend.view.staff.ReviewManagementForm;
+import quanlykhachsan.frontend.view.customer.CustomerBookingHistoryView;
 import quanlykhachsan.frontend.view.customer.CustomerDashboard;
 import quanlykhachsan.frontend.view.staff.LoyaltyForm;
 import quanlykhachsan.frontend.view.customer.RoomDiscoveryPanel;
@@ -191,6 +192,7 @@ public class MainUI extends JFrame {
             addTab("Ưu đãi & KM", new CustomerPromotionView());
         } else if (rId == 3) { // CUSTOMER
             addTab("Tìm & Đặt phòng", new RoomDiscoveryPanel(currentUser));
+            addTab("Lịch sử đặt phòng", new CustomerBookingHistoryView(currentUser));
             addTab("Bảng điều khiển", new CustomerDashboard(currentUser));
             addTab("Ưu đãi & KM", new CustomerPromotionView());
         }
