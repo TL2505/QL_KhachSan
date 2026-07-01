@@ -9,7 +9,7 @@ public class Quanlykhachsan {
     public static void main(String[] args) {
         // Kích hoạt FlatLaf - giao diện hiện đại cho Java Swing
         System.setProperty("flatlaf.useWindowDecorations", "true");
-        
+
         // Initialize theme and global UI
         quanlykhachsan.frontend.utils.ThemeManager.applyGlobalUI();
 
