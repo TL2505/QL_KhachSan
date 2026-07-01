@@ -81,7 +81,7 @@ export async function renderLoyalty(container, session) {
                 pointsToRedeem: points,
                 discountAmount: discount
             });
-            alert("Đổi điểm tích lũy lấy ưu đãi giảm giá thành công!");
+            window.showCustomAlert("Đổi điểm tích lũy lấy ưu đãi giảm giá thành công!");
             loadHistory();
         } catch (e) {
             msgDiv.innerHTML = `<span style="color: var(--danger);">${e.message}</span>`;

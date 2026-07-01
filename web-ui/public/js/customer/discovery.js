@@ -40,7 +40,7 @@ export async function renderDiscovery(container, session) {
     document.getElementById("btn-search-rooms").addEventListener("click", async () => {
         const inDate = document.getElementById("search-checkin").value;
         const outDate = document.getElementById("search-checkout").value;
-        if (!inDate || !outDate) return alert("Vui lòng chọn ngày đầy đủ");
+        if (!inDate || !outDate) return window.showCustomAlert("Vui lòng chọn ngày đầy đủ");
 
         const resultsSection = document.getElementById("search-results-section");
         const grid = document.getElementById("search-rooms-grid");
@@ -80,14 +80,14 @@ export async function renderDiscovery(container, session) {
 
 async function processBooking(room, checkIn, checkOut, session) {
     if (!session.customerId) {
-        alert("Tài khoản của bạn không được liên kết với hồ sơ khách hàng. Vui lòng liên hệ Admin!");
+        window.showCustomAlert("Tài khoản của bạn không được liên kết với hồ sơ khách hàng. Vui lòng liên hệ Admin!");
         return;
     }
     
     const nights = Math.max(1, Math.round((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24)));
     const totalCost = room.price * nights;
 
-    const confirmBooking = confirm(`Xác nhận đặt Phòng ${room.roomNumber}\nCheck-in: ${checkIn}\nCheck-out: ${checkOut}\nTổng số đêm: ${nights} đêm\nTổng tiền tạm tính: ${totalCost.toLocaleString('vi-VN')} VNĐ\n\nBạn có muốn đặt phòng này không?`);
+    const confirmBooking = await window.showCustomConfirm(`Xác nhận đặt Phòng ${room.roomNumber}\nCheck-in: ${checkIn}\nCheck-out: ${checkOut}\nTổng số đêm: ${nights} đêm\nTổng tiền tạm tính: ${totalCost.toLocaleString('vi-VN')} VNĐ\n\nBạn có muốn đặt phòng này không?`);
     
     if (confirmBooking) {
         try {
@@ -97,10 +97,10 @@ async function processBooking(room, checkIn, checkOut, session) {
                 checkInDate: checkIn,
                 checkOutDate: checkOut
             });
-            alert("Đã gửi yêu cầu đặt phòng thành công!");
+            window.showCustomAlert("Đã gửi yêu cầu đặt phòng thành công!");
             document.getElementById("btn-search-rooms").click();
         } catch (e) {
-            alert("Lỗi đặt phòng: " + e.message);
+            window.showCustomAlert("Lỗi đặt phòng: " + e.message);
         }
     }
 }

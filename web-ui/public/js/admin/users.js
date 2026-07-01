@@ -52,13 +52,13 @@ export async function renderUsers(container, session) {
                 `;
                 
                 tr.querySelector(".btn-delete-user").addEventListener("click", async () => {
-                    if (confirm(`Bạn chắc chắn muốn xóa tài khoản này khỏi hệ thống?`)) {
+                    if (await window.showCustomConfirm(`Bạn chắc chắn muốn xóa tài khoản này khỏi hệ thống?`)) {
                         try {
                             await api.delete(`/users/${u.id}`);
-                            alert("Đã xóa tài khoản nhân viên thành công!");
+                            window.showCustomAlert("Đã xóa tài khoản nhân viên thành công!");
                             loadUsers();
                         } catch (err) {
-                            alert("Lỗi xóa tài khoản: " + err.message);
+                            window.showCustomAlert("Lỗi xóa tài khoản: " + err.message);
                         }
                     }
                 });
@@ -127,11 +127,11 @@ export async function renderUsers(container, session) {
 
             try {
                 await api.post("/users", { username, password, fullName, phone, email, roleId, status: "active" });
-                alert("Đã tạo tài khoản nhân viên mới!");
+                window.showCustomAlert("Đã tạo tài khoản nhân viên mới!");
                 closeModal("global-modal");
                 loadUsers();
             } catch (err) {
-                alert("Lỗi tạo tài khoản: " + err.message);
+                window.showCustomAlert("Lỗi tạo tài khoản: " + err.message);
             }
         });
     });

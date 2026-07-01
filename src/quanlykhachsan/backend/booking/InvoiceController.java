@@ -21,13 +21,66 @@ public class InvoiceController implements HttpHandler {
         String method = exchange.getRequestMethod();
 
         if (method.equalsIgnoreCase("GET")) {
-            String query = exchange.getRequestURI().getQuery();
-            String keyword = "";
-            if (query != null && query.startsWith("keyword=")) {
-                keyword = query.substring(8);
+            String path = exchange.getRequestURI().getPath();
+            
+            if (path.matches("^/api/invoices/\\d+/pdf$")) {
+                try {
+                    String[] parts = path.split("/");
+                    int invoiceId = Integer.parseInt(parts[3]);
+                    Invoice invoice = invoiceDAO.getInvoiceById(invoiceId);
+                    
+                    if (invoice == null) {
+                        exchange.sendResponseHeaders(404, -1);
+                        return;
+                    }
+                    
+                    byte[] pdfBytes = quanlykhachsan.backend.utils.PdfGenerator.generateInvoicePdf(invoice);
+                    
+                    exchange.getResponseHeaders().set("Content-Type", "application/pdf");
+                    exchange.getResponseHeaders().set("Content-Disposition", "inline; filename=\"Invoice_" + invoiceId + ".pdf\"");
+                    exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+                    exchange.sendResponseHeaders(200, pdfBytes.length);
+                    OutputStream os = exchange.getResponseBody();
+                    os.write(pdfBytes);
+                    os.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    exchange.sendResponseHeaders(500, -1);
+                }
+                return;
             }
 
-            List<Invoice> invoices = invoiceDAO.searchInvoices(keyword);
+            String query = exchange.getRequestURI().getQuery();
+            String keyword = "";
+            String status = "";
+            String fromDate = "";
+            String toDate = "";
+            int page = 1;
+            int limit = 10;
+            
+            if (query != null) {
+                String[] pairs = query.split("&");
+                for (String pair : pairs) {
+                    int idx = pair.indexOf("=");
+                    if (idx > 0) {
+                        String key = pair.substring(0, idx);
+                        String value = pair.substring(idx + 1);
+                        try {
+                            value = java.net.URLDecoder.decode(value, "UTF-8");
+                            if (key.equals("keyword")) keyword = value;
+                            else if (key.equals("status")) status = value;
+                            else if (key.equals("fromDate")) fromDate = value;
+                            else if (key.equals("toDate")) toDate = value;
+                            else if (key.equals("page")) page = Integer.parseInt(value);
+                            else if (key.equals("limit")) limit = Integer.parseInt(value);
+                        } catch (Exception e) {}
+                    }
+                }
+            }
+            int offset = (page - 1) * limit;
+            if (offset < 0) offset = 0;
+
+            List<Invoice> invoices = invoiceDAO.searchInvoices(keyword, status, fromDate, toDate, offset, limit);
 
             String response = gson.toJson(invoices);
             byte[] responseBytes = response.getBytes("UTF-8");

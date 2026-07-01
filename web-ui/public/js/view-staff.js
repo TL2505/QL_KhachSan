@@ -2,7 +2,8 @@
 import { renderRoomMap } from "./staff/room-map.js";
 import { renderBookings } from "./staff/bookings.js";
 import { renderCustomers } from "./staff/customers.js";
-import { renderPayments } from "./staff/payments.js";
+import { renderInvoices } from "./staff/invoices.js";
+import { renderCheckout } from "./staff/checkout.js";
 import { renderLoyalty } from "./staff/loyalty.js";
 import { renderChat } from "./staff/chat.js";
 
@@ -16,8 +17,10 @@ export function loadStaffView(tab = "room-map") {
         renderBookings(container, session);
     } else if (tab === "customers") {
         renderCustomers(container, session);
-    } else if (tab === "payments") {
-        renderPayments(container, session);
+    } else if (tab === "invoices") {
+        renderInvoices(container, session);
+    } else if (tab === "checkout") {
+        renderCheckout(container, session);
     } else if (tab === "loyalty") {
         renderLoyalty(container, session);
     } else if (tab === "chat") {

@@ -21,12 +21,12 @@ function initApp() {
     activeApiDisplay.textContent = currentBase;
 
     // 2. Event Listener for Saving API Configuration
-    document.getElementById("btn-save-api-config").addEventListener("click", () => {
+    document.getElementById("btn-save-api-config").addEventListener("click", async () => {
         const val = apiBaseInput.value.trim();
         if (val) {
             setApiBaseUrl(val);
             activeApiDisplay.textContent = getApiBaseUrl();
-            alert("Đã lưu địa chỉ kết nối API!");
+            await window.showCustomAlert("Đã lưu địa chỉ kết nối API!");
             closeModal("modal-api-config");
             
             // Re-check api health
@@ -127,9 +127,9 @@ async function handleRegister(e) {
     }
 }
 
-function handleLogout(e) {
+async function handleLogout(e) {
     e.preventDefault();
-    if (confirm("Bạn có muốn đăng xuất khỏi hệ thống không?")) {
+    if (await window.showCustomConfirm("Bạn có muốn đăng xuất khỏi hệ thống không?")) {
         setAuthSession(null);
         showAuthPage();
     }
@@ -175,7 +175,8 @@ function buildSidebarMenu(role) {
             { id: "room-map", label: "Sơ đồ phòng", icon: "grid", view: loadStaffView },
             { id: "bookings", label: "Đơn đặt phòng", icon: "calendar-days", view: () => loadStaffView("bookings") },
             { id: "customers", label: "Khách hàng", icon: "users", view: () => loadStaffView("customers") },
-            { id: "payments", label: "Thanh toán", icon: "credit-card", view: () => loadStaffView("payments") },
+            { id: "checkout", label: "Thanh toán", icon: "wallet", view: () => loadStaffView("checkout") },
+            { id: "invoices", label: "Hóa đơn", icon: "receipt", view: () => loadStaffView("invoices") },
             { id: "loyalty", label: "Hệ thành viên", icon: "award", view: () => loadStaffView("loyalty") },
             { id: "chat", label: "Hỗ trợ khách", icon: "message-square", view: () => loadStaffView("chat") }
         );

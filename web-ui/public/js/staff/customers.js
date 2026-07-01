@@ -108,11 +108,11 @@ export async function renderCustomers(container, session) {
 
             try {
                 await api.post("/customers", { fullName, identityCard, phone, email, address });
-                alert("Thêm khách hàng mới thành công!");
+                window.showCustomAlert("Thêm khách hàng mới thành công!");
                 closeModal("global-modal");
                 loadCustomers();
             } catch (err) {
-                alert("Lỗi thêm khách hàng: " + err.message);
+                window.showCustomAlert("Lỗi thêm khách hàng: " + err.message);
             }
         });
     });

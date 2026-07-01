@@ -105,29 +105,29 @@ async function handleRoomAction(room, reloadCallback) {
 
             try {
                 await api.post("/bookings", { customerId, roomId: room.id, checkInDate, checkOutDate });
-                alert("Đã đặt phòng thành công!");
+                window.showCustomAlert("Đã đặt phòng thành công!");
                 closeModal("global-modal");
                 reloadCallback();
             } catch (err) {
-                alert("Lỗi đặt phòng: " + err.message);
+                window.showCustomAlert("Lỗi đặt phòng: " + err.message);
             }
         });
 
     } else if (room.status === "booked") {
-        if (confirm(`Khách hàng đã đặt Phòng ${room.roomNumber}. Tiến hành nhận phòng (Check-in) ngay?`)) {
+        if (await window.showCustomConfirm(`Khách hàng đã đặt Phòng ${room.roomNumber}. Tiến hành nhận phòng (Check-in) ngay?`)) {
             try {
                 const activeBookings = await api.get("/bookings");
                 const booking = activeBookings.find(b => b.roomId === room.id && b.status === "pending");
                 if (!booking) {
-                    alert("Không tìm thấy đơn đặt phòng tương ứng ở trạng thái chờ nhận phòng.");
+                    window.showCustomAlert("Không tìm thấy đơn đặt phòng tương ứng ở trạng thái chờ nhận phòng.");
                     return;
                 }
                 
                 await api.put(`/bookings/checkin/${booking.id}`);
-                alert("Đã nhận phòng thành công!");
+                window.showCustomAlert("Đã nhận phòng thành công!");
                 reloadCallback();
             } catch (e) {
-                alert("Lỗi Check-in: " + e.message);
+                window.showCustomAlert("Lỗi Check-in: " + e.message);
             }
         }
     } else if (room.status === "occupied") {
@@ -135,7 +135,7 @@ async function handleRoomAction(room, reloadCallback) {
             const activeBookings = await api.get("/bookings");
             const booking = activeBookings.find(b => b.roomId === room.id && b.status === "checked_in");
             if (!booking) {
-                alert("Không tìm thấy đơn thuê phòng đang sử dụng.");
+                window.showCustomAlert("Không tìm thấy đơn thuê phòng đang sử dụng.");
                 return;
             }
             
@@ -184,25 +184,25 @@ async function handleRoomAction(room, reloadCallback) {
                         amount: baseCost,
                         paymentMethod: paymentMethod
                     });
-                    alert("Đã làm thủ tục trả phòng và lưu hóa đơn doanh thu thành công!");
+                    window.showCustomAlert("Đã làm thủ tục trả phòng và lưu hóa đơn doanh thu thành công!");
                     closeModal("global-modal");
                     reloadCallback();
                 } catch (err) {
-                    alert("Lỗi thanh toán: " + err.message);
+                    window.showCustomAlert("Lỗi thanh toán: " + err.message);
                 }
             });
 
         } catch (e) {
-            alert("Lỗi nạp thông tin trả phòng: " + e.message);
+            window.showCustomAlert("Lỗi nạp thông tin trả phòng: " + e.message);
         }
     } else if (room.status === "cleaning") {
-        if (confirm(`Phòng ${room.roomNumber} đã dọn dẹp xong? Chuyển sang trạng thái Trống sẵn sàng?`)) {
+        if (await window.showCustomConfirm(`Phòng ${room.roomNumber} đã dọn dẹp xong? Chuyển sang trạng thái Trống sẵn sàng?`)) {
             try {
                 await api.put(`/rooms/${room.id}/status`, { status: "available" });
-                alert("Phòng đã sẵn sàng đón khách!");
+                window.showCustomAlert("Phòng đã sẵn sàng đón khách!");
                 reloadCallback();
             } catch (e) {
-                alert("Lỗi cập nhật trạng thái phòng: " + e.message);
+                window.showCustomAlert("Lỗi cập nhật trạng thái phòng: " + e.message);
             }
         }
     }

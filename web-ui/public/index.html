@@ -166,6 +166,19 @@
         </div>
     </div>
     
+    <!-- Custom Dialog UI -->
+    <div id="custom-dialog-overlay" class="modal-overlay" style="z-index: 10000; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); transition: opacity 0.2s; opacity: 0;">
+        <div id="custom-dialog-box" style="background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; width: 90%; max-width: 400px; padding: 25px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; color: #fff; transform: scale(0.9); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0;">
+            <div id="custom-dialog-icon" style="margin-bottom: 15px;"></div>
+            <h3 id="custom-dialog-title" style="margin: 0 0 10px 0; font-size: 1.2rem;">Thông báo</h3>
+            <p id="custom-dialog-message" style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5; white-space: pre-wrap;"></p>
+            <div id="custom-dialog-actions" style="display: flex; gap: 10px; justify-content: center;">
+                <button id="custom-dialog-btn-cancel" class="btn btn-secondary" style="flex: 1; display: none;">Hủy</button>
+                <button id="custom-dialog-btn-ok" class="btn btn-primary" style="flex: 1;">OK</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Shared Dialog (Injected Dynamically when needed) -->
     <div id="global-modal" class="modal-overlay">
         <div id="global-modal-content" class="modal-content">
@@ -186,6 +199,77 @@
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
         }
+
+        // Global Custom Dialog Utilities
+        window.showCustomAlert = function(message, title = "Thông báo") {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('custom-dialog-overlay');
+                const box = document.getElementById('custom-dialog-box');
+                document.getElementById('custom-dialog-title').textContent = title;
+                document.getElementById('custom-dialog-message').textContent = message;
+                
+                const btnOk = document.getElementById('custom-dialog-btn-ok');
+                const btnCancel = document.getElementById('custom-dialog-btn-cancel');
+                btnCancel.style.display = 'none';
+                
+                overlay.style.display = 'flex';
+                overlay.style.pointerEvents = 'auto';
+                requestAnimationFrame(() => {
+                    overlay.style.opacity = '1';
+                    box.style.transform = 'scale(1)';
+                    box.style.opacity = '1';
+                });
+
+                const cleanup = () => {
+                    overlay.style.opacity = '0';
+                    box.style.transform = 'scale(0.9)';
+                    box.style.opacity = '0';
+                    overlay.style.pointerEvents = 'none';
+                    setTimeout(() => overlay.style.display = 'none', 200);
+                    btnOk.removeEventListener('click', onOk);
+                };
+
+                const onOk = () => { cleanup(); resolve(true); };
+                btnOk.addEventListener('click', onOk);
+            });
+        };
+
+        window.showCustomConfirm = function(message, title = "Xác nhận") {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('custom-dialog-overlay');
+                const box = document.getElementById('custom-dialog-box');
+                document.getElementById('custom-dialog-title').textContent = title;
+                document.getElementById('custom-dialog-message').textContent = message;
+                
+                const btnOk = document.getElementById('custom-dialog-btn-ok');
+                const btnCancel = document.getElementById('custom-dialog-btn-cancel');
+                btnCancel.style.display = 'block';
+                
+                overlay.style.display = 'flex';
+                overlay.style.pointerEvents = 'auto';
+                requestAnimationFrame(() => {
+                    overlay.style.opacity = '1';
+                    box.style.transform = 'scale(1)';
+                    box.style.opacity = '1';
+                });
+
+                const cleanup = () => {
+                    overlay.style.opacity = '0';
+                    box.style.transform = 'scale(0.9)';
+                    box.style.opacity = '0';
+                    overlay.style.pointerEvents = 'none';
+                    setTimeout(() => overlay.style.display = 'none', 200);
+                    btnOk.removeEventListener('click', onOk);
+                    btnCancel.removeEventListener('click', onCancel);
+                };
+
+                const onOk = () => { cleanup(); resolve(true); };
+                const onCancel = () => { cleanup(); resolve(false); };
+                
+                btnOk.addEventListener('click', onOk);
+                btnCancel.addEventListener('click', onCancel);
+            });
+        };
     </script>
 
 </body>

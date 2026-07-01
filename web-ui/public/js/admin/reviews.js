@@ -48,13 +48,13 @@ export async function renderReviews(container, session) {
                 `;
                 
                 tr.querySelector(".btn-delete-review").addEventListener("click", async () => {
-                    if (confirm(`Bạn chắc chắn muốn xóa bài đánh giá này khỏi danh mục hiển thị công cộng?`)) {
+                    if (await window.showCustomConfirm(`Bạn chắc chắn muốn xóa bài đánh giá này khỏi danh mục hiển thị công cộng?`)) {
                         try {
                             await api.delete(`/reviews/${r.id}`);
-                            alert("Đã xóa bài đánh giá thành công!");
+                            window.showCustomAlert("Đã xóa bài đánh giá thành công!");
                             loadReviews();
                         } catch (err) {
-                            alert("Lỗi xóa đánh giá: " + err.message);
+                            window.showCustomAlert("Lỗi xóa đánh giá: " + err.message);
                         }
                     }
                 });

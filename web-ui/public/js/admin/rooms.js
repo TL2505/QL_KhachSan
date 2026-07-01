@@ -52,13 +52,13 @@ export async function renderRooms(container, session) {
                 `;
                 
                 tr.querySelector(".btn-delete-room").addEventListener("click", async () => {
-                    if (confirm(`Bạn chắc chắn muốn xóa phòng này khỏi danh mục hệ thống?`)) {
+                    if (await window.showCustomConfirm(`Bạn chắc chắn muốn xóa phòng này khỏi danh mục hệ thống?`)) {
                         try {
                             await api.delete(`/rooms/${r.id}`);
-                            alert("Đã xóa phòng thành công!");
+                            window.showCustomAlert("Đã xóa phòng thành công!");
                             loadRooms();
                         } catch (err) {
-                            alert("Lỗi xóa phòng: " + err.message);
+                            window.showCustomAlert("Lỗi xóa phòng: " + err.message);
                         }
                     }
                 });
@@ -114,11 +114,11 @@ export async function renderRooms(container, session) {
 
             try {
                 await api.post("/rooms", { roomNumber, roomTypeId, price, status: "available" });
-                alert("Đã tạo phòng mới thành công!");
+                window.showCustomAlert("Đã tạo phòng mới thành công!");
                 closeModal("global-modal");
                 loadRooms();
             } catch (err) {
-                alert("Lỗi tạo phòng: " + err.message);
+                window.showCustomAlert("Lỗi tạo phòng: " + err.message);
             }
         });
     });

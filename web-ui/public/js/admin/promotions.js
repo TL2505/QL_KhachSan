@@ -109,11 +109,11 @@ export async function renderPromotions(container, session) {
 
             try {
                 await api.post("/promotions", { name, discountType, discountValue, startDate, endDate, status: "active" });
-                alert("Tạo chiến dịch khuyến mãi mới thành công!");
+                window.showCustomAlert("Tạo chiến dịch khuyến mãi mới thành công!");
                 closeModal("global-modal");
                 loadPromotions();
             } catch (err) {
-                alert("Lỗi tạo khuyến mãi: " + err.message);
+                window.showCustomAlert("Lỗi tạo khuyến mãi: " + err.message);
             }
         });
     });

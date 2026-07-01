@@ -23,12 +23,15 @@ const MIME_TYPES = {
 
 const server = http.createServer((req, res) => {
     // Safely resolve the requested file path, trimming any query parameters
-    let filePath = path.join(PUBLIC_DIR, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
+    let basePath = req.url.split('?')[0];
+    let filePath = path.join(PUBLIC_DIR, basePath === '/' ? 'index.html' : basePath);
     const extname = path.extname(filePath);
     let contentType = MIME_TYPES[extname] || 'application/octet-stream';
 
     // CORS headers for static resource requests if loaded cross-origin (though usually loaded same-origin)
     res.setHeader('Access-Control-Allow-Origin', '*');
+
+    console.log(`[REQ] ${req.method} ${req.url} -> ${filePath}`);
 
     fs.readFile(filePath, (error, content) => {
         if (error) {
@@ -48,6 +51,9 @@ const server = http.createServer((req, res) => {
                     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
                     res.end('404 Not Found');
                 }
+            } else if (error.code === 'EISDIR') {
+                res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+                res.end('404 Not Found');
             } else {
                 res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
                 res.end(`Server Error: ${error.code}`);

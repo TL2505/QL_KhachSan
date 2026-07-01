@@ -65,7 +65,7 @@ export async function renderChat(container, session) {
             input.value = "";
             loadChat();
         } catch (err) {
-            alert("Lỗi gửi tin nhắn: " + err.message);
+            window.showCustomAlert("Lỗi gửi tin nhắn: " + err.message);
         }
     });
 }

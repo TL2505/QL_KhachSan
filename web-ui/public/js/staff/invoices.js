@@ -43,9 +43,9 @@ export async function renderInvoices(container, session) {
             .modal-overlay {
                 position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); 
                 backdrop-filter: blur(8px); z-index: 9999; display: none; align-items: center; justify-content: center;
-                opacity: 0; transition: opacity 0.3s ease;
+                opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
             }
-            .modal-overlay.active { display: flex; opacity: 1; }
+            .modal-overlay.active { display: flex; opacity: 1; pointer-events: auto; }
             .modal-glass {
                 background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(20px);
                 border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
@@ -70,9 +70,10 @@ export async function renderInvoices(container, session) {
             .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
             .btn-secondary:hover { background: rgba(255,255,255,0.2); }
         </style>
+        
         <div class="page-header">
-            <h1>Tra Cứu Hóa Đơn</h1>
-            <p>Hồ sơ chứng từ lưu trữ các giao dịch thanh toán thành công.</p>
+            <h1>Hóa Đơn Doanh Thu</h1>
+            <p>Báo cáo doanh số giao dịch thanh toán của khách hàng.</p>
         </div>
         
         <div class="filter-toolbar">
@@ -108,16 +109,15 @@ export async function renderInvoices(container, session) {
                     <thead>
                         <tr>
                             <th>Hóa đơn ID</th>
-                            <th>Mã đơn thuê</th>
-                            <th>Phòng</th>
+                            <th>Mã phòng</th>
                             <th>Khách hàng</th>
-                            <th>Thanh toán</th>
+                            <th>Tổng tiền</th>
                             <th>Ngày xuất</th>
                             <th style="text-align: center;">Hành động</th>
                         </tr>
                     </thead>
-                    <tbody id="admin-invoices-body">
-                        <!-- Content will be loaded here -->
+                    <tbody id="staff-payments-body">
+                        <!-- Content loaded here -->
                     </tbody>
                 </table>
             </div>
@@ -129,7 +129,7 @@ export async function renderInvoices(container, session) {
         </div>
 
         <!-- Modal Overlay -->
-        <div id="invoice-modal-overlay" class="modal-overlay">
+        <div id="payment-modal-overlay" class="modal-overlay">
             <div class="modal-glass">
                 <div class="modal-header">
                     <h2 id="modal-title">Chi Tiết Hóa Đơn</h2>
@@ -160,13 +160,13 @@ export async function renderInvoices(container, session) {
         </div>
     `;
 
-    const body = document.getElementById("admin-invoices-body");
+    const body = document.getElementById("staff-payments-body");
     const btnPrev = document.getElementById("btn-prev-page");
     const btnNext = document.getElementById("btn-next-page");
     const pageInfo = document.getElementById("page-info");
     const btnSearch = document.getElementById("btn-search");
     
-    const modalOverlay = document.getElementById("invoice-modal-overlay");
+    const modalOverlay = document.getElementById("payment-modal-overlay");
     const btnCloseModal1 = document.getElementById("btn-close-modal");
     const btnCloseModal2 = document.getElementById("btn-close-modal-2");
     const btnPrintPdf = document.getElementById("btn-print-pdf-real");
@@ -238,7 +238,6 @@ export async function renderInvoices(container, session) {
                 <tr class="skeleton-row">
                     <td><div class="skeleton-box" style="width: 50px;"></div></td>
                     <td><div class="skeleton-box" style="width: 80px;"></div></td>
-                    <td><div class="skeleton-box" style="width: 100px;"></div></td>
                     <td><div class="skeleton-box" style="width: 150px;"></div></td>
                     <td><div class="skeleton-box" style="width: 120px;"></div></td>
                     <td><div class="skeleton-box" style="width: 100px;"></div></td>
@@ -255,68 +254,65 @@ export async function renderInvoices(container, session) {
             const filters = getFilters();
             let query = `?page=${currentPage}&limit=${limit}`;
             if (filters.keyword) query += `&keyword=${encodeURIComponent(filters.keyword)}`;
-            if (filters.status) query += `&status=${encodeURIComponent(filters.status)}`;
+            if (filters.status && filters.status !== 'all') query += `&status=${encodeURIComponent(filters.status)}`;
             if (filters.fromDate) query += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
             if (filters.toDate) query += `&toDate=${encodeURIComponent(filters.toDate)}`;
 
-            currentInvoices = await api.get(`/invoices${query}`);
+            const response = await api.get(`/invoices${query}`);
+            currentInvoices = response || [];
+            
             body.innerHTML = "";
-            if (!currentInvoices || currentInvoices.length === 0) {
-                body.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">Không tìm thấy bản ghi hóa đơn nào phù hợp.</td></tr>`;
+            if (currentInvoices.length === 0) {
+                body.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Không tìm thấy hóa đơn nào.</td></tr>`;
                 btnNext.disabled = true;
                 return;
             }
 
-            btnNext.disabled = currentInvoices.length < limit;
-
             currentInvoices.forEach(i => {
                 const tr = document.createElement("tr");
-                const dateStr = i.issueDate ? new Date(i.issueDate).toLocaleString('vi-VN') : 'N/A';
-                const amountStr = formatCurrency(i.finalTotal);
                 
-                let statusColor = "var(--text-muted)";
-                let statusText = "Khác";
-                if (i.status === 'paid') { statusColor = "var(--success)"; statusText = "Đã thanh toán"; }
-                else if (i.status === 'pending') { statusColor = "var(--warning, #f59e0b)"; statusText = "Chờ thanh toán"; }
-                else if (i.status === 'cancelled') { statusColor = "var(--danger, #ef4444)"; statusText = "Đã hủy"; }
+                let statusBadge = "";
+                if (i.status === 'paid') statusBadge = `<span class="badge" style="background: rgba(16,185,129,0.1); color: #10b981; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Đã thanh toán</span>`;
+                else if (i.status === 'pending') statusBadge = `<span class="badge" style="background: rgba(245,158,11,0.1); color: #f59e0b; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Chờ thanh toán</span>`;
+                else statusBadge = `<span class="badge" style="background: rgba(239,68,68,0.1); color: #ef4444; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Đã hủy</span>`;
+                
+                const dateStr = i.issueDate ? new Date(i.issueDate).toLocaleDateString('vi-VN') : 'N/A';
 
                 tr.innerHTML = `
-                    <td>#${i.id}</td>
-                    <td>Đơn thuê #${i.bookingId}</td>
-                    <td><strong>Phòng #${i.roomNumber || 'N/A'}</strong></td>
+                    <td><strong>#${i.id}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">Đơn #${i.bookingId}</span></td>
+                    <td><strong>${i.roomNumber || 'N/A'}</strong></td>
                     <td>${i.customerName || 'Khách vãng lai'}</td>
-                    <td>
-                        <div style="font-weight: 600; color: ${statusColor};">${amountStr}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">${statusText}</div>
-                    </td>
-                    <td>${dateStr}</td>
+                    <td style="font-weight: 600; color: var(--success);">${formatCurrency(i.finalTotal)}</td>
+                    <td>${dateStr}<br>${statusBadge}</td>
                     <td style="text-align: center;">
-                        <button class="btn-action btn-detail" data-id="${i.id}">Chi tiết</button>
+                        <button class="btn-action btn-view-invoice" data-id="${i.id}">Chi tiết</button>
                     </td>
                 `;
                 body.appendChild(tr);
             });
 
-            document.querySelectorAll('.btn-detail').forEach(btn => {
+            btnNext.disabled = currentInvoices.length < limit;
+
+            document.querySelectorAll('.btn-view-invoice').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    openModal(e.target.getAttribute('data-id'));
+                    openModal(e.target.dataset.id);
                 });
             });
 
         } catch (e) {
             console.error(e);
-            body.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ff4d4f; padding: 30px;">Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Lỗi khi tải dữ liệu: ${e.message}</td></tr>`;
         }
     };
 
-    btnSearch.addEventListener('click', () => {
+    btnSearch.addEventListener("click", () => {
         currentPage = 1;
         pageInfo.textContent = `Trang ${currentPage}`;
         btnPrev.disabled = true;
         loadData();
     });
 
-    btnPrev.addEventListener('click', () => {
+    btnPrev.addEventListener("click", () => {
         if (currentPage > 1) {
             currentPage--;
             pageInfo.textContent = `Trang ${currentPage}`;
@@ -325,15 +321,13 @@ export async function renderInvoices(container, session) {
         }
     });
 
-    btnNext.addEventListener('click', () => {
+    btnNext.addEventListener("click", () => {
         currentPage++;
         pageInfo.textContent = `Trang ${currentPage}`;
         btnPrev.disabled = false;
         loadData();
     });
 
-    currentPage = 1;
-    btnPrev.disabled = true;
-    pageInfo.textContent = `Trang ${currentPage}`;
+    // Initial Load
     loadData();
 }

@@ -106,7 +106,7 @@ export async function renderChat(container, session) {
             input.value = "";
             openConversation(activeCustomerId);
         } catch (err) {
-            alert("Lỗi gửi tin: " + err.message);
+            window.showCustomAlert("Lỗi gửi tin: " + err.message);
         }
     });
 }
