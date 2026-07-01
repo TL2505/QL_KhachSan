@@ -25,22 +25,32 @@ public class LoyaltyController implements HttpHandler {
         String path = exchange.getRequestURI().getPath();
         Gson gson = JsonUtil.getGson();
 
-        if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
+        // Kiểm tra quyền cơ bản: phải đăng nhập (role 1, 2, hoặc 3)
+        if (!SecurityUtil.hasPermission(exchange, 1, 2, 3)) return;
+
+        // Lấy role của người dùng để phân quyền chi tiết
+        String roleHeader = exchange.getRequestHeaders().getFirst("X-User-Role");
+        boolean isCustomer = "CUSTOMER".equalsIgnoreCase(roleHeader);
+        boolean isAdminOrStaff = "ADMIN".equalsIgnoreCase(roleHeader) || "STAFF".equalsIgnoreCase(roleHeader);
 
         try {
-            // GET /api/loyalty/customers  → all customers with loyalty info
+            // GET /api/loyalty/customers  → Chỉ ADMIN và STAFF được xem danh sách
             if ("GET".equalsIgnoreCase(method) && path.equals("/api/loyalty/customers")) {
+                if (!isAdminOrStaff) {
+                    ApiResponseUtil.write(exchange, 403, ApiResponseUtil.error("Chỉ Admin/Staff mới được xem danh sách khách hàng thân thiết."));
+                    return;
+                }
                 List<Customer> customers = customerService.getAllCustomers();
                 ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(customers));
 
-            // GET /api/loyalty/history/{customerId}
+            // GET /api/loyalty/history/{customerId} → CUSTOMER chỉ xem lịch sử của mình
             } else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/loyalty/history/")) {
                 String[] parts = path.split("/");
                 int customerId = Integer.parseInt(parts[parts.length - 1]);
                 List<LoyaltyHistory> history = loyaltyService.getHistory(customerId);
                 ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(history));
 
-            // POST /api/loyalty/redeem  → redeem points
+            // POST /api/loyalty/redeem → CUSTOMER tự đổi điểm của mình
             } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/loyalty/redeem")) {
                 InputStream is = exchange.getRequestBody();
                 String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);

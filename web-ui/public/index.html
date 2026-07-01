@@ -98,10 +98,13 @@
     <!-- ==================== 2. MAIN APP SHELL ==================== -->
     <div id="app-page" class="app-container" style="display: none;">
         <!-- Left Sidebar Navigation -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="app-sidebar">
             <div class="sidebar-brand">
-                <i data-lucide="hotel" class="text-gold" style="width: 24px; height: 24px;"></i>
-                <h2>AURELIA</h2>
+                <i data-lucide="hotel" class="text-gold brand-icon" style="width: 24px; height: 24px; flex-shrink: 0;"></i>
+                <h2 class="brand-text">AURELIA</h2>
+                <button id="btn-toggle-sidebar" title="Thu gọn/Mở rộng" style="margin-left: auto; background: transparent; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 12px; margin-right: -8px; border-radius: var(--radius-sm);">
+                    <i data-lucide="chevron-left" id="sidebar-toggle-icon" style="width: 22px; height: 22px;"></i>
+                </button>
             </div>
             
             <!-- Dynamic Navigation Links loaded based on User Roles -->
@@ -124,17 +127,13 @@
         </aside>
 
         <!-- Main Display Content Area -->
-        <main class="main-content">
-            <header class="top-nav">
-                <div class="flex-row">
-                    <i data-lucide="activity" class="text-gold" style="width: 16px; height: 16px;"></i>
-                    <span id="connection-status" style="font-size: 13px; color: var(--success);">Đang kết nối API Backend</span>
-                </div>
-                <div class="flex-row">
-                    <span id="active-api-url" class="text-muted" style="font-size: 12px; font-family: monospace;">http://localhost:8081/api</span>
-                </div>
-            </header>
+        <main class="main-content" style="position: relative;">
             
+            <!-- Theme Toggle Button -->
+            <button id="theme-toggle" title="Chuyển đổi giao diện" style="position: absolute; top: 16px; right: 20px; z-index: 999; padding: 10px; border-radius: 50%; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); transition: var(--transition-fast);">
+                <i data-lucide="moon" id="theme-icon" style="width: 20px; height: 20px;"></i>
+            </button>
+
             <!-- Inner View Loader Container -->
             <div id="view-container" class="content-body">
                 <!-- Dynamically injected layouts -->

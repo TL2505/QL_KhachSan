@@ -5,19 +5,19 @@
     --font-heading: 'Outfit', sans-serif;
     --font-body: 'Plus Jakarta Sans', sans-serif;
 
-    /* Theme colors: Sleek Dark / Gold Accent */
-    --bg-main: #0b0f19;
-    --bg-sidebar: #111827;
-    --bg-card: #1f2937;
-    --bg-input: #374151;
+    /* Theme colors: VS Code Dark / Gold Accent */
+    --bg-main: #1e1e1e;
+    --bg-sidebar: #252526;
+    --bg-card: #2d2d30;
+    --bg-input: #3c3c3c;
     
     --primary: #d97706; /* Amber / Gold Accent */
     --primary-hover: #b45309;
     --primary-light: rgba(217, 119, 6, 0.15);
     
-    --text-main: #f9fafb;
-    --text-muted: #9ca3af;
-    --border: #374151;
+    --text-main: #cccccc;
+    --text-muted: #858585;
+    --border: #3c3c3c;
     
     /* Room Status Colors */
     --color-available: #10b981; /* Emerald Green */
@@ -41,6 +41,17 @@
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
 }
+
+:root.light-theme {
+    --bg-main: #fcf9f2;      /* Trắng ám vàng nhẹ cho nền chính */
+    --bg-sidebar: #f4f1ea;   /* Nền sidebar đậm hơn xíu */
+    --bg-card: #fdfcf9;      /* Nền card nổi bật nhẹ */
+    --bg-input: #ffffff;
+    --text-main: #333333;
+    --text-muted: #6b7280;
+    --border: #e6e2d8;       /* Viền cũng ấm hơn */
+}
+
 
 * {
     margin: 0;
@@ -96,6 +107,12 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 8px;
 }
 
+.light-theme .auth-header h1 {
+    background: linear-gradient(135deg, #111827 30%, var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
 /* Forms */
 .form-group {
     margin-bottom: 20px;
@@ -127,6 +144,74 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.2);
 }
 
+/* ============================================================
+   PAGINATION STYLES
+   ============================================================ */
+.pagination-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.page-btn {
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    transition: var(--transition-fast);
+}
+
+.page-btn:hover:not(:disabled) {
+    background-color: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.page-btn.active {
+    background-color: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    font-weight: 600;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.items-per-page-select {
+    background-color: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+}
+
+
 /* Buttons */
 .btn {
     display: inline-flex;
@@ -139,10 +224,33 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: var(--radius-sm);
     border: none;
     cursor: pointer;
-    transition: var(--transition-fast);
+    transition: transform var(--transition-fast), filter var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
     text-decoration: none;
     outline: none;
     gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Button press feedback */
+.btn:active {
+    transform: scale(0.95);
+}
+
+/* Subtle shine sweep on hover */
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.12), transparent);
+    transition: left 0.4s ease;
+    pointer-events: none;
+}
+
+.btn:hover::before {
+    left: 150%;
 }
 
 .btn-primary {
@@ -189,7 +297,48 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    transition: width var(--transition-normal);
 }
+
+.sidebar.compact {
+    width: 80px;
+}
+
+.sidebar.compact .brand-text {
+    display: none;
+}
+
+.sidebar.compact .sidebar-brand {
+    justify-content: center;
+    padding: 24px 0;
+}
+
+.sidebar.compact #btn-toggle-sidebar {
+    margin-left: 0 !important;
+}
+
+.sidebar.compact .sidebar-brand > .brand-icon {
+    display: none;
+}
+
+.sidebar.compact .menu-link span {
+    display: none;
+}
+
+.sidebar.compact .menu-link {
+    justify-content: center;
+    padding: 12px 0;
+}
+
+.sidebar.compact .user-info-name,
+.sidebar.compact .user-info-role {
+    display: none;
+}
+
+.sidebar.compact .sidebar-user > .flex-row {
+    justify-content: center;
+}
+
 
 .sidebar-brand {
     padding: 24px;
@@ -199,11 +348,34 @@ h1, h2, h3, h4, h5, h6 {
     gap: 12px;
 }
 
+#btn-toggle-sidebar {
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+#btn-toggle-sidebar:hover {
+    background-color: var(--bg-input);
+    color: var(--text-main) !important;
+}
+
+#sidebar-toggle-icon {
+    transition: transform 0.3s ease;
+}
+
+.sidebar.compact #sidebar-toggle-icon {
+    transform: rotate(180deg);
+}
+
 .sidebar-brand h2 {
     font-size: 20px;
     font-weight: 700;
     letter-spacing: 1px;
     background: linear-gradient(to right, #fff, var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.light-theme .sidebar-brand h2 {
+    background: linear-gradient(to right, #111827, var(--primary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -226,19 +398,27 @@ h1, h2, h3, h4, h5, h6 {
     text-decoration: none;
     border-radius: var(--radius-sm);
     font-weight: 500;
-    transition: var(--transition-fast);
+    transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast), padding-left var(--transition-fast);
     gap: 12px;
 }
 
-.menu-link:hover, .menu-item.active .menu-link {
+.menu-link:hover {
     color: var(--text-main);
     background-color: var(--bg-card);
+    padding-left: 20px;
 }
 
 .menu-item.active .menu-link {
+    color: var(--text-main);
+    background-color: var(--bg-card);
     border-left: 3px solid var(--primary);
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+    padding-left: 20px;
+}
+
+.menu-link:active {
+    transform: scale(0.97);
 }
 
 .sidebar-user {
@@ -285,6 +465,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Page headers */
 .page-header {
     margin-bottom: 30px;
+    animation: fadeIn 0.4s ease both;
 }
 
 .page-header h1 {
@@ -305,6 +486,12 @@ h1, h2, h3, h4, h5, h6 {
     padding: 24px;
     box-shadow: var(--shadow);
     margin-bottom: 24px;
+    animation: fadeIn 0.4s ease both;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card:hover {
+    border-color: rgba(217, 119, 6, 0.25);
 }
 
 .grid {
@@ -320,6 +507,12 @@ h1, h2, h3, h4, h5, h6 {
 /* Dashboard statistics badge/cards */
 .stat-card {
     border-left: 4px solid var(--primary);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
 }
 
 .stat-title {
@@ -363,8 +556,13 @@ h1, h2, h3, h4, h5, h6 {
     letter-spacing: 0.5px;
 }
 
+.table tbody tr {
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
 .table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: rgba(217, 119, 6, 0.04);
+    transform: translateX(2px);
 }
 
 /* Room Status Map Grids */
@@ -382,14 +580,41 @@ h1, h2, h3, h4, h5, h6 {
     padding: 20px 16px;
     text-align: center;
     cursor: pointer;
-    transition: var(--transition-fast);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
     position: relative;
     overflow: hidden;
+    animation: fadeIn 0.35s ease both;
+}
+
+/* Ripple layer */
+.room-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(217,119,6,0.18) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+    border-radius: inherit;
 }
 
 .room-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-6px);
     box-shadow: var(--shadow-lg);
+    border-color: rgba(217, 119, 6, 0.4);
+}
+
+/* Click / active state: scale down + ripple */
+.room-card:active {
+    transform: scale(0.96) translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.room-card:active::after {
+    opacity: 1;
+    transform: scale(2.5);
+    transition: opacity 0.1s ease, transform 0.15s ease;
 }
 
 .room-card-number {
@@ -457,12 +682,23 @@ h1, h2, h3, h4, h5, h6 {
     max-width: 500px;
     padding: 32px;
     box-shadow: var(--shadow-lg);
-    transform: scale(0.9);
-    transition: var(--transition-normal);
+    transform: scale(0.88) translateY(16px);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
 }
 
 .modal-overlay.active .modal-content {
-    transform: scale(1);
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* Modal close — spin on hover */
+.modal-close {
+    transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.modal-close:hover {
+    transform: rotate(90deg) scale(1.1);
 }
 
 .modal-header {
@@ -572,3 +808,551 @@ h1, h2, h3, h4, h5, h6 {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(217, 119, 6, 0); }
+}
+
+/* ============================================================
+   LOYALTY PAGE — Khách hàng thân thiết
+   ============================================================ */
+
+/* Hero card showing current points */
+.loyalty-hero {
+    background: linear-gradient(135deg, #1a1400 0%, #2d1f00 40%, #1f2937 100%);
+    border: 1px solid rgba(217, 119, 6, 0.4);
+    border-radius: var(--radius-lg);
+    padding: 36px 40px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.5s ease;
+}
+
+.loyalty-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(217,119,6,0.18) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.loyalty-hero-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.loyalty-hero-points {
+    font-family: var(--font-heading);
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.loyalty-hero-points span {
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--primary);
+    margin-left: 6px;
+}
+
+/* Tier badge */
+.tier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.tier-silver { background: rgba(156,163,175,0.2); color: #d1d5db; border: 1px solid rgba(156,163,175,0.3); }
+.tier-gold   { background: rgba(245,158,11,0.2);  color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); animation: pulse-glow 2.5s infinite; }
+.tier-vip    { background: rgba(6,182,212,0.2);   color: #22d3ee; border: 1px solid rgba(6,182,212,0.4); animation: pulse-glow 2.5s infinite; }
+
+/* Progress bar toward next tier */
+.loyalty-progress-wrap {
+    margin-top: 16px;
+}
+
+.loyalty-progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.loyalty-progress-bar {
+    height: 8px;
+    background-color: var(--bg-card);
+    border-radius: 99px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.loyalty-progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(to right, var(--primary), #fbbf24);
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Redeem package cards */
+.redeem-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.redeem-card:hover {
+    border-color: var(--primary);
+    background: rgba(217, 119, 6, 0.06);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.redeem-card-icon {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--primary-light);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+    color: var(--primary);
+}
+
+.redeem-card-title {
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.redeem-card-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+
+.redeem-card-cost {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: var(--font-heading);
+    margin-bottom: 12px;
+}
+
+/* Transaction history row animation */
+.history-row {
+    animation: slideInUp 0.3s ease both;
+}
+
+.history-earn { color: var(--success); font-weight: 700; }
+.history-redeem { color: var(--danger); font-weight: 700; }
+
+/* ============================================================
+   USERS PAGE — Quản lý người dùng
+   ============================================================ */
+
+/* Avatar circle with initials */
+.user-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+    flex-shrink: 0;
+    font-family: var(--font-heading);
+}
+
+.user-avatar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.user-avatar-username {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Role badges */
+.badge-role-admin {
+    background: rgba(217, 119, 6, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(217, 119, 6, 0.35);
+    padding: 3px 10px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-role-staff {
+    background: rgba(6, 182, 212, 0.15);
+    color: #22d3ee;
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    padding: 3px 10px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Skeleton loading row */
+.skeleton-row td {
+    padding: 14px 20px;
+}
+
+.skeleton-block {
+    height: 16px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--bg-card) 25%, var(--border) 50%, var(--bg-card) 75%);
+    background-size: 400px 100%;
+    animation: shimmer 1.4s infinite linear;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    animation: fadeIn 0.4s ease;
+}
+
+.empty-state-icon {
+    width: 64px; height: 64px;
+    background: var(--bg-card);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    color: var(--text-muted);
+}
+
+.empty-state p {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.empty-state small {
+    font-size: 13px;
+    display: block;
+    margin-top: 4px;
+}
+
+/* Action button group */
+.action-btns {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-icon {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    padding: 0;
+}
+
+.btn-icon:hover {
+    background: var(--bg-input);
+    color: var(--text-main);
+}
+
+.btn-icon.danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+/* Table row animation */
+.table-row-animate {
+    animation: slideInUp 0.25s ease both;
+}
+
+/* ============================================================
+   REVIEWS PAGE — Quản lý đánh giá
+   ============================================================ */
+
+/* Summary stats bar at top */
+.reviews-summary {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    padding: 20px 24px;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    animation: fadeIn 0.4s ease;
+}
+
+.reviews-avg-score {
+    font-family: var(--font-heading);
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.reviews-avg-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.reviews-dist {
+    flex: 1;
+    min-width: 180px;
+}
+
+.reviews-dist-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+.reviews-dist-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.reviews-dist-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--primary);
+    transition: width 0.8s ease;
+}
+
+.reviews-total-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* Visual star rating (CSS-rendered) */
+.star-rating {
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+}
+
+.star-rating .star {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.star-rating .star.filled { color: #fbbf24; }
+.star-rating .star.empty  { color: var(--border); }
+
+/* Badge by star count */
+.star-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.star-badge-5 { background: rgba(16,185,129,0.15); color: #10b981; }
+.star-badge-4 { background: rgba(6,182,212,0.15);  color: #22d3ee; }
+.star-badge-3 { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.star-badge-2 { background: rgba(249,115,22,0.15); color: #fb923c; }
+.star-badge-1 { background: rgba(239,68,68,0.15);  color: #ef4444; }
+
+/* Comment with expand */
+.comment-text {
+    font-size: 14px;
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+.comment-more {
+    font-size: 12px;
+    color: var(--primary);
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: 4px;
+}
+
+.comment-more:hover { color: var(--primary-hover); }
+
+/* Room number pill */
+.room-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-heading);
+}
+
+/* ============================================================
+   CUSTOMER DASHBOARD — Tổng quan khách hàng
+   ============================================================ */
+
+/* Animated greeting banner */
+.greeting-banner {
+    background: linear-gradient(120deg, rgba(217,119,6,0.1) 0%, rgba(16,185,129,0.05) 100%);
+    border: 1px solid rgba(217, 119, 6, 0.2);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    animation: fadeIn 0.5s ease;
+}
+
+.greeting-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #fbbf24);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.greeting-text h2 {
+    font-size: 22px;
+    margin-bottom: 4px;
+}
+
+.greeting-text p {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Enhanced stat card with icon */
+.stat-card-enhanced {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: var(--transition-fast);
+    animation: slideInUp 0.4s ease both;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card-enhanced:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(217, 119, 6, 0.3);
+}
+
+.stat-card-enhanced::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent-color, var(--primary));
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.stat-card-icon {
+    width: 44px; height: 44px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+
+.stat-card-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.stat-card-value {
+    font-family: var(--font-heading);
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Booking status timeline dot */
+.status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* btn-sm */
+.btn-sm {
+    padding: 6px 14px;
+    font-size: 13px;
+}
+

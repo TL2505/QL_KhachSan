@@ -29,6 +29,7 @@ export async function renderRooms(container, session) {
                     </tbody>
                 </table>
             </div>
+            <div id="pagination-admin-rooms"></div>
         </div>
     `;
     lucide.createIcons();
@@ -37,38 +38,81 @@ export async function renderRooms(container, session) {
         const body = document.getElementById("admin-rooms-body");
         try {
             const list = await api.get("/rooms");
-            body.innerHTML = "";
-            list.forEach(r => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${r.id}</td>
-                    <td><strong>Phòng ${r.roomNumber}</strong></td>
-                    <td>${r.typeName || 'Standard'}</td>
-                    <td>${Number(r.price).toLocaleString('vi-VN')} đ</td>
-                    <td><span class="room-badge badge-${r.status}">${r.status}</span></td>
-                    <td>
-                        <button class="btn btn-danger btn-sm btn-delete-room" data-id="${r.id}" style="padding: 4px 8px; font-size: 12px;">Xóa</button>
-                    </td>
-                `;
-                
-                tr.querySelector(".btn-delete-room").addEventListener("click", async () => {
-                    if (await window.showCustomConfirm(`Bạn chắc chắn muốn xóa phòng này khỏi danh mục hệ thống?`)) {
-                        try {
-                            await api.delete(`/rooms/${r.id}`);
-                            window.showCustomAlert("Đã xóa phòng thành công!");
-                            loadRooms();
-                        } catch (err) {
-                            window.showCustomAlert("Lỗi xóa phòng: " + err.message);
-                        }
-                    }
-                });
-                
-                body.appendChild(tr);
-            });
+            allRooms = list;
+            currentPage = 1;
+            renderTable();
         } catch (e) {
+            const body = document.getElementById("admin-rooms-body");
             body.innerHTML = `<tr><td colspan="6" style="color: var(--danger);">${e.message}</td></tr>`;
         }
     };
+
+    let allRooms = [];
+    let currentPage = 1;
+    let itemsPerPage = 10;
+
+    const renderTable = () => {
+        const body = document.getElementById("admin-rooms-body");
+        body.innerHTML = "";
+        
+        if (!allRooms || allRooms.length === 0) {
+            body.innerHTML = `<tr><td colspan="6" style="text-align:center;">Chưa có dữ liệu phòng.</td></tr>`;
+            const paginationContainer = document.getElementById("pagination-admin-rooms");
+            if (paginationContainer) paginationContainer.innerHTML = '';
+            return;
+        }
+
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginatedList = allRooms.slice(start, end);
+
+        paginatedList.forEach(r => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${r.id}</td>
+                <td><strong>Phòng ${r.roomNumber}</strong></td>
+                <td>${r.typeName || 'Standard'}</td>
+                <td>${Number(r.price).toLocaleString('vi-VN')} đ</td>
+                <td><span class="room-badge badge-${r.status}">${r.status}</span></td>
+                <td>
+                    <button class="btn btn-danger btn-sm btn-delete-room" data-id="${r.id}" style="padding: 4px 8px; font-size: 12px;">Xóa</button>
+                </td>
+            `;
+            
+            tr.querySelector(".btn-delete-room").addEventListener("click", async () => {
+                if (confirm(`Bạn chắc chắn muốn xóa phòng này khỏi danh mục hệ thống?`)) {
+                    try {
+                        await api.delete(`/rooms/${r.id}`);
+                        alert("Đã xóa phòng thành công!");
+                        loadRooms();
+                    } catch (err) {
+                        alert("Lỗi xóa phòng: " + err.message);
+                    }
+                }
+            });
+            
+            body.appendChild(tr);
+        });
+
+        if (window.renderPaginationComponent) {
+            window.renderPaginationComponent(
+                "pagination-admin-rooms",
+                allRooms.length,
+                itemsPerPage,
+                currentPage,
+                (newPage) => {
+                    currentPage = newPage;
+                    renderTable();
+                },
+                (newItemsPerPage) => {
+                    itemsPerPage = newItemsPerPage;
+                    currentPage = 1;
+                    renderTable();
+                }
+            );
+        }
+    };
+
     loadRooms();
 
     document.getElementById("btn-add-room-admin").addEventListener("click", () => {

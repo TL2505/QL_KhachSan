@@ -28,6 +28,7 @@ export async function renderPromotions(container, session) {
                     </tbody>
                 </table>
             </div>
+            <div id="pagination-admin-promotions"></div>
         </div>
     `;
     lucide.createIcons();
@@ -36,26 +37,65 @@ export async function renderPromotions(container, session) {
         const body = document.getElementById("admin-promotions-body");
         try {
             const list = await api.get("/promotions");
-            body.innerHTML = "";
-            if (!list || list.length === 0) {
-                body.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Không có chiến dịch khuyến mãi nào.</td></tr>`;
-                return;
-            }
-            list.forEach(p => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${p.id}</td>
-                    <td><strong>${p.name}</strong></td>
-                    <td><span class="room-badge badge-cleaning">${p.discountType === 'percentage' ? p.discountValue + '%' : p.discountValue.toLocaleString('vi-VN') + 'đ'}</span></td>
-                    <td>${p.startDate}</td>
-                    <td>${p.endDate || 'Vô thời hạn'}</td>
-                `;
-                body.appendChild(tr);
-            });
+            allPromos = list;
+            currentPage = 1;
+            renderTable();
         } catch (e) {
+            const body = document.getElementById("admin-promotions-body");
             body.innerHTML = `<tr><td colspan="5" style="color: var(--danger);">${e.message}</td></tr>`;
         }
     };
+
+    let allPromos = [];
+    let currentPage = 1;
+    let itemsPerPage = 10;
+
+    const renderTable = () => {
+        const body = document.getElementById("admin-promotions-body");
+        body.innerHTML = "";
+        
+        if (!allPromos || allPromos.length === 0) {
+            body.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Không có chiến dịch khuyến mãi nào.</td></tr>`;
+            const paginationContainer = document.getElementById("pagination-admin-promotions");
+            if (paginationContainer) paginationContainer.innerHTML = '';
+            return;
+        }
+
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginatedList = allPromos.slice(start, end);
+
+        paginatedList.forEach(p => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${p.id}</td>
+                <td><strong>${p.name}</strong></td>
+                <td><span class="room-badge badge-cleaning">${p.discountType === 'percentage' ? p.discountValue + '%' : Number(p.discountValue).toLocaleString('vi-VN') + 'đ'}</span></td>
+                <td>${p.startDate}</td>
+                <td>${p.endDate || 'Vô thời hạn'}</td>
+            `;
+            body.appendChild(tr);
+        });
+
+        if (window.renderPaginationComponent) {
+            window.renderPaginationComponent(
+                "pagination-admin-promotions",
+                allPromos.length,
+                itemsPerPage,
+                currentPage,
+                (newPage) => {
+                    currentPage = newPage;
+                    renderTable();
+                },
+                (newItemsPerPage) => {
+                    itemsPerPage = newItemsPerPage;
+                    currentPage = 1;
+                    renderTable();
+                }
+            );
+        }
+    };
+
     loadPromotions();
 
     document.getElementById("btn-add-promo").addEventListener("click", () => {
