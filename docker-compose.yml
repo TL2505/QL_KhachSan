@@ -40,17 +40,13 @@ services:
       - db
     restart: unless-stopped
 
-  # 4. Web UI (Vanilla HTML/JS - Node static server)
+  # 4. Web UI (Nginx Web Server)
   web:
-    image: node:20-alpine
-    working_dir: /app
+    image: nginx:alpine
     volumes:
-      - ./web-ui:/app
-    command: node server.js
-    environment:
-      - PORT=3000
+      - ./web-ui/public:/usr/share/nginx/html
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - backend
     restart: unless-stopped
