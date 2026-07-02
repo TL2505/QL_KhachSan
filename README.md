@@ -1,32 +1,61 @@
-# Quanlykhachsan
+# 🏨 Quản Lý Khách Sạn — Hotel Management System
 
-## Hướng dẫn chạy dự án
+Hệ thống quản lý khách sạn toàn diện: đặt phòng, check-in/check-out, hóa đơn, khuyến mãi, loyalty, báo cáo và chat nội bộ.
 
-1. Chuẩn bị môi trường
-   - Cài đặt JDK 17.
-   - Cài đặt MySQL và đảm bảo service đang chạy trên cổng `3306`.
-   - Nếu dùng XAMPP, bật MySQL.
+## 📚 Tài Liệu
 
-2. Cấu hình database
-   - Mở `config.properties` và đảm bảo `server.url=http://localhost:8081/api`.
-   - Nếu MySQL không có mật khẩu cho root, cấu hình mặc định đã dùng `root` với mật khẩu rỗng.
-   - Nếu dùng cấu hình khác, set biến môi trường:
-     - `DB_HOST`
-     - `DB_PORT`
-     - `DB_NAME`
-     - `DB_USER`
-     - `DB_PASSWORD`
+| File | Nội dung |
+|------|---------|
+| [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) | **Đọc trước** — Kiến trúc, API, cấu trúc thư mục, lưu ý cho AI agent |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Hướng dẫn triển khai chi tiết (Ubuntu Server + máy khách) |
 
-3. Build và chạy backend
-   - Chạy `build_project.bat` để biên dịch và tạo class.
-   - Khởi chạy backend bằng `Main`:
-     - `quanlykhachsan.backend.Main`
-   - Backend hiện đang lắng nghe trên cổng `8081`.
+## ⚡ Quick Start
 
-4. Chạy giao diện frontend
-   - Chạy lớp chính:
-     - `quanlykhachsan.Quanlykhachsan`
-   - Frontend sẽ gọi API tới `http://localhost:8081/api`.
+### Backend (Ubuntu Server)
+```bash
+# Clone repo
+git clone <GITHUB_URL> && cd Quanlykhachsan
 
-5. Tham khảo thêm
-   - Xem hướng dẫn chi tiết trong `docs/run-project.md`.
+# Khởi động toàn bộ stack (MariaDB + Java API)
+docker compose up -d --build
+
+# Kiểm tra
+curl http://localhost:8081/api/health
+```
+
+### Frontend (Máy khách)
+```bash
+# Node.js static server
+cd web-ui && node server.js
+# Vào: http://localhost:3000
+# Settings → đổi API URL thành http://<SERVER_IP>:8081/api
+```
+
+## 🏗️ Công Nghệ
+
+| Thành phần | Công nghệ |
+|------------|-----------|
+| Backend | Java 17, `com.sun.net.httpserver`, JDBC |
+| Frontend | Vanilla HTML/CSS/JavaScript (ES Modules) |
+| Database | MariaDB 11 / MySQL 8 |
+| Static Server | Node.js 20 (built-in `http` module) |
+| Deploy | Docker, Docker Compose, GitHub Actions |
+
+## 🔑 Biến Môi Trường Backend
+
+```
+DB_HOST=db
+DB_PORT=3306
+DB_NAME=hotel_prod_db
+DB_USER=root
+DB_PASSWORD=rootpass
+```
+
+## 📋 API Nhanh
+
+- Health: `GET /api/health`
+- Login: `POST /api/auth/login` → trả JWT token
+- Rooms: `GET /api/rooms`
+- Bookings: `GET /api/bookings`
+
+Xem đầy đủ trong [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md#-api-endpoints-đầy-đủ).

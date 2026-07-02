@@ -1,23 +1,85 @@
-name: Deploy to Local Linux VM
+name: 🚀 Auto Deploy to Ubuntu Server
 
+# Trigger: Chạy mỗi khi có code push lên nhánh main hoặc master
 on:
   push:
     branches:
-      - refactor/restructure-project
       - main
       - master
 
+# Chỉ cho phép 1 deploy chạy cùng lúc, cancel deploy đang pending nếu có build mới
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
 jobs:
-  deploy:
-    runs-on: self-hosted
-    
+  # ─── JOB 1: BUILD & TEST ──────────────────────────────────────────────────
+  build-check:
+    name: 🔨 Kiểm tra Build Java
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deploy with Docker Compose
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Compile Java Source
         run: |
-          # Hạ hệ thống cũ xuống trước (tùy chọn nhưng an toàn để làm mới mạng)
+          mkdir -p build/classes
+          find src -name "*.java" > sources.txt
+          javac -encoding utf-8 \
+                -cp "lib/*:build/classes" \
+                -d build/classes \
+                @sources.txt
+          echo "✅ Compile Java thành công"
+
+  # ─── JOB 2: DEPLOY ────────────────────────────────────────────────────────
+  deploy:
+    name: 🐳 Deploy to Ubuntu Server
+    runs-on: self-hosted          # Runner chạy trên Ubuntu Server của bạn
+    needs: build-check            # Chỉ deploy sau khi build thành công
+
+    steps:
+      - name: 📥 Checkout Code Mới Nhất
+        uses: actions/checkout@v4
+
+      - name: 🔄 Rebuild & Restart Docker Stack
+        run: |
+          echo "📦 Đang rebuild image backend..."
+          docker compose build --no-cache backend
+
+          echo "🔄 Đang hạ stack cũ và khởi động lại..."
           docker compose down
-          # Khởi động và build lại hệ thống mới
-          docker compose up -d --build
+          docker compose up -d
+
+          echo "⏳ Đang chờ backend healthy..."
+          MAX_WAIT=90
+          WAITED=0
+          until curl -s http://localhost:8081/api/health | grep -q '"status":"success"'; do
+            if [ $WAITED -ge $MAX_WAIT ]; then
+              echo "❌ Backend không phản hồi sau ${MAX_WAIT}s"
+              docker compose logs backend --tail=30
+              exit 1
+            fi
+            sleep 3
+            WAITED=$((WAITED + 3))
+          done
+
+          echo "✅ Deploy thành công!"
+          docker compose ps
+
+      - name: 📊 In Thông Tin Deploy
+        if: always()
+        run: |
+          echo "─────────────────────────────────────"
+          echo "Commit  : ${{ github.sha }}"
+          echo "Nhánh   : ${{ github.ref_name }}"
+          echo "Người   : ${{ github.actor }}"
+          echo "Thời gian: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "─────────────────────────────────────"
+          curl -s http://localhost:8081/api/health || echo "Backend check failed"
