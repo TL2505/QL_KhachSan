@@ -24,6 +24,25 @@ const MIME_TYPES = {
 const server = http.createServer((req, res) => {
     // Safely resolve the requested file path, trimming any query parameters
     let basePath = req.url.split('?')[0];
+
+    if (basePath === '/api-config') {
+        const configPath = path.join(__dirname, '..', 'config.properties');
+        fs.readFile(configPath, 'utf8', (err, data) => {
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            if (err) {
+                res.writeHead(500);
+                res.end(JSON.stringify({ error: 'Cannot read config.properties' }));
+            } else {
+                const match = data.match(/^\s*server\.url\s*=\s*(.+)$/m);
+                const serverUrl = match ? match[1].trim() : '';
+                res.writeHead(200);
+                res.end(JSON.stringify({ serverUrl }));
+            }
+        });
+        return;
+    }
+
     let filePath = path.join(PUBLIC_DIR, basePath === '/' ? 'index.html' : basePath);
     const extname = path.extname(filePath);
     let contentType = MIME_TYPES[extname] || 'application/octet-stream';

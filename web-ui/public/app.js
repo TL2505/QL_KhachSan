@@ -88,6 +88,15 @@ window.renderPaginationComponent = (containerId, totalItems, itemsPerPage, curre
     });
 };
 
+async function checkApiHealth() {
+    try {
+        const data = await api.get("/health");
+        console.log("[App] API Health Status:", data);
+    } catch (err) {
+        console.error("[App] API Health Check Failed:", err.message);
+    }
+}
+
 function initApp() {
     // 1. Setup API Connection Display
     const apiBaseInput = document.getElementById("config-api-input");

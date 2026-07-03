@@ -1,10 +1,56 @@
 // API Client for Java HTTPServer Backend
 // Handles dynamic API URL configuration, custom headers, and request envelopes
 
+const LOCAL_FALLBACK_URL = "http://localhost:8081/api";
+
 // Auto-detect API URL: same host on port 8081, fallback to localhost for local dev
-const DEFAULT_API_BASE = window.location.hostname === "localhost"
-    ? "http://localhost:8081/api"
+let defaultApiBase = window.location.hostname === "localhost"
+    ? LOCAL_FALLBACK_URL
     : `http://${window.location.hostname}:8081/api`;
+
+// Helper to check if API server is reachable
+async function isServerReachable(url) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 seconds timeout
+    try {
+        const response = await fetch(`${url.replace(/\/$/, "")}/health`, {
+            signal: controller.signal,
+            headers: { "ngrok-skip-browser-warning": "true" }
+        });
+        clearTimeout(timeoutId);
+        return response.ok;
+    } catch (e) {
+        clearTimeout(timeoutId);
+        return false;
+    }
+}
+
+try {
+    const response = await fetch("/api-config");
+    if (response.ok) {
+        const configData = await response.json();
+        if (configData && configData.serverUrl) {
+            const configuredUrl = configData.serverUrl.trim();
+            if (configuredUrl !== LOCAL_FALLBACK_URL) {
+                console.log("[api.js] Đang kiểm tra server: " + configuredUrl + " ...");
+                if (await isServerReachable(configuredUrl)) {
+                    defaultApiBase = configuredUrl;
+                    console.log("[api.js] ✔ Server phản hồi → dùng: " + defaultApiBase);
+                } else {
+                    defaultApiBase = LOCAL_FALLBACK_URL;
+                    console.log("[api.js] ✘ Không kết nối được server → chuyển sang localhost: " + defaultApiBase);
+                }
+            } else {
+                defaultApiBase = configuredUrl;
+                console.log("[api.js] Dùng server local: " + defaultApiBase);
+            }
+        }
+    }
+} catch (err) {
+    console.warn("[api.js] Could not load API URL configuration from server, using default detection:", err);
+}
+
+const DEFAULT_API_BASE = defaultApiBase;
 
 // Fetch the saved API URL from localStorage or fall back to localhost
 export function getApiBaseUrl() {
