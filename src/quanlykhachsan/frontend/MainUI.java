@@ -2,6 +2,8 @@ package quanlykhachsan.frontend;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.KeyboardFocusManager;
 import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.view.staff.BookingForm;
 import quanlykhachsan.frontend.view.staff.CustomerForm;
@@ -13,6 +15,7 @@ import quanlykhachsan.frontend.view.admin.PersonnelForm;
 import quanlykhachsan.frontend.view.admin.ReportForm;
 import quanlykhachsan.frontend.view.staff.InvoiceForm;
 import quanlykhachsan.frontend.utils.ThemeManager;
+import quanlykhachsan.frontend.utils.WebSocketService;
 import quanlykhachsan.frontend.view.admin.PromotionForm;
 import quanlykhachsan.frontend.view.customer.CustomerPromotionView;
 import quanlykhachsan.frontend.view.admin.AdminDashboard;
@@ -36,6 +39,12 @@ public class MainUI extends JFrame {
         setLocationRelativeTo(null);
 
         initUI();
+        setupGlobalHotkeys();
+        
+        // Khởi chạy WebSocket để nhận thông báo real-time (chỉ dành cho Admin & Lễ tân)
+        if (currentUser.getRoleId() == 1 || currentUser.getRoleId() == 2) {
+            WebSocketService.connect();
+        }
     }
 
     private void initUI() {
@@ -244,10 +253,47 @@ public class MainUI extends JFrame {
         int confirm = JOptionPane.showConfirmDialog(this, "Bạn có thực sự muốn đăng xuất?", "Đăng xuất",
                 JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
+            WebSocketService.disconnect(); // Đóng kết nối WS
             this.dispose();
             SwingUtilities.invokeLater(() -> {
                 new LoginForm().setVisible(true);
             });
         }
+    }
+
+    private void setupGlobalHotkeys() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
+            if (e.getID() == KeyEvent.KEY_PRESSED) {
+                int keyCode = e.getKeyCode();
+                
+                // F2: Phím tắt mở Quản lý Khách hàng
+                if (keyCode == KeyEvent.VK_F2) {
+                    if (currentUser.getRoleId() == 1 || currentUser.getRoleId() == 2) {
+                        setSelectedTab(2);
+                        return true;
+                    }
+                }
+                
+                // F5: Phím tắt làm mới (Refresh Sơ đồ phòng)
+                if (keyCode == KeyEvent.VK_F5) {
+                    Component currentPanel = tabbedPane.getSelectedComponent();
+                    if (currentPanel instanceof RoomForm) {
+                        ((RoomForm) currentPanel).loadRooms();
+                    }
+                    return true;
+                }
+                
+                // F12: Phím tắt mở tab Thanh toán / Hóa đơn
+                if (keyCode == KeyEvent.VK_F12) {
+                    if (currentUser.getRoleId() == 1) {
+                        setSelectedTab(5); // Admin -> Hóa đơn
+                    } else if (currentUser.getRoleId() == 2) {
+                        setSelectedTab(3); // Nhân viên -> Thanh toán
+                    }
+                    return true;
+                }
+            }
+            return false;
+        });
     }
 }
