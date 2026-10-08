@@ -180,6 +180,16 @@ public class RoomController implements HttpHandler {
             java.util.Date checkIn = sdf.parse(checkInStr);
             java.util.Date checkOut = sdf.parse(checkOutStr);
 
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTime(checkIn);
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 14);
+            checkIn = cal.getTime();
+
+            cal.setTime(checkOut);
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 12);
+            checkOut = cal.getTime();
+
+
             List<Room> availableRooms = roomService.findAvailableRooms(checkIn, checkOut);
             List<RoomResponse> dtoList = new java.util.ArrayList<>();
             for (Room r : availableRooms) {

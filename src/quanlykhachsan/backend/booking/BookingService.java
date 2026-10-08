@@ -24,8 +24,12 @@ public class BookingService {
         List<Booking> bookings = bookingDAO.findByRoomId(roomId);
 
         for (Booking b : bookings) {
-            boolean overlap = checkIn.getTime() <= b.getCheckOutDate().getTime() &&
-                              checkOut.getTime() >= b.getCheckInDate().getTime();
+            String st = b.getStatus() != null ? b.getStatus().toLowerCase() : "";
+            if (st.equals("cancelled") || st.equals("no_show") || st.equals("completed") || st.equals("checked_out")) {
+                continue;
+            }
+            boolean overlap = checkIn.getTime() < b.getCheckOutDate().getTime() &&
+                              checkOut.getTime() > b.getCheckInDate().getTime();
             if (overlap) return false;
         }
         return true;
@@ -65,7 +69,8 @@ public class BookingService {
     public boolean cancelBooking(int bookingId) {
         Booking b = getBookingById(bookingId);
         if (b != null) {
-            bookingDAO.deleteBooking(b);
+            b.setStatus("cancelled");
+            bookingDAO.updateBooking(b);
             return true;
         }
         return false;
