@@ -5,13 +5,9 @@ import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import quanlykhachsan.backend.hotelservice.ServiceUsageDAOImpl;
-import quanlykhachsan.backend.hotelservice.ServiceUsage;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 public class ServiceUsageController implements HttpHandler {
     private final ServiceUsageDAOImpl usageDAO = new ServiceUsageDAOImpl();

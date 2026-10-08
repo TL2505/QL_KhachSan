@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.room;
 
-import quanlykhachsan.backend.room.RoomTypeDAO;
-import quanlykhachsan.backend.room.RoomType;
 import quanlykhachsan.backend.utils.DBconn;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

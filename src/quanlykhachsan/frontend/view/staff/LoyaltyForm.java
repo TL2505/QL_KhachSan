@@ -569,7 +569,20 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
                 } catch (Exception e) {
                     lblStatus.setText("❌ Lỗi tải dữ liệu!");
                     lblStatus.setForeground(DANGER);
-                    e.printStackTrace();
+                    String errorMsg = e.getMessage();
+                    if (e.getCause() != null) {
+                        errorMsg = e.getCause().getMessage();
+                    }
+                    if (errorMsg != null && errorMsg.contains("403")) {
+                        JOptionPane.showMessageDialog(LoyaltyForm.this,
+                                "Bạn không có quyền truy cập danh sách Khách hàng thân thiết.",
+                                "Từ chối truy cập", JOptionPane.WARNING_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(LoyaltyForm.this,
+                                "Không thể tải dữ liệu: " + (errorMsg != null ? errorMsg : "Lỗi không xác định"),
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        e.printStackTrace();
+                    }
                 }
             }
         };
@@ -667,7 +680,17 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
                         tblHistoryModel.addRow(new Object[] { "", "", "", "", "—— Chưa có lịch sử tích điểm ——" });
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    String errorMsg = e.getMessage();
+                    if (e.getCause() != null) {
+                        errorMsg = e.getCause().getMessage();
+                    }
+                    if (errorMsg != null && errorMsg.contains("403")) {
+                        JOptionPane.showMessageDialog(LoyaltyForm.this,
+                                "Bạn không có quyền xem lịch sử tích điểm.",
+                                "Từ chối truy cập", JOptionPane.WARNING_MESSAGE);
+                    } else {
+                        e.printStackTrace();
+                    }
                 }
             }
         };

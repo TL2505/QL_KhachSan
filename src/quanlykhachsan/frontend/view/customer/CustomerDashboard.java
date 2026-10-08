@@ -3,7 +3,6 @@ package quanlykhachsan.frontend.view.customer;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -19,7 +18,6 @@ import quanlykhachsan.backend.booking.Booking;
 import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.view.ChatDialog;
-import quanlykhachsan.frontend.view.customer.CustomerNotificationDialog;
 
 public class CustomerDashboard extends JPanel {
 

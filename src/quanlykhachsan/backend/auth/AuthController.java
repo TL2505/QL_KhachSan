@@ -1,7 +1,6 @@
 package quanlykhachsan.backend.auth;
 
 import quanlykhachsan.backend.user.User;
-import quanlykhachsan.backend.auth.AuthService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
@@ -14,7 +13,6 @@ import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.auth.dto.LoginRequest;
 import quanlykhachsan.backend.auth.dto.RegisterRequest;
 import quanlykhachsan.backend.auth.dto.AuthResponse;
-import quanlykhachsan.backend.auth.dto.AuthUserInfo;
 
 public class AuthController implements HttpHandler {
 

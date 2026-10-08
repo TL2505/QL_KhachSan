@@ -1,13 +1,7 @@
 package quanlykhachsan.backend.room;
 
-import quanlykhachsan.backend.room.RoomTypeDAO;
-import quanlykhachsan.backend.room.RoomTypeDAOImpl;
-import quanlykhachsan.backend.room.Room;
-import quanlykhachsan.backend.room.RoomType;
 
 import java.util.List;
-import quanlykhachsan.backend.room.RoomDAO;
-import quanlykhachsan.backend.room.RoomDAOImpl;
 
 public class RoomService {
 

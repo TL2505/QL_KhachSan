@@ -7,9 +7,6 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
-import quanlykhachsan.backend.booking.InvoiceDAO;
-import quanlykhachsan.backend.booking.InvoiceDAOImpl;
-import quanlykhachsan.backend.booking.Invoice;
 
 
 public class InvoiceController implements HttpHandler {

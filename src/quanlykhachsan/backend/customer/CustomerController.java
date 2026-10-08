@@ -1,22 +1,17 @@
 package quanlykhachsan.backend.customer;
 
-import quanlykhachsan.backend.customer.Customer;
-import quanlykhachsan.backend.customer.CustomerService;
 import quanlykhachsan.backend.utils.SecurityUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.customer.dto.CustomerCreateRequest;
 import quanlykhachsan.backend.customer.dto.CustomerResponse;
-import quanlykhachsan.backend.customer.CustomerMapper;
 
 public class CustomerController implements HttpHandler {
 

@@ -1,17 +1,10 @@
 package quanlykhachsan.backend.booking;
 
-import quanlykhachsan.backend.booking.BookingDAO;
-import quanlykhachsan.backend.booking.BookingDAOImpl;
 import quanlykhachsan.backend.room.RoomDAOImpl;
-import quanlykhachsan.backend.booking.Booking;
-import quanlykhachsan.backend.booking.Invoice;
-import quanlykhachsan.backend.booking.InvoiceDAOImpl;
 import quanlykhachsan.backend.promotion.Promotion;
 import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.backend.room.Room;
 import quanlykhachsan.backend.customer.CustomerDAOImpl;
-import quanlykhachsan.backend.room.RoomDAOImpl;
-import quanlykhachsan.backend.booking.PaymentDAOImpl;
 import quanlykhachsan.backend.promotion.PromotionService;
 
 import java.util.List;
@@ -98,8 +91,8 @@ public class BookingService {
                 }
             }
 
-            // 3. Update Booking status to "paid"
-            b.setStatus("paid");
+            // 3. Update Booking status to "checked_out" (MySQL ENUM requires 'checked_out', not 'paid')
+            b.setStatus("checked_out");
             bookingDAO.updateBooking(b);
             
             // 4. Create Payment record

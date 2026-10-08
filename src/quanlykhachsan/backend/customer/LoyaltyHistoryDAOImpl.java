@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.customer;
 
-import quanlykhachsan.backend.customer.LoyaltyHistoryDAO;
-import quanlykhachsan.backend.customer.LoyaltyHistory;
 import quanlykhachsan.backend.utils.DBconn;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.room;
 
-import quanlykhachsan.backend.room.RoomType;
 import java.util.List;
 
 public interface RoomTypeDAO {

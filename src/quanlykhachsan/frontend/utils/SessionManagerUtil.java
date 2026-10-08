@@ -2,7 +2,6 @@ package quanlykhachsan.frontend.utils;
 
 import quanlykhachsan.backend.user.User;
 
-import quanlykhachsan.frontend.utils.ThemeManager;
 
 /**
  * Singleton class to manage the current user session on the frontend.

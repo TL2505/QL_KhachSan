@@ -3,8 +3,6 @@ package quanlykhachsan.backend.booking;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import quanlykhachsan.backend.booking.InvoiceDAO;
-import quanlykhachsan.backend.booking.Invoice;
 import quanlykhachsan.backend.utils.DBconn;
 
 public class InvoiceDAOImpl implements InvoiceDAO {

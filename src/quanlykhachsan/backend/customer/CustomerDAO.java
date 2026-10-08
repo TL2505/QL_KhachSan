@@ -4,7 +4,6 @@
  */
 package quanlykhachsan.backend.customer;
 
-import quanlykhachsan.backend.customer.Customer;
 import java.util.ArrayList;
 
 /**

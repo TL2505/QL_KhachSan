@@ -13,7 +13,6 @@ import quanlykhachsan.backend.room.Room;
 import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.api.RoomAPI;
 import quanlykhachsan.frontend.utils.WrapLayout;
-import quanlykhachsan.frontend.view.staff.BookingWizardDialog;
 
 public class RoomDiscoveryPanel extends JPanel {
 

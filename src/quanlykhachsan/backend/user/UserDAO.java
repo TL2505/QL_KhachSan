@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.user;
 
-import quanlykhachsan.backend.user.User;
-import quanlykhachsan.backend.user.Role;
 import java.util.ArrayList;
 import java.util.List;
 

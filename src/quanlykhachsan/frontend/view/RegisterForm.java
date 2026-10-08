@@ -4,7 +4,6 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
-import quanlykhachsan.frontend.api.AuthAPI;
 import com.google.gson.JsonObject;
 import com.google.gson.Gson;
 import quanlykhachsan.frontend.utils.HttpUtil;

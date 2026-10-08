@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.customer;
 
-import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.backend.customer.dto.CustomerResponse;
 
 public class CustomerMapper {

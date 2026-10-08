@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.user;
 
-import quanlykhachsan.backend.user.User;
 import quanlykhachsan.backend.user.dto.UserCreateRequest;
 import quanlykhachsan.backend.user.dto.UserResponse;
 

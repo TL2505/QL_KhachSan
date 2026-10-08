@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.booking;
 
-import quanlykhachsan.backend.booking.PaymentDAO;
-import quanlykhachsan.backend.booking.Payment;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

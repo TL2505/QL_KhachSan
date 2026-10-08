@@ -4,7 +4,6 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -12,9 +11,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
-import quanlykhachsan.backend.promotion.Promotion;
 import quanlykhachsan.backend.promotion.dto.PromotionCreateRequest;
-import quanlykhachsan.backend.promotion.PromotionService;
 import quanlykhachsan.backend.booking.BookingService;
 import quanlykhachsan.backend.booking.Booking;
 import quanlykhachsan.backend.customer.Customer;
@@ -22,11 +19,8 @@ import quanlykhachsan.backend.room.Room;
 import quanlykhachsan.backend.customer.CustomerDAOImpl;
 import quanlykhachsan.backend.room.RoomDAOImpl;
 import quanlykhachsan.backend.utils.SecurityUtil;
-import java.net.URI;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.stream.Collectors;
-import java.util.Arrays;
 
 public class PromotionController implements HttpHandler {
 

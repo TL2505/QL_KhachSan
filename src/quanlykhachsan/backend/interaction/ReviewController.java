@@ -1,22 +1,17 @@
 package quanlykhachsan.backend.interaction;
 
-import quanlykhachsan.backend.interaction.Review;
-import quanlykhachsan.backend.interaction.ReviewService;
 import quanlykhachsan.backend.utils.SecurityUtil;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.interaction.dto.ReviewCreateRequest;
 import quanlykhachsan.backend.interaction.dto.ReviewResponse;
-import quanlykhachsan.backend.interaction.ReviewMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 

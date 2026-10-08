@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.interaction;
 
-import quanlykhachsan.backend.interaction.Review;
 import quanlykhachsan.backend.interaction.dto.ReviewCreateRequest;
 import quanlykhachsan.backend.interaction.dto.ReviewResponse;
 

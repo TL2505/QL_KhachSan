@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.interaction;
 
-import quanlykhachsan.backend.interaction.ChatDAO;
-import quanlykhachsan.backend.interaction.Message;
 import quanlykhachsan.backend.utils.DBconn;
 import java.sql.*;
 import java.util.ArrayList;

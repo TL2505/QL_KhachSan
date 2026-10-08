@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.hotelservice;
 
-import quanlykhachsan.backend.hotelservice.ServiceUsageDAO;
-import quanlykhachsan.backend.hotelservice.ServiceUsage;
 import quanlykhachsan.backend.utils.DBconn;
 
 import java.sql.Connection;

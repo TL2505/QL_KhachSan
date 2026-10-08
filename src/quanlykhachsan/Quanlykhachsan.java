@@ -1,8 +1,5 @@
 package quanlykhachsan;
 
-import com.formdev.flatlaf.FlatIntelliJLaf;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Quanlykhachsan {
 

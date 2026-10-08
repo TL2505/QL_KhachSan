@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.customer;
 
-import quanlykhachsan.backend.customer.CustomerDAO;
-import quanlykhachsan.backend.customer.Customer;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

@@ -19,7 +19,7 @@ import quanlykhachsan.frontend.api.BookingAPI;
 import quanlykhachsan.frontend.api.PromotionAPI;
 import quanlykhachsan.frontend.api.PaymentAPI;
 import quanlykhachsan.frontend.utils.ThemeManager;
-import java.util.List;
+
 
 public class RoomDetailDialog extends JDialog {
 

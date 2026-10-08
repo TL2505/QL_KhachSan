@@ -34,9 +34,9 @@ export async function renderDashboard(container, session) {
         // Fetch Stats
         const stats = await api.get("/reports/today-stats");
         if (stats) {
-            document.getElementById("stat-revenue").textContent = Number(stats.todayRevenue || 0).toLocaleString('vi-VN') + " đ";
+            document.getElementById("stat-revenue").textContent = Number(stats.revenueToday || 0).toLocaleString('vi-VN') + " đ";
             document.getElementById("stat-occupied").textContent = stats.occupiedRooms || 0;
-            document.getElementById("stat-pending").textContent = stats.pendingBookings || 0;
+            document.getElementById("stat-pending").textContent = stats.pendingCheckIns || 0;
         }
 
         // Fetch monthly revenue and draw Canvas bar chart
@@ -60,7 +60,7 @@ function drawRevenueChart(data) {
     const width = canvas.width - margin.left - margin.right;
     const height = canvas.height - margin.top - margin.bottom;
 
-    const maxVal = Math.max(...data.map(d => Number(d.revenue || 0)), 100000);
+    const maxVal = Math.max(...data.map(d => Number(d.grossRevenue || 0)), 100000);
 
     ctx.strokeStyle = "#374151";
     ctx.lineWidth = 1;
@@ -95,7 +95,7 @@ function drawRevenueChart(data) {
     ctx.textAlign = "center";
     data.forEach((d, idx) => {
         const x = margin.left + gap + (barWidth + gap) * idx;
-        const barHeight = (Number(d.revenue || 0) / maxVal) * height;
+        const barHeight = (Number(d.grossRevenue || 0) / maxVal) * height;
         const y = margin.top + height - barHeight;
 
         const gradient = ctx.createLinearGradient(0, y, 0, margin.top + height);
@@ -111,6 +111,6 @@ function drawRevenueChart(data) {
         ctx.fillText(d.monthName || d.month, x, margin.top + height + 18);
         
         ctx.fillStyle = "#f9fafb";
-        ctx.fillText(Number(d.revenue).toLocaleString('vi-VN', { notation: 'compact' }), x, y - 6);
+        ctx.fillText(Number(d.grossRevenue).toLocaleString('vi-VN', { notation: 'compact' }), x, y - 6);
     });
 }

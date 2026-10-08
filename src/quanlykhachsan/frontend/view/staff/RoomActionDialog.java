@@ -6,7 +6,6 @@ import java.awt.*;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -16,7 +15,6 @@ import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.backend.room.Room;
 import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.api.BookingAPI;
-import quanlykhachsan.frontend.api.CustomerAPI;
 import quanlykhachsan.frontend.utils.ThemeManager;
 
 /**

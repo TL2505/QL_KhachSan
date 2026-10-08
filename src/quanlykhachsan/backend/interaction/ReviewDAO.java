@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.interaction;
 
-import quanlykhachsan.backend.interaction.Review;
 import java.util.List;
 
 public interface ReviewDAO {

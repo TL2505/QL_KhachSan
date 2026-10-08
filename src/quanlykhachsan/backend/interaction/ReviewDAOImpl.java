@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.interaction;
 
-import quanlykhachsan.backend.interaction.ReviewDAO;
-import quanlykhachsan.backend.interaction.Review;
 import quanlykhachsan.backend.utils.DBconn;
 
 import java.sql.*;

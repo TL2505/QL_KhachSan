@@ -1,7 +1,6 @@
 package quanlykhachsan.frontend.utils;
 
 import java.awt.*;
-import javax.swing.*;
 
 /**
  * FlowLayout extension that correctly handles wrapping inside JScrollPane.

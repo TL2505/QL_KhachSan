@@ -7,8 +7,6 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import quanlykhachsan.backend.booking.Booking;
-import quanlykhachsan.backend.room.Room;
-import quanlykhachsan.frontend.api.RoomAPI;
 import quanlykhachsan.frontend.utils.ThemeManager;
 
 public class BookingDetailDialog extends JDialog {

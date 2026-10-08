@@ -1,6 +1,5 @@
 package quanlykhachsan.frontend.api;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import quanlykhachsan.frontend.utils.HttpUtil;

@@ -226,7 +226,7 @@ public class AdminDashboard extends JPanel {
     }
 
     private void updateChart(Map<String, Integer> data) {
-        DefaultPieDataset dataset = new DefaultPieDataset();
+        DefaultPieDataset<String> dataset = new DefaultPieDataset<>();
         if (data != null) {
             data.forEach((k, v) -> {
                 String label;
@@ -246,7 +246,7 @@ public class AdminDashboard extends JPanel {
         chart.setBackgroundPaint(CARD_BG);
         chart.setBorderVisible(false);
         
-        org.jfree.chart.plot.PiePlot plot = (org.jfree.chart.plot.PiePlot) chart.getPlot();
+        org.jfree.chart.plot.PiePlot<String> plot = (org.jfree.chart.plot.PiePlot<String>) chart.getPlot();
         plot.setOutlineVisible(false);
         plot.setLabelGenerator(null);
         

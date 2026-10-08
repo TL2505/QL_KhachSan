@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.hotelservice;
 
-import quanlykhachsan.backend.hotelservice.ServiceUsage;
 import java.util.ArrayList;
 
 public interface ServiceUsageDAO {

@@ -1,11 +1,5 @@
 package quanlykhachsan.backend.customer;
 
-import quanlykhachsan.backend.customer.CustomerDAO;
-import quanlykhachsan.backend.customer.LoyaltyHistoryDAO;
-import quanlykhachsan.backend.customer.CustomerDAOImpl;
-import quanlykhachsan.backend.customer.LoyaltyHistoryDAOImpl;
-import quanlykhachsan.backend.customer.Customer;
-import quanlykhachsan.backend.customer.LoyaltyHistory;
 
 import java.util.List;
 

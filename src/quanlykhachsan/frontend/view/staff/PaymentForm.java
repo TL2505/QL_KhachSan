@@ -21,7 +21,6 @@ import quanlykhachsan.frontend.utils.InvoicePDFExporter;
 import java.net.URL;
 import java.awt.Image;
 import javax.imageio.ImageIO;
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.hotelservice.ServiceUsage;
 import quanlykhachsan.frontend.api.ServiceUsageAPI;

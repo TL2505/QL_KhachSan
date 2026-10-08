@@ -1,8 +1,5 @@
 package quanlykhachsan.backend.interaction;
 
-import quanlykhachsan.backend.interaction.ChatDAO;
-import quanlykhachsan.backend.interaction.ChatDAOImpl;
-import quanlykhachsan.backend.interaction.Message;
 import java.util.List;
 
 public class ChatService {

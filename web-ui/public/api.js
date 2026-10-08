@@ -97,7 +97,7 @@ export async function apiFetch(path, init = {}) {
 }
 
 export const api = {
-    get: (path, init = {}) => apiFetch(path, { ...init, method: 'GET' }),
+    get: (path, init = {}) => apiFetch(path, { ...init, method: 'GET', cache: 'no-store' }),
     post: (path, body, init = {}) => apiFetch(path, { ...init, method: 'POST', body: JSON.stringify(body) }),
     put: (path, body, init = {}) => apiFetch(path, { ...init, method: 'PUT', body: JSON.stringify(body) }),
     delete: (path, init = {}) => apiFetch(path, { ...init, method: 'DELETE' })

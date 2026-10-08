@@ -369,7 +369,7 @@ public class ReportForm extends JPanel {
                     chartBarContainer.repaint();
 
                     // 3. Pie Chart
-                    DefaultPieDataset pieDataset = new DefaultPieDataset();
+                    DefaultPieDataset<String> pieDataset = new DefaultPieDataset<>();
                     if (data.getMarketSegmentData() != null) {
                         for (Map.Entry<String, Integer> entry : data.getMarketSegmentData().entrySet()) {
                             pieDataset.setValue(entry.getKey(), entry.getValue());
@@ -383,7 +383,7 @@ public class ReportForm extends JPanel {
                         pieChart.getLegend().setBackgroundPaint(CARD_BG);
                         pieChart.getLegend().setItemPaint(TEXT_MAIN);
                     }
-                    PiePlot piePlot = (PiePlot) pieChart.getPlot();
+                    PiePlot<String> piePlot = (PiePlot<String>) pieChart.getPlot();
                     piePlot.setBackgroundPaint(CARD_BG);
                     piePlot.setOutlineVisible(false);
                     piePlot.setShadowXOffset(0);

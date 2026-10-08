@@ -1,11 +1,5 @@
 package quanlykhachsan.backend.report;
 
-import quanlykhachsan.backend.report.ReportDAO;
-import quanlykhachsan.backend.report.ReportDAOImpl;
-import quanlykhachsan.backend.report.MonthlyRevenue;
-import quanlykhachsan.backend.report.DailyStats;
-import quanlykhachsan.backend.report.DashboardData;
-import quanlykhachsan.backend.report.DashboardFilter;
 import quanlykhachsan.backend.utils.SecurityUtil;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -18,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 

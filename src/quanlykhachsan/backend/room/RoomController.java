@@ -1,8 +1,5 @@
 package quanlykhachsan.backend.room;
 
-import quanlykhachsan.backend.room.Room;
-import quanlykhachsan.backend.user.User;
-import quanlykhachsan.backend.room.RoomService;
 import quanlykhachsan.backend.utils.SecurityUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -10,17 +7,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import quanlykhachsan.backend.report.DailyStats;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import quanlykhachsan.backend.room.RoomType;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.room.dto.RoomCreateRequest;
 import quanlykhachsan.backend.room.dto.RoomStatusUpdateRequest;
 import quanlykhachsan.backend.room.dto.RoomResponse;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class RoomController implements HttpHandler {
 

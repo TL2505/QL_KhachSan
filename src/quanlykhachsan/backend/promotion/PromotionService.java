@@ -1,8 +1,5 @@
 package quanlykhachsan.backend.promotion;
 
-import quanlykhachsan.backend.promotion.PromotionDAO;
-import quanlykhachsan.backend.promotion.PromotionDAOImpl;
-import quanlykhachsan.backend.promotion.Promotion;
 import quanlykhachsan.backend.booking.Booking;
 import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.backend.room.Room;
