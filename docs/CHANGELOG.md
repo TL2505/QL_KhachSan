@@ -12,5 +12,5 @@
 - Created `/docs/system-prompts/` (2 files): chatbot-guest, staff-assistant
 - Created `/docs/dev-spec/` (8 files): architecture, api-contracts, test-scenarios, prompt-loading, implementation-plan, tech-stack, integration, deployment
 - AI Behavior Contract v1.0 (11 hard rules)
-- Phase 1 scope defined (5 core endpoints)
+- Defined Phase 1 scope (5 core endpoints)
 - Deployment: 6-container Docker architecture

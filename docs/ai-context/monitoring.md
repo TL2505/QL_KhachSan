@@ -1,17 +1,17 @@
-# AI MONITORING & KPI METRICS
+# AI MONITORING & KPIs
 
-## 1. KEY PERFORMANCE INDICATORS (KPIs)
-- **Deflection Rate:** Target `> 60%` (Conversations resolved without Staff intervention).
-- **Violation Rate:** Target `< 0.1%` (Instances where AI violates `constraints.md`).
-- **Escalation SLA Compliance:** Target `> 95%` (Staff acknowledges warm transfers within 2 minutes).
-- **Average Handle Time (AHT):** AI response time target `< 2 seconds`.
+## 1. KEY METRICS (KPIs)
+- **Deflection Rate:** Target `> 60%` (Conversations resolved without staff intervention).
+- **Violation Rate:** Target `< 0.1%` (AI violating `constraints.md`).
+- **Escalation SLA Compliance:** Target `> 95%` (Staff acknowledges warm transfer within 2 minutes).
+- **Average Handling Time (AHT):** Target AI response speed `< 2 seconds`.
 
 ## 2. CONTINUOUS MONITORING
-- **Sentiment Tracking:** Daily report on average guest sentiment interacting with AI.
-- **Keyword Triggers:** Weekly analysis of top reasons for Hard Escalations to optimize FAQs or SOPs.
-- **Hallucination Checks:** Weekly random sampling of 100 AI logs by Compliance/QA role to ensure data-access compliance.
+- **Sentiment Tracking:** Daily report on average guest sentiment using AI.
+- **Trigger Keywords:** Weekly analysis of top reasons causing Hard Escalation to optimize FAQs or SOPs.
+- **Hallucination Checks:** Weekly, Compliance/QA role randomly samples 100 AI logs to verify data rule adherence.
 
-## 3. ALERTING THRESHOLDS (Slack / Email)
-- **CRITICAL:** Violation Rate exceeds `0.5%` in 1 hour → Alert IT & GM.
-- **HIGH:** Escalation SLA drops below `80%` (Staff ignoring chats) → Alert Front Office Manager.
-- **MEDIUM:** Fallback response triggered `> 10 times` in an hour (Possible PMS API outage) → Alert IT.
+## 3. ALARM THRESHOLDS (Slack / Email)
+- **CRITICAL:** Violation rate exceeds `0.5%` in 1 hour → Alert IT & GM.
+- **HIGH:** Escalation SLA compliance drops below `80%` (Staff ignoring chats) → Alert Front Office Manager (FOM).
+- **MEDIUM:** Fallbacks triggered `> 10 times` in an hour (Possible PMS API error) → Alert IT.
