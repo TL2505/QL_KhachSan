@@ -1,19 +1,56 @@
 package quanlykhachsan.backend.room;
 
-
+import quanlykhachsan.backend.booking.BookingDAO;
+import quanlykhachsan.backend.booking.BookingDAOImpl;
+import quanlykhachsan.backend.booking.Booking;
 import java.util.List;
 
 public class RoomService {
 
     private RoomDAO roomDAO = new RoomDAOImpl();
     private RoomTypeDAO roomTypeDAO = new RoomTypeDAOImpl();
+    private BookingDAO bookingDAO = new BookingDAOImpl();
+
+    private void computeVirtualStatus(Room r, long now) {
+        String st = r.getStatus() != null ? r.getStatus().toLowerCase() : "available";
+        if (st.equals("maintenance") || st.equals("out_of_service") || st.equals("cleaning")) {
+            return; // keep physical status
+        }
+        // compute based on active bookings
+        List<Booking> bookings = bookingDAO.findByRoomId(r.getId());
+        for (Booking b : bookings) {
+            String bSt = b.getStatus() != null ? b.getStatus().toLowerCase() : "";
+            if (bSt.equals("checked_in") || bSt.equals("confirmed") || bSt.equals("pending") || bSt.equals("booked")) {
+                if (b.getCheckInDate() != null && b.getCheckOutDate() != null) {
+                    if (now >= b.getCheckInDate().getTime() && now <= b.getCheckOutDate().getTime()) {
+                        if (bSt.equals("checked_in")) {
+                            r.setStatus("occupied");
+                        } else {
+                            r.setStatus("booked");
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+        r.setStatus("available");
+    }
 
     public List<Room> getAllRooms() {
-        return roomDAO.findAll();
+        List<Room> rooms = roomDAO.findAll();
+        long now = System.currentTimeMillis();
+        for (Room r : rooms) {
+            computeVirtualStatus(r, now);
+        }
+        return rooms;
     }
 
     public Room getRoomById(int id) {
-        return roomDAO.findById(id);
+        Room r = roomDAO.findById(id);
+        if (r != null) {
+            computeVirtualStatus(r, System.currentTimeMillis());
+        }
+        return r;
     }
 
     public boolean updateRoomStatus(int roomId, String status) {
