@@ -10,8 +10,13 @@ HTTP codes: `200 OK`, `201 Created`, `400 Bad Request`, `401 Unauthorized`, `403
 }
 ```
 
+> **Platform note:** All endpoints are platform-agnostic. Desktop (Swing) and Web (React) consume identical APIs. Auth: Staff = `POST /auth/login` (username/password → JWT). Guest = `POST /auth/guest` (OTP → scoped token). No platform-specific endpoints exist.
+
+
+
 ## 2. API ENDPOINTS BY PHASE
 ### PHASE 1: CORE PMS
+*(Phase 1 scope = 10 core endpoints. Additional endpoints such as invoices, reviews, chat, promotions, loyalty, and reports are already implemented in existing codebase.)*
 - `POST /api/v1/auth/login` (Returns JWT)
 - `GET /api/v1/rooms` (List rooms)
 - `GET /api/v1/rooms/availability`

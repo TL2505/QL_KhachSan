@@ -3,11 +3,13 @@
 ## 1. KIẾN TRÚC 6-CONTAINER (Docker Compose)
 Được triển khai trên một máy ảo Ubuntu 22.04 LTS (ví dụ: `192.168.56.102`).
 1. **Nginx (Reverse Proxy):** Cổng `443/80` (Cắt TLS, định tuyến).
-2. **Java Backend (PMS API):** Cổng `8081` (Spring Boot 17). Chỉ mạng nội bộ.
+2. **Java Backend (PMS API):** Cổng `8081` (Java 17 plain HttpServer). Chỉ mạng nội bộ.
 3. **MariaDB (Giao dịch):** Cổng `3306`. Chỉ mạng nội bộ. Không phơi bày cổng ra ngoài.
 4. **pgvector (Vector DB):** Cổng `5432`. Chỉ mạng nội bộ. Dùng để nhúng RAG.
 5. **AI Gateway (FastAPI):** Cổng `8082`. Chỉ mạng nội bộ. Tương tác với OpenAI.
 6. **Adminer (Quản trị DB):** Cổng `127.0.0.1:8083` (Chỉ dành cho Dev).
+
+> **Ghi chú nền tảng:** Ứng dụng Desktop cho nhân viên (Swing) gọi trực tiếp backend qua HTTP (cùng máy hoặc qua mạng LAN). Giao diện Web cho khách (React) được phục vụ qua container Nginx, gọi backend qua HTTPS reverse proxy. Hai giao diện, một API, một backend duy nhất.
 
 ## 2. LỘ TRÌNH TRIỂN KHAI THEO GIAI ĐOẠN
 - **Giai đoạn 1 (Lõi):** Triển khai Nginx, Java Backend, MariaDB. (3 containers)
@@ -26,13 +28,13 @@
 - [x] **Tường lửa UFW** được bật, chỉ cho phép mở cổng 22, 80, 443.
 
 ## 4. VẬN HÀNH (Sao lưu & Kiểm tra sức khỏe)
-- **Sao lưu (Backup):** Cron job hàng ngày chạy lệnh `mysqldump` lúc 02:00 sáng, giữ lại 30 ngày.
+- **Sao lưu (Backup):** Cron job hàng ngày chạy lệnh `mysqldump` lúc 02:00 sáng, giữ lại 30 ngày (tên container theo `docker-compose.yml`, ví dụ: `ql_khachsan-db-1` hoặc `pms-mariadb`).
   ```bash
-  0 2 * * * docker exec pms-mariadb sh -c 'mysqldump -u root -p${DB_PASSWORD} pms' > /backups/db_$(date +\%F).sql
+  0 2 * * * docker exec ql_khachsan-db-1 sh -c 'mysqldump -u root -p${DB_PASSWORD} pms' > /backups/db_$(date +\%F).sql
   ```
-- **Kiểm tra sức khỏe (Health Check):** Script xác minh sau khi deploy gọi tới endpoint `/api/v1/health`.
+- **Kiểm tra sức khỏe (Health Check):** Script xác minh sau khi deploy gọi tới endpoint `/api/v1/health`. *(Thay thế bằng domain thực tế khi lên production; Môi trường Staging hiện tại trên VM: `http://192.168.56.102:8081/api/v1/health` hoặc qua reverse proxy `http://192.168.56.102:3000/api/v1/health`)*
   ```bash
-  curl -f https://pms.hotel.com/api/v1/health || exit 1
+  curl -f http://192.168.56.102:8081/api/v1/health || exit 1
   ```
 
 ## 5. BIẾN MÔI TRƯỜNG (.env)

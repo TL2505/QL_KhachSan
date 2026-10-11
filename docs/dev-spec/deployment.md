@@ -3,11 +3,14 @@
 ## 1. 6-CONTAINER ARCHITECTURE (Docker Compose)
 Deployed on an Ubuntu 22.04 LTS VM (e.g., `192.168.56.102`).
 1. **Nginx (Reverse Proxy):** Port `443/80` (TLS termination, routing).
-2. **Java Backend (PMS API):** Port `8081` (Spring Boot 17). Internal network only.
+2. **Java Backend (PMS API):** Port `8081` (Java 17 plain HttpServer). Internal network only.
 3. **MariaDB (Transactional):** Port `3306`. Internal network only. No exposed ports.
 4. **pgvector (Vector DB):** Port `5432`. Internal network only. Used for RAG embeddings.
 5. **AI Gateway (FastAPI):** Port `8082`. Internal network only. Interacts with OpenAI.
 6. **Adminer (DB Admin):** Port `127.0.0.1:8083` (Dev profile only).
+
+> **Platform note:** Staff desktop (Swing) calls backend directly via HTTP (same machine or LAN). Guest web (React) served by Nginx container, calls backend via HTTPS reverse proxy. Two UIs, one API, one backend.
+
 
 ## 2. PHASE DEPLOYMENT ROLLOUT
 - **Phase 1 (Core):** Deploy Nginx, Java Backend, MariaDB. (3 containers)
@@ -26,13 +29,13 @@ Deployed on an Ubuntu 22.04 LTS VM (e.g., `192.168.56.102`).
 - [x] **UFW firewall** enabled, allowing only ports 22, 80, 443.
 
 ## 4. OPERATIONS (Backup & Health Check)
-- **Backup:** Daily cron job running `mysqldump` at 02:00 AM, 30-day retention.
+- **Backup:** Daily cron job running `mysqldump` at 02:00 AM, 30-day retention (container name per `docker-compose.yml`, e.g. `ql_khachsan-db-1` or `pms-mariadb`).
   ```bash
-  0 2 * * * docker exec pms-mariadb sh -c 'mysqldump -u root -p${DB_PASSWORD} pms' > /backups/db_$(date +\%F).sql
+  0 2 * * * docker exec ql_khachsan-db-1 sh -c 'mysqldump -u root -p${DB_PASSWORD} pms' > /backups/db_$(date +\%F).sql
   ```
-- **Health Check:** Post-deploy validation script checking the `/api/v1/health` endpoint.
+- **Health Check:** Post-deploy validation script checking the `/api/v1/health` endpoint. *(Replace with actual domain in production; Current VM staging: `http://192.168.56.102:8081/api/v1/health` or via reverse proxy `http://192.168.56.102:3000/api/v1/health`)*
   ```bash
-  curl -f https://pms.hotel.com/api/v1/health || exit 1
+  curl -f http://192.168.56.102:8081/api/v1/health || exit 1
   ```
 
 ## 5. ENVIRONMENT VARIABLES (.env)

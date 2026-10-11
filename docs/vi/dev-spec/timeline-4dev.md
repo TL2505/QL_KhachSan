@@ -8,12 +8,21 @@
 | Dev C | Frontend | React/Vue, Dashboard Nhân viên, Chat UI cho Khách |
 | Dev D | DevOps + QA | Docker, CI/CD, Kiểm thử, Bảo mật, Giám sát |
 
+### Dev C (Frontend) — Nền tảng: Desktop (Swing) Giai đoạn 1-2, Web (React) Giai đoạn 3
+
+| Giai đoạn | Nhiệm vụ | Nền tảng |
+|---|---|---|
+| Giai đoạn 1 (T1-4) | Tích hợp `/api/v1/*` vào UI Swing sẵn có. Xóa dữ liệu mock. Kết nối API thật. **KHÔNG dùng framework UI mới. KHÔNG làm React.** | Swing |
+| Giai đoạn 2 (T5-7) | UI Chat AI trong Swing (JEditorPane + WebSocket). Các bảng điều khiển Dashboard Nhân viên (Swing). Cảnh báo leo thang (Popup Swing). **KHÔNG làm React.** | Swing |
+| Giai đoạn 3 (T8-9) | **React 18 web:** Trang đặt phòng cho khách + Chat AI + Form đánh giá. Dashboard Quản trị Admin (báo cáo, nhân sự, khuyến mãi). | React |
+| Giai đoạn 4+ | Tùy chọn: Chuyển đổi từ Swing sang React cho nhân viên. Ứng dụng PWA cho khách dùng di động. | React + PWA |
+
 ## Giai đoạn 0: Vá lỗi nhanh (Ngày 1-2)
 | Dev | Nhiệm vụ |
 |---|---|
 | Dev A | JWT cho mọi endpoints + Lỗi chuẩn + Mã HTTP |
 | Dev B | Thiết kế schema DB + Khung Docker (docker-compose.yml) |
-| Dev C | Khởi tạo dự án React/Vue + Cấu hình Nginx + TLS (self-signed) |
+| Dev C | Cấu hình Nginx + TLS (self-signed). KHÔNG cài đặt React/Vue. |
 | Dev D | .env + .gitignore + UFW (22,80,443) + Chỉ SSH key + fail2ban |
 
 **Cột mốc (Ngày 3):** Hoàn thành Giai đoạn 0 → An toàn để demo nội bộ.
@@ -23,7 +32,7 @@
 |---|---|---|---|---|
 | Dev A | Endpoints: Xác thực, Phòng, Trống, Khách, Đặt phòng | Endpoints: Hủy, Hóa đơn, Thanh toán, Health, Danh sách | Test tích hợp với Dev B | Test Go/No-Go |
 | Dev B | 7 bước Night Audit + Quy tắc khóa | Ngoại lệ Night Audit (POS offline, C/O nửa đêm, No-Show) + Thuế | Đặt phòng đoàn + Định tuyến/tách/tạm tính Hóa đơn | Test tích hợp |
-| Dev C | UI Login + DS Phòng + Form Đặt (dữ liệu giả) | UI Khách + Hóa đơn + Thanh toán | Kết nối API thật (xóa giả) | Test E2E |
+| Dev C | Tích hợp API vào UI Swing sẵn có + kết nối API thật (xóa mock). KHÔNG làm UI framework mới. | Tích hợp API vào UI Swing sẵn có + kết nối API thật (xóa mock). KHÔNG làm UI framework mới. | Kết nối API thật (xóa mock) | Test E2E |
 | Dev D | Code 6 kịch bản test + Khung Unit test | Khung Integration test | Test tải (50 concurrent) + Quét bảo mật (OWASP ZAP) | Checklist Go/No-Go |
 
 **Cột mốc (Cuối Tuần 4):** Go/No-Go Giai đoạn 1.
@@ -39,7 +48,7 @@
 |---|---|---|---|
 | Dev A | Xác thực khách (OTP), Check-in/out, Dịch vụ, Endpoints Đoàn | Hóa đơn nâng cao (định tuyến, tách), Kích hoạt Night Audit thủ công | Test tích hợp |
 | Dev B | AI Gateway: main.py + llm_client.py | AI Gateway: rag.py + guardrails.py + escalation.py | AI Gateway: audit log + webhook giám sát |
-| Dev C | Chat UI Khách + Dashboard Nhân viên | UI Cảnh báo leo thang + Trình xem tương tác AI | Test E2E (Kịch bản AI) |
+| Dev C | UI Chat AI trong Swing (JEditorPane hoặc webview đơn giản). Dashboard Nhân viên (Swing). KHÔNG làm React. | UI Cảnh báo leo thang + Trình xem tương tác AI | Test E2E (Kịch bản AI) |
 | Dev D | Cài đặt pgvector + Pipeline RAG (index ngoại lệ, leo thang, SOPs) | 4 kịch bản test AI (tiêm nhiễm, lách luật, đồng thời, offline) | Dashboard giám sát (Grafana) + Luật cảnh báo |
 
 **Cột mốc (Cuối Tuần 7):** Go/No-Go Giai đoạn 2.
@@ -55,7 +64,7 @@
 |---|---|---|
 | Dev A | Endpoints: Khuyến mãi, Loyalty, Phản hồi, Thông báo, QL Nhân viên | Webhooks (nhận + đăng ký), Báo cáo (DBR, công suất, doanh thu kênh) |
 | Dev B | Tích hợp OTA (Booking.com/Agoda XML/HTNG) | Cổng thanh toán (Stripe/local) + Tích hợp POS |
-| Dev C | Dashboard Admin (báo cáo, nhân viên, KM) | UI Cấu hình Webhook + Template thông báo |
+| Dev C | React 18 web: Đặt phòng cho khách + Chat AI + Đánh giá. Dashboard Quản trị Admin. | UI Cấu hình Webhook + Template thông báo |
 | Dev D | Pipeline CI/CD (GitHub Actions) + Phân tách môi trường (dev/staging/prod) | Tăng cường bảo mật Prod + Cron sao lưu + Test phục hồi |
 
 **Cột mốc (Cuối Tuần 9):** Go/No-Go Production.

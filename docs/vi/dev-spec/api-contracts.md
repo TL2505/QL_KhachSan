@@ -10,8 +10,11 @@ Mã HTTP chuẩn: `200 OK`, `201 Created`, `400 Bad Request`, `401 Unauthorized`
 }
 ```
 
+> **Ghi chú nền tảng:** Mọi endpoints đều độc lập với nền tảng (platform-agnostic). Cả Desktop (Swing) và Web (React) đều sử dụng chung một tập API đồng nhất. Phân biệt xác thực: Nhân viên = `POST /auth/login` (tên đăng nhập/mật khẩu → JWT). Khách = `POST /auth/guest` (OTP → scoped token). Không tồn tại bất kỳ endpoint riêng biệt nào cho từng nền tảng.
+
 ## 2. API ENDPOINTS THEO GIAI ĐOẠN
 ### GIAI ĐOẠN 1: PMS CỐT LÕI
+*(Phạm vi Giai đoạn 1 = 10 endpoints cốt lõi. Các endpoints bổ sung như hóa đơn/invoices, đánh giá/reviews, chat, khuyến mãi/promotions, khách thân thiết/loyalty và báo cáo/reports đã được triển khai sẵn trong mã nguồn hiện tại.)*
 - `POST /api/v1/auth/login` (Trả về JWT)
 - `GET /api/v1/rooms` (Danh sách phòng)
 - `GET /api/v1/rooms/availability`
