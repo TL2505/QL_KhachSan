@@ -3,7 +3,7 @@
 ## 1. TECH STACK SUMMARY
 | Component | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Backend API** | Java 17 + Spring Boot | Core business logic, PMS functions, Night Audit |
+| **Backend API** | Java 17 (plain HttpServer) | Core business logic, PMS functions, Night Audit |
 | **AI Gateway** | Python 3.11 + FastAPI | Guardrails, RAG, LLM Orchestration |
 | **Database** | MariaDB 11 | Transactional data, Bookings, Folios |
 | **Vector DB** | PostgreSQL 16 + pgvector | Document embeddings for RAG |
@@ -43,3 +43,15 @@
 | Implement Guardrails | I | **A/R** | C |
 | Monitor Violations | **A** | R | **C** |
 *(R=Responsible, A=Accountable, C=Consulted, I=Informed)*
+
+### Platform Scope per Phase
+
+| Phase | Staff | Guest | Admin | Dev C Focus |
+|---|---|---|---|---|
+| 1-2 | Swing (existing, API integration only) | None | None | Connect API → Swing. NO React. |
+| 3 | Swing (unchanged) | React web (booking, chat, review) | React dashboard | Build React. |
+| 4+ | React (optional migration) | React + PWA | React | Migrate Swing → React. |
+
+**Design principle:** Platform = where user sits. Staff at desk = desktop. Guest on phone = web. No unified frontend until Phase 4+.
+
+

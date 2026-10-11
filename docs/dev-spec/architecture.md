@@ -1,5 +1,8 @@
 # SYSTEM ARCHITECTURE & DATA FLOW — 5★ HOTEL PMS
 
+> **Platform layer:** Desktop (Swing, Staff, Phase 1-3) + Web (React, Guest/Admin, Phase 3+) → both consume `/api/v1/*` from same Java backend. Principle: Platform = where user sits. See `tech-stack.md` § PLATFORM DESIGN PHILOSOPHY.
+
+
 ## 1. 12-ROW DATA FLOW MATRIX
 | Source | Target | Trigger | Action |
 | :--- | :--- | :--- | :--- |

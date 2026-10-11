@@ -8,12 +8,22 @@
 | Dev C | Frontend | React/Vue, Staff Dashboard, Guest Chat UI |
 | Dev D | DevOps + QA | Docker, CI/CD, Testing, Security, Monitoring |
 
+### Dev C (Frontend) — Platform: Desktop (Swing) Phase 1-2, Web (React) Phase 3
+
+| Phase | Task | Platform |
+|---|---|---|
+| Phase 1 (W1-4) | Integrate `/api/v1/*` into existing Swing UI. Remove mock data. Connect real API. **NO new UI framework. NO React.** | Swing |
+| Phase 2 (W5-7) | AI Chat UI in Swing (JEditorPane + WebSocket). Staff Dashboard panels (Swing). Escalation alert (Swing popup). **NO React.** | Swing |
+| Phase 3 (W8-9) | **React 18 web:** Guest booking page + AI chat + review form. Admin dashboard (reports, staff, promos). | React |
+| Phase 4+ | Optional: Swing → React migration for staff. PWA for mobile guests. | React + PWA |
+
+
 ## Phase 0: Quick Fixes (Day 1-2)
 | Dev | Task |
 |---|---|
 | Dev A | JWT on all endpoints + Standard error format + HTTP codes |
 | Dev B | DB schema design + Docker skeleton (docker-compose.yml) |
-| Dev C | React/Vue project setup + Nginx config + TLS (self-signed) |
+| Dev C | Nginx config + TLS (self-signed). NO React/Vue setup. |
 | Dev D | .env + .gitignore + UFW (22,80,443) + SSH key only + fail2ban |
 
 **Milestone (Day 3):** Phase 0 complete → Internal demo safe.
@@ -23,7 +33,7 @@
 |---|---|---|---|---|
 | Dev A | Auth, Room, Availability, Customer, Booking endpoints | Cancel, Folio, Payment, Health, List endpoints | Integration test with Dev B | Go/No-Go test |
 | Dev B | Night Audit 7 steps + Lock Rule | Night Audit edge cases (POS offline, midnight C/O, No-Show) + Tax | Group booking + Folio routing/split/interim | Integration test |
-| Dev C | Login UI + Room list + Booking form (mock data) | Customer + Folio + Payment UI | Connect real API (remove mock) | E2E test |
+| Dev C | API integration into existing Swing UI + connect real API (remove mock). NO new UI framework. | API integration into existing Swing UI + connect real API (remove mock). NO new UI framework. | Connect real API (remove mock) | E2E test |
 | Dev D | 6 test scenarios (code) + Unit test framework | Integration test framework | Load test (50 concurrent) + Security scan (OWASP ZAP) | Go/No-Go checklist |
 
 **Milestone (End Week 4):** Go/No-Go Phase 1.
@@ -39,7 +49,7 @@
 |---|---|---|---|
 | Dev A | Guest auth (OTP), Check-in/out, Services, Group endpoints | Folio advanced (routing, split, interim), Night Audit manual trigger | Integration test |
 | Dev B | AI Gateway: main.py + llm_client.py | AI Gateway: rag.py + guardrails.py + escalation.py | AI Gateway: audit log + monitoring hooks |
-| Dev C | Guest Chat UI + Staff Dashboard | Escalation alert UI + AI interaction viewer | E2E test (AI scenarios) |
+| Dev C | AI Chat UI in Swing (simple JEditorPane or webview). Staff Dashboard (Swing). NO React. | Escalation alert UI + AI interaction viewer | E2E test (AI scenarios) |
 | Dev D | pgvector setup + RAG pipeline (index edge-cases, escalation, SOPs) | 4 AI test scenarios (injection, bypass, concurrent, offline) | Monitoring dashboard (Grafana) + Alert rules |
 
 **Milestone (End Week 7):** Go/No-Go Phase 2.
@@ -55,7 +65,7 @@
 |---|---|---|
 | Dev A | Promotions, Loyalty, Feedback, Notifications, Staff mgmt endpoints | Webhooks (subscribe + receive), Reports (DBR, occupancy, revenue-by-channel) |
 | Dev B | OTA integration (Booking.com/Agoda XML/HTNG) | Payment gateway (Stripe/local) + POS integration |
-| Dev C | Admin dashboard (reports, staff, promos) | Webhook config UI + Notification templates |
+| Dev C | React 18 web: Guest booking + AI chat + review. Admin dashboard. | Webhook config UI + Notification templates |
 | Dev D | CI/CD pipeline (GitHub Actions) + Environment separation (dev/staging/prod) | Production hardening + Backup cron + Restore test |
 
 **Milestone (End Week 9):** Go/No-Go Production.
