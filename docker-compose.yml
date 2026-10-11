@@ -14,11 +14,11 @@ services:
       - ./database/hotel.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       interval: 10s
       timeout: 5s
-      retries: 5
-
+      retries: 10
+      start_period: 30s
   # 2. Công cụ quản lý DB qua Web (Adminer)
   adminer:
     image: adminer
@@ -50,7 +50,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/api/v1/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8081/api/v1/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
