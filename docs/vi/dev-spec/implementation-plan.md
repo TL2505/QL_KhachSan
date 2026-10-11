@@ -3,7 +3,7 @@
 ## 1. TÓM TẮT CÔNG NGHỆ
 | Thành phần | Công nghệ | Mục đích |
 | :--- | :--- | :--- |
-| **Backend API** | Java 17 + Spring Boot | Logic nghiệp vụ cốt lõi, hàm PMS, Night Audit |
+| **Backend API** | Java 17 (plain HttpServer) | Logic nghiệp vụ cốt lõi, hàm PMS, Night Audit |
 | **AI Gateway** | Python 3.11 + FastAPI | Guardrails, RAG, Điều phối LLM |
 | **Cơ sở dữ liệu** | MariaDB 11 | Dữ liệu giao dịch, Đặt phòng, Hóa đơn (Folios) |
 | **Vector DB** | PostgreSQL 16 + pgvector | Document embeddings cho RAG |
@@ -43,3 +43,13 @@
 | Triển khai Guardrails | I | **A/R** | C |
 | Giám sát Vi phạm | **A** | R | **C** |
 *(R=Chịu trách nhiệm thực thi, A=Người phê duyệt cuối cùng, C=Được tham vấn, I=Được thông báo)*
+
+### Phạm vi Nền tảng theo Giai đoạn (Platform Scope per Phase)
+
+| Giai đoạn | Nhân viên (Staff) | Khách hàng (Guest) | Quản trị (Admin) | Trọng tâm Dev C |
+|---|---|---|---|---|
+| 1-2 | Swing (sẵn có, chỉ tích hợp API) | Không có | Không có | Kết nối API → Swing. KHÔNG làm React. |
+| 3 | Swing (giữ nguyên) | React web (đặt phòng, chat, đánh giá) | React dashboard | Xây dựng React web. |
+| 4+ | React (di chuyển tùy chọn) | React + PWA | React | Chuyển đổi Swing → React. |
+
+**Triết lý thiết kế:** Nền tảng = Nơi người dùng ngồi. Nhân viên ngồi bàn làm việc = Desktop. Khách dùng điện thoại = Web. Không thống nhất frontend cho đến Giai đoạn 4+.

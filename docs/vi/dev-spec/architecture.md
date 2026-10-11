@@ -1,5 +1,7 @@
 # KIẾN TRÚC HỆ THỐNG & LUỒNG DỮ LIỆU — HỆ THỐNG PMS 5★
 
+> **Tầng nền tảng (Platform layer):** Desktop (Swing, Nhân viên, Giai đoạn 1-3) + Web (React, Khách/Quản trị, Giai đoạn 3+) → cả hai đều tiêu thụ `/api/v1/*` từ cùng một Java backend. Triết lý: Nền tảng = Nơi người dùng ngồi. Xem thêm `tech-stack.md` § TRIẾT LÝ THIẾT KẾ NỀN TẢNG.
+
 ## 1. MA TRẬN LUỒNG DỮ LIỆU (12 DÒNG)
 | Nguồn | Đích | Trình kích hoạt | Hành động |
 | :--- | :--- | :--- | :--- |
