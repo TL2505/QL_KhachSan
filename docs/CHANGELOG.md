@@ -35,7 +35,8 @@
 - Corrected room domain status codes (`vacant_clean`, `reserved`) in optimistic locking queries.
 - Adjusted HikariCP leak detection threshold to 5000ms and timeout to 30s.
 - Formatted clean Cross-Developer Dependency Matrix and Go/No-Go Acceptance Checklist.
-
-
-
+## [2026-10-13] — @devops — root, SVN_Repo_KhachSan — Clean SVN Folders & Artifacts
+- Removed legacy `SVN_Repo_KhachSan/` mirror directory from git tracking and disk.
+- Removed `DongBoSVN.bat` synchronization script.
+- Cleaned unused SVN placeholder folders (`trunk/`, `branches/`, `tags/`).
 
