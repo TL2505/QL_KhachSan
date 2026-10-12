@@ -116,6 +116,7 @@ public final class FolioController implements HttpHandler {
         String requestHash = sha256("POST|" + exchange.getRequestURI().getPath() + "|" + requestBody);
 
         try (Connection connection = DatabaseConnection.getConnection()) {
+            acquireIdempotencyLock(connection, key);
             connection.setAutoCommit(false);
             try {
                 String oldHash = null;
@@ -188,7 +189,7 @@ public final class FolioController implements HttpHandler {
                     update.setBigDecimal(1, newBalance);
                     update.setString(2, newBalance.signum() == 0 ? "settled" : "open");
                     update.setInt(3, folioId);
-                    update.executeUpdate();
+                    if (update.executeUpdate() != 1) throw new SQLException("Folio state changed before payment was applied");
                 }
 
                 boolean checkedOut = false;
@@ -239,8 +240,35 @@ public final class FolioController implements HttpHandler {
                 connection.rollback();
                 throw ex;
             } finally {
-                connection.setAutoCommit(true);
+                try {
+                    connection.setAutoCommit(true);
+                } finally {
+                    releaseIdempotencyLock(connection, key);
+                }
             }
+        }
+    }
+
+    private static void acquireIdempotencyLock(Connection connection, String key) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("SELECT GET_LOCK(SHA2(?, 256), 30)")) {
+            statement.setString(1, key);
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next() || result.getInt(1) != 1) {
+                    throw new SQLException("Timed out acquiring payment idempotency lock");
+                }
+            }
+        }
+    }
+
+    private static void releaseIdempotencyLock(Connection connection, String key) {
+        try (PreparedStatement statement = connection.prepareStatement("SELECT RELEASE_LOCK(SHA2(?, 256))")) {
+            statement.setString(1, key);
+            try (ResultSet ignored = statement.executeQuery()) {
+                // Consume and close the result so the pooled connection is returned cleanly.
+            }
+        } catch (SQLException ex) {
+            System.err.println("[FolioController] Unable to release payment idempotency lock: "
+                + ex.getMessage());
         }
     }
 

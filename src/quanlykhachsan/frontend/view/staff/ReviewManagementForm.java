@@ -41,7 +41,7 @@ public class ReviewManagementForm extends JPanel {
         header.setOpaque(false);
         
         JLabel lblTitle = new JLabel("Chăm sóc & Phản hồi Khách hàng");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         header.add(lblTitle, BorderLayout.WEST);
 
@@ -63,7 +63,7 @@ public class ReviewManagementForm extends JPanel {
                 super.paintComponent(g);
             }
         };
-        btnDelete.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnDelete.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnDelete.setForeground(Color.WHITE);
         btnDelete.setContentAreaFilled(false);
         btnDelete.setBorderPainted(false);
@@ -95,7 +95,7 @@ public class ReviewManagementForm extends JPanel {
     }
 
     private void styleTable(JTable table) {
-        table.setRowHeight(40);
+        table.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         table.getTableHeader().setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));

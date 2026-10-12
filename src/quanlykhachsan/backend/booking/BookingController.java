@@ -15,6 +15,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.booking.dto.BookingCreateRequest;
+import quanlykhachsan.backend.room.OptimisticLockException;
+import quanlykhachsan.backend.room.RoomAllocationService;
 
 public class BookingController implements HttpHandler {
 
@@ -79,13 +81,13 @@ public class BookingController implements HttpHandler {
                 checkOut = cal.getTime();
 
                 // Lấy thông tin phòng để kiểm tra trạng thái và tính giá tạm tính
-                quanlykhachsan.backend.room.Room room = roomService.getRoomById(roomId);
+                RoomAllocationService.RoomSnapshot room = RoomAllocationService.findRoom(roomId);
                 if (room == null) {
                     ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Phòng không tồn tại!"));
                     return;
                 }
 
-                String st = room.getStatus() != null ? room.getStatus().toLowerCase() : "";
+                String st = room.status() != null ? room.status().toLowerCase() : "";
                 if (!"vacant_clean".equals(st)) {
                     ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error("Room is not available for reservation"));
                     return;
@@ -95,7 +97,10 @@ public class BookingController implements HttpHandler {
                 long diff = checkOut.getTime() - checkIn.getTime();
                 long days = diff / (1000 * 60 * 60 * 24);
                 if (days < 1) days = 1;
-                double totalPrice = days * room.getPrice();
+                java.math.BigDecimal roomFee = room.price().multiply(java.math.BigDecimal.valueOf(days));
+                FinancialCalculator.Calculation pricing = FinancialCalculator.calculate(
+                    roomFee, java.math.BigDecimal.ZERO, TaxConfig.fromRuntimeConfiguration());
+                double totalPrice = pricing.getTotalAmount().doubleValue();
 
                 Booking newBooking = new Booking();
                 newBooking.setCustomerId(customerId);
@@ -105,13 +110,13 @@ public class BookingController implements HttpHandler {
                 newBooking.setTotalPrice(totalPrice);
                 newBooking.setStatus("pending");
 
-                int generatedId = bookingService.addBooking(newBooking);
+                int expectedRoomVersion = room.version();
+                int generatedId = bookingService.addBooking(newBooking, expectedRoomVersion);
 
                 if (generatedId > 0) {
-                    roomService.updateRoomStatus(roomId, "reserved");
                     JsonObject details = new JsonObject();
                     details.addProperty("bookingId", generatedId);
-                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(details));
+                    ApiResponseUtil.write(exchange, 201, ApiResponseUtil.successWithData(details));
                 } else {
                     ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi tạo booking hoặc trùng lịch!"));
                 }
@@ -198,6 +203,12 @@ public class BookingController implements HttpHandler {
                 exchange.sendResponseHeaders(405, -1);
             }
 
+        } catch (OptimisticLockException e) {
+            JsonObject error = new JsonObject();
+            error.addProperty("error_code", "ERR_409_CONFLICT");
+            error.addProperty("message", "Room state changed by another concurrent transaction");
+            error.addProperty("timestamp", java.time.Instant.now().toString());
+            ApiResponseUtil.write(exchange, 409, JsonUtil.getGson().toJson(error));
         } catch (Exception e) {
             e.printStackTrace();
             ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi Server: " + e.getMessage()));

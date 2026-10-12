@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import quanlykhachsan.frontend.utils.UIThemeTokens;
 
 /**
  * TASK-C3.2 — SystemStatusBanner
@@ -38,10 +39,10 @@ import java.util.Map;
 public class SystemStatusBanner extends JPanel {
 
     // ─── Colour tokens ────────────────────────────────────────────────────────
-    /** Amber #F57C00 per ui-tokens.md Warning token */
-    private static final Color AMBER_DARK   = new Color(0xF5, 0x7C, 0x00);
+    /** Amber shared warning token. */
+    private static final Color AMBER_DARK   = UIThemeTokens.WARNING;
     /** Slightly lighter amber for gradient end */
-    private static final Color AMBER_LIGHT  = new Color(0xFF, 0xA7, 0x26);
+    private static final Color AMBER_LIGHT  = UIThemeTokens.WARNING.brighter();
     private static final Color TEXT_WHITE   = Color.WHITE;
 
     // ─── Freeze state (volatile for cross-thread visibility) ─────────────────
@@ -84,12 +85,12 @@ public class SystemStatusBanner extends JPanel {
         // ── Centre message ─────────────────────────────────────────────────
         lblMessage = new JLabel(
             "Night Audit in progress (00:00 - 00:05). Mutations temporarily locked.");
-        lblMessage.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblMessage.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblMessage.setForeground(TEXT_WHITE);
 
         // ── Countdown label ────────────────────────────────────────────────
         lblCountdown = new JLabel("Retry in: 300s");
-        lblCountdown.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblCountdown.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblCountdown.setForeground(TEXT_WHITE);
         lblCountdown.setBorder(new EmptyBorder(0, 12, 0, 0));
 
@@ -287,7 +288,7 @@ public class SystemStatusBanner extends JPanel {
         lblCountdown.setText(String.format("  Retry in: %02d:%02d", mins, secs));
         // Pulse: turn red in the last 30 seconds
         lblCountdown.setForeground(secondsRemaining <= 30
-            ? new Color(0xFF, 0xDD, 0x57)   // bright yellow accent
+            ? UIThemeTokens.WARNING.brighter()
             : TEXT_WHITE);
         repaint(); // trigger gradient re-draw for pulse animation
     }

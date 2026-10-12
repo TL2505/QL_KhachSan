@@ -41,7 +41,7 @@ public class RegisterForm extends JFrame {
         header.setBorder(new EmptyBorder(25, 30, 25, 30));
         
         JLabel title = new JLabel("Tham gia cùng chúng tôi");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 24));
         title.setForeground(Color.WHITE);
         header.add(title);
 

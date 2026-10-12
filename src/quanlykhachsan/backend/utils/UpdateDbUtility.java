@@ -32,6 +32,16 @@ public class UpdateDbUtility {
     public static void main(String[] args) {
         System.out.println("[UpdateDbUtility] Bắt đầu kiểm tra và cập nhật cấu trúc Database...");
         try (Connection conn = DBconn.getConnection()) {
+            migrate(conn);
+        } catch (SQLException e) {
+            System.err.println("[UpdateDbUtility] ✘ Lỗi trong quá trình migration: " + e.getMessage());
+            throw new IllegalStateException("Database migration failed; refusing to start with an unknown schema", e);
+        }
+    }
+
+    /** Runs the idempotent schema migration on a caller-owned connection. */
+    public static void migrate(Connection conn) throws SQLException {
+        if (conn == null || conn.isClosed()) throw new SQLException("An open migration connection is required");
 
             // ── TASK tiền kỳ: đảm bảo các cột cũ đã được thêm ──────────────
             ensureColumn(conn, "bookings", "customer_type",
@@ -44,6 +54,7 @@ public class UpdateDbUtility {
             // ── TASK-B1.1: Cột version cho Optimistic Locking ────────────────
             ensureColumn(conn, "rooms", "version",
                     "INT NOT NULL DEFAULT 0");
+            migrateBookingStatuses(conn);
             migrateRoomStatuses(conn);
 
             // ── TASK-B1.1: Composite index rooms(room_number, version) ────────
@@ -120,13 +131,6 @@ public class UpdateDbUtility {
                     + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
             System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.");
-
-        } catch (SQLException e) {
-            // Không ném exception — server vẫn tiếp tục khởi động.
-            // Lỗi ở đây thường là mất kết nối hoặc thiếu quyền DDL; không nghiêm trọng
-            // đến mức cần tắt toàn bộ ứng dụng.
-            System.err.println("[UpdateDbUtility] ✘ Lỗi trong quá trình migration: " + e.getMessage());
-        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -160,7 +164,7 @@ public class UpdateDbUtility {
 
     private static void migrateRoomStatuses(Connection conn) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate("ALTER TABLE rooms MODIFY status ENUM('
+            stmt.executeUpdate("ALTER TABLE rooms MODIFY status ENUM('"
                     + "available','booked','occupied','maintenance','cleaning','out_of_service',"
                     + "'vacant_clean','vacant_dirty','occupied_clean','occupied_dirty','out_of_order','reserved')"
                     + " NOT NULL DEFAULT 'vacant_clean'");
@@ -171,9 +175,17 @@ public class UpdateDbUtility {
                     + "WHEN 'maintenance' THEN 'out_of_order' "
                     + "WHEN 'out_of_service' THEN 'out_of_order' "
                     + "WHEN 'cleaning' THEN 'vacant_dirty' ELSE status END");
-            stmt.executeUpdate("ALTER TABLE rooms MODIFY status ENUM('
+            stmt.executeUpdate("ALTER TABLE rooms MODIFY status ENUM('"
                     + "vacant_clean','vacant_dirty','occupied_clean','occupied_dirty','out_of_order','reserved')"
                     + " NOT NULL DEFAULT 'vacant_clean'");
+        }
+    }
+
+    private static void migrateBookingStatuses(Connection conn) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("ALTER TABLE bookings MODIFY status ENUM('"
+                    + "pending','confirmed','checked_in','checked_out','cancelled','no_show')"
+                    + " DEFAULT 'pending'");
         }
     }
 

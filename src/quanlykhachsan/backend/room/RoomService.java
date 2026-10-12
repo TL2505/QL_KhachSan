@@ -12,10 +12,9 @@ public class RoomService {
     private BookingDAO bookingDAO = new BookingDAOImpl();
 
     private void computeVirtualStatus(Room r, long now) {
-        String st = r.getStatus() != null ? r.getStatus().toLowerCase() : "available";
-        if (st.equals("maintenance") || st.equals("out_of_service") || st.equals("cleaning")) {
-            return; // keep physical status
-        }
+        String st = r.getStatus() != null ? r.getStatus().toLowerCase() : "vacant_clean";
+        if ("out_of_order".equals(st) || "vacant_dirty".equals(st)
+                || "occupied_dirty".equals(st)) return;
         // compute based on active bookings
         List<Booking> bookings = bookingDAO.findByRoomId(r.getId());
         for (Booking b : bookings) {
@@ -24,16 +23,19 @@ public class RoomService {
                 if (b.getCheckInDate() != null && b.getCheckOutDate() != null) {
                     if (now >= b.getCheckInDate().getTime() && now <= b.getCheckOutDate().getTime()) {
                         if (bSt.equals("checked_in")) {
-                            r.setStatus("occupied");
+                            r.setStatus("occupied_clean");
                         } else {
-                            r.setStatus("booked");
+                            r.setStatus("reserved");
                         }
                         return;
                     }
                 }
             }
         }
-        r.setStatus("available");
+        if (!java.util.Set.of("vacant_clean", "vacant_dirty", "occupied_clean",
+                "occupied_dirty", "out_of_order", "reserved").contains(st)) {
+            r.setStatus("vacant_clean");
+        }
     }
 
     public List<Room> getAllRooms() {

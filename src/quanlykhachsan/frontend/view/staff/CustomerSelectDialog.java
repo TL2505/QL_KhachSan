@@ -57,7 +57,7 @@ public class CustomerSelectDialog extends JDialog {
 
         txtSearch = new JTextField();
         txtSearch.putClientProperty("JTextField.placeholderText", " Nhập tên hoặc số điện thoại để tìm...");
-        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         txtSearch.setPreferredSize(new Dimension(300, 40));
         txtSearch.setBorder(BorderFactory.createCompoundBorder(
             new LineBorder(BORDER_CLR, 1, true),
@@ -90,7 +90,7 @@ public class CustomerSelectDialog extends JDialog {
         };
         table = new JTable(tableModel);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        table.setRowHeight(40);
+        table.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         if(!ThemeManager.isDarkMode()) {
@@ -99,7 +99,7 @@ public class CustomerSelectDialog extends JDialog {
         }
 
         // Table Header Styling
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         table.getTableHeader().setBackground(ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
         table.getTableHeader().setForeground(new Color(71, 85, 105));
         table.getTableHeader().setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
@@ -156,18 +156,40 @@ public class CustomerSelectDialog extends JDialog {
     }
 
     private void loadData() {
+        loadData(null);
+    }
+
+    private void loadData(String selectPhone) {
         tableModel.setRowCount(0);
-        customersList = CustomerAPI.getAllCustomers();
-        if (customersList != null) {
-            for (Customer c : customersList) {
-                tableModel.addRow(new Object[]{
-                        c.getId(),
-                        c.getFullName(),
-                        c.getPhone(),
-                        c.getIdentityCard() == null ? "" : c.getIdentityCard()
-                });
+        new SwingWorker<List<Customer>, Void>() {
+            @Override protected List<Customer> doInBackground() { return CustomerAPI.getAllCustomers(); }
+            @Override protected void done() {
+                try {
+                    customersList = get();
+                    if (customersList != null) for (Customer c : customersList) {
+                        tableModel.addRow(new Object[]{c.getId(), c.getFullName(), c.getPhone(),
+                            c.getIdentityCard() == null ? "" : c.getIdentityCard()});
+                    }
+                    if (selectPhone != null) for (int i = 0; i < tableModel.getRowCount(); i++) {
+                        if (selectPhone.equals(String.valueOf(tableModel.getValueAt(i, 2)))) {
+                            int viewIndex = table.convertRowIndexToView(i);
+                            if (viewIndex >= 0) table.setRowSelectionInterval(viewIndex, viewIndex);
+                            break;
+                        }
+                    }
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    showLoadError(ex);
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    showLoadError(ex.getCause() == null ? ex : ex.getCause());
+                }
             }
-        }
+        }.execute();
+    }
+
+    private void showLoadError(Throwable error) {
+        JOptionPane.showMessageDialog(this, "Unable to load customers: " + error.getMessage(),
+            "Customer list unavailable", JOptionPane.ERROR_MESSAGE);
     }
 
     private void filterData() {
@@ -227,23 +249,24 @@ public class CustomerSelectDialog extends JDialog {
             newC.setPhone(phone);
             newC.setIdentityCard(cccd);
 
-            String result = CustomerAPI.addCustomer(newC);
-            if (result.startsWith("Success")) {
-                JOptionPane.showMessageDialog(this, "Thêm khách hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                // Reload list to get the new customer
-                loadData();
-                
-                // Auto-select the newly added (try to find by phone)
-                for (int i=0; i<tableModel.getRowCount(); i++) {
-                    if (tableModel.getValueAt(i, 2).toString().equals(phone)) {
-                        int viewIdx = table.convertRowIndexToView(i);
-                        table.setRowSelectionInterval(viewIdx, viewIdx);
-                        break;
+            new SwingWorker<String, Void>() {
+                @Override protected String doInBackground() { return CustomerAPI.addCustomer(newC); }
+                @Override protected void done() {
+                    try {
+                        String result = get();
+                        if (result != null && result.startsWith("Success")) {
+                            JOptionPane.showMessageDialog(CustomerSelectDialog.this, "Thêm khách hàng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                            loadData(phone);
+                        } else JOptionPane.showMessageDialog(CustomerSelectDialog.this, result,
+                            "Lỗi thêm mới", JOptionPane.ERROR_MESSAGE);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        showLoadError(ex);
+                    } catch (java.util.concurrent.ExecutionException ex) {
+                        showLoadError(ex.getCause() == null ? ex : ex.getCause());
                     }
                 }
-            } else {
-                JOptionPane.showMessageDialog(this, result, "Lỗi thêm mới", JOptionPane.ERROR_MESSAGE);
-            }
+            }.execute();
         }
     }
 

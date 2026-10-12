@@ -36,7 +36,7 @@ public class SupportManagementForm extends JPanel {
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER));
 
         JLabel lblTitle = new JLabel("Hỗ trợ trực tuyến");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblTitle.setBorder(new EmptyBorder(20, 20, 15, 20));
         sidebar.add(lblTitle, BorderLayout.NORTH);
 

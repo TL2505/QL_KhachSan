@@ -4,6 +4,7 @@ import quanlykhachsan.frontend.utils.JsonUtil;
 import quanlykhachsan.frontend.utils.ThemeManager;
 import quanlykhachsan.frontend.utils.ToastNotification;
 import quanlykhachsan.frontend.utils.HttpUtil;
+import quanlykhachsan.frontend.utils.UIThemeTokens;
 
 import com.google.gson.JsonObject;
 
@@ -50,7 +51,7 @@ public class OfflinePosDialog extends JDialog implements SystemStatusBanner.Free
     private final Color PRIMARY = ThemeManager.getPrimary();
     private final Color SUCCESS = ThemeManager.getSuccess();
     private final Color DANGER  = ThemeManager.getDanger();
-    private static final Color AMBER = new Color(0xF5, 0x7C, 0x00);
+    private static final Color AMBER = UIThemeTokens.WARNING;
 
     // ── Queue entry model ───────────────────────────────────────────────────────
 
@@ -188,7 +189,7 @@ public class OfflinePosDialog extends JDialog implements SystemStatusBanner.Free
         JLabel sub = new JLabel(
             "<html><i>Charges queued here will auto-sync to the backend "
             + "once the system is unfrozen (Retry-After timer expires).</i></html>");
-        sub.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        sub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         sub.setForeground(new Color(255, 255, 255, 210));
 
         JPanel text = new JPanel(new GridLayout(2, 1, 0, 2));
@@ -255,7 +256,7 @@ public class OfflinePosDialog extends JDialog implements SystemStatusBanner.Free
             "food_beverage", "minibar", "laundry",
             "service_charge", "room_rate", "penalty", "adjustment"
         });
-        cmbChargeType.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cmbChargeType.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         card.add(cmbChargeType, gc);
 
         gc.gridx = 4; gc.weightx = 0;
@@ -274,8 +275,8 @@ public class OfflinePosDialog extends JDialog implements SystemStatusBanner.Free
         };
 
         queueTable = new JTable(tableModel);
-        queueTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        queueTable.setRowHeight(24);       // per ui-tokens.md §Table.rowHeight
+        queueTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        queueTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);       // per ui-tokens.md §Table.rowHeight
         queueTable.setBackground(CARD);
         queueTable.setForeground(TEXT);
         queueTable.setSelectionBackground(PRIMARY);
@@ -315,7 +316,7 @@ public class OfflinePosDialog extends JDialog implements SystemStatusBanner.Free
         syncProgress.setStringPainted(true);
         syncProgress.setForeground(PRIMARY);
         syncProgress.setBackground(CARD);
-        syncProgress.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        syncProgress.setFont(new Font("Segoe UI", Font.BOLD, 12));
         syncProgress.setPreferredSize(new Dimension(0, 12));
 
         JPanel left = new JPanel(new BorderLayout(0, 4));
@@ -605,14 +606,14 @@ public class OfflinePosDialog extends JDialog implements SystemStatusBanner.Free
 
     private static JTextField formField(String placeholder, int cols) {
         JTextField f = new JTextField(cols);
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         f.putClientProperty("JTextField.placeholderText", placeholder);
         return f;
     }
 
     private static JButton primaryButton(String text, Color bg) {
         JButton b = new JButton(text);
-        b.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        b.setFont(new Font("Segoe UI", Font.BOLD, 14));
         b.setForeground(Color.WHITE);
         b.setBackground(bg);
         b.setOpaque(true);
@@ -672,19 +673,19 @@ public class OfflinePosDialog extends JDialog implements SystemStatusBanner.Free
             if (!selected) {
                 switch (s) {
                     case "SUCCESS":
-                        setBackground(new Color(0xF0, 0xFF, 0xF4));
-                        setForeground(new Color(0x1B, 0x87, 0x3C));
+                        setBackground(ThemeManager.getCardBg());
+                        setForeground(UIThemeTokens.SUCCESS);
                         break;
                     case "FAILED":
-                        setBackground(new Color(0xFF, 0xF0, 0xF0));
-                        setForeground(DANGER);
+                        setBackground(ThemeManager.getCardBg());
+                        setForeground(UIThemeTokens.ERROR);
                         break;
                     case "SYNCING":
-                        setBackground(new Color(0xEF, 0xF6, 0xFF));
-                        setForeground(PRIMARY);
+                        setBackground(ThemeManager.getCardBg());
+                        setForeground(UIThemeTokens.INFO);
                         break;
                     default: // QUEUED
-                        setBackground(new Color(0xFF, 0xF8, 0xEC));
+                        setBackground(ThemeManager.getCardBg());
                         setForeground(AMBER);
                         break;
                 }

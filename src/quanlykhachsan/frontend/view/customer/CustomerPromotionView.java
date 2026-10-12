@@ -35,11 +35,11 @@ public class CustomerPromotionView extends JPanel {
                 new EmptyBorder(20, 25, 20, 25)));
         
         JLabel title = new JLabel("Ưu đãi & Khuyến mãi dành riêng cho bạn");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 24));
         title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         
         lblStatus = new JLabel("Đang tải các ưu đãi mới nhất...");
-        lblStatus.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        lblStatus.setFont(new Font("Segoe UI", Font.ITALIC, 14));
         
         header.add(title, BorderLayout.WEST);
         header.add(lblStatus, BorderLayout.EAST);

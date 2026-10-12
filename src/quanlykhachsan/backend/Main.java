@@ -12,6 +12,7 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import quanlykhachsan.backend.utils.SystemStatusFilter;
+import quanlykhachsan.backend.utils.IdempotencyFilter;
 
 public class Main {
     public static void main(String[] args) {
@@ -29,6 +30,7 @@ public class Main {
             Filter jwtFilter = new JwtFilter();
             Filter exceptionFilter = new GlobalExceptionHandler();
             Filter systemStatusFilter = new SystemStatusFilter();
+            Filter idempotencyFilter = new IdempotencyFilter();
 
             // --- ĐĂNG KÝ CÁC ROUTE (API ENDPOINTS) TẠI ĐÂY ---
             // Route Health
@@ -65,12 +67,12 @@ public class Main {
             registerContext(server, "/api/customers", new quanlykhachsan.backend.customer.CustomerController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Đặt phòng / Check-in / Check-out
             var bookingController = new quanlykhachsan.backend.booking.BookingController();
-            registerContext(server, "/api/v1/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
-            registerContext(server, "/api/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+            registerContext(server, "/api/v1/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
+            registerContext(server, "/api/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
             // Route Thanh toán (Payment)
             registerContext(server, "/api/v1/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
             registerContext(server, "/api/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
-            registerContext(server, "/api/v1/folios", new quanlykhachsan.backend.booking.FolioController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+            registerContext(server, "/api/v1/folios", new quanlykhachsan.backend.booking.FolioController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
             registerContext(server, "/api/v1/pos/sync", new quanlykhachsan.backend.booking.PosSyncController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
             // Route Quản lý Hóa đơn
             registerContext(server, "/api/v1/invoices", new quanlykhachsan.backend.booking.InvoiceController(), exceptionFilter, corsFilter, jwtFilter);

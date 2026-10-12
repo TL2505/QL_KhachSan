@@ -38,6 +38,7 @@ public class RoomActionDialog extends JDialog {
     private Runnable onSuccessCallback; // Called when an action succeeds, refresh map
     private final SystemStatusBanner statusBanner;
     private final Map<Integer, String> paymentKeys = new HashMap<>();
+    private String bookingIdempotencyKey;
 
     private final Color PRIMARY   = ThemeManager.getPrimary();
     private final Color SUCCESS   = ThemeManager.getSuccess();
@@ -102,7 +103,7 @@ public class RoomActionDialog extends JDialog {
         header.setBorder(new EmptyBorder(20, 24, 20, 24));
 
         JLabel lblRoom = new JLabel("Phòng " + room.getRoomNumber());
-        lblRoom.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        lblRoom.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblRoom.setForeground(Color.WHITE);
 
         JLabel lblStatus = new JLabel(statusText);
@@ -110,7 +111,7 @@ public class RoomActionDialog extends JDialog {
         lblStatus.setForeground(new Color(255, 255, 255, 200));
 
         JLabel lblPrice = new JLabel(nf.format(room.getPrice()) + " đ / đêm");
-        lblPrice.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblPrice.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblPrice.setForeground(Color.WHITE);
 
         JPanel left = new JPanel();
@@ -154,7 +155,7 @@ public class RoomActionDialog extends JDialog {
         body.add(Box.createVerticalStrut(6));
 
         JButton btnSelectCustomer = new JButton("  Nhấn để chọn khách hàng...");
-        btnSelectCustomer.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btnSelectCustomer.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btnSelectCustomer.setHorizontalAlignment(SwingConstants.LEFT);
         btnSelectCustomer.setForeground(MUTED);
         btnSelectCustomer.setBackground(CARD_BG);
@@ -213,7 +214,7 @@ public class RoomActionDialog extends JDialog {
 
         // Estimate display
         JLabel lblEstimate = new JLabel(" ");
-        lblEstimate.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblEstimate.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblEstimate.setForeground(PRIMARY);
         lblEstimate.setAlignmentX(LEFT_ALIGNMENT);
         body.add(lblEstimate);
@@ -254,13 +255,15 @@ public class RoomActionDialog extends JDialog {
             }
             btnBook.setEnabled(false);
             btnBook.setText("Đang xử lý...");
+            if (bookingIdempotencyKey == null) bookingIdempotencyKey = java.util.UUID.randomUUID().toString();
+            final String requestKey = bookingIdempotencyKey;
             String ciStr = sdf.format(di);
             String coStr = sdf.format(co);
             int cId = selectedCustomer[0].getId();
 
             new SwingWorker<com.google.gson.JsonObject, Void>() {
                 @Override protected com.google.gson.JsonObject doInBackground() {
-                    return BookingAPI.bookRoom(cId, room.getId(), ciStr, coStr);
+                    return BookingAPI.bookRoom(cId, room.getId(), ciStr, coStr, requestKey);
                 }
                 @Override protected void done() {
                     try {
@@ -567,14 +570,14 @@ public class RoomActionDialog extends JDialog {
         body.add(Box.createVerticalStrut(16));
 
         JLabel lblTitle = new JLabel("Phòng đang được dọn dẹp", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblTitle.setForeground(TEXT_MAIN);
         lblTitle.setAlignmentX(CENTER_ALIGNMENT);
         body.add(lblTitle);
         body.add(Box.createVerticalStrut(8));
 
         JLabel lblSub = new JLabel("Phòng " + room.getRoomNumber() + " hiện đang trong quá trình vệ sinh.", SwingConstants.CENTER);
-        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblSub.setForeground(MUTED);
         lblSub.setAlignmentX(CENTER_ALIGNMENT);
         body.add(lblSub);
@@ -637,7 +640,7 @@ public class RoomActionDialog extends JDialog {
 
     private JLabel makeLabel(String text) {
         JLabel l = new JLabel(text);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        l.setFont(new Font("Segoe UI", Font.BOLD, 14));
         l.setForeground(TEXT_MAIN);
         l.setAlignmentX(LEFT_ALIGNMENT);
         return l;
@@ -649,10 +652,10 @@ public class RoomActionDialog extends JDialog {
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
         row.setAlignmentX(LEFT_ALIGNMENT);
         JLabel lbl = new JLabel(label);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lbl.setForeground(MUTED);
         JLabel val = new JLabel(value);
-        val.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        val.setFont(new Font("Segoe UI", Font.BOLD, 14));
         val.setForeground(TEXT_MAIN);
         row.add(lbl, BorderLayout.WEST);
         row.add(val, BorderLayout.EAST);
@@ -699,7 +702,7 @@ public class RoomActionDialog extends JDialog {
         ));
 
         JButton btnCancel = new JButton("Hủy");
-        btnCancel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btnCancel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btnCancel.setForeground(MUTED);
         btnCancel.setFocusPainted(false);
         btnCancel.setBackground(CARD_BG);

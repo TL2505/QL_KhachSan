@@ -39,7 +39,7 @@ public class BookingDetailDialog extends JDialog {
         header.setBorder(new EmptyBorder(18, 18, 18, 18));
 
         JLabel title = new JLabel("Chi tiết đặt phòng");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(Color.WHITE);
         header.add(title, BorderLayout.WEST);
 
@@ -91,7 +91,7 @@ public class BookingDetailDialog extends JDialog {
 
         gbc.gridx = 0;
         JLabel lbl = new JLabel(label);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lbl.setForeground(ThemeManager.getTextMuted());
         parent.add(lbl, gbc);
 

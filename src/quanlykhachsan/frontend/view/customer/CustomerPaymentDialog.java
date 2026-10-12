@@ -21,6 +21,7 @@ public class CustomerPaymentDialog extends JDialog {
     private int pointsUsed = 0;
     private double discountAmount = 0;
     private quanlykhachsan.backend.customer.Customer loyaltyCustomer;
+    private JButton btnConfirmPayment;
 
     private final Color PRIMARY = new Color(13, 148, 136); // Teal 600
 
@@ -46,10 +47,9 @@ public class CustomerPaymentDialog extends JDialog {
         header.setBorder(new EmptyBorder(20, 20, 10, 20));
 
         JLabel title = new JLabel("Thanh toán Chuyển khoản QR");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        loyaltyCustomer = quanlykhachsan.frontend.api.LoyaltyAPI.getCustomerLoyalty(booking.getCustomerId());
         originalAmount = booking.getTotalPrice() > 0 ? booking.getTotalPrice() : 500000;
 
         NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
@@ -59,7 +59,7 @@ public class CustomerPaymentDialog extends JDialog {
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         JLabel desc = new JLabel("Mở ứng dụng Ngân hàng để quét mã QR bên dưới.");
-        desc.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        desc.setFont(new Font("Segoe UI", Font.ITALIC, 14));
         desc.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         desc.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -69,29 +69,7 @@ public class CustomerPaymentDialog extends JDialog {
         header.add(Box.createVerticalStrut(10));
         header.add(desc);
         
-        if (loyaltyCustomer != null && loyaltyCustomer.getLoyaltyPoints() > 0) {
-            JButton btnUsePoints = new JButton("Dùng " + loyaltyCustomer.getLoyaltyPoints() + " điểm (Giảm " + nf.format(loyaltyCustomer.getLoyaltyPoints() * 1000) + ")");
-            btnUsePoints.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            btnUsePoints.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btnUsePoints.setFocusPainted(false);
-            btnUsePoints.setBackground(new Color(245, 158, 11)); // Amber
-            btnUsePoints.setForeground(Color.WHITE);
-            btnUsePoints.addActionListener(e -> {
-                int maxPoints = (int) (originalAmount / 1000);
-                pointsUsed = Math.min(loyaltyCustomer.getLoyaltyPoints(), maxPoints);
-                discountAmount = pointsUsed * 1000;
-                
-                subtitle.setText("Tổng số tiền: " + nf.format(originalAmount - discountAmount) + " (Đã trừ " + nf.format(discountAmount) + ")");
-                btnUsePoints.setEnabled(false);
-                btnUsePoints.setText("Đã áp dụng " + pointsUsed + " điểm");
-                // Reload QR
-                lblWait.setIcon(null);
-                lblWait.setText("Đang tải lại mã QR...");
-                loadQRCodeBackground();
-            });
-            header.add(Box.createVerticalStrut(10));
-            header.add(btnUsePoints);
-        }
+        loadLoyaltyOptions(header, nf);
 
         add(header, BorderLayout.NORTH);
 
@@ -115,17 +93,58 @@ public class CustomerPaymentDialog extends JDialog {
         btnCancel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btnCancel.addActionListener(e -> dispose());
 
-        JButton btnConfirm = new JButton("Tôi đã chuyển khoản");
-        btnConfirm.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnConfirm.setBackground(PRIMARY);
-        btnConfirm.setForeground(Color.WHITE);
-        btnConfirm.setFocusPainted(false);
-        btnConfirm.addActionListener(e -> processConfirm());
+        btnConfirmPayment = new JButton("Tôi đã chuyển khoản");
+        btnConfirmPayment.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnConfirmPayment.setBackground(PRIMARY);
+        btnConfirmPayment.setForeground(Color.WHITE);
+        btnConfirmPayment.setFocusPainted(false);
+        btnConfirmPayment.addActionListener(e -> processConfirm());
 
         bottom.add(btnCancel);
-        bottom.add(btnConfirm);
+        bottom.add(btnConfirmPayment);
         
         add(bottom, BorderLayout.SOUTH);
+    }
+
+    private void loadLoyaltyOptions(JPanel header, NumberFormat numberFormat) {
+        new SwingWorker<quanlykhachsan.backend.customer.Customer, Void>() {
+            @Override protected quanlykhachsan.backend.customer.Customer doInBackground() {
+                return quanlykhachsan.frontend.api.LoyaltyAPI.getCustomerLoyalty(booking.getCustomerId());
+            }
+            @Override protected void done() {
+                try {
+                    loyaltyCustomer = get();
+                    if (loyaltyCustomer == null || loyaltyCustomer.getLoyaltyPoints() <= 0 || !isDisplayable()) return;
+                    JButton usePoints = new JButton("Dùng " + loyaltyCustomer.getLoyaltyPoints()
+                        + " điểm (Giảm " + numberFormat.format(loyaltyCustomer.getLoyaltyPoints() * 1000) + ")");
+                    usePoints.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                    usePoints.setAlignmentX(Component.CENTER_ALIGNMENT);
+                    usePoints.setFocusPainted(false);
+                    usePoints.setBackground(quanlykhachsan.frontend.utils.UIThemeTokens.WARNING);
+                    usePoints.setForeground(Color.WHITE);
+                    usePoints.addActionListener(event -> {
+                        int maxPoints = (int) (originalAmount / 1000);
+                        pointsUsed = Math.min(loyaltyCustomer.getLoyaltyPoints(), maxPoints);
+                        discountAmount = pointsUsed * 1000;
+                        subtitle.setText("Tổng số tiền: " + numberFormat.format(originalAmount - discountAmount)
+                            + " (Đã trừ " + numberFormat.format(discountAmount) + ")");
+                        usePoints.setEnabled(false);
+                        usePoints.setText("Đã áp dụng " + pointsUsed + " điểm");
+                        lblWait.setIcon(null);
+                        lblWait.setText("Đang tải lại mã QR...");
+                        loadQRCodeBackground();
+                    });
+                    header.add(Box.createVerticalStrut(10));
+                    header.add(usePoints);
+                    header.revalidate();
+                    header.repaint();
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    System.err.println("Unable to load loyalty balance: " + ex.getCause());
+                }
+            }
+        }.execute();
     }
 
     private void loadQRCodeBackground() {
@@ -172,23 +191,31 @@ public class CustomerPaymentDialog extends JDialog {
         int opt = JOptionPane.showConfirmDialog(this, "Bạn xác nhận khoản tiền đã được chuyển thành công?", "Xác nhận Thanh toán", JOptionPane.YES_NO_OPTION);
         if (opt == JOptionPane.YES_OPTION) {
             double amount = originalAmount - discountAmount;
-            
-            // 1. Ghi nhận giao dịch
-            String paymentRes = PaymentAPI.pay(booking.getId(), amount, "bank_transfer", booking.getCustomerId());
-            if (!paymentRes.startsWith("Success")) {
-                // Ignore silent errors and proceed to checkout anyway as pending
-                String checkoutRes = BookingAPI.checkOut(booking.getId());
-            }
-
-            if (pointsUsed > 0) {
-                quanlykhachsan.frontend.api.LoyaltyAPI.redeemPoints(booking.getCustomerId(), pointsUsed, discountAmount, "Đổi điểm thanh toán phòng #" + booking.getId());
-            }
-            
-            JOptionPane.showMessageDialog(this, "Thanh toán thành công! Chúc quý khách một ngày tốt lành.");
-            dispose();
-            if (onSuccess != null) {
-                onSuccess.run();
-            }
+            btnConfirmPayment.setEnabled(false);
+            new SwingWorker<Void, Void>() {
+                @Override protected Void doInBackground() {
+                    String paymentResult = PaymentAPI.pay(booking.getId(), amount, "bank_transfer", booking.getCustomerId());
+                    if (paymentResult == null || !paymentResult.startsWith("Success")) BookingAPI.checkOut(booking.getId());
+                    if (pointsUsed > 0) quanlykhachsan.frontend.api.LoyaltyAPI.redeemPoints(booking.getCustomerId(),
+                        pointsUsed, discountAmount, "Đổi điểm thanh toán phòng #" + booking.getId());
+                    return null;
+                }
+                @Override protected void done() {
+                    btnConfirmPayment.setEnabled(true);
+                    try {
+                        get();
+                        JOptionPane.showMessageDialog(CustomerPaymentDialog.this,
+                            "Thanh toán thành công! Chúc quý khách một ngày tốt lành.");
+                        dispose();
+                        if (onSuccess != null) onSuccess.run();
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        JOptionPane.showMessageDialog(CustomerPaymentDialog.this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    } catch (java.util.concurrent.ExecutionException ex) {
+                        JOptionPane.showMessageDialog(CustomerPaymentDialog.this, ex.getCause().getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }.execute();
         }
     }
 }

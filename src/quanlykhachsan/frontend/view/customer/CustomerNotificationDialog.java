@@ -23,12 +23,12 @@ public class CustomerNotificationDialog extends JDialog {
         header.setBorder(new EmptyBorder(18, 18, 18, 18));
 
         JLabel title = new JLabel("THÔNG BÁO");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(Color.WHITE);
         header.add(title, BorderLayout.WEST);
 
         JLabel icon = new JLabel("🔔");
-        icon.setFont(new Font("Segoe UI", Font.PLAIN, 22));
+        icon.setFont(new Font("Segoe UI", Font.PLAIN, 24));
         icon.setForeground(Color.WHITE);
         header.add(icon, BorderLayout.EAST);
 
@@ -78,7 +78,7 @@ public class CustomerNotificationDialog extends JDialog {
         lblTitle.setForeground(ThemeManager.getTextMain());
 
         JLabel lblDetail = new JLabel(detail);
-        lblDetail.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblDetail.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblDetail.setForeground(ThemeManager.getTextMuted());
 
         card.add(lblTitle, BorderLayout.NORTH);

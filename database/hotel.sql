@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   check_in_date DATETIME NOT NULL,
   check_out_date DATETIME NOT NULL,
   total_price DECIMAL(10, 2) DEFAULT 0,
-  status ENUM('pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled') DEFAULT 'pending',
+  status ENUM('pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'no_show') DEFAULT 'pending',
   customer_type ENUM('OTA', 'Walk-in', 'Corporate') DEFAULT 'Walk-in',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

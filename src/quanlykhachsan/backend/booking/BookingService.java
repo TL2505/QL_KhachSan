@@ -6,6 +6,7 @@ import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.backend.room.Room;
 import quanlykhachsan.backend.customer.CustomerDAOImpl;
 import quanlykhachsan.backend.promotion.PromotionService;
+import quanlykhachsan.backend.room.OptimisticLockException;
 
 import java.util.List;
 
@@ -43,6 +44,13 @@ public class BookingService {
             return -1;
         }
         return bookingDAO.addBooking(booking);
+    }
+
+    public int addBooking(Booking booking, int expectedRoomVersion) throws OptimisticLockException {
+        if (!checkAvailable(booking.getRoomId(), booking.getCheckInDate(), booking.getCheckOutDate())) {
+            return -1;
+        }
+        return ((BookingDAOImpl) bookingDAO).addBooking(booking, expectedRoomVersion);
     }
 
     public List<Booking> getBookingsByCustomer(int customerId) {

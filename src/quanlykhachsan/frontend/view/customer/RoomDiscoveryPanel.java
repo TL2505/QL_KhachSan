@@ -109,7 +109,7 @@ public class RoomDiscoveryPanel extends JPanel {
         btnSearch.setBackground(PRIMARY);
         btnSearch.setForeground(Color.WHITE);
         btnSearch.setFocusPainted(false);
-        btnSearch.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnSearch.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnSearch.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnSearch.addActionListener(e -> performSearch());
         searchBar.add(btnSearch, gbc);
@@ -135,16 +135,16 @@ public class RoomDiscoveryPanel extends JPanel {
         JPanel titleRow = new JPanel(new BorderLayout());
         titleRow.setOpaque(false);
         JLabel heading = new JLabel("Sơ đồ phòng hiện tại");
-        heading.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        heading.setFont(new Font("Segoe UI", Font.BOLD, 20));
         heading.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         JLabel desc = new JLabel("Xem trạng thái phòng và chọn phòng phù hợp với nhu cầu của bạn.");
-        desc.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        desc.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         desc.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         titleRow.add(heading, BorderLayout.WEST);
         titleRow.add(desc, BorderLayout.SOUTH);
 
         lblResults = new JLabel("Vui lòng chọn ngày để tìm kiếm các phòng khả dụng.");
-        lblResults.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        lblResults.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         lblResults.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
 
         contentPanel.add(titleRow, BorderLayout.NORTH);
@@ -166,14 +166,14 @@ public class RoomDiscoveryPanel extends JPanel {
 
     private JLabel createInlineLabel(String text) {
         JLabel lbl = new JLabel(text);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lbl.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         return lbl;
     }
 
     private JTextField createSearchField(int cols) {
         JTextField field = new JTextField(cols);
-        field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         field.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         field.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         field.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(8, 8, 8, 8)));
@@ -183,7 +183,7 @@ public class RoomDiscoveryPanel extends JPanel {
 
     private JComboBox<String> createSearchCombo(String[] options) {
         JComboBox<String> combo = new JComboBox<>(options);
-        combo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        combo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         combo.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
         combo.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         combo.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(6, 8, 6, 8)));

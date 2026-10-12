@@ -4,7 +4,7 @@
 
 1. Chuẩn bị môi trường
    - Cài đặt JDK 17.
-   - Cài đặt MySQL và đảm bảo service đang chạy trên cổng `3306`.
+   - Cài đặt MariaDB 11 và đảm bảo service đang chạy trên cổng `3306`.
    - Nếu dùng XAMPP, bật MySQL.
 
 2. Cấu hình database
@@ -16,6 +16,7 @@
      - `DB_NAME`
      - `DB_USER`
      - `DB_PASSWORD`
+   - Chọn đúng thuế VAT hiện hành cho khách sạn bằng `HOTEL_VAT_RATE=0.08` hoặc `HOTEL_VAT_RATE=0.10`. Booking không được tính giá nếu chưa cấu hình mức thuế hợp lệ.
 
 3. Build và chạy backend
    - Chạy `build_project.bat` để biên dịch và tạo class.
@@ -27,6 +28,11 @@
    - Chạy lớp chính:
      - `quanlykhachsan.Quanlykhachsan`
    - Frontend sẽ gọi API tới `http://localhost:8081/api`.
+
+5. Chạy kiểm thử Maven
+   - `mvn test` chạy các kiểm thử đơn vị và kiểm thử UI bất đồng bộ.
+   - Kiểm thử migration MariaDB cần `HOTEL_MARIADB_TEST_URL` trỏ tới URL JDBC không kèm tên database (ví dụ `jdbc:mysql://localhost:3306/?serverTimezone=UTC`), cùng `HOTEL_MARIADB_TEST_USER` và `HOTEL_MARIADB_TEST_PASSWORD`. Test tạo rồi xóa schema riêng.
+   - Kiểm thử idempotency cần `HOTEL_RUN_DB_INTEGRATION=true` và `DB_NAME` trỏ tới schema dùng riêng có tên kết thúc bằng `_test`; test sẽ tạo lại bảng `idempotency_keys` trong schema đó.
 
 5. Tham khảo thêm
    - Xem hướng dẫn chi tiết trong `docs/run-project.md`.

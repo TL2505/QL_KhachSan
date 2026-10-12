@@ -30,9 +30,9 @@ public final class QuickFilterBar extends JPanel {
         setBackground(ThemeManager.getCardBg());
 
         JLabel label = new JLabel("Search rooms");
-        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
         label.setForeground(ThemeManager.getTextMain());
-        searchField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
+        searchField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
         searchField.setBackground(ThemeManager.getCardBg());
         searchField.setForeground(ThemeManager.getTextMain());
         searchField.setBorder(BorderFactory.createCompoundBorder(

@@ -89,6 +89,15 @@ public class RoomForm extends JPanel {
         new RoomActionDialog(owner, selectedRoom, currentUser, this::loadRooms, systemStatusBanner).setVisible(true);
     }
 
+    /** Selects the adjacent room in map order for F6/F7 global navigation. */
+    public void selectAdjacentRoom(int delta) {
+        if (loadedRooms.isEmpty() || delta == 0) return;
+        int index = selectedRoom == null ? (delta > 0 ? -1 : 0) : loadedRooms.indexOf(selectedRoom);
+        int next = Math.max(0, Math.min(loadedRooms.size() - 1, index + Integer.signum(delta)));
+        selectedRoom = loadedRooms.get(next);
+        gridPanel.repaint();
+    }
+
     private void initUI() {
         // ── Main Header Wrapper ───────────────────────────────────────────
         JPanel mainHeader = new JPanel();
@@ -110,7 +119,7 @@ public class RoomForm extends JPanel {
         actionButtons.setOpaque(false);
 
         lblStatus = new JLabel(" ");
-        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblStatus.setForeground(MUTED);
         actionButtons.add(lblStatus);
 
@@ -346,12 +355,12 @@ public class RoomForm extends JPanel {
         lblIcon.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel lblNumber = new JLabel(room.getRoomNumber());
-        lblNumber.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblNumber.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblNumber.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         lblNumber.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel lblCap = new JLabel("Sức chứa: " + (room.getRoomTypeId() == 1 ? "2-4" : "1-2") + " người");
-        lblCap.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblCap.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblCap.setForeground(MUTED);
         lblCap.setAlignmentX(LEFT_ALIGNMENT);
 
@@ -373,7 +382,7 @@ public class RoomForm extends JPanel {
         statusPill.setAlignmentX(LEFT_ALIGNMENT);
         
         JLabel lblStatusTxt = new JLabel(toVietnamese(room.getStatus()));
-        lblStatusTxt.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        lblStatusTxt.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblStatusTxt.setForeground(statusColor.darker());
         statusPill.add(lblStatusTxt);
 
@@ -480,7 +489,7 @@ public class RoomForm extends JPanel {
                 return this;
             }
         });
-        cbStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cbStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         cbStatus.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         cbStatus.setAlignmentX(LEFT_ALIGNMENT);
         panel.add(cbStatus);
@@ -574,14 +583,14 @@ public class RoomForm extends JPanel {
         panel.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
 
         JLabel title = new JLabel("Đổi trạng thái — Phòng " + room.getRoomNumber());
-        title.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
         title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         title.setAlignmentX(LEFT_ALIGNMENT);
         panel.add(title);
         panel.add(Box.createVerticalStrut(4));
 
         JLabel currentLbl = new JLabel("Trạng thái hiện tại: " + toVietnamese(room.getStatus()));
-        currentLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        currentLbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         currentLbl.setForeground(MUTED);
         currentLbl.setAlignmentX(LEFT_ALIGNMENT);
         panel.add(currentLbl);
@@ -597,7 +606,7 @@ public class RoomForm extends JPanel {
         for (String[] entry : statusOptions) {
             JRadioButton rb = new JRadioButton(entry[1]);
             rb.setActionCommand(entry[0]);
-            rb.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            rb.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             rb.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
             rb.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
             rb.setAlignmentX(LEFT_ALIGNMENT);
@@ -732,7 +741,7 @@ public class RoomForm extends JPanel {
         };
         
         btn.setText(text);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setFocusPainted(false);
         
@@ -757,7 +766,7 @@ public class RoomForm extends JPanel {
         parent.add(lbl);
         parent.add(Box.createVerticalStrut(4));
         JTextField f = new JTextField();
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         f.putClientProperty("JTextField.placeholderText", placeholder);
         f.setBorder(BorderFactory.createCompoundBorder(
             new LineBorder(BORDER_C, 1, true),

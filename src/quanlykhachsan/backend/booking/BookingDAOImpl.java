@@ -3,22 +3,38 @@ package quanlykhachsan.backend.booking;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import quanlykhachsan.backend.utils.DBconn;
+import quanlykhachsan.backend.room.RoomAllocationService;
+import quanlykhachsan.backend.room.OptimisticLockException;
 
 public class BookingDAOImpl implements BookingDAO {
 
     @Override
     public int addBooking(Booking booking) {
+        try {
+            return addBooking(booking, RoomAllocationService.currentVersion(booking.getRoomId()));
+        } catch (OptimisticLockException ex) {
+            return -1;
+        } catch (java.sql.SQLException ex) {
+            ex.printStackTrace();
+            return -1;
+        }
+    }
+
+    public int addBooking(Booking booking, int expectedRoomVersion) throws OptimisticLockException {
         String query = "INSERT INTO bookings(customer_id, room_id, check_in_date, check_out_date, total_price, status) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection con = quanlykhachsan.backend.utils.DatabaseConnection.getConnection()) {
             con.setAutoCommit(false);
+            RoomAllocationService.reserve(con, booking.getRoomId(), expectedRoomVersion);
             try (PreparedStatement ps = con.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
                 ps.setInt(1, booking.getCustomerId());
                 ps.setInt(2, booking.getRoomId());
                 ps.setTimestamp(3, new java.sql.Timestamp(booking.getCheckInDate().getTime()));
                 ps.setTimestamp(4, new java.sql.Timestamp(booking.getCheckOutDate().getTime()));
-                ps.setDouble(5, booking.getTotalPrice());
+                ps.setBigDecimal(5, BigDecimal.valueOf(booking.getTotalPrice()).setScale(2, RoundingMode.HALF_UP));
                 ps.setString(6, booking.getStatus());
                 ps.executeUpdate();
                 try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -57,10 +73,13 @@ public class BookingDAOImpl implements BookingDAO {
                 }
             } catch (Exception ex) {
                 con.rollback();
+                if (ex instanceof OptimisticLockException) throw (OptimisticLockException) ex;
                 throw ex;
             } finally {
                 con.setAutoCommit(true);
             }
+        } catch (OptimisticLockException e) {
+            throw e;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -76,7 +95,7 @@ public class BookingDAOImpl implements BookingDAO {
             ps.setInt(2, booking.getRoomId());
             ps.setTimestamp(3, new java.sql.Timestamp(booking.getCheckInDate().getTime()));
             ps.setTimestamp(4, new java.sql.Timestamp(booking.getCheckOutDate().getTime()));
-            ps.setDouble(5, booking.getTotalPrice());
+            ps.setBigDecimal(5, BigDecimal.valueOf(booking.getTotalPrice()).setScale(2, RoundingMode.HALF_UP));
             ps.setString(6, booking.getStatus());
             ps.setInt(7, booking.getId());
             ps.executeUpdate();

@@ -17,7 +17,21 @@
     <build>
         <!-- Giữ nguyên cấu trúc thư mục src cũ của NetBeans để không phải di chuyển file -->
         <sourceDirectory>src</sourceDirectory>
+        <testSourceDirectory>tests</testSourceDirectory>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.15.0</version>
+                <configuration>
+                    <release>17</release>
+                </configuration>
+            </plugin>
             <!-- Plugin cấu hình file chạy chính (Main Class) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -27,10 +41,21 @@
                     <mainClass>quanlykhachsan.Quanlykhachsan</mainClass>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
         </plugins>
     </build>
     
     <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
         <!-- 1. Giao diện FlatLaf -->
         <dependency>
             <groupId>com.formdev</groupId>

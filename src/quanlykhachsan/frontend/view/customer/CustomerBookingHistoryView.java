@@ -56,7 +56,7 @@ public class CustomerBookingHistoryView extends JPanel {
         header.add(title, BorderLayout.WEST);
 
         JButton btnReload = new JButton("🔄 Tải lại");
-        btnReload.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnReload.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnReload.setBackground(ThemeManager.getBorderColor());
         btnReload.setForeground(ThemeManager.getTextMain());
         btnReload.setFocusPainted(false);
@@ -65,7 +65,7 @@ public class CustomerBookingHistoryView extends JPanel {
         header.add(btnReload, BorderLayout.EAST);
 
         JLabel subtitle = new JLabel("Nhấn đúp vào một đơn để xem chi tiết và đánh giá dịch vụ.");
-        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitle.setForeground(ThemeManager.getTextMuted());
         header.add(subtitle, BorderLayout.SOUTH);
 
@@ -119,7 +119,7 @@ public class CustomerBookingHistoryView extends JPanel {
     }
 
     private void styleTable(JTable table) {
-        table.setRowHeight(48);
+        table.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setFillsViewportHeight(true);
@@ -129,7 +129,7 @@ public class CustomerBookingHistoryView extends JPanel {
         table.setSelectionBackground(new Color(224, 242, 254));
         table.setSelectionForeground(ThemeManager.getTextMain());
 
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         table.getTableHeader().setPreferredSize(new Dimension(0, 40));
         table.getTableHeader().setBackground(ThemeManager.getCardBg());
         table.getTableHeader().setForeground(ThemeManager.getTextMain());
@@ -214,7 +214,7 @@ public class CustomerBookingHistoryView extends JPanel {
     class ActionBtnRenderer extends JButton implements javax.swing.table.TableCellRenderer {
         public ActionBtnRenderer() {
             setOpaque(true);
-            setFont(new Font("Segoe UI", Font.BOLD, 11));
+            setFont(new Font("Segoe UI", Font.BOLD, 12));
         }
 
         @Override
