@@ -1,10 +1,11 @@
-# UI CONVENTIONS: WEB ADMIN & GM (REACT 18 + ANT DESIGN)
+# UI CONVENTIONS: WEB ADMIN & GM (REACT 18 + MUI 5.X — PHASE 4)
 
 ## 1. DESIGN SPECIFICATION & FOUNDATION
-- **Framework:** React 18 + Ant Design `5.x` + TypeScript.
+- **Framework:** React 18 + Material-UI (MUI) `5.x` + TypeScript (Unified single design system with Guest Web; scheduled for Phase 4 while Phase 1–3 relies on desktop Swing `AdminForm.java`).
 - **Target Audience:** General Manager, Operations Directors, System Admins.
 - **Design Philosophy:** Data density, instant scanning, deep reporting, responsive (laptop, tablet, phone).
-- **Tokens Reference:** All colors, typography, status codes, and spacing imported from `ui-tokens.md`.
+- **Tokens Reference:** All colors, typography, status codes, and spacing imported from `ui-tokens.md` (reusing `theme.ts` & `ApiClient.ts`).
+
 
 ## 2. NAVIGATION & WORKSPACE LAYOUT
 - **Desktop Layout (> 1200px):**
@@ -29,7 +30,7 @@
   - 10 rows visible. Columns: Guest Name, Room, Check-in, Check-out, Status Badge, Folio Amount.
 
 ## 4. DATA TABLES & DETAIL DRAWER
-- **Row Dimensions:** Height exactly `40px` per row (high-density Ant Design table).
+- **Row Dimensions:** Height exactly `40px` per row (high-density MUI Table / DataGrid compact mode).
 - **Typography:** `14px` primary text, `12px` for secondary timestamps/IDs.
 - **Controls:** Header sorting indicators; top filter bar with search input and multi-select filters; "Export CSV" and "Export PDF" buttons on top-right.
 - **Pagination:** Options for 20 / 50 / 100 rows per page.
@@ -50,7 +51,7 @@
 ## 7. RESPONSIVE BEHAVIOR & THEME
 - **Tablet (768px – 1200px):** Sidebar auto-collapses to `64px`; charts stack vertically; table maintains horizontal scroll.
 - **Mobile (< 768px):** Sidebar hidden behind top hamburger drawer; KPI cards render 2 per row; tables convert to compact cards (1 item per card).
-- **Dark Mode Support:** User menu dropdown offers "Dark Mode" toggle using Ant Design `theme.darkAlgorithm`. Preferences saved in `localStorage`.
+- **Dark Mode Support:** User menu dropdown offers "Dark Mode" toggle using MUI `ThemeProvider` (`palette.mode = 'dark'`). Preferences saved in `localStorage`.
 - **Notifications Panel:** 320px dropdown panel from header bell icon. Unread items display a primary accent dot and bold text.
 
 ## 8. HARD CONSTRAINTS

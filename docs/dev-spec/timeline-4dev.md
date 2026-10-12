@@ -1,21 +1,22 @@
 # PROJECT TIMELINE — 4 DEV TEAM (5★ HOTEL PMS + AI)
 
-## Team Roles
-| Dev | Role | Focus |
-|---|---|---|
-| Dev A | Backend API | Endpoints, JWT, RBAC, Payment |
-| Dev B | Business Logic | Night Audit, Folio, Group Booking, AI Gateway |
-| Dev C | Frontend | React/Vue, Staff Dashboard, Guest Chat UI |
-| Dev D | DevOps + QA | Docker, CI/CD, Testing, Security, Monitoring |
+## Team Roles & Rebalanced Ownership
+| Dev | Role | Phase 2 Focus | Phase 3 Focus |
+|---|---|---|---|
+| **Dev A** | Backend API & AI Integration | Java HTTP Client to AI Gateway (`/api/v1/ai/*`) | Webhooks & Loyalty/Promotions subsystems |
+| **Dev B** | Core Business Logic | 100% Night Audit 7-step, Folio Split/Routing, Locks | `guardrails.py` rules & RAG context injection |
+| **Dev C** | Frontend Engineer | Swing Chat Native UI (`JPanel` + `FlatRoundBorder`) | 100% Guest Web Mobile-First (MUI 5) |
+| **Dev D** | DevOps & AI Infrastructure | FastAPI skeleton, pgvector Docker, SOP embeddings | CI/CD GitHub Actions, Stress test (50 connections) |
 
 ### Dev C (Frontend) — Platform: Desktop (Swing) Phase 1-2, Web (React) Phase 3
 
 | Phase | Task | Platform |
 |---|---|---|
 | Phase 1 (W1-4) | Integrate `/api/v1/*` into existing Swing UI. Remove mock data. Connect real API. **NO new UI framework. NO React.** | Swing |
-| Phase 2 (W5-7) | AI Chat UI in Swing (JEditorPane + WebSocket). Staff Dashboard panels (Swing). Escalation alert (Swing popup). **NO React.** | Swing |
-| Phase 3 (W8-9) | **React 18 web:** Guest booking page + AI chat + review form. Admin dashboard (reports, staff, promos). | React |
-| Phase 4+ | Optional: Swing → React migration for staff. PWA for mobile guests. | React + PWA |
+| Phase 2 (W5-7) | AI Chat Native UI in Swing (`JPanel` + `BoxLayout` + `FlatRoundBorder`). Staff Dashboard panels (Swing). Escalation alert (Swing popup). **NO React.** | Swing |
+| Phase 3 (W8-9) | **React 18 web (MUI 5):** 100% focus on Guest booking page + AI chat + review form. Admin manages via Swing `AdminForm`. | React |
+| Phase 4+ | React 18 Admin Portal. Optional: Swing → React migration for staff. PWA for mobile guests. | React + PWA |
+
 
 
 ## Phase 0: Quick Fixes (Day 1-2)
@@ -47,10 +48,10 @@
 ## Phase 2: AI + Operations (Week 5-7)
 | | Week 5 | Week 6 | Week 7 |
 |---|---|---|---|
-| Dev A | Guest auth (OTP), Check-in/out, Services, Group endpoints | Folio advanced (routing, split, interim), Night Audit manual trigger | Integration test |
-| Dev B | AI Gateway: main.py + llm_client.py | AI Gateway: rag.py + guardrails.py + escalation.py | AI Gateway: audit log + monitoring hooks |
-| Dev C | AI Chat UI in Swing (simple JEditorPane or webview). Staff Dashboard (Swing). NO React. | Escalation alert UI + AI interaction viewer | E2E test (AI scenarios) |
-| Dev D | pgvector setup + RAG pipeline (index edge-cases, escalation, SOPs) | 4 AI test scenarios (injection, bypass, concurrent, offline) | Monitoring dashboard (Grafana) + Alert rules |
+| Dev A | Guest auth (OTP), Check-in/out, Services, Group endpoints | Java Client HTTP to AI Gateway (`/api/v1/ai/*`) | Integration test with AI Gateway & Core |
+| Dev B | Night Audit edge cases & Folio Routing/Split | 100% Core Transaction Locks & Folio Audit | `guardrails.py` rules & RAG context injection |
+| Dev C | AI Chat Native UI in Swing (`JPanel` + `FlatRoundBorder`) | Staff Dashboard panels (Swing) + Alert popup | E2E test (Swing AI scenarios) |
+| Dev D | FastAPI skeleton + pgvector Docker setup | RAG indexing pipeline (SOPs, constraints) | 4 AI test scenarios + Monitoring dashboard |
 
 **Milestone (End Week 7):** Go/No-Go Phase 2.
 **Criteria:**
@@ -63,10 +64,11 @@
 ## Phase 3: Scale & Integration (Week 8-9)
 | | Week 8 | Week 9 |
 |---|---|---|
-| Dev A | Promotions, Loyalty, Feedback, Notifications, Staff mgmt endpoints | Webhooks (subscribe + receive), Reports (DBR, occupancy, revenue-by-channel) |
+| Dev A | Promotions, Loyalty, Feedback, Notifications, Staff mgmt endpoints | Webhooks (subscribe + receive), Reports (DBR, occupancy, revenue) |
 | Dev B | OTA integration (Booking.com/Agoda XML/HTNG) | Payment gateway (Stripe/local) + POS integration |
-| Dev C | React 18 web: Guest booking + AI chat + review. Admin dashboard. | Webhook config UI + Notification templates |
-| Dev D | CI/CD pipeline (GitHub Actions) + Environment separation (dev/staging/prod) | Production hardening + Backup cron + Restore test |
+| Dev C | React 18 (MUI 5): Guest booking flow + AI chat bubble | React 18: Guest review form + mobile polish. Admin on Swing. |
+| Dev D | CI/CD pipeline (GitHub Actions) + Stress test (50 conn) | Production hardening + Backup cron + Restore test |
+
 
 **Milestone (End Week 9):** Go/No-Go Production.
 **Criteria:**

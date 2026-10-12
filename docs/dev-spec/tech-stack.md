@@ -7,7 +7,9 @@
 | **PMS Backend** | Java 17 (plain HttpServer) | 17 | Enterprise standard, lightweight native HTTP server (`com.sun.net.httpserver`), robust multithreading |
 | **Build Tool** | Maven (pom.xml) + javac | 3.9+ | Standard dependency management and clean javac container build |
 | **AI Gateway** | Python (FastAPI) | 3.11 | Native ML/AI libraries, async handling, ideal for LLM orchestration |
-| **Frontend UI** | React + Vite | 18 | High performance, rapid rendering for Staff Dashboard |
+| **Frontend UI (Guest & Admin)** | React 18 + MUI 5.x | 18 | Unified single design system; reuses theme tokens, minimizes learning overhead |
+| **DB Connection Pool** | HikariCP | 5.1.0 | High-performance JDBC connection pool for Java HttpServer, eliminates leaks |
+| **AI Database Role** | MariaDB user `ai_reader` | - | Physical read-only boundary (SELECT rooms, promotions); strict PII denial |
 | **Transactional DB** | MariaDB | 11 | High performance relational DB for folios, bookings, and financial logs |
 | **Deployment** | Docker Compose | v2 | Simplifies 6-container microservices orchestration on a single Ubuntu VM |
 | **OS** | Ubuntu LTS | 22.04 | Stable, secure production environment |
@@ -18,16 +20,17 @@
 | Platform | User | Tech | Phase | Notes |
 |---|---|---|---|---|
 | Desktop (Staff) | Front Desk, HK, F&B | Java Swing (existing) | Phase 1-2 (keep) | Calls /api/v1/* via HTTP. No UI changes. |
-| Web (Guest) | Guest | React 18 + TypeScript | Phase 3 | Served by Nginx. OTP auth. |
-| Web (Admin) | Admin/GM | React 18 + TypeScript | Phase 3 | Same frontend, different RBAC. |
+| Web (Guest) | Guest | React 18 + MUI 5.x | Phase 3 | Served by Nginx. OTP auth. |
+| Web (Admin) | Admin/GM | React 18 + MUI 5.x | Phase 4+ (Swing in P3) | Reuses Guest theme/tokens. |
 | Mobile (Future) | Guest | PWA / React Native | Phase 4+ | Reuses /api/v1/* endpoints. |
 
 ### PLATFORM BY PHASE
-| Phase | Staff UI | Guest UI | Dev C Focus |
-|---|---|---|---|
-| 1-2 | Swing (no changes) | None | API integration into existing Swing. NO new UI. |
-| 3 | Swing + React Admin | React (booking, chat, review) | Build React web. |
-| 4+ | React (optional) | React + PWA | Migrate Swing → React. |
+| Phase | Staff UI | Guest UI | Admin UI | Dev C Focus |
+|---|---|---|---|---|
+| 1-2 | Swing (real REST API integration) | None | None | Integrate `/api/v1/*` into existing Swing; NO React. |
+| 3 | Swing Staff Form | React 18 (Booking, Chat, Review) | Swing AdminForm (existing) | 100% focus on Guest Web Mobile-First. |
+| 4+ | Swing (or migrate React if needed) | React + PWA | React 18 (Admin Portal) | Build Web Admin and PWA. |
+
 
 ## PLATFORM DESIGN PHILOSOPHY
 

@@ -68,3 +68,16 @@
 ## 8. NGUYÊN TẮC BẮT BUỘC (DO / DON'T)
 - **NÊN (DO):** Gán phím tắt cho tất cả chức năng. Giữ bảng dữ liệu cô đọng. Dùng chấm màu trạng thái.
 - **KHÔNG NÊN (DON'T):** Không hiệu ứng động (> `150ms`). Không dùng `JOptionPane.showMessageDialog` mặc định. Không dùng cỡ chữ ngoài 6 cỡ chuẩn.
+
+## 9. KHUNG TRỢ LÝ AI COPILOT DOCK (JAVA SWING)
+- **Kiến trúc Component:**
+  - Không sử dụng `JEditorPane` (tránh lỗi render HTML 3.2 cũ kỹ, vẽ lại chậm và vỡ font tiếng Việt có dấu).
+  - Sử dụng `JPanel` với `BoxLayout(box, BoxLayout.Y_AXIS)` đặt trong `JScrollPane` (cuộn mượt, tự động cuộn xuống cuối khi có tin nhắn mới).
+- **Quy chuẩn Bong bóng tin nhắn (Message Bubble):**
+  - Mỗi bong bóng chat là một `JPanel` con bo góc bằng `new FlatRoundBorder()` (arc `12px`).
+  - Nội dung text hiển thị bằng `JTextArea`: `setWrapStyleWord(true)`, `setLineWrap(true)`, `setEditable(false)`, font hệ thống chuẩn `14px`.
+  - **Màu sắc bong bóng:**
+    - Tin nhắn Copilot (AI): Background `#F5F5F5`, viền `1px solid #E0E0E0`, căn trái.
+    - Tin nhắn Staff: Background `#1B2A4A` (Primary Accent), chữ trắng, căn phải.
+- **Hiệu năng:** Thời gian thêm tin nhắn và vẽ lại giao diện < 10ms, không gây block Event Dispatch Thread (EDT) bằng cách sử dụng `SwingWorker` khi nhận phản hồi bất đồng bộ từ API.
+

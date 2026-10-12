@@ -20,12 +20,24 @@
 - **Hủy bỏ (Abort):** Chỉ Admin/GM (Yêu cầu xác thực 2 bước 2FA).
 - **Xem:** Night Auditor, Admin, GM (Dashboard chỉ đọc).
 
-## 4. ĐỘ MỚI DỮ LIỆU & CACHE TTL
+## 4. RANH GIỚI CƠ SỞ DỮ LIỆU VẬT LÝ CHO AI GATEWAY (PHYSICAL DB BOUNDARY)
+- Dịch vụ AI Gateway kết nối cơ sở dữ liệu thông qua tài khoản riêng biệt: `ai_reader`.
+- **Danh sách bảng được phép truy cập (`GRANT SELECT`):**
+  - `rooms`: Kiểm tra trạng thái và tiện ích phòng.
+  - `room_types`: Lấy thông tin mô tả loại phòng.
+  - `promotions`: Kiểm tra chính sách khuyến mãi đang kích hoạt.
+  - `services` (hoặc `hotel_services`): Tra cứu dịch vụ phụ trợ (Spa, Restaurant, Laundry).
+- **Ranh giới cấm tuyệt đối (Phòng thủ chiều sâu):**
+  - Cơ sở dữ liệu MariaDB từ chối quyền truy cập của `ai_reader` vào các bảng PII và tài chính: `users`, `customers`, `bookings`, `booking_details`, `folios`, `payments`.
+  - Mọi câu truy vấn cố tình trích xuất thông tin khách hàng từ AI Gateway sẽ bị MariaDB chặn ngay lập tức với mã lỗi `1142 (42000): SELECT command denied to user`.
+
+## 5. ĐỘ MỚI DỮ LIỆU & CACHE TTL
 - **Tình trạng & Trạng thái Phòng:** CHỈ THỜI GIAN THỰC (TTL = 0s) để tránh overbooking.
 - **Giá phòng & Khuyến mãi:** TTL tối đa = 5 phút.
 - **Hồ sơ khách hàng:** TTL = 1 giờ (Xóa cache khi khách check-in/out).
 
-## 5. TRUY CẬP NHẬT KÝ KIỂM TOÁN (AUDIT LOG)
+## 6. TRUY CẬP NHẬT KÝ KIỂM TOÁN (AUDIT LOG)
 - Mọi tương tác của AI đều được lưu log (Timestamp, ID User, Hành động AI, Dữ liệu tham chiếu).
 - Quyền truy cập bị giới hạn ở role Admin & Tuân thủ (Compliance).
 - Thời gian lưu trữ: 6 tháng (tuân thủ GDPR/PDPA).
+
