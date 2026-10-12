@@ -149,7 +149,7 @@ public class UpdateDbUtility {
     private static void ensureColumn(Connection conn, String table, String column,
                                      String definition) throws SQLException {
         DatabaseMetaData meta = conn.getMetaData();
-        try (ResultSet rs = meta.getColumns(null, null, table, column)) {
+        try (ResultSet rs = meta.getColumns(conn.getCatalog(), null, table, column)) {
             if (rs.next()) {
                 System.out.println("[UpdateDbUtility]   ✓ Cột `" + table + "." + column + "` đã tồn tại, bỏ qua.");
             } else {
@@ -202,7 +202,7 @@ public class UpdateDbUtility {
     private static void ensureTable(Connection conn, String tableName,
                                     String createDdl) throws SQLException {
         DatabaseMetaData meta = conn.getMetaData();
-        try (ResultSet rs = meta.getTables(null, null, tableName, new String[]{"TABLE"})) {
+        try (ResultSet rs = meta.getTables(conn.getCatalog(), null, tableName, new String[]{"TABLE"})) {
             if (rs.next()) {
                 System.out.println("[UpdateDbUtility]   ✓ Bảng `" + tableName + "` đã tồn tại, bỏ qua.");
             } else {

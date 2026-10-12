@@ -78,11 +78,27 @@ class MariaDbMigrationIntegrationTest {
     private static void executeHotelSchemaScript(Connection connection, String schema) throws Exception {
         String sql = java.nio.file.Files.readString(java.nio.file.Path.of("database", "hotel.sql"))
             .replace("hotel_prod_db", schema);
-        sql = sql.replaceAll("(?m)^\\s*--.*(?:\\R|$)", "");
+        String delimiter = ";";
+        StringBuilder pending = new StringBuilder();
         try (Statement statement = connection.createStatement()) {
-            for (String command : sql.split(";")) {
-                String trimmed = command.trim();
-                if (!trimmed.isEmpty()) statement.execute(trimmed);
+            for (String line : sql.split("\\R")) {
+                String trimmedLine = line.trim();
+                if (trimmedLine.regionMatches(true, 0, "DELIMITER ", 0, 10)) {
+                    delimiter = trimmedLine.substring(10).trim();
+                    continue;
+                }
+                if (trimmedLine.startsWith("--") || trimmedLine.startsWith("#")) continue;
+                pending.append(line).append('\n');
+                String candidate = pending.toString().trim();
+                if (candidate.endsWith(delimiter)) {
+                    String command = candidate.substring(0, candidate.length() - delimiter.length()).trim();
+                    if (!command.isEmpty()) statement.execute(command);
+                    pending.setLength(0);
+                }
+            }
+            if (!pending.toString().isBlank()) {
+                throw new IllegalStateException("Unterminated SQL in database/hotel.sql: "
+                    + pending.toString().trim());
             }
         }
     }
@@ -91,13 +107,13 @@ class MariaDbMigrationIntegrationTest {
         return rootUrl.replaceFirst("/\\?", "/" + schema + "?");
     }
     private static boolean columnExists(Connection c, String table, String column) throws Exception {
-        try (ResultSet rs = c.getMetaData().getColumns(null, c.getCatalog(), table, column)) { return rs.next(); }
+        try (ResultSet rs = c.getMetaData().getColumns(c.getCatalog(), null, table, column)) { return rs.next(); }
     }
     private static boolean isMariaDb11(String version) {
         return version != null && version.startsWith("11.") && version.toLowerCase(java.util.Locale.ROOT).contains("mariadb");
     }
     private static boolean tableExists(Connection c, String table) throws Exception {
-        try (ResultSet rs = c.getMetaData().getTables(null, c.getCatalog(), table, new String[]{"TABLE"})) { return rs.next(); }
+        try (ResultSet rs = c.getMetaData().getTables(c.getCatalog(), null, table, new String[]{"TABLE"})) { return rs.next(); }
     }
     private static int indexColumnCount(Connection c, String index) throws Exception {
         try (var query = c.prepareStatement("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE table_schema=DATABASE() AND index_name=?")) {
