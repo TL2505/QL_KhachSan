@@ -10,6 +10,8 @@ import quanlykhachsan.backend.utils.GlobalExceptionHandler;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.concurrent.Executors;
+import quanlykhachsan.backend.utils.SystemStatusFilter;
 
 public class Main {
     public static void main(String[] args) {
@@ -26,6 +28,7 @@ public class Main {
             Filter corsFilter = new CorsFilter();
             Filter jwtFilter = new JwtFilter();
             Filter exceptionFilter = new GlobalExceptionHandler();
+            Filter systemStatusFilter = new SystemStatusFilter();
 
             // --- ĐĂNG KÝ CÁC ROUTE (API ENDPOINTS) TẠI ĐÂY ---
             // Route Health
@@ -46,6 +49,7 @@ public class Main {
             
             // Route Quản lý phòng
             registerContext(server, "/api/v1/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
+            registerContext(server, "/api/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Hồ sơ người dùng
             registerContext(server, "/api/v1/users/update-profile", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
             registerContext(server, "/api/v1/users/change-password", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
@@ -58,10 +62,16 @@ public class Main {
             registerContext(server, "/api/v1/reports", new quanlykhachsan.backend.report.ReportController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Khách hàng
             registerContext(server, "/api/v1/customers", new quanlykhachsan.backend.customer.CustomerController(), exceptionFilter, corsFilter, jwtFilter);
+            registerContext(server, "/api/customers", new quanlykhachsan.backend.customer.CustomerController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Đặt phòng / Check-in / Check-out
-            registerContext(server, "/api/v1/bookings", new quanlykhachsan.backend.booking.BookingController(), exceptionFilter, corsFilter, jwtFilter);
+            var bookingController = new quanlykhachsan.backend.booking.BookingController();
+            registerContext(server, "/api/v1/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+            registerContext(server, "/api/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
             // Route Thanh toán (Payment)
-            registerContext(server, "/api/v1/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, jwtFilter);
+            registerContext(server, "/api/v1/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+            registerContext(server, "/api/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+            registerContext(server, "/api/v1/folios", new quanlykhachsan.backend.booking.FolioController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+            registerContext(server, "/api/v1/pos/sync", new quanlykhachsan.backend.booking.PosSyncController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
             // Route Quản lý Hóa đơn
             registerContext(server, "/api/v1/invoices", new quanlykhachsan.backend.booking.InvoiceController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Đánh giá (Review)
@@ -74,7 +84,7 @@ public class Main {
             registerContext(server, "/api/v1/loyalty", new quanlykhachsan.backend.customer.LoyaltyController(), exceptionFilter, corsFilter, jwtFilter);
 
             // Thiết lập cấu hình mặc định và chạy server
-            server.setExecutor(null);
+            server.setExecutor(Executors.newFixedThreadPool(20));
             server.start();
 
             System.out.println("Server đang chạy thành công tại: http://localhost:8081/");

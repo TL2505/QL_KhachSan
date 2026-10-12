@@ -371,9 +371,9 @@ public class RoomDetailDialog extends JDialog {
                     java.util.List<quanlykhachsan.backend.room.Room> all = RoomAPI.getAllRooms();
                     for (quanlykhachsan.backend.room.Room rr : all) {
                         if (rr.getId() == room.getId()) {
-                            String st = rr.getStatus() != null ? rr.getStatus().toLowerCase() : "available";
-                            if ("maintenance".equals(st)) return "Phòng đang được bảo trì!";
-                            if ("cleaning".equals(st)) return "Phòng đang dọn dẹp!";
+                            String st = rr.getStatus() != null ? rr.getStatus().toLowerCase() : "vacant_clean";
+                            if ("out_of_order".equals(st)) return "Phòng đang được bảo trì!";
+                            if ("vacant_dirty".equals(st)) return "Phòng đang dọn dẹp!";
                             break;
                         }
                     }
@@ -479,11 +479,12 @@ public class RoomDetailDialog extends JDialog {
     private String toVietnamese(String status) {
         if (status == null) return "N/A";
         switch (status.toLowerCase()) {
-            case "available":      return "Trống - Sẵn sàng";
-            case "booked":         return "Đã được đặt";
-            case "occupied":       return "Đang có khách";
-            case "maintenance":    return "Đang bảo trì";
-            case "cleaning":       return "Đang dọn dẹp";
+            case "vacant_clean":   return "Trống - Sẵn sàng";
+            case "reserved":       return "Đã được đặt";
+            case "occupied_clean":
+            case "occupied_dirty": return "Đang có khách";
+            case "out_of_order":   return "Đang bảo trì";
+            case "vacant_dirty":   return "Đang dọn dẹp";
             default:               return status;
         }
     }
@@ -516,26 +517,27 @@ public class RoomDetailDialog extends JDialog {
         String text = toVietnamese(status).toUpperCase();
         Color fgColor;
         Color bgColor;
-        if (status == null) status = "available";
+        if (status == null) status = "vacant_clean";
         switch (status.toLowerCase()) {
-            case "available":
+            case "vacant_clean":
                 fgColor = SUCCESS;
                 bgColor = new Color(SUCCESS.getRed(), SUCCESS.getGreen(), SUCCESS.getBlue(), 35);
                 break;
-            case "booked":
+            case "reserved":
                 fgColor = new Color(217, 119, 6);
                 bgColor = new Color(245, 158, 11, 35);
                 break;
-            case "occupied":
+            case "occupied_clean":
+            case "occupied_dirty":
                 fgColor = DANGER;
                 bgColor = new Color(DANGER.getRed(), DANGER.getGreen(), DANGER.getBlue(), 35);
                 break;
-            case "cleaning":
+            case "vacant_dirty":
                 Color cleaningColor = new Color(56, 189, 248);
                 fgColor = new Color(12, 74, 110);
                 bgColor = new Color(cleaningColor.getRed(), cleaningColor.getGreen(), cleaningColor.getBlue(), 35);
                 break;
-            case "maintenance":
+            case "out_of_order":
             default:
                 fgColor = MUTED;
                 bgColor = new Color(MUTED.getRed(), MUTED.getGreen(), MUTED.getBlue(), 35);

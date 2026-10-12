@@ -6,10 +6,17 @@ import java.awt.*;
 import java.awt.event.*;
 import java.text.NumberFormat;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Locale;
 import quanlykhachsan.backend.room.Room;
 import quanlykhachsan.backend.user.User;
+import quanlykhachsan.backend.booking.Booking;
+import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.frontend.api.RoomAPI;
+import quanlykhachsan.frontend.api.BookingAPI;
+import quanlykhachsan.frontend.api.CustomerAPI;
 import quanlykhachsan.frontend.utils.WrapLayout;
 import quanlykhachsan.frontend.view.customer.RoomDetailDialog;
 
@@ -20,6 +27,13 @@ public class RoomForm extends JPanel {
     private JLabel lblStatus;        // Thanh trạng thái phía trên
     private Room selectedRoom;       // Phòng đang được chọn (để xóa)
     private User currentUser;        // User hiện tại (để phân quyền)
+    private final List<Room> loadedRooms = new ArrayList<>();
+    private final Map<Room, JPanel> roomCards = new HashMap<>();
+    private final Map<Room, String> roomSearchText = new HashMap<>();
+    private JLabel noSearchResults;
+    private String quickFilter = "";
+    private long roomLoadGeneration;
+    private quanlykhachsan.frontend.view.SystemStatusBanner systemStatusBanner;
 
     // ── Màu sắc ──────────────────────────────────────────────────────────
     private final Color C_AVAILABLE   = new Color(34, 197, 94);   // xanh lá
@@ -41,11 +55,38 @@ public class RoomForm extends JPanel {
     private static final int CARD_H = 170;
 
     public RoomForm(User user) {
+        this(user, null);
+    }
+
+    public RoomForm(User user, quanlykhachsan.frontend.view.SystemStatusBanner banner) {
         this.currentUser = user;
+        this.systemStatusBanner = banner;
         setLayout(new BorderLayout(0, 0));
         setBackground(BG);
         initUI();
         loadRooms();
+    }
+
+    public void openSelectedRoomAction() {
+        openSelectedRoomAction(null);
+    }
+
+    public void openSelectedRoomAction(String requiredAction) {
+        if (selectedRoom == null) {
+            JOptionPane.showMessageDialog(this, "Select a room on the room map first.", "No room selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        String status = selectedRoom.getStatus() == null ? "" : selectedRoom.getStatus().toLowerCase();
+        if ("checkin".equals(requiredAction) && !"reserved".equals(status)) {
+            JOptionPane.showMessageDialog(this, "F2 requires a reserved room. Select a reserved room first.", "Check-in unavailable", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        if ("checkout".equals(requiredAction) && !("occupied_clean".equals(status) || "occupied_dirty".equals(status))) {
+            JOptionPane.showMessageDialog(this, "F3 requires an occupied room. Select an occupied room first.", "Check-out unavailable", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        new RoomActionDialog(owner, selectedRoom, currentUser, this::loadRooms, systemStatusBanner).setVisible(true);
     }
 
     private void initUI() {
@@ -79,10 +120,12 @@ public class RoomForm extends JPanel {
 
         if (currentUser.getRoleId() == 1) { // ADMIN
             JButton btnAdd = makeToolBtn("Thêm phòng", PRIMARY, true);
+            if (systemStatusBanner != null) systemStatusBanner.registerMutationComponent(btnAdd);
             btnAdd.addActionListener(e -> showAddRoomDialog());
             actionButtons.add(btnAdd);
 
             JButton btnChangeStatus = makeToolBtn("Đổi trạng thái", new Color(124, 58, 237), true);
+            if (systemStatusBanner != null) systemStatusBanner.registerMutationComponent(btnChangeStatus);
             btnChangeStatus.addActionListener(e -> {
                 if (selectedRoom == null) {
                     JOptionPane.showMessageDialog(this, "Vui lòng chọn một phòng!", "Chưa chọn phòng", JOptionPane.INFORMATION_MESSAGE);
@@ -125,7 +168,11 @@ public class RoomForm extends JPanel {
     // ── Load rooms ────────────────────────────────────────────────────────
 
     public void loadRooms() {
+        final long requestGeneration = ++roomLoadGeneration;
         selectedRoom = null;
+        loadedRooms.clear();
+        roomCards.clear();
+        roomSearchText.clear();
         gridPanel.removeAll();
         setStatus("Đang tải dữ liệu...", MUTED);
 
@@ -137,16 +184,21 @@ public class RoomForm extends JPanel {
         gridPanel.revalidate();
         gridPanel.repaint();
 
-        SwingWorker<List<Room>, Void> worker = new SwingWorker<>() {
+        SwingWorker<RoomLoadData, Void> worker = new SwingWorker<>() {
             @Override
-            protected List<Room> doInBackground() throws Exception {
-                return RoomAPI.getAllRooms();
+            protected RoomLoadData doInBackground() {
+                List<Room> rooms = RoomAPI.getAllRooms();
+                List<Booking> bookings = BookingAPI.getAllBookings();
+                List<Customer> customers = CustomerAPI.getAllCustomers();
+                return new RoomLoadData(rooms, bookings, customers);
             }
             @Override
             protected void done() {
+                if (requestGeneration != roomLoadGeneration) return;
                 gridPanel.removeAll();
                 try {
-                    List<Room> roomsList = get();
+                    RoomLoadData loaded = get();
+                    List<Room> roomsList = loaded.rooms;
                     if (roomsList == null || roomsList.isEmpty()) {
                         JLabel empty = new JLabel("Chưa có phòng nào. Nhấn 'Thêm phòng' để bắt đầu!");
                         empty.setFont(new Font("Segoe UI", Font.ITALIC, 14));
@@ -154,6 +206,7 @@ public class RoomForm extends JPanel {
                         gridPanel.add(empty);
                         setStatus("0 phòng", MUTED);
                     } else {
+                        loadedRooms.addAll(roomsList);
                         // Sắp xếp phòng theo số hiệu (Số - chuyển sang int nếu có thể để sort: 101, 102, 201...)
                         roomsList.sort((r1, r2) -> {
                             try {
@@ -163,9 +216,33 @@ public class RoomForm extends JPanel {
                             }
                         });
 
-                        for (Room r : roomsList) {
-                            gridPanel.add(makeRoomCard(r));
+                        Map<Integer, String> customerNames = new HashMap<>();
+                        for (Customer customer : loaded.customers) {
+                            if (customer != null) customerNames.put(customer.getId(), customer.getFullName());
                         }
+                        Map<Integer, StringBuilder> bookingTerms = new HashMap<>();
+                        for (Booking booking : loaded.bookings) {
+                            if (booking != null && booking.getRoomId() > 0) {
+                                StringBuilder terms = bookingTerms.computeIfAbsent(booking.getRoomId(), ignored -> new StringBuilder());
+                                terms.append(' ').append(booking.getId());
+                                String guestName = customerNames.get(booking.getCustomerId());
+                                if (guestName != null) terms.append(' ').append(guestName);
+                            }
+                        }
+                        for (Room r : roomsList) {
+                            JPanel card = makeRoomCard(r);
+                            roomCards.put(r, card);
+                            String bookingText = bookingTerms.containsKey(r.getId())
+                                ? bookingTerms.get(r.getId()).toString() : "";
+                            roomSearchText.put(r, ((r.getRoomNumber() == null ? "" : r.getRoomNumber())
+                                + " " + bookingText).toLowerCase(Locale.ROOT));
+                            gridPanel.add(card);
+                        }
+                        noSearchResults = new JLabel("Không tìm thấy phòng phù hợp.");
+                        noSearchResults.setForeground(MUTED);
+                        noSearchResults.setVisible(false);
+                        gridPanel.add(noSearchResults);
+                        applyQuickFilter(quickFilter);
                         setStatus(roomsList.size() + " phòng", SUCCESS);
                     }
                 } catch (Exception ex) {
@@ -179,6 +256,47 @@ public class RoomForm extends JPanel {
             }
         };
         worker.execute();
+    }
+
+    public void setSystemStatusBanner(quanlykhachsan.frontend.view.SystemStatusBanner banner) {
+        this.systemStatusBanner = banner;
+    }
+
+    /** Apply a cached, in-memory filter without rebuilding room cards or making network calls. */
+    public void applyQuickFilter(String query) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(() -> applyQuickFilter(query));
+            return;
+        }
+        String normalized = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        quickFilter = normalized;
+        int visible = 0;
+        for (Room room : loadedRooms) {
+            JPanel card = roomCards.get(room);
+            boolean matches = normalized.isEmpty()
+                || roomSearchText.getOrDefault(room, "").contains(normalized);
+            if (card != null) {
+                card.setVisible(matches);
+                if (matches) visible++;
+            }
+        }
+        if (noSearchResults != null) noSearchResults.setVisible(!normalized.isEmpty() && visible == 0);
+        if (!loadedRooms.isEmpty()) {
+            setStatus(normalized.isEmpty() ? loadedRooms.size() + " phòng" : visible + " / " + loadedRooms.size() + " phòng", MUTED);
+        }
+        gridPanel.revalidate();
+        gridPanel.repaint();
+    }
+
+    private static final class RoomLoadData {
+        final List<Room> rooms;
+        final List<Booking> bookings;
+        final List<Customer> customers;
+        RoomLoadData(List<Room> rooms, List<Booking> bookings, List<Customer> customers) {
+            this.rooms = rooms == null ? new ArrayList<>() : rooms;
+            this.bookings = bookings == null ? new ArrayList<>() : bookings;
+            this.customers = customers == null ? new ArrayList<>() : customers;
+        }
     }
 
     // ── Tạo card phòng ────────────────────────────────────────────────────
@@ -278,9 +396,10 @@ public class RoomForm extends JPanel {
         // ── Status-based interaction tooltip ──
         String tooltip = null;
         switch (room.getStatus().toLowerCase()) {
-            case "available": tooltip = "Nhấn để đặt phòng cho khách"; break;
-            case "booked":    tooltip = "Nhấn để xác nhận nhận phòng (Check-in)"; break;
-            case "occupied":  tooltip = "Nhấn để trả phòng & thanh toán (Check-out)"; break;
+            case "vacant_clean": tooltip = "Nhấn để đặt phòng cho khách"; break;
+            case "reserved":    tooltip = "Nhấn để xác nhận nhận phòng (Check-in)"; break;
+            case "occupied_clean":
+            case "occupied_dirty": tooltip = "Nhấn để trả phòng & thanh toán (Check-out)"; break;
         }
         if (tooltip != null) card.setToolTipText(tooltip);
 
@@ -298,9 +417,12 @@ public class RoomForm extends JPanel {
                 } else {
                     // Nhân viên (role 2): tương tác trực tiếp theo trạng thái
                     String status = room.getStatus().toLowerCase();
-                    if (status.equals("available") || status.equals("booked") || status.equals("occupied") || status.equals("cleaning")) {
+                    selectedRoom = room;
+                    if (status.equals("vacant_clean") || status.equals("reserved")
+                            || status.equals("occupied_clean") || status.equals("occupied_dirty")
+                            || status.equals("vacant_dirty")) {
                         Window w = SwingUtilities.getWindowAncestor(RoomForm.this);
-                        new RoomActionDialog(w, room, currentUser, () -> SwingUtilities.invokeLater(() -> loadRooms())).setVisible(true);
+                        new RoomActionDialog(w, room, currentUser, () -> SwingUtilities.invokeLater(() -> loadRooms()), systemStatusBanner).setVisible(true);
                     } else {
                         selectedRoom = room;
                         gridPanel.repaint();
@@ -312,7 +434,8 @@ public class RoomForm extends JPanel {
             public void mouseEntered(MouseEvent e) {
                 if (currentUser.getRoleId() == 2) {
                     String st = room.getStatus().toLowerCase();
-                    if (st.equals("available") || st.equals("booked") || st.equals("occupied")) {
+                    if (st.equals("vacant_clean") || st.equals("reserved")
+                            || st.equals("occupied_clean") || st.equals("occupied_dirty")) {
                         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                     }
                 }
@@ -348,7 +471,7 @@ public class RoomForm extends JPanel {
         panel.add(Box.createVerticalStrut(10));
 
         panel.add(makeDialogLabel("Trạng thái ban đầu"));
-        String[] statuses = {"available", "maintenance"};
+        String[] statuses = {"vacant_clean", "out_of_order"};
         JComboBox<String> cbStatus = new JComboBox<>(statuses);
         cbStatus.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -379,6 +502,7 @@ public class RoomForm extends JPanel {
                 super.paintComponent(g);
             }
         };
+        if (systemStatusBanner != null) systemStatusBanner.registerMutationComponent(btnSave);
         btnSave.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnSave.setForeground(Color.WHITE);
         btnSave.setContentAreaFilled(false);
@@ -464,10 +588,9 @@ public class RoomForm extends JPanel {
         panel.add(Box.createVerticalStrut(18));
 
         String[][] statusOptions = {
-            {"available",       "Trống — Sẵn sàng nhận khách mới"},
-            {"cleaning",        "Đang dọn dẹp — Vừa có khách trả"},
-            {"maintenance",     "Bảo trì — Phủ phòng / sửa chữa"},
-            {"out_of_service",  "Ngừng hoạt động — Tạm thời đóng cửa"}
+            {"vacant_clean",  "Trống — Sẵn sàng nhận khách mới"},
+            {"vacant_dirty",  "Cần dọn dẹp — Vừa có khách trả"},
+            {"out_of_order",  "Bảo trì — Tạm thời ngừng hoạt động"}
         };
 
         ButtonGroup group = new ButtonGroup();
@@ -502,6 +625,7 @@ public class RoomForm extends JPanel {
                 super.paintComponent(g);
             }
         };
+        if (systemStatusBanner != null) systemStatusBanner.registerMutationComponent(btnSave);
         btnSave.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnSave.setForeground(Color.WHITE);
         btnSave.setContentAreaFilled(false);
@@ -656,12 +780,12 @@ public class RoomForm extends JPanel {
     private Color getStatusColor(String status) {
         if (status == null) return Color.LIGHT_GRAY;
         switch (status.toLowerCase()) {
-            case "available":      return C_AVAILABLE;
-            case "booked":         return C_BOOKED;
-            case "occupied":       return C_OCCUPIED;
-            case "maintenance":    return C_MAINTENANCE;
-            case "cleaning":       return C_CLEANING;
-            case "out_of_service": return C_SERVICE;
+            case "vacant_clean":   return C_AVAILABLE;
+            case "vacant_dirty":   return C_CLEANING;
+            case "reserved":       return C_BOOKED;
+            case "occupied_clean":
+            case "occupied_dirty": return C_OCCUPIED;
+            case "out_of_order":   return C_MAINTENANCE;
             default:               return new Color(200, 200, 200);
         }
     }
@@ -669,12 +793,12 @@ public class RoomForm extends JPanel {
     private String toVietnamese(String status) {
         if (status == null) return "N/A";
         switch (status.toLowerCase()) {
-            case "available":      return "Trống";
-            case "booked":         return "Đã đặt";
-            case "occupied":       return "Có khách";
-            case "maintenance":    return "Bảo trì";
-            case "cleaning":       return "Dọn dẹp";
-            case "out_of_service": return "Ngừng bán";
+            case "vacant_clean":   return "Trống sạch";
+            case "vacant_dirty":   return "Trống cần dọn";
+            case "reserved":       return "Đã đặt";
+            case "occupied_clean": return "Có khách — sạch";
+            case "occupied_dirty": return "Có khách — cần dọn";
+            case "out_of_order":   return "Ngừng hoạt động";
             default:               return status;
         }
     }

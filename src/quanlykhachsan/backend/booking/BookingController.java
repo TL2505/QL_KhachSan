@@ -33,13 +33,25 @@ public class BookingController implements HttpHandler {
 
         try {
             // 0. GET /api/bookings (Lấy danh sách booking)
-            if ("GET".equalsIgnoreCase(method) && "/api/bookings".equals(path)) {
+            if ("GET".equalsIgnoreCase(method) && ("/api/bookings".equals(path) || "/api/v1/bookings".equals(path))) {
                 ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(bookingService.getAllBookings()));
                 return;
             }
 
+            if ("GET".equalsIgnoreCase(method) && path.matches("/api/v1/bookings/\\d+")) {
+                int bookingId = Integer.parseInt(path.substring(path.lastIndexOf('/') + 1));
+                Booking booking = bookingService.getBookingById(bookingId);
+                if (booking == null) {
+                    ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Booking not found"));
+                    return;
+                }
+                ApiResponseUtil.write(exchange, 200,
+                    ApiResponseUtil.successWithData(bookingService.getBookingFolioDetails(booking)));
+                return;
+            }
+
             // 1. POST /api/bookings (Đặt phòng)
-            if ("POST".equalsIgnoreCase(method) && "/api/bookings".equals(path)) {
+            if ("POST".equalsIgnoreCase(method) && ("/api/bookings".equals(path) || "/api/v1/bookings".equals(path))) {
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
@@ -73,9 +85,9 @@ public class BookingController implements HttpHandler {
                     return;
                 }
 
-                String st = room.getStatus() != null ? room.getStatus().toLowerCase() : "available";
-                if (st.equals("maintenance") || st.equals("out_of_service")) {
-                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Phòng đang được bảo trì hoặc không sử dụng được!"));
+                String st = room.getStatus() != null ? room.getStatus().toLowerCase() : "";
+                if (!"vacant_clean".equals(st)) {
+                    ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error("Room is not available for reservation"));
                     return;
                 }
 
@@ -96,6 +108,7 @@ public class BookingController implements HttpHandler {
                 int generatedId = bookingService.addBooking(newBooking);
 
                 if (generatedId > 0) {
+                    roomService.updateRoomStatus(roomId, "reserved");
                     JsonObject details = new JsonObject();
                     details.addProperty("bookingId", generatedId);
                     ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(details));
@@ -105,20 +118,21 @@ public class BookingController implements HttpHandler {
 
             }
             // 2. PUT /api/bookings/checkin/{id}
-            else if ("PUT".equalsIgnoreCase(method) && path.startsWith("/api/bookings/checkin/")) {
-                int bookingId = Integer.parseInt(path.substring("/api/bookings/checkin/".length()));
+            else if ("PUT".equalsIgnoreCase(method) && (path.startsWith("/api/bookings/checkin/") || path.startsWith("/api/v1/bookings/checkin/"))) {
+                int bookingId = Integer.parseInt(path.substring(path.lastIndexOf('/') + 1));
                 Booking b = bookingService.getBookingById(bookingId);
                 
                 if (b != null) {
                     bookingService.updateBookingStatus(bookingId, "checked_in");
+                    roomService.updateRoomStatus(b.getRoomId(), "occupied_clean");
                     ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Check-in thành công"));
                 } else {
                     ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy Booking ID"));
                 }
             }
             // 3. PUT /api/bookings/checkout/{id}
-            else if ("PUT".equalsIgnoreCase(method) && path.startsWith("/api/bookings/checkout/")) {
-                int bookingId = Integer.parseInt(path.substring("/api/bookings/checkout/".length()));
+            else if ("PUT".equalsIgnoreCase(method) && (path.startsWith("/api/bookings/checkout/") || path.startsWith("/api/v1/bookings/checkout/"))) {
+                int bookingId = Integer.parseInt(path.substring(path.lastIndexOf('/') + 1));
                 Booking b = bookingService.getBookingById(bookingId);
                 
                 if (b != null) {
@@ -155,8 +169,8 @@ public class BookingController implements HttpHandler {
                 }
             }
             // 4. GET /api/bookings/room/{roomId} - Active booking for a room
-            else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/bookings/room/")) {
-                int roomId = Integer.parseInt(path.substring("/api/bookings/room/".length()));
+            else if ("GET".equalsIgnoreCase(method) && (path.startsWith("/api/bookings/room/") || path.startsWith("/api/v1/bookings/room/"))) {
+                int roomId = Integer.parseInt(path.substring(path.lastIndexOf('/') + 1));
                 Gson gson = JsonUtil.getGson();
                 // Find the active booking for this room (checked_in, booked, or pending)
                 quanlykhachsan.backend.booking.Booking activeBooking = null;
@@ -173,8 +187,8 @@ public class BookingController implements HttpHandler {
                 ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(activeBooking));
             }
             // 5. GET /api/bookings/customer/{id}
-            else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/bookings/customer/")) {
-                int customerId = Integer.parseInt(path.substring("/api/bookings/customer/".length()));
+            else if ("GET".equalsIgnoreCase(method) && (path.startsWith("/api/bookings/customer/") || path.startsWith("/api/v1/bookings/customer/"))) {
+                int customerId = Integer.parseInt(path.substring(path.lastIndexOf('/') + 1));
                 java.util.List<Booking> list = bookingService.getBookingsByCustomer(customerId);
                 Gson gson = JsonUtil.getGson();
                 ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(list));

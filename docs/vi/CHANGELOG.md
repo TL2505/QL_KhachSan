@@ -39,3 +39,10 @@
 - Đã xóa bỏ hoàn toàn thư mục bản sao `SVN_Repo_KhachSan/` khỏi Git tracking và ổ đĩa.
 - Đã xóa tệp script đồng bộ `DongBoSVN.bat`.
 - Đã dọn dẹp các thư mục khung SVN không sử dụng (`trunk/`, `branches/`, `tags/`).
+
+## [2026-10-13] — @codex — Các tệp frontend/backend Dev C C3 — Sửa lỗi quy trình C3
+- Bổ sung các route thanh toán folio và đồng bộ POS theo lô của Phase 1 với xử lý idempotency; kết nối client desktop tới API đã cấu hình và phiên xác thực.
+- Kết nối HTTP 503 với banner Night Audit, khóa các nút thay đổi đã đăng ký trong thời gian đóng băng và tự đồng bộ hàng POS sau khi mở khóa.
+- Gán F2 cho check-in và F3 cho check-out của phòng đã chọn; hiển thị riêng số dư folio Master và Guest khi trả phòng.
+- Chuẩn hóa trạng thái phòng theo đúng sáu giá trị tài liệu quy định và chỉ cho phép đặt phòng khi trạng thái là `vacant_clean`.
+- Thêm kiểm tra thế hệ request để kết quả tải phòng cũ không ghi đè dữ liệu mới; đồng bộ thanh tìm kiếm nhanh với màu giao diện.

@@ -138,4 +138,27 @@ public class BookingService {
         }
         return false;
     }
+
+    public com.google.gson.JsonObject getBookingFolioDetails(Booking booking) throws java.sql.SQLException {
+        com.google.gson.JsonObject result = quanlykhachsan.backend.utils.JsonUtil.getGson()
+            .toJsonTree(booking).getAsJsonObject();
+        com.google.gson.JsonArray folioRows = new com.google.gson.JsonArray();
+        String sql = "SELECT id, folio_type, balance, status FROM folios WHERE booking_id = ? ORDER BY id";
+        try (java.sql.Connection connection = quanlykhachsan.backend.utils.DatabaseConnection.getConnection();
+             java.sql.PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, booking.getId());
+            try (java.sql.ResultSet rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    com.google.gson.JsonObject folio = new com.google.gson.JsonObject();
+                    folio.addProperty("id", rows.getInt("id"));
+                    folio.addProperty("folio_type", rows.getString("folio_type"));
+                    folio.addProperty("balance", rows.getBigDecimal("balance"));
+                    folio.addProperty("status", rows.getString("status"));
+                    folioRows.add(folio);
+                }
+            }
+        }
+        result.add("folios", folioRows);
+        return result;
+    }
 }

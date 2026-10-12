@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 
 public class HttpUtil {
 
+    private static volatile java.util.function.IntConsumer serviceUnavailableHandler;
+
     private static final String LOCAL_URL  = "http://localhost:8081/api";
     private static final String BASE_URL;
 
@@ -92,11 +94,13 @@ public class HttpUtil {
         conn.setReadTimeout(10000);
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Accept", "application/json");
-        conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
+        applySessionHeaders(conn);
         conn.setRequestProperty("ngrok-skip-browser-warning", "true");
 
-        if (conn.getResponseCode() != 200) {
-            throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
+        int status = conn.getResponseCode();
+        notifyServiceUnavailable(conn, status);
+        if (status != 200) {
+            throw new RuntimeException("Failed : HTTP error code : " + status);
         }
 
         BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
@@ -122,10 +126,11 @@ public class HttpUtil {
         conn.setReadTimeout(10000);
         conn.setRequestMethod("DELETE");
         conn.setRequestProperty("Accept", "application/json");
-        conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
+        applySessionHeaders(conn);
         conn.setRequestProperty("ngrok-skip-browser-warning", "true");
 
         int code = conn.getResponseCode();
+        notifyServiceUnavailable(conn, code);
         BufferedReader br = new BufferedReader(new InputStreamReader(
             code >= 200 && code <= 299 ? conn.getInputStream()
                 : (conn.getErrorStream() != null ? conn.getErrorStream() : conn.getInputStream()),
@@ -147,7 +152,7 @@ public class HttpUtil {
         conn.setRequestMethod(method);
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
         conn.setRequestProperty("Accept", "application/json");
-        conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
+        applySessionHeaders(conn);
         conn.setRequestProperty("ngrok-skip-browser-warning", "true");
 
         if (jsonBody != null && !jsonBody.isEmpty()) {
@@ -158,6 +163,7 @@ public class HttpUtil {
         }
 
         int responseCode = conn.getResponseCode();
+        notifyServiceUnavailable(conn, responseCode);
         BufferedReader br;
         if (responseCode >= 200 && responseCode <= 299) {
             br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
@@ -172,5 +178,78 @@ public class HttpUtil {
         while ((output = br.readLine()) != null) sb.append(output);
         conn.disconnect();
         return sb.toString();
+    }
+
+    /** Sends a POST with caller-supplied headers while retaining configured API URL and session auth. */
+    public static HttpResult sendPostWithHeaders(String endpoint, String jsonBody,
+                                                  java.util.Map<String, String> headers) throws Exception {
+        URL url = new URL(BASE_URL + endpoint);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(10000);
+        conn.setDoOutput(true);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setRequestProperty("Accept", "application/json");
+        applySessionHeaders(conn);
+        if (headers != null) headers.forEach(conn::setRequestProperty);
+        byte[] payload = jsonBody == null ? new byte[0] : jsonBody.getBytes(StandardCharsets.UTF_8);
+        try (OutputStream output = conn.getOutputStream()) {
+            output.write(payload);
+        }
+        int status = conn.getResponseCode();
+        String retryAfter = conn.getHeaderField("Retry-After");
+        notifyServiceUnavailable(conn, status);
+        java.io.InputStream stream = status >= 200 && status < 400
+            ? conn.getInputStream() : conn.getErrorStream();
+        StringBuilder body = new StringBuilder();
+        if (stream != null) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) body.append(line);
+            }
+        }
+        conn.disconnect();
+        return new HttpResult(status, body.toString(), retryAfter);
+    }
+
+    private static void applySessionHeaders(HttpURLConnection conn) {
+        conn.setRequestProperty("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
+        String token = SessionManagerUtil.getAccessToken();
+        if (token != null && !token.isBlank()) conn.setRequestProperty("Authorization", "Bearer " + token);
+        conn.setRequestProperty("ngrok-skip-browser-warning", "true");
+    }
+
+    public static void setServiceUnavailableHandler(java.util.function.IntConsumer handler) {
+        serviceUnavailableHandler = handler;
+    }
+
+    private static void notifyServiceUnavailable(HttpURLConnection conn, int status) {
+        if (status != 503) return;
+        int retryAfter = 300;
+        try {
+            String header = conn.getHeaderField("Retry-After");
+            if (header != null) retryAfter = Math.max(1, Integer.parseInt(header.trim()));
+        } catch (NumberFormatException ignored) {
+            // The banner uses the contract's default five-minute retry window.
+        }
+        java.util.function.IntConsumer handler = serviceUnavailableHandler;
+        if (handler != null) handler.accept(retryAfter);
+    }
+
+    public static final class HttpResult {
+        private final int statusCode;
+        private final String body;
+        private final String retryAfter;
+
+        private HttpResult(int statusCode, String body, String retryAfter) {
+            this.statusCode = statusCode;
+            this.body = body;
+            this.retryAfter = retryAfter;
+        }
+
+        public int getStatusCode() { return statusCode; }
+        public String getBody() { return body; }
+        public String getRetryAfter() { return retryAfter; }
     }
 }

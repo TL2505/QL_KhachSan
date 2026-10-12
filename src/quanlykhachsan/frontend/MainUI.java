@@ -25,11 +25,19 @@ import quanlykhachsan.frontend.view.customer.CustomerDashboard;
 import quanlykhachsan.frontend.view.staff.LoyaltyForm;
 import quanlykhachsan.frontend.view.customer.RoomDiscoveryPanel;
 import quanlykhachsan.frontend.view.admin.SupportManagementForm;
+import quanlykhachsan.frontend.view.SystemStatusBanner;
+import quanlykhachsan.frontend.view.OfflinePosDialog;
+import quanlykhachsan.frontend.view.QuickFilterBar;
+import quanlykhachsan.frontend.utils.HttpUtil;
 
 public class MainUI extends JFrame {
 
     private User currentUser;
     private JTabbedPane tabbedPane;
+    /** TASK-C3.2: Persistent amber freeze-warning banner embedded below the app header. */
+    private SystemStatusBanner systemStatusBanner;
+    private QuickFilterBar quickFilterBar;
+    private RoomForm roomForm;
 
     public MainUI(User user) {
         this.currentUser = user;
@@ -40,7 +48,11 @@ public class MainUI extends JFrame {
 
         initUI();
         setupGlobalHotkeys();
-        
+
+        // Wire OfflinePosDialog to the banner (must be after initUI so banner is attached)
+        systemStatusBanner.bindOfflinePosDialog(this);
+        HttpUtil.setServiceUnavailableHandler(systemStatusBanner::handleServiceUnavailable);
+
         // Khởi chạy WebSocket để nhận thông báo real-time (chỉ dành cho Admin & Lễ tân)
         if (currentUser.getRoleId() == 1 || currentUser.getRoleId() == 2) {
             WebSocketService.connect();
@@ -135,6 +147,26 @@ public class MainUI extends JFrame {
         headerPanel.add(rightHeader, BorderLayout.EAST);
         add(headerPanel, BorderLayout.NORTH);
 
+        // ── TASK-C3.2: System freeze banner (amber, hidden by default) ──────────
+        // Inserted in a wrapper so header stays at absolute NORTH and banner
+        // appears directly underneath it without competing for BorderLayout.NORTH.
+        systemStatusBanner = new SystemStatusBanner();
+        JPanel northStack = new JPanel(new BorderLayout());
+        northStack.add(headerPanel,        BorderLayout.NORTH);
+        northStack.add(systemStatusBanner, BorderLayout.SOUTH);
+        if (currentUser.getRoleId() == 1 || currentUser.getRoleId() == 2) {
+            quickFilterBar = new QuickFilterBar();
+            JPanel staffToolbar = new JPanel(new BorderLayout());
+            staffToolbar.add(systemStatusBanner, BorderLayout.NORTH);
+            staffToolbar.add(quickFilterBar, BorderLayout.SOUTH);
+            northStack.remove(systemStatusBanner);
+            northStack.add(staffToolbar, BorderLayout.SOUTH);
+            quickFilterBar.setFilterListener(query -> {
+                if (roomForm != null) roomForm.applyQuickFilter(query);
+            });
+        }
+        add(northStack, BorderLayout.NORTH);
+
         // Tabs
         tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
@@ -183,7 +215,8 @@ public class MainUI extends JFrame {
 
         if (rId == 1) { // ADMIN
             addTab("Trang chủ", new AdminDashboard(idx -> tabbedPane.setSelectedIndex(idx)));
-            addTab("Sơ đồ Phòng", new RoomForm(currentUser));
+            roomForm = new RoomForm(currentUser, systemStatusBanner);
+            addTab("Sơ đồ Phòng", roomForm);
             addTab("Khách hàng", new CustomerForm());
             addTab("Hệ thành viên", new LoyaltyForm());
             addTab("Quản lý Đánh giá", new ReviewManagementForm());
@@ -192,7 +225,8 @@ public class MainUI extends JFrame {
             addTab("Quản lý Khuyến mãi", new PromotionForm());
             addTab("Quản trị & Báo cáo", new ReportForm());
         } else if (rId == 2) { // STAFF (Lễ tân)
-            addTab("Sơ đồ Phòng", new RoomForm(currentUser));
+            roomForm = new RoomForm(currentUser, systemStatusBanner);
+            addTab("Sơ đồ Phòng", roomForm);
             addTab("Đơn đặt phòng", new BookingForm());
             addTab("Khách hàng", new CustomerForm());
             addTab("Thanh toán", new PaymentForm());
@@ -266,12 +300,13 @@ public class MainUI extends JFrame {
             if (e.getID() == KeyEvent.KEY_PRESSED) {
                 int keyCode = e.getKeyCode();
                 
-                // F2: Phím tắt mở Quản lý Khách hàng
+                // F2: start a reservation for the selected room.
                 if (keyCode == KeyEvent.VK_F2) {
-                    if (currentUser.getRoleId() == 1 || currentUser.getRoleId() == 2) {
-                        setSelectedTab(2);
-                        return true;
-                    }
+                    if (roomForm != null) { setSelectedTab(currentUser.getRoleId() == 1 ? 1 : 0); roomForm.openSelectedRoomAction("checkin"); return true; }
+                }
+                // F3: check in/out from the selected room.
+                if (keyCode == KeyEvent.VK_F3) {
+                    if (roomForm != null) { setSelectedTab(currentUser.getRoleId() == 1 ? 1 : 0); roomForm.openSelectedRoomAction("checkout"); return true; }
                 }
                 
                 // F5: Phím tắt làm mới (Refresh Sơ đồ phòng)
@@ -280,6 +315,14 @@ public class MainUI extends JFrame {
                     if (currentPanel instanceof RoomForm) {
                         ((RoomForm) currentPanel).loadRooms();
                     }
+                    return true;
+                }
+
+                // F4: focus the debounced room/guest/booking search.
+                if (keyCode == KeyEvent.VK_F4 && quickFilterBar != null) {
+                    int roomTab = currentUser.getRoleId() == 1 ? 1 : 0;
+                    setSelectedTab(roomTab);
+                    quickFilterBar.focusSearch();
                     return true;
                 }
                 

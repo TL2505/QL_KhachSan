@@ -50,7 +50,10 @@ public class AuthController implements HttpHandler {
                     if (user.getRoleId() == adminId) roleStr = "ADMIN";
                     else if (user.getRoleId() == customerId) roleStr = "CUSTOMER";
 
-                    response = AuthMapper.success("Đăng nhập thành công", AuthMapper.toUserInfo(user, roleStr));
+                    quanlykhachsan.backend.auth.dto.AuthUserInfo userInfo = AuthMapper.toUserInfo(user, roleStr);
+                    userInfo.setToken(quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(
+                        user.getId(), user.getUsername(), roleStr));
+                    response = AuthMapper.success("Đăng nhập thành công", userInfo);
                 } else {
                     statusCode = 401;
                     response = AuthMapper.error("Sai tên đăng nhập hoặc mật khẩu");

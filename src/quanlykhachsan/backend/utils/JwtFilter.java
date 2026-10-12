@@ -5,22 +5,12 @@ import com.sun.net.httpserver.HttpExchange;
 // Requires: io.jsonwebtoken:jjwt:0.12.5
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
 
 public class JwtFilter extends Filter {
 
-    private final SecretKey key;
-
-    public JwtFilter() {
-        String secret = System.getenv("JWT_SECRET");
-        if (secret == null || secret.length() < 32) {
-            secret = "hotel_pms_super_secure_secret_key_1234567890"; 
-        }
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-    }
+    private final SecretKey key = JwtTokenUtil.signingKey();
 
     @Override
     public String description() {

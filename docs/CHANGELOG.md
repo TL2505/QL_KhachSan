@@ -40,3 +40,10 @@
 - Removed `DongBoSVN.bat` synchronization script.
 - Cleaned unused SVN placeholder folders (`trunk/`, `branches/`, `tags/`).
 
+## [2026-10-13] — @codex — Dev C C3 frontend/backend files — C3 workflow review fixes
+- Added Phase 1 folio payment and POS batch-sync routes with idempotency handling; connected the desktop clients to the configured API and authenticated session.
+- Wired HTTP 503 responses to the Night Audit warning banner, disabled registered mutation controls during the freeze, and auto-syncs queued POS charges after unfreeze.
+- Routed F2 to check-in and F3 to check-out for the selected room; displayed master and guest folio balances in checkout.
+- Standardized room-state handling to the documented six status values and prevented bookings unless a room is `vacant_clean`.
+- Added a request-generation guard to prevent stale room refresh results from replacing newer results; aligned the quick-search bar with theme tokens.
+
