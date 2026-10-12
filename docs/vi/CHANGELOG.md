@@ -46,3 +46,12 @@
 - Gán F2 cho check-in và F3 cho check-out của phòng đã chọn; hiển thị riêng số dư folio Master và Guest khi trả phòng.
 - Chuẩn hóa trạng thái phòng theo đúng sáu giá trị tài liệu quy định và chỉ cho phép đặt phòng khi trạng thái là `vacant_clean`.
 - Thêm kiểm tra thế hệ request để kết quả tải phòng cũ không ghi đè dữ liệu mới; đồng bộ thanh tìm kiếm nhanh với màu giao diện.
+
+## [2026-10-13] — @codex — Backend/frontend, kiểm thử và cấu hình build B1/C1 — Triển khai B1/C1 và trạng thái xác minh
+- Triển khai migration/versioning và idempotency cho B1, kết nối tính giá đặt phòng với bộ tính VAT/phí dịch vụ, đồng thời bổ sung kiểm thử đơn vị và kiểm thử tích hợp MariaDB tùy chọn.
+- Triển khai API client bất đồng bộ dùng chung, bộ điều phối phím tắt F1–F10 và token giao diện dùng chung cho C1; bổ sung kiểm thử API/EDT và cấu hình Maven test runner.
+- `mvn -o test` đã chạy qua các kiểm thử đơn vị/API hiện có (26 đạt); ba kiểm thử tích hợp MariaDB bị bỏ qua do chưa cấu hình cơ sở dữ liệu MariaDB 11. Việc xác minh CSDL cho B1.1/B1.2 vẫn còn thiếu tại thời điểm đó.
+
+## [2026-10-13] — @codex — UpdateDbUtility.java, MariaDbMigrationIntegrationTest.java, database/hotel.sql — Xác minh tích hợp MariaDB 11
+- Xác minh toàn bộ bộ kiểm thử trên MariaDB 11.8.6 cô lập: 26 kiểm thử đạt, 0 lỗi, 0 bị bỏ qua. Phạm vi gồm migration lặp lại trên schema cũ, nạp toàn bộ `database/hotel.sql`, xử lý đồng thời các request idempotency và phát lại phản hồi lỗi đã lưu.
+- Giới hạn tra cứu metadata migration trong đúng cơ sở dữ liệu hiện tại, cập nhật trình chạy kiểm thử schema để hỗ trợ chỉ thị SQL `DELIMITER`, và sửa trạng thái booking mẫu số 63 từ trạng thái invoice `paid` thành trạng thái booking hợp lệ `checked_out`.
