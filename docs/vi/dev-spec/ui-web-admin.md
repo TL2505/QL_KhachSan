@@ -1,10 +1,11 @@
-# QUY CHUẨN GIAO DIỆN: WEB QUẢN TRỊ & TỔNG GIÁM ĐỐC (REACT 18 + ANT DESIGN)
+# QUY CHUẨN GIAO DIỆN: WEB QUẢN TRỊ & TỔNG GIÁM ĐỐC (REACT 18 + MUI 5.X — PHASE 4)
 
 ## 1. NỀN TẢNG THIẾT KẾ
-- **Framework:** React 18 + Ant Design `5.x` + TypeScript.
+- **Framework:** React 18 + Material-UI (MUI) `5.x` + TypeScript (Thống nhất 1 design system duy nhất với Guest Web; triển khai ở Phase 4 trong khi Phase 1–3 dùng Swing `AdminForm.java`).
 - **Đối tượng sử dụng:** Tổng giám đốc (GM), Giám đốc khối vận hành, Quản trị viên hệ thống.
 - **Triết lý:** Mật độ thông tin cao, dễ quét thông số, báo cáo chuyên sâu, tương thích mọi thiết bị (laptop, tablet, phone).
-- **Quy chuẩn Token:** Màu sắc, typography, trạng thái phòng và khoảng cách tham chiếu từ `ui-tokens.md`.
+- **Quy chuẩn Token:** Màu sắc, typography, trạng thái phòng và khoảng cách tham chiếu từ `ui-tokens.md` (tái sử dụng `theme.ts` & `ApiClient.ts`).
+
 
 ## 2. ĐIỀU HƯỚNG VÀ BỐ CỤC KHUNG LÀM VIỆC
 - **Bố cục máy tính (> 1200px):**
@@ -29,7 +30,7 @@
   - Hiển thị 10 dòng. Các cột: Tên khách, Phòng, Ngày đến, Ngày đi, Nhãn trạng thái, Tổng tiền.
 
 ## 4. BẢNG DỮ LIỆU VÀ NGĂN KÉO CHI TIẾT (DRAWER)
-- **Kích thước hàng:** Cao chính xác `40px` mỗi dòng (Bảng mật độ cao Ant Design).
+- **Kích thước hàng:** Cao chính xác `40px` mỗi dòng (Bảng mật độ cao MUI Table / DataGrid compact mode).
 - **Cỡ chữ:** `14px` cho nội dung chính, `12px` cho nhãn phụ và mã định danh.
 - **Điều khiển:** Biểu tượng mũi tên sắp xếp trên tiêu đề; thanh lọc trên đầu bảng gồm ô tìm kiếm và bộ lọc chọn nhiều; nút "Xuất CSV" và "Xuất PDF" góc trên bên phải.
 - **Phân trang:** Tùy chọn 20 / 50 / 100 bản ghi trên mỗi trang.
@@ -50,7 +51,7 @@
 ## 7. TƯƠNG THÍCH THIẾT BỊ VÀ CHỦ ĐỀ
 - **Máy tính bảng (768px – 1200px):** Thanh bên tự động thu gọn về `64px`; biểu đồ xếp dọc; bảng dữ liệu cho phép cuộn ngang.
 - **Điện thoại (< 768px):** Thanh bên ẩn vào menu hamburger góc trên; thẻ KPI chia 2 thẻ/hàng; bảng dữ liệu chuyển thành dạng thẻ thông tin (1 thẻ/bản ghi).
-- **Chế độ ban đêm (Dark Mode):** Tùy chọn chuyển đổi trong menu người dùng (dùng `theme.darkAlgorithm` của Ant Design). Lưu cấu hình vào `localStorage`.
+- **Chế độ ban đêm (Dark Mode):** Tùy chọn chuyển đổi trong menu người dùng (dùng MUI `ThemeProvider` với `palette.mode = 'dark'`). Lưu cấu hình vào `localStorage`.
 - **Khung thông báo:** Rộng `320px` khi bấm chuông thông báo. Mục chưa đọc có chấm tròn accent và chữ đậm.
 
 ## 8. NGUYÊN TẮC BẮT BUỘC (DO / DON'T)

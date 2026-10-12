@@ -22,3 +22,20 @@
 ## [2026-10-12] — @devops — docs/dev-spec/ui-*.md, docs/vi/dev-spec/ui-*.md — UI/UX Design System Specification
 - Created 4 UI specification files: `ui-tokens.md`, `ui-desktop-staff.md`, `ui-web-guest.md`, `ui-web-admin.md` and complete Vietnamese translations.
 
+## [2026-10-12] — @toan — docs/*, database/hotel.sql, docker-compose.yml — Architectural Refinements & Risk Mitigation
+- Unified MUI 5.x across Web UIs; deferred Admin Web to Phase 4 to focus Dev C 100% on Guest Web.
+- Reallocated AI Gateway responsibilities: Dev D on FastAPI/pgvector skeleton, Dev A on Java API client, Dev B on Night Audit & guardrails.
+- Replaced Swing JEditorPane with Native Components (JPanel + BoxLayout + FlatRoundBorder + JTextArea).
+- Enforced physical PII database boundary: configured MariaDB user `ai_reader` with read-only SELECT permissions on rooms and promotions.
+- Standardized HikariCP Connection Pool and Fixed Thread Pool on plain Java HttpServer.
+
+## [2026-10-12] — @toan — docs/dev-spec/tasks-phase1.md, pom.xml — Phase 1 WBS Specification & Dependencies
+- Standardized Phase 1 WBS execution plan across 4 weeks and 4 developers.
+- Added TASK-A1.4 for JWT auth / login controller; added HikariCP, SLF4J, and jbcrypt to pom.xml.
+- Corrected room domain status codes (`vacant_clean`, `reserved`) in optimistic locking queries.
+- Adjusted HikariCP leak detection threshold to 5000ms and timeout to 30s.
+- Formatted clean Cross-Developer Dependency Matrix and Go/No-Go Acceptance Checklist.
+
+
+
+

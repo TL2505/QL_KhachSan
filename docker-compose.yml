@@ -66,5 +66,25 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # 5. AI Gateway (FastAPI Microservice)
+  ai-gateway:
+    build:
+      context: ./ai-gateway
+      dockerfile: Dockerfile
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=ai_reader
+      - DB_PASSWORD=${AI_DB_PASSWORD:-ai_read_secure_pass_2026}
+      - DB_NAME=hotel_prod_db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "8082:8082"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   db_data:
+

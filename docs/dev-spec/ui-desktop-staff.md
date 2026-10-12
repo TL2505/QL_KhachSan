@@ -68,3 +68,16 @@
 ## 8. HARD CONSTRAINTS
 - **DO:** Bind keyboard shortcuts to all functions. Keep dense tables. Use color dots for status.
 - **DON'T:** NEVER use animations or transitions (> `150ms`). NEVER use generic `JOptionPane.showMessageDialog` (use custom FlatLaf modal). NEVER use font sizes outside defined tokens.
+
+## 9. AI STAFF COPILOT DOCK (JAVA SWING)
+- **Component Architecture:**
+  - Do NOT use `JEditorPane` (avoids HTML 3.2 rendering bugs, slow paint, and Vietnamese font breakage).
+  - Use `JPanel` with `BoxLayout(box, BoxLayout.Y_AXIS)` placed inside a `JScrollPane` (smooth scrolling, auto-scroll to bottom on new message).
+- **Message Bubble Standards:**
+  - Each message bubble is a child `JPanel` with `new FlatRoundBorder()` (arc `12px`).
+  - Text rendered via `JTextArea`: `setWrapStyleWord(true)`, `setLineWrap(true)`, `setEditable(false)`, system font `14px`.
+  - **Bubble Colors:**
+    - Copilot (AI) Bubble: Background `#F5F5F5`, border `1px solid #E0E0E0`, left-aligned.
+    - Staff Bubble: Background `#1B2A4A` (Primary Accent), white text, right-aligned.
+- **Performance:** Message insertion and layout repaint < 10ms. Non-blocking UI via `SwingWorker` for async AI API responses.
+

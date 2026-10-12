@@ -534,4 +534,19 @@ INSERT INTO `loyalty_histories` (`id`, `customer_id`, `points`, `type`, `descrip
 (5, 8, 2200, 'earn', 'Tích điểm theo chương trình khuyến mãi đầu năm', '2026-04-20 04:03:26'),
 (6, 11, 800, 'earn', 'Khách hàng thân thiết check-in nhiều lần', '2026-04-20 04:03:26');
 
+-- ===================================================
+-- SECURITY: PHYSICAL BOUNDARY FOR AI GATEWAY
+-- ===================================================
+CREATE USER IF NOT EXISTS 'ai_reader'@'%' IDENTIFIED BY 'ai_read_secure_pass_2026';
+
+-- Cấp quyền SELECT trên các danh mục công khai
+GRANT SELECT ON hotel_prod_db.rooms TO 'ai_reader'@'%';
+GRANT SELECT ON hotel_prod_db.room_types TO 'ai_reader'@'%';
+GRANT SELECT ON hotel_prod_db.promotions TO 'ai_reader'@'%';
+GRANT SELECT ON hotel_prod_db.services TO 'ai_reader'@'%';
+
+-- TUYỆT ĐỐI KHÔNG CẤP QUYỀN trên: users, customers, bookings, folios, payments
+FLUSH PRIVILEGES;
+
+
 

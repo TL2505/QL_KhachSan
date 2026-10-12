@@ -1,21 +1,21 @@
 # LỘ TRÌNH DỰ ÁN — NHÓM 4 DEV (HỆ THỐNG PMS 5★ + AI)
 
-## Vai trò trong nhóm
-| Dev | Vai trò | Trọng tâm |
-|---|---|---|
-| Dev A | Backend API | Endpoints, JWT, RBAC, Thanh toán |
-| Dev B | Logic Nghiệp vụ | Night Audit, Hóa đơn (Folio), Đặt phòng đoàn, AI Gateway |
-| Dev C | Frontend | React/Vue, Dashboard Nhân viên, Chat UI cho Khách |
-| Dev D | DevOps + QA | Docker, CI/CD, Kiểm thử, Bảo mật, Giám sát |
+## Bảng phân vai điều chỉnh
+| Dev | Phân vai chính | Trọng tâm Phase 2 | Trọng tâm Phase 3 |
+|---|---|---|---|
+| **Dev A** | Backend API & AI Integration | Viết Java HTTP Client kết nối sang AI Gateway (`/api/v1/ai/*`) | Webhooks & Phân hệ Loyalty/Promotions |
+| **Dev B** | Core Business Logic | 100% Night Audit 7 bước, Folio Split/Routing, Transaction Locks | Logic `guardrails.py`, RAG context injection |
+| **Dev C** | Frontend Engineer | Swing Chat Native UI (`JPanel` + `FlatRoundBorder`) | Hoàn thiện 100% Guest Web Mobile-First (MUI 5) |
+| **Dev D** | DevOps & Hạ tầng AI | Dựng khung FastAPI, pgvector Docker, pipeline embedding SOP | CI/CD GitHub Actions, Stress test 50 connections |
 
 ### Dev C (Frontend) — Nền tảng: Desktop (Swing) Giai đoạn 1-2, Web (React) Giai đoạn 3
 
 | Giai đoạn | Nhiệm vụ | Nền tảng |
 |---|---|---|
 | Giai đoạn 1 (T1-4) | Tích hợp `/api/v1/*` vào UI Swing sẵn có. Xóa dữ liệu mock. Kết nối API thật. **KHÔNG dùng framework UI mới. KHÔNG làm React.** | Swing |
-| Giai đoạn 2 (T5-7) | UI Chat AI trong Swing (JEditorPane + WebSocket). Các bảng điều khiển Dashboard Nhân viên (Swing). Cảnh báo leo thang (Popup Swing). **KHÔNG làm React.** | Swing |
-| Giai đoạn 3 (T8-9) | **React 18 web:** Trang đặt phòng cho khách + Chat AI + Form đánh giá. Dashboard Quản trị Admin (báo cáo, nhân sự, khuyến mãi). | React |
-| Giai đoạn 4+ | Tùy chọn: Chuyển đổi từ Swing sang React cho nhân viên. Ứng dụng PWA cho khách dùng di động. | React + PWA |
+| Giai đoạn 2 (T5-7) | UI Chat Native trong Swing (`JPanel` + `BoxLayout` + `FlatRoundBorder`). Dashboard Nhân viên (Swing). Cảnh báo leo thang (Popup Swing). **KHÔNG làm React.** | Swing |
+| Giai đoạn 3 (T8-9) | **React 18 web (MUI 5):** 100% tập trung Trang đặt phòng cho khách + Chat AI + Form đánh giá. Quản trị dùng Swing `AdminForm`. | React |
+| Giai đoạn 4+ | React 18 Web Admin. Tùy chọn: Chuyển đổi từ Swing sang React cho nhân viên. PWA cho khách dùng di động. | React + PWA |
 
 ## Giai đoạn 0: Vá lỗi nhanh (Ngày 1-2)
 | Dev | Nhiệm vụ |
@@ -46,10 +46,10 @@
 ## Giai đoạn 2: AI + Vận hành (Tuần 5-7)
 | | Tuần 5 | Tuần 6 | Tuần 7 |
 |---|---|---|---|
-| Dev A | Xác thực khách (OTP), Check-in/out, Dịch vụ, Endpoints Đoàn | Hóa đơn nâng cao (định tuyến, tách), Kích hoạt Night Audit thủ công | Test tích hợp |
-| Dev B | AI Gateway: main.py + llm_client.py | AI Gateway: rag.py + guardrails.py + escalation.py | AI Gateway: audit log + webhook giám sát |
-| Dev C | UI Chat AI trong Swing (JEditorPane hoặc webview đơn giản). Dashboard Nhân viên (Swing). KHÔNG làm React. | UI Cảnh báo leo thang + Trình xem tương tác AI | Test E2E (Kịch bản AI) |
-| Dev D | Cài đặt pgvector + Pipeline RAG (index ngoại lệ, leo thang, SOPs) | 4 kịch bản test AI (tiêm nhiễm, lách luật, đồng thời, offline) | Dashboard giám sát (Grafana) + Luật cảnh báo |
+| Dev A | Xác thực khách (OTP), Check-in/out, Dịch vụ, Endpoints Đoàn | Viết Java HTTP Client gọi AI Gateway (`/api/v1/ai/*`) | Test tích hợp với AI Gateway & Core |
+| Dev B | Ngoại lệ Night Audit & Định tuyến/Tách Folio | 100% Khóa giao dịch Core & Kiểm toán Folio | Viết luật `guardrails.py` & RAG context injection |
+| Dev C | UI Chat Native trong Swing (`JPanel` + `FlatRoundBorder`) | Dashboard Nhân viên (Swing) + Popup cảnh báo | Test E2E (Kịch bản AI trên Swing) |
+| Dev D | Dựng khung FastAPI + pgvector Docker | Pipeline RAG embedding (SOPs, constraints) | 4 kịch bản test AI + Dashboard giám sát |
 
 **Cột mốc (Cuối Tuần 7):** Go/No-Go Giai đoạn 2.
 **Tiêu chí:**
@@ -62,10 +62,11 @@
 ## Giai đoạn 3: Mở rộng & Tích hợp (Tuần 8-9)
 | | Tuần 8 | Tuần 9 |
 |---|---|---|
-| Dev A | Endpoints: Khuyến mãi, Loyalty, Phản hồi, Thông báo, QL Nhân viên | Webhooks (nhận + đăng ký), Báo cáo (DBR, công suất, doanh thu kênh) |
+| Dev A | Endpoints: Khuyến mãi, Loyalty, Phản hồi, Thông báo, QL Nhân viên | Webhooks (nhận + đăng ký), Báo cáo (DBR, công suất, doanh thu) |
 | Dev B | Tích hợp OTA (Booking.com/Agoda XML/HTNG) | Cổng thanh toán (Stripe/local) + Tích hợp POS |
-| Dev C | React 18 web: Đặt phòng cho khách + Chat AI + Đánh giá. Dashboard Quản trị Admin. | UI Cấu hình Webhook + Template thông báo |
-| Dev D | Pipeline CI/CD (GitHub Actions) + Phân tách môi trường (dev/staging/prod) | Tăng cường bảo mật Prod + Cron sao lưu + Test phục hồi |
+| Dev C | React 18 (MUI 5): Đặt phòng cho khách + Chat AI bubble | React 18: Form đánh giá cho khách + tối ưu di động. Admin trên Swing. |
+| Dev D | Pipeline CI/CD (GitHub Actions) + Stress test (50 conn) | Tăng cường bảo mật Prod + Cron sao lưu + Test phục hồi |
+
 
 **Cột mốc (Cuối Tuần 9):** Go/No-Go Production.
 **Tiêu chí:**

@@ -20,12 +20,24 @@
 - **Abort:** Admin/GM only (Requires 2FA).
 - **View:** Night Auditor, Admin, GM (Read-only dashboard).
 
-## 4. DATA FRESHNESS & CACHE TTL
+## 4. PHYSICAL DATABASE BOUNDARY FOR AI GATEWAY
+- The AI Gateway microservice connects to the database via a dedicated restricted user: `ai_reader`.
+- **Allowed Tables (`GRANT SELECT`):**
+  - `rooms`: Check real-time room status, specifications, and amenities.
+  - `room_types`: Retrieve room category metadata and standard pricing.
+  - `promotions`: Query currently active promotional offers and discounts.
+  - `services`: Query auxiliary hotel services (Spa, Restaurant, Laundry, Tour).
+- **Strict Physical Isolation (Defense-in-Depth):**
+  - MariaDB hard-blocks `ai_reader` from accessing sensitive PII and financial tables: `users`, `customers`, `bookings`, `booking_details`, `folios`, `payments`.
+  - Any indirect injection or rogue prompt trying to query customer data is immediately terminated at the database engine with error `1142 (42000): SELECT command denied to user`.
+
+## 5. DATA FRESHNESS & CACHE TTL
 - **Room Availability & Status:** REAL-TIME ONLY (TTL = 0s) to prevent overbooking.
 - **Room Rates & Promotions:** Max TTL = 5 minutes.
 - **Guest Profiles:** TTL = 1 hour (Clear cache on check-in/out).
 
-## 5. AUDIT LOG ACCESS
+## 6. AUDIT LOG ACCESS
 - Every AI interaction is logged (Timestamp, User ID, AI Action, Reference Data).
 - Access restricted to Admin & Compliance roles.
 - Retention period: 6 months (GDPR/PDPA compliant).
+

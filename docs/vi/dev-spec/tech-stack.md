@@ -7,7 +7,9 @@
 | **PMS Backend** | Java 17 (plain HttpServer) | 17 | Tiêu chuẩn Enterprise, máy chủ HTTP nhẹ (`com.sun.net.httpserver`), đa luồng mạnh mẽ |
 | **Công cụ Build** | Maven (pom.xml) + javac | 3.9+ | Quản lý phụ thuộc tiêu chuẩn và build javac sạch sẽ trong Docker |
 | **AI Gateway** | Python (FastAPI) | 3.11 | Thư viện native cho ML/AI, xử lý bất đồng bộ (async), lý tưởng cho điều phối LLM |
-| **Frontend UI** | React + Vite | 18 | Hiệu năng cao, render cực nhanh cho Staff Dashboard |
+| **Frontend UI (Khách & Admin)** | React 18 + MUI 5.x | 18 | Thống nhất 1 design system duy nhất; tái sử dụng theme tokens, giảm tải học framework |
+| **DB Connection Pool** | HikariCP | 5.1.0 | Quản lý kết nối JDBC hiệu năng cao cho Java HttpServer, triệt tiêu connection leak |
+| **AI Database Role** | MariaDB user `ai_reader` | - | Phân quyền vật lý chỉ đọc (SELECT rooms, promotions); cấm truy cập bảng PII |
 | **DB Giao dịch** | MariaDB | 11 | DB quan hệ hiệu năng cao cho folios, bookings, và log tài chính |
 | **Triển khai** | Docker Compose | v2 | Đơn giản hóa việc quản lý 6 microservices trên 1 máy ảo Ubuntu duy nhất |
 | **Hệ điều hành** | Ubuntu LTS | 22.04 | Môi trường production ổn định, bảo mật |
@@ -18,16 +20,17 @@
 | Nền tảng | Người dùng | Công nghệ | Giai đoạn | Ghi chú |
 |---|---|---|---|---|
 | Desktop (Nhân viên) | Lễ tân, Buồng phòng, F&B | Java Swing (sẵn có) | Giai đoạn 1-2 (giữ) | Gọi /api/v1/* qua HTTP. Không đổi UI. |
-| Web (Khách hàng) | Khách lưu trú | React 18 + TypeScript | Giai đoạn 3 | Nginx phục vụ. Xác thực OTP. |
-| Web (Quản trị) | Admin/GM | React 18 + TypeScript | Giai đoạn 3 | Cùng frontend, khác quyền RBAC. |
+| Web (Khách hàng) | Khách lưu trú | React 18 + MUI 5.x | Giai đoạn 3 | Nginx phục vụ. Xác thực OTP. |
+| Web (Quản trị) | Admin/GM | React 18 + MUI 5.x | Giai đoạn 4+ (Swing ở P3) | Tái sử dụng Theme/Token của Khách. |
 | Mobile (Tương lai) | Khách lưu trú | PWA / React Native | Giai đoạn 4+ | Tái sử dụng các endpoints /api/v1/*. |
 
 ### NỀN TẢNG THEO GIAI ĐOẠN
-| Giai đoạn | UI Nhân viên | UI Khách hàng | Trọng tâm Dev C |
-|---|---|---|---|
-| 1-2 | Swing (không đổi) | Không có | Tích hợp API vào Swing sẵn có. KHÔNG làm UI mới. |
-| 3 | Swing + React Admin | React (đặt phòng, chat, đánh giá) | Xây dựng React web. |
-| 4+ | React (tùy chọn) | React + PWA | Chuyển đổi Swing → React. |
+| Giai đoạn | UI Nhân viên | UI Khách hàng | UI Quản trị (Admin) | Trọng tâm Dev C |
+|---|---|---|---|---|
+| 1-2 | Swing (kết nối REST API thực tế) | Không có | Không có | Tích hợp `/api/v1/*` vào Swing hiện có; cấm React. |
+| 3 | Swing Staff Form | React 18 (Booking, Chat, Review) | Swing AdminForm (hiện có) | Tập trung 100% Guest Web Mobile-First. |
+| 4+ | Swing (hoặc migrate React nếu cần) | React + PWA | React 18 (Admin Portal) | Xây dựng Web Admin và PWA. |
+
 
 ## TRIẾT LÝ THIẾT KẾ NỀN TẢNG (PLATFORM DESIGN PHILOSOPHY)
 
