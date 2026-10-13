@@ -163,8 +163,8 @@ public class BookingController implements HttpHandler {
                 }
             }
             // 4. DELETE /api/bookings/{id}
-            else if ("DELETE".equalsIgnoreCase(method) && path.matches("/api/bookings/\\d+")) {
-                int bookingId = Integer.parseInt(path.substring("/api/bookings/".length()));
+            else if ("DELETE".equalsIgnoreCase(method) && path.matches("/api/(v1/)?bookings/\\d+")) {
+                int bookingId = Integer.parseInt(path.substring(path.lastIndexOf('/') + 1));
                 Booking b = bookingService.getBookingById(bookingId);
                 if (b != null) {
                     bookingService.cancelBooking(bookingId);

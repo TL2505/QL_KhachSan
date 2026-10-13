@@ -19,20 +19,16 @@ public class RoomAPI {
     public static List<Room> getAllRooms() {
         List<Room> rooms = new ArrayList<>();
         try {
-            String json = HttpUtil.sendGet("/rooms");
+            String json = HttpUtil.sendGet("/v1/rooms");
             JsonObject res = gson.fromJson(json, JsonObject.class);
-            if (res != null && "success".equals(res.get("status").getAsString())) {
-                JsonArray data = res.getAsJsonArray("data");
-                if (data != null) {
-                    for (JsonElement el : data) {
-                        rooms.add(gson.fromJson(el, Room.class));
-                    }
-                }
-            }
+            if (res == null || !res.has("status") || !"success".equals(res.get("status").getAsString()))
+                throw new IllegalStateException("Room API returned an unsuccessful response");
+            JsonArray data = res.getAsJsonArray("data");
+            if (data != null) for (JsonElement el : data) rooms.add(gson.fromJson(el, Room.class));
+            return rooms;
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Unable to load rooms: " + e.getMessage(), e);
         }
-        return rooms;
     }
 
     /**
@@ -42,7 +38,7 @@ public class RoomAPI {
     public static String addRoom(Room room) {
         try {
             String body = gson.toJson(room);
-            String json = HttpUtil.sendPost("/rooms", body);
+            String json = HttpUtil.sendPost("/v1/rooms", body);
             JsonObject res = gson.fromJson(json, JsonObject.class);
             if (res != null && "success".equals(res.get("status").getAsString())) {
                 return "Success";
@@ -61,7 +57,7 @@ public class RoomAPI {
      */
     public static String deleteRoom(int roomId) {
         try {
-            String json = HttpUtil.sendDelete("/rooms/" + roomId);
+            String json = HttpUtil.sendDelete("/v1/rooms/" + roomId);
             JsonObject res = gson.fromJson(json, JsonObject.class);
             if (res != null && "success".equals(res.get("status").getAsString())) {
                 return "Success";
@@ -82,7 +78,7 @@ public class RoomAPI {
         try {
             JsonObject body = new JsonObject();
             body.addProperty("status", newStatus);
-            String json = HttpUtil.sendPut("/rooms/" + roomId + "/status", gson.toJson(body));
+            String json = HttpUtil.sendPut("/v1/rooms/" + roomId + "/status", gson.toJson(body));
             JsonObject res = gson.fromJson(json, JsonObject.class);
             if (res != null && "success".equals(res.get("status").getAsString())) {
                 return "Success";

@@ -27,6 +27,9 @@ HTTP codes: `200 OK`, `201 Created`, `400 Bad Request`, `401 Unauthorized`, `403
 - `PUT /api/v1/bookings/{id}` (Modify)
 - `POST /api/v1/bookings/{id}/cancel`
 - `POST /api/v1/folios/{id}/pay` (Requires `Idempotency-Key`)
+- `POST /api/v1/folios/{id}/split` (Create or ensure a Guest Folio for a booking)
+- `PUT /api/v1/folios/{id}/routing` (Body: `{"charge_type":"room_rate|service|..."}`; returns selected folio)
+- `POST /api/v1/rooms/{bookingId}/downgrade` (Manager only; body: `{"replacement_room_id":123}`)
 
 ### PHASE 2: OPERATIONS & AI
 - `POST /api/v1/auth/guest`
@@ -34,8 +37,6 @@ HTTP codes: `200 OK`, `201 Created`, `400 Bad Request`, `401 Unauthorized`, `403
 - `POST /api/v1/bookings/{id}/check-out`
 - `POST /api/v1/services/request`
 - `POST /api/v1/bookings/group`
-- `PUT /api/v1/folios/{id}/routing`
-- `POST /api/v1/folios/{id}/split`
 - `POST /api/v1/system/night-audit`
 - `POST /api/v1/ai/chat` (AI Gateway - Guardrails applied)
 - `POST /api/v1/ai/escalate`
