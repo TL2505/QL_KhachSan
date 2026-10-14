@@ -28,7 +28,7 @@ public class GlobalExceptionHandler extends Filter {
             sendError(exchange, 409, "ERR_409_CONFLICT", e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(exchange, 500, "ERR_500_SERVER_ERROR", "Internal Server Error: " + e.getMessage());
+            sendError(exchange, 500, "ERR_500_SERVER_ERROR", "The request could not be completed.");
         }
     }
 
@@ -42,12 +42,11 @@ public class GlobalExceptionHandler extends Filter {
                                             .withZone(ZoneOffset.UTC)
                                             .format(Instant.now());
         
-        String safeMessage = message != null ? message.replace("\"", "\\\"") : "Unknown Error";
-        
-        String jsonResponse = String.format(
-            "{\"error_code\": \"%s\", \"message\": \"%s\", \"timestamp\": \"%s\"}",
-            errorCode, safeMessage, timestamp
-        );
+        com.google.gson.JsonObject error = new com.google.gson.JsonObject();
+        error.addProperty("error_code", errorCode);
+        error.addProperty("message", message == null ? "Unknown Error" : message);
+        error.addProperty("timestamp", timestamp);
+        String jsonResponse = error.toString();
 
         byte[] bytes = jsonResponse.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");

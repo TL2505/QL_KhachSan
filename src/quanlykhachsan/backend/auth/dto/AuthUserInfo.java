@@ -4,6 +4,9 @@ public class AuthUserInfo {
     private int userId;
     private String username;
     private String role;
+    private int roleId;
+    public int getRoleId(){return roleId;}
+    public void setRoleId(int value){roleId=value;}
     private String fullName;
     private String email;
     private String phone;

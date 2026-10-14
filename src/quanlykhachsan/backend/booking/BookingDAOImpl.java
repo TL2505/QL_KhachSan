@@ -42,13 +42,15 @@ public class BookingDAOImpl implements BookingDAO {
                     int id = rs.getInt(1);
                     booking.setId(id);
                     try (PreparedStatement master = con.prepareStatement(
-                            "INSERT INTO folios (booking_id, folio_type, balance, status) VALUES (?, 'master', 0.00, 'open')")) {
+                            "INSERT INTO folios (booking_id, folio_type, balance, status,code) VALUES (?, 'master', 0.00, 'open',?)")) {
                         master.setInt(1, id);
+                        master.setString(2,"FOLIO-MASTER-B"+id);
                         master.executeUpdate();
                     }
                     try (PreparedStatement guest = con.prepareStatement(
-                            "INSERT INTO folios (booking_id, folio_type, balance, status) VALUES (?, 'guest', 0.00, 'open')")) {
+                            "INSERT INTO folios (booking_id, folio_type, balance, status,code) VALUES (?, 'guest', 0.00, 'open',?)")) {
                         guest.setInt(1, id);
+                        guest.setString(2,"FOLIO-GUEST-B"+id);
                         guest.executeUpdate();
                     }
                     con.commit();

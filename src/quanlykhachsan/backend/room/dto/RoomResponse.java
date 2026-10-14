@@ -6,6 +6,9 @@ public class RoomResponse {
     private int roomTypeId;
     private double price;
     private String status;
+    private int version;
+    public int getVersion(){return version;}
+    public void setVersion(int value){version=value;}
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }

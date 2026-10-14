@@ -6,6 +6,9 @@ public class Room {
     private int roomTypeId;
     private double price;
     private String status;
+    private int version;
+    public int getVersion(){return version;}
+    public void setVersion(int value){version=value;}
 
     public Room() {
     }

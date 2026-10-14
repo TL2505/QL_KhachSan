@@ -15,8 +15,9 @@ public final class JwtTokenUtil {
 
     private static String resolveSecret() {
         String secret = System.getenv("JWT_SECRET");
-        return secret == null || secret.length() < 32
-            ? "hotel_pms_super_secure_secret_key_1234567890" : secret;
+        if(secret==null || secret.isBlank())secret=System.getProperty("hotel.jwt.secret");
+        if(secret==null || secret.getBytes(StandardCharsets.UTF_8).length<32)throw new IllegalStateException("Configure a JWT signing secret with at least 32 bytes");
+        return secret;
     }
 
     public static SecretKey signingKey() {

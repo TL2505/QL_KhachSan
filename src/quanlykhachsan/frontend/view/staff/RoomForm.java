@@ -95,6 +95,9 @@ public class RoomForm extends JPanel {
             return;
         }
         Window owner = SwingUtilities.getWindowAncestor(this);
+        String role=quanlykhachsan.frontend.utils.SessionManagerUtil.getRole();
+        if(role.equals("maintenance")){new quanlykhachsan.frontend.view.MaintenanceDialog(owner,selectedRoom.getId(),this::loadRooms).setVisible(true);return;}
+        if(role.equals("f&b")){new quanlykhachsan.frontend.view.MinibarChecklistDialog(owner,selectedRoom.getId(),this::loadRooms).setVisible(true);return;}
         new RoomActionDialog(owner, selectedRoom, currentUser, this::loadRooms, systemStatusBanner).setVisible(true);
     }
 
@@ -501,6 +504,9 @@ public class RoomForm extends JPanel {
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                String role=quanlykhachsan.frontend.utils.SessionManagerUtil.getRole();
+                if(role.equals("maintenance")){new quanlykhachsan.frontend.view.MaintenanceDialog(SwingUtilities.getWindowAncestor(RoomForm.this),room.getId(),RoomForm.this::loadRooms).setVisible(true);return;}
+                if(role.equals("f&b")){new quanlykhachsan.frontend.view.MinibarChecklistDialog(SwingUtilities.getWindowAncestor(RoomForm.this),room.getId(),RoomForm.this::loadRooms).setVisible(true);return;}
                 if (currentUser.getRoleId() == 3) {
                     // Khách hàng: xem chi tiết phòng
                     showRoomDetailDialog(room);
@@ -656,6 +662,10 @@ public class RoomForm extends JPanel {
     // ── Dialog Đổi Trạng Thái Phòng ─────────────────────────────────────
 
     private void showChangeStatusDialog(Room room) {
+        new quanlykhachsan.frontend.view.MaintenanceDialog(SwingUtilities.getWindowAncestor(this),room.getId(),this::loadRooms).setVisible(true);
+    }
+
+    private void legacyChangeStatusDialog(Room room) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
             "Đổi trạng thái phòng", true);
         dialog.setSize(380, 420);

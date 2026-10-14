@@ -16,12 +16,13 @@ public class CorsFilter extends Filter {
         // Set standard CORS response headers
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, X-User-Role, Authorization, ngrok-skip-browser-warning");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key, X-Signature, X-Manager-Pin, ngrok-skip-browser-warning");
         exchange.getResponseHeaders().set("Access-Control-Max-Age", "86400"); // 24 hours caching
 
         // Handle OPTIONS request pre-flight checks
         if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
-            exchange.sendResponseHeaders(200, -1);
+            exchange.sendResponseHeaders(204, -1);
+            exchange.close();
             return;
         }
 

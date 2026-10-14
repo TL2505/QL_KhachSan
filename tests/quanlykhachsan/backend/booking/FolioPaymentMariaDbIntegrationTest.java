@@ -56,7 +56,6 @@ class FolioPaymentMariaDbIntegrationTest {
                     delete.setInt(1, f.customerId); delete.executeUpdate();
                 }
             }
-            DatabaseConnection.close();
         }
     }
 

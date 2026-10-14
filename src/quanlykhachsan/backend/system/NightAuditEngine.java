@@ -40,7 +40,7 @@ public final class NightAuditEngine {
             current = NightAuditStep.RECONCILE_LEDGER;
             step(auditDate, current, this::reconcileLedger);
             current = NightAuditStep.CREATE_DBR;
-            step(auditDate, current, () -> new DbrReportService().generate(auditDate));
+            step(auditDate, current, () -> new quanlykhachsan.backend.report.DbrLedgerAggregator().generate(auditDate));
             current = NightAuditStep.ADVANCE_DATE;
             step(auditDate, current, () -> advanceBusinessDate(auditDate));
             SystemStateHolder.setFrozen(false);
@@ -85,7 +85,7 @@ public final class NightAuditEngine {
 
     private static List<RoomCharge> loadRoomChunk(Connection c, int offset) throws SQLException {
         List<RoomCharge> list = new ArrayList<>();
-        try (PreparedStatement q = c.prepareStatement("SELECT b.id booking_id,r.price FROM bookings b JOIN rooms r ON r.id=b.room_id WHERE b.status='checked_in' AND r.status IN ('occupied_clean','occupied_dirty') AND b.id>? ORDER BY b.id LIMIT ?")) {
+        try (PreparedStatement q = c.prepareStatement("SELECT b.id booking_id,r.price FROM bookings b JOIN rooms r ON r.id=b.room_id WHERE b.status='checked_in' AND r.status IN ('occupied_clean','occupied_dirty') AND NOT EXISTS (SELECT 1 FROM folios f JOIN folio_transactions t ON t.folio_id=f.id WHERE f.booking_id=b.id AND t.reference_id=CONCAT('BOOKING-ROOM-',b.id)) AND b.id>? ORDER BY b.id LIMIT ?")) {
             q.setInt(1, offset); q.setInt(2, CHUNK_SIZE);
             try (ResultSet r = q.executeQuery()) { while (r.next()) list.add(new RoomCharge(r.getInt(1), r.getBigDecimal(2))); }
         }
@@ -93,11 +93,11 @@ public final class NightAuditEngine {
     }
 
     private static void postRoomRate(Connection c, LocalDate date, RoomCharge room, TaxConfig tax) throws SQLException {
-        int folio;
+        long folio;
         try (PreparedStatement q = c.prepareStatement("SELECT id FROM folios WHERE booking_id=? AND folio_type='master' ORDER BY id LIMIT 1 FOR UPDATE")) {
             q.setInt(1, room.bookingId); try (ResultSet r = q.executeQuery()) {
                 if (!r.next()) throw new SQLException("Master folio missing for checked-in booking " + room.bookingId);
-                folio = r.getInt(1);
+                folio = r.getLong(1);
             }
         }
         String prefix = "AUDIT-" + date.toString().replace("-", "") + "-" + room.bookingId;
@@ -107,7 +107,7 @@ public final class NightAuditEngine {
         addDebit(c, folio, "service_charge", "Night audit service charge", bill.getServiceFee(), date, prefix + "-SVC");
         addDebit(c, folio, "vat", "Night audit VAT", bill.getVat(), date, prefix + "-VAT");
         try (PreparedStatement q = c.prepareStatement("UPDATE folios SET balance=balance+?,status='open' WHERE id=?")) {
-            q.setBigDecimal(1, bill.getTotalAmount()); q.setInt(2, folio);
+            q.setBigDecimal(1, bill.getTotalAmount()); q.setLong(2, folio);
             if (q.executeUpdate() != 1) throw new SQLException("Unable to update master folio during audit");
         }
     }
@@ -133,7 +133,7 @@ public final class NightAuditEngine {
     }
 
     private void reconcileLedger() throws SQLException {
-        String sql = "SELECT f.id,f.balance,COALESCE(SUM(CASE WHEN t.transaction_type='debit' THEN t.amount ELSE -t.amount END),0.00) ledger "
+        String sql = "SELECT f.id,f.balance,COALESCE(SUM(CASE WHEN t.charge_type='credit_adjustment' THEN 0.00 WHEN t.transaction_type='debit' THEN t.amount ELSE -t.amount END),0.00) ledger "
             + "FROM folios f LEFT JOIN folio_transactions t ON t.folio_id=f.id GROUP BY f.id,f.balance "
             + "HAVING ABS(ROUND(f.balance-ledger,2))>0.00";
         try (Connection c = DatabaseConnection.getConnection(); PreparedStatement q = c.prepareStatement(sql);
@@ -208,10 +208,10 @@ public final class NightAuditEngine {
             q.setString(1, reference); try (ResultSet r = q.executeQuery()) { return r.next(); }
         }
     }
-    private static void addDebit(Connection c, int folio, String type, String description, BigDecimal amount,
+    private static void addDebit(Connection c, long folio, String type, String description, BigDecimal amount,
             LocalDate date, String reference) throws SQLException {
         try (PreparedStatement q = c.prepareStatement("INSERT INTO folio_transactions(folio_id,transaction_type,charge_type,description,amount,business_date,reference_id) VALUES(?,'debit',?,?,?,?,?)")) {
-            q.setInt(1, folio); q.setString(2, type); q.setString(3, description); q.setBigDecimal(4, amount);
+            q.setLong(1, folio); q.setString(2, type); q.setString(3, description); q.setBigDecimal(4, amount);
             q.setDate(5, java.sql.Date.valueOf(date)); q.setString(6, reference); q.executeUpdate();
         }
     }

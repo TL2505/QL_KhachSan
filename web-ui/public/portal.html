@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Khách Sạn Aurelia</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <!-- ==================== 1. AUTHENTICATION PAGES ==================== -->
+    <div id="auth-page" class="auth-wrapper">
+        <!-- Login Card -->
+        <div id="login-card" class="auth-card">
+            <div class="auth-header">
+                <h1>Aurelia Hotel</h1>
+                <p>Đăng nhập hệ thống quản lý</p>
+            </div>
+            
+            <div id="login-error" class="form-group" style="color: var(--danger); font-size: 14px; text-align: center; display: none;"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="login-username">Tên đăng nhập</label>
+                    <input class="form-input" type="text" id="login-username" placeholder="Nhập tên đăng nhập" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Mật khẩu</label>
+                    <input class="form-input" type="password" id="login-password" placeholder="Nhập mật khẩu" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
+            </form>
+            
+            <div class="mt-4 text-right" style="font-size: 14px;">
+                Chưa có tài khoản? <a href="#" id="to-register" class="text-gold">Đăng ký ngay</a>
+            </div>
+            
+            <!-- Connection Settings -->
+            <div class="mt-4 pt-4" style="border-top: 1px dashed var(--border); text-align: center;">
+                <a href="#" id="btn-config-api" class="text-muted" style="font-size: 13px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i data-lucide="settings" style="width: 14px; height: 14px;"></i> Cấu hình kết nối API
+                </a>
+            </div>
+        </div>
+
+        <!-- Register Card -->
+        <div id="register-card" class="auth-card" style="display: none;">
+            <div class="auth-header">
+                <h1>Đăng Ký Thành Viên</h1>
+                <p>Trở thành thành viên thân thiết</p>
+            </div>
+
+            <div id="register-error" class="form-group" style="color: var(--danger); font-size: 14px; text-align: center; display: none;"></div>
+            <div id="register-success" class="form-group" style="color: var(--success); font-size: 14px; text-align: center; display: none;"></div>
+
+            <form id="register-form">
+                <div class="form-group">
+                    <label class="form-label" for="reg-username">Tên đăng nhập *</label>
+                    <input class="form-input" type="text" id="reg-username" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-password">Mật khẩu *</label>
+                    <input class="form-input" type="password" id="reg-password" required autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-name">Họ và tên *</label>
+                    <input class="form-input" type="text" id="reg-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-identity">Số CCCD / Passport *</label>
+                    <input class="form-input" type="text" id="reg-identity" placeholder="Ví dụ: 012345678901" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-phone">Số điện thoại</label>
+                    <input class="form-input" type="text" id="reg-phone">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-email">Email</label>
+                    <input class="form-input" type="email" id="reg-email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-address">Địa chỉ</label>
+                    <input class="form-input" type="text" id="reg-address">
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">Đăng ký tài khoản</button>
+            </form>
+            
+            <div class="mt-4 text-right" style="font-size: 14px;">
+                Đã có tài khoản? <a href="#" id="to-login" class="text-gold">Đăng nhập</a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================== 2. MAIN APP SHELL ==================== -->
+    <div id="app-page" class="app-container" style="display: none;">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="app-sidebar">
+            <div class="sidebar-brand">
+                <i data-lucide="hotel" class="text-gold brand-icon" style="width: 24px; height: 24px; flex-shrink: 0;"></i>
+                <h2 class="brand-text">AURELIA</h2>
+                <button id="btn-toggle-sidebar" title="Thu gọn/Mở rộng" style="margin-left: auto; background: transparent; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 12px; margin-right: -8px; border-radius: var(--radius-sm);">
+                    <i data-lucide="chevron-left" id="sidebar-toggle-icon" style="width: 22px; height: 22px;"></i>
+                </button>
+            </div>
+            
+            <!-- Dynamic Navigation Links loaded based on User Roles -->
+            <ul id="sidebar-menu" class="sidebar-menu">
+                <!-- Loaded via JS -->
+            </ul>
+            
+            <!-- Bottom Logged-in User Profile Summary -->
+            <div class="sidebar-user">
+                <div class="flex-row justify-between">
+                    <div>
+                        <div id="user-display-name" class="user-info-name">Loading...</div>
+                        <div id="user-display-role" class="user-info-role">Guest</div>
+                    </div>
+                    <a href="#" id="btn-logout" title="Đăng xuất" style="color: var(--danger);">
+                        <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Display Content Area -->
+        <main class="main-content" style="position: relative;">
+            
+            <!-- Theme Toggle Button -->
+            <button id="theme-toggle" title="Chuyển đổi giao diện" style="position: absolute; top: 16px; right: 20px; z-index: 999; padding: 10px; border-radius: 50%; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); transition: var(--transition-fast);">
+                <i data-lucide="moon" id="theme-icon" style="width: 20px; height: 20px;"></i>
+            </button>
+
+            <!-- Inner View Loader Container -->
+            <div id="view-container" class="content-body">
+                <!-- Dynamically injected layouts -->
+            </div>
+        </main>
+    </div>
+
+
+    <!-- ==================== 3. MODALS & POPUPS ==================== -->
+    
+    <!-- API Config Modal -->
+    <div id="modal-api-config" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Cấu hình Kết nối API</h2>
+                <button class="modal-close" onclick="closeModal('modal-api-config')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="config-api-input">Địa chỉ API Server (Backend Java)</label>
+                <input class="form-input" type="text" id="config-api-input" placeholder="http://localhost:8081/api">
+                <p class="text-muted mt-4" style="font-size: 12px; line-height: 1.4;">
+                    * Lưu ý: Nếu bạn sử dụng ngrok để gọi API từ Internet (cloud), hãy nhập link ngrok của bạn (Ví dụ: <code>https://your-domain.ngrok-free.dev/api</code>).
+                </p>
+            </div>
+            <div class="flex-row mt-4" style="justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-api-config')">Hủy</button>
+                <button type="button" id="btn-save-api-config" class="btn btn-primary">Lưu cấu hình</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom Dialog UI -->
+    <div id="custom-dialog-overlay" class="modal-overlay" style="z-index: 10000; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); transition: opacity 0.2s; opacity: 0;">
+        <div id="custom-dialog-box" style="background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; width: 90%; max-width: 400px; padding: 25px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; color: #fff; transform: scale(0.9); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0;">
+            <div id="custom-dialog-icon" style="margin-bottom: 15px;"></div>
+            <h3 id="custom-dialog-title" style="margin: 0 0 10px 0; font-size: 1.2rem;">Thông báo</h3>
+            <p id="custom-dialog-message" style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5; white-space: pre-wrap;"></p>
+            <div id="custom-dialog-actions" style="display: flex; gap: 10px; justify-content: center;">
+                <button id="custom-dialog-btn-cancel" class="btn btn-secondary" style="flex: 1; display: none;">Hủy</button>
+                <button id="custom-dialog-btn-ok" class="btn btn-primary" style="flex: 1;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Shared Dialog (Injected Dynamically when needed) -->
+    <div id="global-modal" class="modal-overlay">
+        <div id="global-modal-content" class="modal-content">
+            <!-- Content loaded via js -->
+        </div>
+    </div>
+
+
+    <!-- ==================== 4. RUNTIME SCRIPTS ==================== -->
+    <!-- Load App shell logic first -->
+    <script type="module" src="app.js"></script>
+
+    <!-- Modal Helper Utilities -->
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // Global Custom Dialog Utilities
+        window.showCustomAlert = function(message, title = "Thông báo") {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('custom-dialog-overlay');
+                const box = document.getElementById('custom-dialog-box');
+                document.getElementById('custom-dialog-title').textContent = title;
+                document.getElementById('custom-dialog-message').textContent = message;
+                
+                const btnOk = document.getElementById('custom-dialog-btn-ok');
+                const btnCancel = document.getElementById('custom-dialog-btn-cancel');
+                btnCancel.style.display = 'none';
+                
+                overlay.style.display = 'flex';
+                overlay.style.pointerEvents = 'auto';
+                requestAnimationFrame(() => {
+                    overlay.style.opacity = '1';
+                    box.style.transform = 'scale(1)';
+                    box.style.opacity = '1';
+                });
+
+                const cleanup = () => {
+                    overlay.style.opacity = '0';
+                    box.style.transform = 'scale(0.9)';
+                    box.style.opacity = '0';
+                    overlay.style.pointerEvents = 'none';
+                    setTimeout(() => overlay.style.display = 'none', 200);
+                    btnOk.removeEventListener('click', onOk);
+                };
+
+                const onOk = () => { cleanup(); resolve(true); };
+                btnOk.addEventListener('click', onOk);
+            });
+        };
+
+        window.showCustomConfirm = function(message, title = "Xác nhận") {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('custom-dialog-overlay');
+                const box = document.getElementById('custom-dialog-box');
+                document.getElementById('custom-dialog-title').textContent = title;
+                document.getElementById('custom-dialog-message').textContent = message;
+                
+                const btnOk = document.getElementById('custom-dialog-btn-ok');
+                const btnCancel = document.getElementById('custom-dialog-btn-cancel');
+                btnCancel.style.display = 'block';
+                
+                overlay.style.display = 'flex';
+                overlay.style.pointerEvents = 'auto';
+                requestAnimationFrame(() => {
+                    overlay.style.opacity = '1';
+                    box.style.transform = 'scale(1)';
+                    box.style.opacity = '1';
+                });
+
+                const cleanup = () => {
+                    overlay.style.opacity = '0';
+                    box.style.transform = 'scale(0.9)';
+                    box.style.opacity = '0';
+                    overlay.style.pointerEvents = 'none';
+                    setTimeout(() => overlay.style.display = 'none', 200);
+                    btnOk.removeEventListener('click', onOk);
+                    btnCancel.removeEventListener('click', onCancel);
+                };
+
+                const onOk = () => { cleanup(); resolve(true); };
+                const onCancel = () => { cleanup(); resolve(false); };
+                
+                btnOk.addEventListener('click', onOk);
+                btnCancel.addEventListener('click', onCancel);
+            });
+        };
+    </script>
+
+</body>
+</html>

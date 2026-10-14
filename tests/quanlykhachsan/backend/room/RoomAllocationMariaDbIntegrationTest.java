@@ -72,7 +72,6 @@ class RoomAllocationMariaDbIntegrationTest {
                 delete.setInt(1, roomId);
                 delete.executeUpdate();
             }
-            DatabaseConnection.close();
         }
     }
 

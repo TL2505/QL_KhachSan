@@ -238,6 +238,7 @@ public class MainUI extends JFrame {
             addTab("Đơn đặt phòng", bookingForm);
             addTab("Khách hàng", new CustomerForm());
             addTab("Thanh toán", new PaymentForm());
+            addTab("Xuất Hóa Đơn Điện Tử (VAT)",new InvoiceForm());
             addTab("Hệ thành viên", new LoyaltyForm());
             addTab("Hỗ trợ khách hàng", new SupportManagementForm(currentUser));
             addTab("Ưu đãi & KM", new CustomerPromotionView());
@@ -249,6 +250,10 @@ public class MainUI extends JFrame {
         }
 
         // 5. Hồ sơ cá nhân (Dùng chung)
+        String phase2Role=quanlykhachsan.frontend.utils.SessionManagerUtil.getRole();
+        if(phase2Role.equals("admin") || phase2Role.equals("front_desk"))addTab("Báo Cáo Doanh Thu (DBR)",new quanlykhachsan.frontend.view.DbrReportPanel());
+        if(phase2Role.equals("admin") || phase2Role.equals("housekeeping"))addTab("Buồng phòng",new quanlykhachsan.frontend.view.HousekeepingPanel());
+        if(phase2Role.equals("maintenance") || phase2Role.equals("f&b")){roomForm=new RoomForm(currentUser,systemStatusBanner);addTab(phase2Role.equals("maintenance")?"Bảo trì":"Minibar",roomForm);}
         addTab("Hồ sơ cá nhân", new ProfileForm(currentUser));
 
         add(tabbedPane, BorderLayout.CENTER);
@@ -330,6 +335,8 @@ public class MainUI extends JFrame {
         });
         globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F10, this::printCurrentView);
         globalKeyDispatcher.install();
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W,java.awt.event.InputEvent.CTRL_DOWN_MASK),"walk-in");
+        getRootPane().getActionMap().put("walk-in",new AbstractAction(){@Override public void actionPerformed(java.awt.event.ActionEvent e){if(currentUser.getRoleId()==1 || currentUser.getRoleId()==2)new quanlykhachsan.frontend.view.WalkInWizardDialog(MainUI.this,()->{if(roomForm!=null)roomForm.loadRooms();}).setVisible(true);}});
     }
 
     private void withRoomForm(String action) {

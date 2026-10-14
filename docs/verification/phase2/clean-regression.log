@@ -1,0 +1,783 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.utt:QL_KhachSan >-------------------------
+[INFO] Building QL_KhachSan 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24086 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO] Loaded 74 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO] 
+[INFO] --- clean:3.5.0:clean (default-clean) @ QL_KhachSan ---
+[INFO] Deleting D:\dulieucam\JAVA\QL_KhachSan\target
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ QL_KhachSan ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ QL_KhachSan ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 252 source files with javac [debug release 17] to target\classes
+[INFO] /D:/dulieucam/JAVA/QL_KhachSan/src/quanlykhachsan/frontend/view/admin/AdminDashboard.java: Some input files use unchecked or unsafe operations.
+[INFO] /D:/dulieucam/JAVA/QL_KhachSan/src/quanlykhachsan/frontend/view/admin/AdminDashboard.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ QL_KhachSan ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ QL_KhachSan ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 53 source files with javac [debug release 17] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ QL_KhachSan ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running quanlykhachsan.Phase2RegressionSuite
+[INFO] Running quanlykhachsan.backend.customer.GuestIngestionDeduplicationTest
+[main] INFO com.zaxxer.hikari.HikariDataSource - HotelPmsPool - Starting...
+[main] INFO com.zaxxer.hikari.pool.HikariPool - HotelPmsPool - Added connection com.mysql.cj.jdbc.ConnectionImpl@2cae1042
+[main] INFO com.zaxxer.hikari.HikariDataSource - HotelPmsPool - Start completed.
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.691 s -- in quanlykhachsan.backend.customer.GuestIngestionDeduplicationTest
+[INFO] Running quanlykhachsan.security.HousekeepingControllerSecurityTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.548 s -- in quanlykhachsan.security.HousekeepingControllerSecurityTest
+[INFO] Running quanlykhachsan.backend.booking.FolioQuerySecurityTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.328 s -- in quanlykhachsan.backend.booking.FolioQuerySecurityTest
+[INFO] Running quanlykhachsan.promotion.VoucherServiceTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in quanlykhachsan.promotion.VoucherServiceTest
+[INFO] Running quanlykhachsan.backend.room.RoomStateMachineTest
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.053 s -- in quanlykhachsan.backend.room.RoomStateMachineTest
+[INFO] Running quanlykhachsan.backend.booking.VietQrGeneratorTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in quanlykhachsan.backend.booking.VietQrGeneratorTest
+[INFO] Running quanlykhachsan.promotion.VoucherValidationControllerTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.195 s -- in quanlykhachsan.promotion.VoucherValidationControllerTest
+[INFO] Running quanlykhachsan.backend.booking.FinancialCalculatorTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in quanlykhachsan.backend.booking.FinancialCalculatorTest
+[INFO] Running quanlykhachsan.backend.report.DbrLedgerAggregatorTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.199 s -- in quanlykhachsan.backend.report.DbrLedgerAggregatorTest
+[INFO] Running quanlykhachsan.scenarios.Scenario7DuplicateWebhookTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.322 s -- in quanlykhachsan.scenarios.Scenario7DuplicateWebhookTest
+[INFO] Running quanlykhachsan.backend.booking.IdempotencyMariaDbIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.073 s -- in quanlykhachsan.backend.booking.IdempotencyMariaDbIntegrationTest
+[INFO] Running quanlykhachsan.backend.room.MinibarPostingServiceTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.261 s -- in quanlykhachsan.backend.room.MinibarPostingServiceTest
+[INFO] Running quanlykhachsan.security.CorsAndStaticServingTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.075 s -- in quanlykhachsan.security.CorsAndStaticServingTest
+[INFO] Running quanlykhachsan.backend.pricing.PricingApiIntegrationTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.235 s -- in quanlykhachsan.backend.pricing.PricingApiIntegrationTest
+[INFO] Running quanlykhachsan.backend.room.RoomAllocationMariaDbIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in quanlykhachsan.backend.room.RoomAllocationMariaDbIntegrationTest
+[INFO] Running quanlykhachsan.stubs.MockOperationsTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.084 s -- in quanlykhachsan.stubs.MockOperationsTest
+[INFO] Running quanlykhachsan.invoice.Circular78PdfInvoiceTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.558 s -- in quanlykhachsan.invoice.Circular78PdfInvoiceTest
+[INFO] Running quanlykhachsan.backend.booking.FolioPaymentMariaDbIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s -- in quanlykhachsan.backend.booking.FolioPaymentMariaDbIntegrationTest
+[INFO] Running quanlykhachsan.invoice.InvoicePdfControllerTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.280 s -- in quanlykhachsan.invoice.InvoicePdfControllerTest
+[INFO] Running quanlykhachsan.backend.auth.GuestAuthIntegrationTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.216 s -- in quanlykhachsan.backend.auth.GuestAuthIntegrationTest
+[INFO] Running quanlykhachsan.backend.booking.BankWebhookControllerTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in quanlykhachsan.backend.booking.BankWebhookControllerTest
+[INFO] Running quanlykhachsan.invoice.VatInvoicePdfGeneratorTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in quanlykhachsan.invoice.VatInvoicePdfGeneratorTest
+[INFO] Running quanlykhachsan.financial.FolioBigintIntegrationTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.216 s -- in quanlykhachsan.financial.FolioBigintIntegrationTest
+[INFO] Running quanlykhachsan.backend.utils.StaticFileHandlerTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.077 s -- in quanlykhachsan.backend.utils.StaticFileHandlerTest
+[INFO] Running quanlykhachsan.backend.utils.MariaDbMigrationIntegrationTest
+[UpdateDbUtility]   ➕ Đã thêm cột `bookings.customer_type`.
+[UpdateDbUtility]   ➕ Đã thêm cột `bookings.check_out_actual`.
+[UpdateDbUtility]   ➕ Đã thêm cột `users.theme`.
+[UpdateDbUtility]   ➕ Đã thêm cột `rooms.version`.
+[UpdateDbUtility]   🗑️ Đã xoá index cũ `idx_room_number` trên `rooms`.
+[UpdateDbUtility]   ➕ Đã tạo index `idx_room_number_version` trên `rooms`.
+[UpdateDbUtility]   ➕ Đã tạo bảng `idempotency_keys`.
+[UpdateDbUtility]   ➕ Đã tạo bảng `folios`.
+[UpdateDbUtility]   ➕ Đã tạo bảng `folio_transactions`.
+[UpdateDbUtility]   ➕ Đã tạo bảng `audit_checkpoints`.
+[UpdateDbUtility]   ➕ Đã tạo bảng `hotel_business_state`.
+[UpdateDbUtility]   ➕ Đã tạo bảng `daily_business_reports`.
+[UpdateDbUtility]   ➕ Đã thêm cột `folios.code`.
+[UpdateDbUtility]   ➕ Đã tạo index `uq_folio_code` trên `folios`.
+[UpdateDbUtility]   ➕ Đã thêm cột `rooms.maintenance_until`.
+[UpdateDbUtility]   ➕ Đã thêm cột `daily_business_reports.snapshot_json`.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ➕ Đã thêm cột `bookings.check_out_actual`.
+[UpdateDbUtility]   ➕ Đã thêm cột `users.theme`.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ➕ Đã thêm cột `folios.code`.
+[UpdateDbUtility]   ➕ Đã tạo index `uq_folio_code` trên `folios`.
+[UpdateDbUtility]   ➕ Đã thêm cột `rooms.maintenance_until`.
+[UpdateDbUtility]   ➕ Đã thêm cột `promotions.code`.
+[UpdateDbUtility]   ➕ Đã thêm cột `promotions.max_discount`.
+[UpdateDbUtility]   ➕ Đã thêm cột `promotions.minimum_spend`.
+[UpdateDbUtility]   ➕ Đã thêm cột `promotions.max_uses_per_user`.
+[UpdateDbUtility]   ➕ Đã tạo index `uq_promotion_code` trên `promotions`.
+[UpdateDbUtility]   ➕ Đã thêm cột `customers.company_name`.
+[UpdateDbUtility]   ➕ Đã thêm cột `customers.tax_code`.
+[UpdateDbUtility]   ➕ Đã thêm cột `daily_business_reports.snapshot_json`.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.079 s -- in quanlykhachsan.backend.utils.MariaDbMigrationIntegrationTest
+[INFO] Running quanlykhachsan.backend.booking.FolioPaymentServiceTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.241 s -- in quanlykhachsan.backend.booking.FolioPaymentServiceTest
+[INFO] Running quanlykhachsan.backend.room.RoomAllocationServiceTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.177 s -- in quanlykhachsan.backend.room.RoomAllocationServiceTest
+[INFO] Running quanlykhachsan.frontend.view.DenseTableRendererTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.087 s -- in quanlykhachsan.frontend.view.DenseTableRendererTest
+[INFO] Running quanlykhachsan.backend.room.HousekeepingMigrationTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.185 s -- in quanlykhachsan.backend.room.HousekeepingMigrationTest
+[INFO] Running quanlykhachsan.booking.MinibarConcurrentPostingTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.538 s -- in quanlykhachsan.booking.MinibarConcurrentPostingTest
+[INFO] Running quanlykhachsan.frontend.view.RoomGridPanelTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.085 s -- in quanlykhachsan.frontend.view.RoomGridPanelTest
+[INFO] Running quanlykhachsan.frontend.api.ApiClientTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.078 s -- in quanlykhachsan.frontend.api.ApiClientTest
+[INFO] Running quanlykhachsan.stubs.MockApiServerTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in quanlykhachsan.stubs.MockApiServerTest
+[INFO] Running quanlykhachsan.promotion.VoucherRedemptionIntegrationTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.202 s -- in quanlykhachsan.promotion.VoucherRedemptionIntegrationTest
+[INFO] Running quanlykhachsan.backend.pricing.DynamicPricingEngineTest
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.020 s -- in quanlykhachsan.backend.pricing.DynamicPricingEngineTest
+[INFO] Running quanlykhachsan.backend.utils.DatabaseMigrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.117 s -- in quanlykhachsan.backend.utils.DatabaseMigrationTest
+[INFO] Running quanlykhachsan.financial.OverpaymentCreditAdjustmentTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.188 s -- in quanlykhachsan.financial.OverpaymentCreditAdjustmentTest
+[INFO] Running quanlykhachsan.backend.booking.FinancialEdgeCaseTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in quanlykhachsan.backend.booking.FinancialEdgeCaseTest
+[INFO] Running quanlykhachsan.performance.DynamicPricingLoadTest
+[main] INFO com.zaxxer.hikari.HikariDataSource - HotelPmsPool - Starting...
+[main] INFO com.zaxxer.hikari.pool.HikariPool - HotelPmsPool - Added connection com.mysql.cj.jdbc.ConnectionImpl@66498326
+[main] INFO com.zaxxer.hikari.HikariDataSource - HotelPmsPool - Start completed.
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+requests=10000 concurrency=50 p95_ms=6.447 p99_ms=9.968 active_connections=0 awaiting_connections=0
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.765 s -- in quanlykhachsan.performance.DynamicPricingLoadTest
+[INFO] Running quanlykhachsan.scenarios.Scenario8HousekeepingRbacTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.204 s -- in quanlykhachsan.scenarios.Scenario8HousekeepingRbacTest
+[INFO] Running quanlykhachsan.backend.room.MaintenanceControllerTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.432 s -- in quanlykhachsan.backend.room.MaintenanceControllerTest
+[INFO] Running quanlykhachsan.performance.MinibarConcurrencyTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.492 s -- in quanlykhachsan.performance.MinibarConcurrencyTest
+[INFO] Running quanlykhachsan.scenarios.Scenario9WebVsWalkInRaceTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.276 s -- in quanlykhachsan.scenarios.Scenario9WebVsWalkInRaceTest
+[INFO] Running quanlykhachsan.backend.report.DbrReportServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in quanlykhachsan.backend.report.DbrReportServiceTest
+[INFO] Running quanlykhachsan.backend.report.FinancialReportControllerTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.206 s -- in quanlykhachsan.backend.report.FinancialReportControllerTest
+[INFO] Running quanlykhachsan.financial.FolioAccountingMigrationTest
+[UpdateDbUtility]   ✓ Cột `bookings.customer_type` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `bookings.check_out_actual` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `users.theme` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.version` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `idx_room_number` không tồn tại, không cần xoá.
+[UpdateDbUtility]   ✓ Index `idx_room_number_version` trên `rooms` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `idempotency_keys` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `folio_transactions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `audit_checkpoints` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `hotel_business_state` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Bảng `daily_business_reports` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `rooms.maintenance_until` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_discount` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.minimum_spend` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `promotions.max_uses_per_user` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_promotion_code` trên `promotions` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.company_name` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `customers.tax_code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Cột `daily_business_reports.snapshot_json` đã tồn tại, bỏ qua.
+[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.
+[UpdateDbUtility]   ✓ Cột `folios.code` đã tồn tại, bỏ qua.
+[UpdateDbUtility]   ✓ Index `uq_folio_code` trên `folios` đã tồn tại, bỏ qua.
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.203 s -- in quanlykhachsan.financial.FolioAccountingMigrationTest
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.29 s -- in quanlykhachsan.Phase2RegressionSuite
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 109, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  29.404 s
+[INFO] Finished at: 2026-10-15T01:06:11+07:00
+[INFO] ------------------------------------------------------------------------

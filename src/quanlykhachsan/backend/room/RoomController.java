@@ -27,6 +27,9 @@ public class RoomController implements HttpHandler {
 
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath(); // /api/rooms hoặc /api/rooms/123
+        if(path.matches("/api/v1/rooms/[0-9]+/housekeeping")){new HousekeepingController().handle(exchange);return;}
+        if(path.matches("/api/v1/rooms/[0-9]+/maintenance")){new MaintenanceController().handle(exchange);return;}
+        if(path.matches("/api/v1/rooms/[0-9]+/minibar")){new MinibarController().handle(exchange);return;}
 
         // Preserve the legacy alias while parsing the versioned Phase 1 route correctly.
         String prefix = path.startsWith("/api/v1/rooms") ? "/api/v1/rooms" : "/api/rooms";
@@ -101,6 +104,10 @@ public class RoomController implements HttpHandler {
     }
 
     private void handleUpdateStatus(HttpExchange exchange, int roomId) throws IOException {
+        ApiResponseUtil.write(exchange,403,ApiResponseUtil.error("Use the authorized booking, housekeeping or maintenance workflow"));
+    }
+
+    private void legacyUpdateStatus(HttpExchange exchange, int roomId) throws IOException {
         // Cập nhật trạng thái phòng (thường dùng cho lễ tân check-in/out)
         // Không yêu cầu quyền Admin ở đây để nhân viên có thể thao tác
         try {

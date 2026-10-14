@@ -20,6 +20,7 @@ public class RoomMapper {
         response.setRoomTypeId(room.getRoomTypeId());
         response.setPrice(room.getPrice());
         response.setStatus(room.getStatus());
+        response.setVersion(room.getVersion());
         return response;
     }
 }

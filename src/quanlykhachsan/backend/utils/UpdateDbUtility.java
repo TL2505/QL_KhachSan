@@ -138,7 +138,96 @@ public class UpdateDbUtility {
             ensureTable(conn, "daily_business_reports",
                     "CREATE TABLE IF NOT EXISTS daily_business_reports (audit_date DATE NOT NULL PRIMARY KEY, total_revenue DECIMAL(14,2) NOT NULL DEFAULT 0.00, room_revenue DECIMAL(14,2) NOT NULL DEFAULT 0.00, occupied_rooms INT NOT NULL DEFAULT 0, available_rooms INT NOT NULL DEFAULT 0, occupancy_rate DECIMAL(7,2) NOT NULL DEFAULT 0.00, adr DECIMAL(14,2) NOT NULL DEFAULT 0.00, revpar DECIMAL(14,2) NOT NULL DEFAULT 0.00, created_at DATETIME DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+            migratePublicPortal(conn);
+            migrateFolioAccounting(conn);
+            migrateHousekeeping(conn);
+            migratePromotionalWallet(conn);
+            ensureColumn(conn,"daily_business_reports","snapshot_json","LONGTEXT NULL");
             System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.");
+    }
+
+    /** Refuses lossy ENUM conversion and executes the versioned portal script. */
+    public static void migratePublicPortal(Connection conn) throws SQLException {
+        try (Statement query = conn.createStatement();
+             ResultSet rows = query.executeQuery("SELECT COUNT(*) FROM bookings WHERE customer_type IS NOT NULL "
+                     + "AND customer_type NOT IN ('OTA','Walk-in','Corporate','Web')")) {
+            rows.next();
+            if (rows.getLong(1) != 0) throw new SQLException(
+                    "Week 5 migration requires operator review of unsupported booking customer types");
+        }
+        runMigrationScript(conn, java.nio.file.Path.of("database", "migrations", "v2_0_week5_public_portal.sql"));
+        // Online guests have not supplied a passport yet; preserve missing identity
+        // as NULL rather than inventing an identification number.
+        try (ResultSet tables = conn.getMetaData().getTables(conn.getCatalog(), null, "customers", new String[]{"TABLE"})) {
+            if (tables.next()) {
+                try (Statement statement = conn.createStatement()) {
+                    statement.execute("ALTER TABLE customers MODIFY identity_card VARCHAR(20) NULL");
+                }
+            }
+        }
+    }
+
+    public static void migrateFolioAccounting(Connection c) throws SQLException {
+        boolean widen=false;
+        try(ResultSet columns=c.getMetaData().getColumns(c.getCatalog(),null,"folios","id")){widen=columns.next() && columns.getInt("DATA_TYPE")!=java.sql.Types.BIGINT;}
+        try(ResultSet columns=c.getMetaData().getColumns(c.getCatalog(),null,"folio_transactions","folio_id")){widen|=columns.next() && columns.getInt("DATA_TYPE")!=java.sql.Types.BIGINT;}
+        if(widen) {
+            try(Statement s=c.createStatement()) {
+                s.execute("ALTER TABLE folio_transactions DROP FOREIGN KEY IF EXISTS fk_folio_transactions_folios");
+                s.execute("ALTER TABLE folios MODIFY id BIGINT NOT NULL AUTO_INCREMENT");
+                s.execute("ALTER TABLE folio_transactions MODIFY folio_id BIGINT NOT NULL");
+                s.execute("ALTER TABLE folio_transactions ADD CONSTRAINT fk_folio_transactions_folios FOREIGN KEY(folio_id) REFERENCES folios(id) ON DELETE CASCADE ON UPDATE CASCADE");
+            }
+        }
+        // Recover a migration interrupted after both columns widened but before FK recreation.
+        try(PreparedStatement q=c.prepareStatement("SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME='folio_transactions' AND CONSTRAINT_NAME='fk_folio_transactions_folios'")) {
+            try(ResultSet r=q.executeQuery()){r.next();if(r.getInt(1)==0)try(Statement s=c.createStatement()){s.execute("ALTER TABLE folio_transactions ADD CONSTRAINT fk_folio_transactions_folios FOREIGN KEY(folio_id) REFERENCES folios(id) ON DELETE CASCADE ON UPDATE CASCADE");}}
+        }
+        ensureColumn(c,"folios","code","VARCHAR(64) NULL");
+        try(Statement s=c.createStatement()) {
+            s.executeUpdate("UPDATE folios SET code=CONCAT('FOLIO-',UPPER(folio_type),'-',id) WHERE code IS NULL");
+            s.execute("ALTER TABLE folios MODIFY code VARCHAR(64) NOT NULL DEFAULT (CONCAT('FOLIO-',UUID()))");
+        }
+        ensureIndex(c,"folios","uq_folio_code","UNIQUE INDEX uq_folio_code(code)");
+        try(PreparedStatement q=c.prepareStatement("SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME='folios' AND CONSTRAINT_NAME='chk_folio_nonnegative'")) {
+            try(ResultSet r=q.executeQuery()){r.next();if(r.getInt(1)==0)try(Statement s=c.createStatement()){s.execute("ALTER TABLE folios ADD CONSTRAINT chk_folio_nonnegative CHECK(balance>=0.00)");}}
+        }
+        runMigrationScript(c,java.nio.file.Path.of("database","migrations","v2_0_week6_vietqr_accounting.sql"));
+    }
+
+    public static void migrateHousekeeping(Connection c)throws SQLException {
+        runMigrationScript(c,java.nio.file.Path.of("database","migrations","v2_0_week7_housekeeping_minibar.sql"));
+        ensureColumn(c,"rooms","maintenance_until","DATETIME NULL");
+        try(ResultSet tables=c.getMetaData().getTables(c.getCatalog(),null,"roles",new String[]{"TABLE"})){if(tables.next())try(PreparedStatement q=c.prepareStatement("INSERT IGNORE INTO roles(name,description) VALUES (?,?)")){for(String role:new String[]{"housekeeping","maintenance","f&b"}){q.setString(1,role);q.setString(2,"Phase 2 departmental role");q.executeUpdate();}}}
+    }
+
+    public static void migratePromotionalWallet(Connection c)throws SQLException {
+        try(ResultSet tables=c.getMetaData().getTables(c.getCatalog(),null,"promotions",new String[]{"TABLE"})){if(!tables.next())return;}
+        ensureColumn(c,"promotions","code","VARCHAR(50) NULL");
+        ensureColumn(c,"promotions","max_discount","DECIMAL(12,2) NULL");
+        ensureColumn(c,"promotions","minimum_spend","DECIMAL(12,2) NULL");
+        ensureColumn(c,"promotions","max_uses_per_user","INT NULL");
+        ensureIndex(c,"promotions","uq_promotion_code","UNIQUE INDEX uq_promotion_code(code)");
+        ensureColumn(c,"customers","company_name","VARCHAR(150) NULL");
+        ensureColumn(c,"customers","tax_code","VARCHAR(20) NULL");
+        runMigrationScript(c,java.nio.file.Path.of("database","migrations","v2_0_week8_promotions.sql"));
+    }
+
+    /** Only checked-in simple DDL scripts are accepted; no request controls this path. */
+    private static void runMigrationScript(Connection conn, java.nio.file.Path script) throws SQLException {
+        try {
+            StringBuilder sql = new StringBuilder();
+            for (String line : java.nio.file.Files.readAllLines(script, java.nio.charset.StandardCharsets.UTF_8)) {
+                if (!line.stripLeading().startsWith("--")) sql.append(line).append('\n');
+            }
+            try (Statement statement = conn.createStatement()) {
+                for (String command : sql.toString().split(";")) {
+                    if (!command.isBlank()) statement.execute(command.trim());
+                }
+            }
+        } catch (java.io.IOException e) {
+            throw new SQLException("Required migration script is unavailable: " + script.getFileName(), e);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -181,10 +270,9 @@ public class UpdateDbUtility {
                     + "WHEN 'booked' THEN 'reserved' "
                     + "WHEN 'occupied' THEN 'occupied_clean' "
                     + "WHEN 'maintenance' THEN 'out_of_order' "
-                    + "WHEN 'out_of_service' THEN 'out_of_order' "
                     + "WHEN 'cleaning' THEN 'vacant_dirty' ELSE status END");
             stmt.executeUpdate("ALTER TABLE rooms MODIFY status ENUM('"
-                    + "vacant_clean','vacant_dirty','occupied_clean','occupied_dirty','out_of_order','reserved')"
+                    + "vacant_clean','vacant_dirty','occupied_clean','occupied_dirty','out_of_order','out_of_service','reserved')"
                     + " NOT NULL DEFAULT 'vacant_clean'");
         }
     }

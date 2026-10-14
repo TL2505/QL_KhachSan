@@ -64,12 +64,12 @@ public final class RoomDowngradeService {
             q.setInt(1, bookingId);
             try (ResultSet rs = q.executeQuery()) {
                 if (!rs.next()) throw new SQLException("Master folio missing");
-                int id = rs.getInt(1);
+                long id = rs.getLong(1);
                 try (PreparedStatement tx = c.prepareStatement("INSERT INTO folio_transactions(folio_id,transaction_type,charge_type,description,amount,business_date,reference_id) VALUES(?,'credit','room_adjustment','Room downgrade rate adjustment',?,CURRENT_DATE(),?)")) {
-                    tx.setInt(1, id); tx.setBigDecimal(2, credit); tx.setString(3, "ROOM-DOWNGRADE-" + bookingId); tx.executeUpdate();
+                    tx.setLong(1, id); tx.setBigDecimal(2, credit); tx.setString(3, "ROOM-DOWNGRADE-" + bookingId); tx.executeUpdate();
                 }
                 try (PreparedStatement update = c.prepareStatement("UPDATE folios SET balance=balance-? WHERE id=?")) {
-                    update.setBigDecimal(1, credit); update.setInt(2, id); update.executeUpdate();
+                    update.setBigDecimal(1, credit); update.setLong(2, id); update.executeUpdate();
                 }
             }
         }

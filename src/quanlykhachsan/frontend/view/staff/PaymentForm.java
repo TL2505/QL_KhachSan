@@ -657,6 +657,26 @@ public class PaymentForm extends JPanel {
     }
 
     private void actionProcessPayment() {
+        if(selectedBooking==null)return;
+        if(cbMethod.getSelectedIndex()==1){actionShowQR();return;}
+        if(cbMethod.getSelectedIndex()!=0){JOptionPane.showMessageDialog(this,"Thanh toán thẻ cần xác nhận từ nhà cung cấp được cấu hình. Vui lòng dùng tiền mặt hoặc VietQR.");return;}
+        btnPay.setEnabled(false);int bookingId=selectedBooking.getId();
+        quanlykhachsan.frontend.api.Phase2UiApi.request("GET","/v1/folios/booking/"+bookingId,null,null,data->{
+            java.util.List<com.google.gson.JsonObject> folios=new java.util.ArrayList<>();java.math.BigDecimal balance=java.math.BigDecimal.ZERO;
+            for(var element:data.getAsJsonArray()){var folio=element.getAsJsonObject();folios.add(folio);balance=balance.add(folio.get("balance").getAsBigDecimal());}
+            if(folios.isEmpty()){btnPay.setEnabled(true);JOptionPane.showMessageDialog(this,"Chưa có sổ folio để thanh toán.");return;}
+            if(JOptionPane.showConfirmDialog(this,"Xác nhận đã thu tiền mặt: "+balance.toPlainString()+" VNĐ?","Thanh toán theo sổ folio",JOptionPane.YES_NO_OPTION)!=JOptionPane.YES_OPTION){btnPay.setEnabled(true);return;}
+            settleCashFolios(folios,0);
+        },error->{btnPay.setEnabled(true);JOptionPane.showMessageDialog(this,"Không thể tải số dư folio.");});
+    }
+
+    private void settleCashFolios(java.util.List<com.google.gson.JsonObject> folios,int index) {
+        if(index>=folios.size()){btnPay.setEnabled(true);loadInitialData();resetInvoice();JOptionPane.showMessageDialog(this,"Đã ghi nhận thanh toán theo folio.");return;}
+        var folio=folios.get(index);com.google.gson.JsonObject body=new com.google.gson.JsonObject();body.add("amount",folio.get("balance"));body.addProperty("payment_method","cash");body.addProperty("checkout",true);
+        quanlykhachsan.frontend.api.Phase2UiApi.request("POST","/v1/folios/"+folio.get("id").getAsLong()+"/pay",body.toString(),java.util.UUID.randomUUID().toString(),data->settleCashFolios(folios,index+1),error->{btnPay.setEnabled(true);JOptionPane.showMessageDialog(this,"Thanh toán chưa hoàn tất. Kiểm tra lại số dư trước khi thử tiếp.");});
+    }
+
+    private void legacyProcessPayment() {
         if (selectedBooking == null)
             return;
 
@@ -746,6 +766,18 @@ public class PaymentForm extends JPanel {
     }
 
     private void actionShowQR() {
+        if(selectedBooking==null)return;
+        final int bookingId=selectedBooking.getId();final boolean checkout="checked_in".equals(selectedBooking.getStatus());
+        btnShowQR.setEnabled(false);
+        quanlykhachsan.frontend.api.Phase2UiApi.request("GET","/v1/folios/booking/"+bookingId,null,null,data->{
+            btnShowQR.setEnabled(true);com.google.gson.JsonObject selected=null;
+            for(com.google.gson.JsonElement row:data.getAsJsonArray()){var f=row.getAsJsonObject();if(selected==null || (f.get("folio_type").getAsString().equals("master") && f.get("balance").getAsBigDecimal().signum()>0))selected=f;}
+            if(selected==null){JOptionPane.showMessageDialog(this,"Chưa có Folio thanh toán. Vui lòng kiểm tra với lễ tân.");return;}
+            new quanlykhachsan.frontend.view.VietQrPaymentDialog(SwingUtilities.getWindowAncestor(this),selected.get("id").getAsLong(),checkout,()->{loadInitialData();resetInvoice();}).setVisible(true);
+        },error->{btnShowQR.setEnabled(true);JOptionPane.showMessageDialog(this,"Chưa thể tải Folio. Vui lòng thử lại.");});
+    }
+
+    private void legacyRemoteQr() {
         if (selectedBooking == null)
             return;
         try {

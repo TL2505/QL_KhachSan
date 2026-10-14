@@ -17,15 +17,14 @@ public class SecurityUtil {
      */
     public static boolean hasPermission(HttpExchange exchange, int... allowedRoles) throws IOException {
         Object jwtRole = exchange.getAttribute("role");
-        String roleHeader = jwtRole == null
-            ? exchange.getRequestHeaders().getFirst("X-User-Role") : jwtRole.toString();
+        String roleHeader = jwtRole == null ? null : jwtRole.toString();
         
         int roleId = -1;
         if (roleHeader != null) {
             roleHeader = roleHeader.trim();
             if (roleHeader.equalsIgnoreCase("ADMIN")) {
                 roleId = 1;
-            } else if (roleHeader.equalsIgnoreCase("STAFF")) {
+            } else if (roleHeader.equalsIgnoreCase("STAFF") || roleHeader.equalsIgnoreCase("front_desk")) {
                 roleId = 2;
             } else if (roleHeader.equalsIgnoreCase("CUSTOMER")) {
                 roleId = 3;

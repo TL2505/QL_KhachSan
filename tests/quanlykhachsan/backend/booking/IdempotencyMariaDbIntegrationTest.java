@@ -64,7 +64,6 @@ class IdempotencyMariaDbIntegrationTest {
     static void stopServer() {
         if (server != null) server.stop(0);
         if (executor != null) executor.shutdownNow();
-        if (server != null) DatabaseConnection.close();
     }
 
     @Test

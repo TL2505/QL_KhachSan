@@ -1,0 +1,1 @@
+{"status":"success","data":{"token":"mock-guest-jwt","access_token":"mock-guest-jwt","token_type":"Bearer","expires_in_seconds":86400,"guest_profile":{"customer_id":999,"phone":"0901234567","loyalty_level":"Member","total_points":0}}}

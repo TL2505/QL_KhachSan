@@ -27,6 +27,7 @@ public class AuthMapper {
         info.setUserId(user.getId());
         info.setUsername(user.getUsername());
         info.setRole(roleStr);
+        info.setRoleId(user.getRoleId());
         info.setFullName(user.getFullName() != null ? user.getFullName() : "");
         info.setEmail(user.getEmail() != null ? user.getEmail() : "");
         info.setPhone(user.getPhone() != null ? user.getPhone() : "");

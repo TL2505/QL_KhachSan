@@ -78,7 +78,8 @@ public class RoomAPI {
         try {
             JsonObject body = new JsonObject();
             body.addProperty("status", newStatus);
-            String json = HttpUtil.sendPut("/v1/rooms/" + roomId + "/status", gson.toJson(body));
+            if(!newStatus.equals("vacant_clean") && !newStatus.equals("occupied_clean"))return "Use the booking or maintenance workflow";
+            String json = HttpUtil.sendPut("/v1/rooms/" + roomId + "/housekeeping", gson.toJson(body));
             JsonObject res = gson.fromJson(json, JsonObject.class);
             if (res != null && "success".equals(res.get("status").getAsString())) {
                 return "Success";

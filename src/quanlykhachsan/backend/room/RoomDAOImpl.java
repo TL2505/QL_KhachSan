@@ -65,6 +65,7 @@ public class RoomDAOImpl implements RoomDAO {
                 r.setRoomTypeId(rs.getInt("room_type_id"));
                 r.setPrice(rs.getDouble("price"));
                 r.setStatus(rs.getString("status"));
+                r.setVersion(rs.getInt("version"));
                 list.add(r);
             }
         } catch (Exception e) {

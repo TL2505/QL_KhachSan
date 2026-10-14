@@ -61,7 +61,7 @@ public final class PosSyncController implements HttpHandler {
                         if (uuid.version() != 4) {
                             throw new ClientInputException(400, "ERR_400_BAD_REQUEST", "Each charge needs a UUIDv4 idempotency_key");
                         }
-                        int folioId = charge.get("folio_id").getAsInt();
+                        long folioId = charge.get("folio_id").getAsLong();
                         BigDecimal amount = charge.get("amount").getAsBigDecimal();
                         String chargeType = charge.get("charge_type").getAsString();
                         String description = charge.get("description").getAsString();
@@ -96,7 +96,7 @@ public final class PosSyncController implements HttpHandler {
                         int bookingId;
                         try (PreparedStatement folio = connection.prepareStatement(
                                 "SELECT booking_id FROM folios WHERE id=? FOR UPDATE")) {
-                            folio.setInt(1, folioId);
+                            folio.setLong(1, folioId);
                             try (ResultSet rows = folio.executeQuery()) {
                                 if (!rows.next()) throw new ClientInputException(404, "ERR_404_NOT_FOUND", "Folio not found");
                                 bookingId = rows.getInt(1);
@@ -105,7 +105,7 @@ public final class PosSyncController implements HttpHandler {
                         folioId = new FolioRoutingEngine().routeCharge(connection, bookingId, chargeType);
                         String status;
                         try (PreparedStatement folio = connection.prepareStatement("SELECT status FROM folios WHERE id=? FOR UPDATE")) {
-                            folio.setInt(1, folioId);
+                            folio.setLong(1, folioId);
                             try (ResultSet rows = folio.executeQuery()) { rows.next(); status = rows.getString(1); }
                         }
                         if (!"open".equals(status)) {
@@ -114,7 +114,7 @@ public final class PosSyncController implements HttpHandler {
                         try (PreparedStatement transaction = connection.prepareStatement(
                                 "INSERT INTO folio_transactions (folio_id, transaction_type, charge_type, description, amount, business_date, reference_id)"
                               + " VALUES (?, 'debit', ?, ?, ?, ?, ?)")) {
-                            transaction.setInt(1, folioId);
+                            transaction.setLong(1, folioId);
                             transaction.setString(2, chargeType);
                             transaction.setString(3, description);
                             transaction.setBigDecimal(4, amount);
@@ -125,7 +125,7 @@ public final class PosSyncController implements HttpHandler {
                         try (PreparedStatement update = connection.prepareStatement(
                                 "UPDATE folios SET balance=balance+? WHERE id=? AND status='open'")) {
                             update.setBigDecimal(1, amount);
-                            update.setInt(2, folioId);
+                            update.setLong(2, folioId);
                             if (update.executeUpdate() != 1) throw new ClientInputException(409, "ERR_409_CONFLICT", "Folio changed while syncing");
                         }
                         JsonObject result = new JsonObject();

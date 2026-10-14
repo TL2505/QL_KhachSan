@@ -49,14 +49,6 @@ export async function apiFetch(path, init = {}) {
         headers.set("Content-Type", "application/json; charset=utf-8");
     }
 
-    // Role ID mapping helper (ADMIN=1, STAFF=2, CUSTOMER=3)
-    if (session && session.role) {
-        const roleIdMap = { "ADMIN": "1", "STAFF": "2", "CUSTOMER": "3" };
-        const roleHeaderVal = roleIdMap[session.role] || String(session.roleId || "");
-        if (roleHeaderVal) {
-            headers.set("X-User-Role", roleHeaderVal);
-        }
-    }
     
     // Bypass Ngrok security warning screen automatically
     headers.set("ngrok-skip-browser-warning", "69420");

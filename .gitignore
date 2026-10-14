@@ -4,3 +4,5 @@ dist/
 *.class
 .svn/
 .env
+/target/
+/.phase2-runtime/

@@ -1,7 +1,7 @@
 package quanlykhachsan.backend.room;
 
 /** Indicates that the room state or version changed before reservation. */
-public final class OptimisticLockException extends Exception {
+public class OptimisticLockException extends Exception {
     private static final long serialVersionUID = 1L;
 
     public OptimisticLockException() {

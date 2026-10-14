@@ -170,6 +170,14 @@ public class InvoiceForm extends JPanel {
     public void printSelectedInvoice() { actionPrintPDF(); }
 
     private void actionPrintPDF() {
+        int selected=table.getSelectedRow();
+        if(selected<0 || currentInvoices==null)return;
+        int row=table.convertRowIndexToModel(selected);
+        if(row>=currentInvoices.size())return;
+        new quanlykhachsan.frontend.view.InvoiceViewerDialog(SwingUtilities.getWindowAncestor(this),currentInvoices.get(row).getId()).setVisible(true);
+    }
+
+    private void legacyPrintPDF() {
         int index = table.getSelectedRow();
         if (index < 0 || currentInvoices == null || index >= currentInvoices.size()) return;
 

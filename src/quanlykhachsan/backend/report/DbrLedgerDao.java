@@ -17,7 +17,7 @@ public final class DbrLedgerDao {
             try (ResultSet r = q.executeQuery()) { r.next(); total = r.getBigDecimal(1); room = r.getBigDecimal(2); }
         }
         int occupied; int available;
-        try (PreparedStatement q = c.prepareStatement("SELECT SUM(status IN ('occupied_clean','occupied_dirty')), SUM(status<>'out_of_order') FROM rooms"); ResultSet r = q.executeQuery()) {
+        try (PreparedStatement q = c.prepareStatement("SELECT SUM(status IN ('occupied_clean','occupied_dirty')), SUM(status NOT IN ('out_of_order','out_of_service')) FROM rooms"); ResultSet r = q.executeQuery()) {
             r.next(); occupied = r.getInt(1); available = r.getInt(2);
         }
         return new DbrInputs(total, room, occupied, available);

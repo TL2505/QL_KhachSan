@@ -42,7 +42,15 @@ public final class RoomAllocationService {
               + "WHERE id=? AND version=? AND status='vacant_clean'")) {
             update.setInt(1, roomId);
             update.setInt(2, expectedVersion);
-            if (update.executeUpdate() != 1) throw new OptimisticLockException();
+            if (update.executeUpdate() != 1) {
+                try (PreparedStatement query = connection.prepareStatement("SELECT status FROM rooms WHERE id=? FOR UPDATE")) {
+                    query.setInt(1, roomId);
+                    try (ResultSet row = query.executeQuery()) {
+                        if (!row.next() || !"vacant_clean".equals(row.getString(1))) throw new RoomUnavailableException();
+                    }
+                }
+                throw new OptimisticLockException();
+            }
         }
     }
 

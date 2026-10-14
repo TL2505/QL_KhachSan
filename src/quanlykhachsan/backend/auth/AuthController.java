@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.utils.JsonUtil;
+import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.auth.dto.LoginRequest;
 import quanlykhachsan.backend.auth.dto.RegisterRequest;
 import quanlykhachsan.backend.auth.dto.AuthResponse;
@@ -49,6 +50,13 @@ public class AuthController implements HttpHandler {
                     String roleStr = "STAFF";
                     if (user.getRoleId() == adminId) roleStr = "ADMIN";
                     else if (user.getRoleId() == customerId) roleStr = "CUSTOMER";
+                    else {
+                        roleStr = null;
+                        for(var role:userDAO.selectAllRoles())if(role.getId()==user.getRoleId())roleStr=role.getName();
+                        if(roleStr==null || !java.util.Set.of("staff","front_desk","housekeeping","maintenance","f&b").contains(roleStr.toLowerCase(java.util.Locale.ROOT))) {
+                            ApiResponseUtil.write(exchange,403,ApiResponseUtil.error("Role is not authorized"));return;
+                        }
+                    }
 
                     quanlykhachsan.backend.auth.dto.AuthUserInfo userInfo = AuthMapper.toUserInfo(user, roleStr);
                     userInfo.setToken(quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(

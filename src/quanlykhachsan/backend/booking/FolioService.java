@@ -21,6 +21,7 @@ public final class FolioService {
     public PaymentResult pay(Connection c, FolioDao.PaymentRequest request, FailureInjector injector) throws SQLException {
         dao.acquireLock(c, request.idempotencyKey());
         try {
+            c.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             c.setAutoCommit(false);
             try {
                 FolioDao.PaymentReplay replay = dao.findReplay(c, request.idempotencyKey());

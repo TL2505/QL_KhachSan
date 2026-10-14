@@ -66,3 +66,9 @@
 - Kết nối lỗi tải API với trạng thái lỗi trên bản đồ phòng, giữ hỗ trợ cửa sổ bản đồ màn hình phụ và ghi lại quy trình mô phỏng ca lễ tân hai giờ.
 - Đặt số dư folio mới về 0 để tránh tính trùng tiền phòng giữa ước tính booking và bút toán night audit; chuẩn hóa phản hồi đóng băng với `Retry-After: 300`.
 - JDK 17 biên dịch thành công toàn bộ mã Java production và test. Chạy JUnit tập trung: 6 đạt, 0 lỗi, 2 test MariaDB bị bỏ qua do chưa có schema kiểm thử riêng. `mvn -o test` chưa chạy được vì khóa kho Maven cấp người dùng không có quyền truy cập. Mô phỏng hai giờ và kiểm thử giao dịch/khôi phục trên MariaDB vẫn cần chạy trong môi trường tương ứng.
+
+## [2026-10-15] — @codex — Backend, desktop/web UI, migration, tests, scripts và docs Phase 2 — Triển khai Phase 2 và ghi nhận trạng thái nghiệm thu
+- Bổ sung luồng portal/OTP/đặt phòng công khai, phân bổ phòng cạnh tranh an toàn, báo giá và voucher phía máy chủ; tích hợp VietQR, xác minh HMAC webhook, thanh toán idempotent, folio và xử lý thanh toán thừa.
+- Bổ sung housekeeping, state machine phòng, minibar, maintenance OOO/OOS, hóa đơn PDF/thuế cấu hình tường minh, DBR và các giao diện Swing/web tương ứng; thêm migration, mock/stub và bộ kiểm thử Phase 2.
+- Thêm tài liệu kiểm kê tệp thay đổi, cấu hình production bắt buộc, báo cáo nghiệm thu và bằng chứng kiểm thử; chỉ dùng cấu hình/dữ liệu tổng hợp trong môi trường test, không đặt thông tin pháp lý/ngân hàng/OTP production giả định.
+- Xác minh theo báo cáo Phase 2: Java 17, MariaDB 11.4.2 cô lập; `mvn clean test -Dtest=Phase2RegressionSuite` đạt 109 test, 0 lỗi, 0 bỏ qua. Nghiệm thu tổng thể vẫn một phần: còn kiểm tra Swing/thời gian hiển thị thủ công, kiểm tra Docker và cấu hình production/nhà cung cấp cần phê duyệt.

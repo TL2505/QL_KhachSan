@@ -73,7 +73,6 @@ public class HttpUtil {
     private static java.net.http.HttpResponse<String> send(String method, String endpoint, String body,
             java.util.Map<String, String> additionalHeaders) throws Exception {
         java.util.Map<String, String> headers = new java.util.HashMap<>();
-        headers.put("X-User-Role", String.valueOf(SessionManagerUtil.getCurrentRoleId()));
         headers.put("ngrok-skip-browser-warning", "true");
         if (additionalHeaders != null) headers.putAll(additionalHeaders);
         return quanlykhachsan.frontend.api.ApiClient.getInstance().sendSync(method, endpoint, body, headers);

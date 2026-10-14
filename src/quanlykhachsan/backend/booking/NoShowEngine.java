@@ -49,13 +49,13 @@ public final class NoShowEngine {
                         }
                     }
 
-                    int folioId = findMasterFolio(connection, booking.bookingId);
+                    long folioId = findMasterFolio(connection, booking.bookingId);
                     BigDecimal penalty = booking.roomRate.setScale(2, RoundingMode.HALF_UP);
                     try (PreparedStatement transaction = connection.prepareStatement(
                             "INSERT INTO folio_transactions "
                           + "(folio_id, transaction_type, charge_type, description, amount, business_date, reference_id) "
                           + "VALUES (?, 'debit', 'penalty', ?, ?, ?, ?)")) {
-                        transaction.setInt(1, folioId);
+                        transaction.setLong(1, folioId);
                         transaction.setString(2, "One-night no-show penalty for booking " + booking.bookingId);
                         transaction.setBigDecimal(3, penalty);
                         transaction.setDate(4, java.sql.Date.valueOf(businessDate));
@@ -65,7 +65,7 @@ public final class NoShowEngine {
                     try (PreparedStatement update = connection.prepareStatement(
                             "UPDATE folios SET balance=balance+?, status='open' WHERE id=?")) {
                         update.setBigDecimal(1, penalty);
-                        update.setInt(2, folioId);
+                        update.setLong(2, folioId);
                         if (update.executeUpdate() != 1) throw new SQLException("Master folio disappeared");
                     }
                     processed++;
@@ -100,13 +100,13 @@ public final class NoShowEngine {
         return result;
     }
 
-    private static int findMasterFolio(Connection connection, int bookingId) throws SQLException {
+    private static long findMasterFolio(Connection connection, int bookingId) throws SQLException {
         try (PreparedStatement query = connection.prepareStatement(
                 "SELECT id FROM folios WHERE booking_id=? AND folio_type='master' ORDER BY id LIMIT 1 FOR UPDATE")) {
             query.setInt(1, bookingId);
             try (ResultSet rows = query.executeQuery()) {
                 if (!rows.next()) throw new SQLException("Master folio not found for booking " + bookingId);
-                return rows.getInt(1);
+                return rows.getLong(1);
             }
         }
     }

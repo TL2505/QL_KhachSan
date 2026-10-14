@@ -48,9 +48,11 @@ public class Main {
             // Route Đăng nhập và Đăng ký (Được skip JWT auth bên trong JwtFilter)
             registerContext(server, "/api/v1/auth/login", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
             registerContext(server, "/api/v1/auth/register", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
+            registerContext(server, "/api/v1/auth/guest-otp", new quanlykhachsan.backend.auth.GuestAuthController(), exceptionFilter, corsFilter, jwtFilter);
             
             // Route Quản lý phòng
             registerContext(server, "/api/v1/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
+            registerContext(server, "/api/v1/rooms/availability", new quanlykhachsan.backend.room.RoomAvailabilityController(), exceptionFilter, corsFilter, jwtFilter);
             registerContext(server, "/api/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Hồ sơ người dùng
             registerContext(server, "/api/v1/users/update-profile", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
@@ -67,9 +69,14 @@ public class Main {
             registerContext(server, "/api/customers", new quanlykhachsan.backend.customer.CustomerController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Đặt phòng / Check-in / Check-out
             var bookingController = new quanlykhachsan.backend.booking.BookingController();
+            registerContext(server, "/api/v1/pricing/quote", new quanlykhachsan.backend.pricing.PricingController(), exceptionFilter, corsFilter, jwtFilter);
+            registerContext(server, "/api/v1/reports/financial/dbr", new quanlykhachsan.backend.report.FinancialReportController(), exceptionFilter, corsFilter, jwtFilter);
+            registerContext(server, "/api/v1/bookings/public", new quanlykhachsan.backend.booking.PublicBookingController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+            registerContext(server, "/api/v1/bookings/walk-in", new quanlykhachsan.backend.booking.PublicBookingController(true), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
             registerContext(server, "/api/v1/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
             registerContext(server, "/api/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
             // Route Thanh toán (Payment)
+            registerContext(server, "/api/v1/webhooks/vietqr", new quanlykhachsan.backend.booking.BankWebhookController(), exceptionFilter, corsFilter, systemStatusFilter);
             registerContext(server, "/api/v1/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
             registerContext(server, "/api/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
             registerContext(server, "/api/v1/folios", new quanlykhachsan.backend.booking.FolioController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
@@ -81,11 +88,16 @@ public class Main {
             // Route Chat
             registerContext(server, "/api/v1/chat", new quanlykhachsan.backend.interaction.ChatController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Khuyến mãi (Promotion)
+            registerContext(server, "/api/v1/promotions/validate", new quanlykhachsan.backend.promotion.VoucherValidationController(), exceptionFilter, corsFilter, jwtFilter);
             registerContext(server, "/api/v1/promotions", new quanlykhachsan.backend.promotion.PromotionController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Khách hàng thân thiết (Loyalty)
             registerContext(server, "/api/v1/loyalty", new quanlykhachsan.backend.customer.LoyaltyController(), exceptionFilter, corsFilter, jwtFilter);
 
             // Thiết lập cấu hình mặc định và chạy server
+            var staticFiles = new quanlykhachsan.backend.utils.StaticFileHandler(
+                    java.nio.file.Path.of("web-ui", "public"));
+            registerContext(server, "/booking", staticFiles, exceptionFilter, corsFilter);
+            registerContext(server, "/", staticFiles, exceptionFilter, corsFilter);
             server.setExecutor(Executors.newFixedThreadPool(20));
             server.start();
             var nightAuditJob = new quanlykhachsan.backend.system.NightAuditJob();

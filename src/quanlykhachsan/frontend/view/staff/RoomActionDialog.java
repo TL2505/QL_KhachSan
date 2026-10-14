@@ -37,7 +37,7 @@ public class RoomActionDialog extends JDialog {
     private final User currentUser;
     private Runnable onSuccessCallback; // Called when an action succeeds, refresh map
     private final SystemStatusBanner statusBanner;
-    private final Map<Integer, String> paymentKeys = new HashMap<>();
+    private final Map<Long, String> paymentKeys = new HashMap<>();
     private String bookingIdempotencyKey;
 
     private final Color PRIMARY   = ThemeManager.getPrimary();
@@ -73,6 +73,10 @@ public class RoomActionDialog extends JDialog {
 
         buildHeader();
         buildBody();
+        JPanel phase2Actions=new JPanel(new FlowLayout(FlowLayout.LEFT));
+        if(room.getStatus().startsWith("occupied_")){JButton minibar=new JButton("Kiểm kho Minibar");minibar.addActionListener(e->new quanlykhachsan.frontend.view.MinibarChecklistDialog(this,room.getId(),()->{if(onSuccessCallback!=null)onSuccessCallback.run();}).setVisible(true));phase2Actions.add(minibar);}
+        if(java.util.Set.of("admin","maintenance").contains(quanlykhachsan.frontend.utils.SessionManagerUtil.getRole())){JButton maintenance=new JButton("Bảo trì / Sửa chữa (OOO)");maintenance.addActionListener(e->new quanlykhachsan.frontend.view.MaintenanceDialog(this,room.getId(),()->{if(onSuccessCallback!=null)onSuccessCallback.run();dispose();}).setVisible(true));phase2Actions.add(maintenance);}
+        if(phase2Actions.getComponentCount()>0){JPanel existing=new JPanel(new BorderLayout());Component footer=((BorderLayout)getContentPane().getLayout()).getLayoutComponent(BorderLayout.SOUTH);if(footer!=null)existing.add(footer,BorderLayout.CENTER);existing.add(phase2Actions,BorderLayout.NORTH);add(existing,BorderLayout.SOUTH);}
     }
 
     private static String buildTitle(Room room) {
@@ -594,6 +598,7 @@ public class RoomActionDialog extends JDialog {
 
         // Footer button
         JButton btnDone = makeActionBtn("✔ Xác nhận Dọn dẹp Hoàn tất", CLEANING);
+        btnDone.setEnabled(java.util.Set.of("housekeeping","admin").contains(quanlykhachsan.frontend.utils.SessionManagerUtil.getRole()));
         btnDone.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(
                 RoomActionDialog.this,

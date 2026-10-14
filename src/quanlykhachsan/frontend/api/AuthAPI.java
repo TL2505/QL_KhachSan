@@ -46,6 +46,8 @@ public class AuthAPI {
                 if ("ADMIN".equalsIgnoreCase(roleStr)) roleId = 1;
                 else if ("CUSTOMER".equalsIgnoreCase(roleStr)) roleId = 3;
                 user.setRoleId(roleId);
+                if(dataObj.has("roleId"))user.setRoleId(dataObj.get("roleId").getAsInt());
+                SessionManagerUtil.setRole(roleStr);
                 if (dataObj.has("fullName")) user.setFullName(dataObj.get("fullName").getAsString());
                 if (dataObj.has("email")) user.setEmail(dataObj.get("email").getAsString());
                 if (dataObj.has("phone")) user.setPhone(dataObj.get("phone").getAsString());

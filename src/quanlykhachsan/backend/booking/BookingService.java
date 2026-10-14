@@ -158,7 +158,7 @@ public class BookingService {
             try (java.sql.ResultSet rows = statement.executeQuery()) {
                 while (rows.next()) {
                     com.google.gson.JsonObject folio = new com.google.gson.JsonObject();
-                    folio.addProperty("id", rows.getInt("id"));
+                    folio.addProperty("id", rows.getLong("id"));
                     folio.addProperty("folio_type", rows.getString("folio_type"));
                     folio.addProperty("balance", rows.getBigDecimal("balance"));
                     folio.addProperty("status", rows.getString("status"));

@@ -26,14 +26,14 @@ public final class FolioAPI {
         if (rows != null) {
             for (JsonElement element : rows) {
                 JsonObject row = element.getAsJsonObject();
-                result.add(new FolioBalance(row.get("id").getAsInt(),
+                result.add(new FolioBalance(row.get("id").getAsLong(),
                     row.get("folio_type").getAsString(), row.get("balance").getAsBigDecimal()));
             }
         }
         return result;
     }
 
-    public static HttpUtil.HttpResult pay(int folioId, BigDecimal amount, String paymentMethod,
+    public static HttpUtil.HttpResult pay(long folioId, BigDecimal amount, String paymentMethod,
                                           boolean checkout, String idempotencyKey) throws Exception {
         JsonObject request = new JsonObject();
         request.addProperty("amount", amount);
@@ -48,17 +48,17 @@ public final class FolioAPI {
     }
 
     public static final class FolioBalance {
-        private final int id;
+        private final long id;
         private final String type;
         private final BigDecimal balance;
 
-        public FolioBalance(int id, String type, BigDecimal balance) {
+        public FolioBalance(long id, String type, BigDecimal balance) {
             this.id = id;
             this.type = type;
             this.balance = balance == null ? BigDecimal.ZERO : balance;
         }
 
-        public int getId() { return id; }
+        public long getId() { return id; }
         public String getType() { return type; }
         public BigDecimal getBalance() { return balance; }
     }

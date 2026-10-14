@@ -64,12 +64,12 @@ public class OfflinePosDialog extends JDialog implements SystemStatusBanner.Free
         String description;
         double amount;
         String chargeType;
-        int    folioId;
+        long   folioId;
         /** QUEUED → SYNCING → SUCCESS | FAILED */
         String status       = "QUEUED";
         String errorMessage = "";
 
-        QueuedCharge(int folioId, String chargeType, String description, double amount) {
+        QueuedCharge(long folioId, String chargeType, String description, double amount) {
             this.folioId     = folioId;
             this.chargeType  = chargeType;
             this.description = description;
@@ -364,9 +364,9 @@ public class OfflinePosDialog extends JDialog implements SystemStatusBanner.Free
     /** Validates the form and appends a new {@link QueuedCharge} to the queue. */
     private void handleAddCharge() {
         // Validate folio ID
-        int folioId;
+        long folioId;
         try {
-            folioId = Integer.parseInt(txtFolioId.getText().trim());
+            folioId = Long.parseLong(txtFolioId.getText().trim());
             if (folioId <= 0) throw new NumberFormatException();
         } catch (NumberFormatException ex) {
             highlightError(txtFolioId, "Folio ID must be a positive integer.");

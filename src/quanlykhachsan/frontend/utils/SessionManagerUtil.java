@@ -9,6 +9,9 @@ import quanlykhachsan.backend.user.User;
 public class SessionManagerUtil {
     private static User currentUser;
     private static String accessToken;
+    private static String role;
+    public static void setRole(String value){role=value==null?null:value.toLowerCase(java.util.Locale.ROOT);if("staff".equals(role))role="front_desk";}
+    public static String getRole(){if(role!=null)return role;return switch(getCurrentRoleId()){case 1->"admin";case 2->"front_desk";case 3->"customer";default->"unknown";};}
 
     public static void setUser(User user) {
         currentUser = user;
@@ -34,5 +37,6 @@ public class SessionManagerUtil {
     public static void clear() {
         currentUser = null;
         accessToken = null;
+        role = null;
     }
 }

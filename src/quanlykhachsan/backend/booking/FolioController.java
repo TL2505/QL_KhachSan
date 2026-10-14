@@ -35,6 +35,8 @@ public final class FolioController implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
+        if(path.matches("/api/v1/folios/[^/]+/vietqr")){new VietQrController().handle(exchange);return;}
+        if(path.matches("/api/v1/folios/[^/]+/payment-status")){new PaymentPollController().handle(exchange);return;}
         try {
             if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
                 Matcher matcher = BOOKING_FOLIOS_PATH.matcher(path);
@@ -51,7 +53,7 @@ public final class FolioController implements HttpHandler {
                     Matcher routing = ROUTING_PATH.matcher(path);
                     if (!routing.matches()) { writeError(exchange, 404, "ERR_404_NOT_FOUND", "Folio route not found"); return; }
                     if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
-                    routeCharge(exchange, Integer.parseInt(routing.group(1)));
+                    routeCharge(exchange, Long.parseLong(routing.group(1)));
                     return;
                 }
                 writeError(exchange, 405, "ERR_405_METHOD_NOT_ALLOWED", "Method not allowed");
@@ -59,13 +61,13 @@ public final class FolioController implements HttpHandler {
             }
             if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
             Matcher split = SPLIT_PATH.matcher(path);
-            if (split.matches()) { splitFolio(exchange, Integer.parseInt(split.group(1))); return; }
+            if (split.matches()) { splitFolio(exchange, Long.parseLong(split.group(1))); return; }
             Matcher matcher = PAYMENT_PATH.matcher(path);
             if (!matcher.matches()) {
                 writeError(exchange, 404, "ERR_404_NOT_FOUND", "Folio route not found");
                 return;
             }
-            settle(exchange, Integer.parseInt(matcher.group(1)));
+            settle(exchange, Long.parseLong(matcher.group(1)));
         } catch (IllegalArgumentException ex) {
             writeError(exchange, 400, "ERR_400_BAD_REQUEST", "Invalid folio request");
         } catch (Exception ex) {
@@ -76,12 +78,12 @@ public final class FolioController implements HttpHandler {
         }
     }
 
-    private void splitFolio(HttpExchange exchange, int folioId) throws Exception {
+    private void splitFolio(HttpExchange exchange, long folioId) throws Exception {
         try (Connection c = DatabaseConnection.getConnection()) {
             c.setAutoCommit(false);
             try {
                 int bookingId = bookingId(c, folioId);
-                int guestFolio = new FolioRoutingEngine().ensureGuestFolio(c, bookingId);
+                long guestFolio = new FolioRoutingEngine().ensureGuestFolio(c, bookingId);
                 c.commit();
                 JsonObject result = new JsonObject(); result.addProperty("master_folio_id", folioId);
                 result.addProperty("guest_folio_id", guestFolio);
@@ -91,7 +93,7 @@ public final class FolioController implements HttpHandler {
         }
     }
 
-    private void routeCharge(HttpExchange exchange, int folioId) throws Exception {
+    private void routeCharge(HttpExchange exchange, long folioId) throws Exception {
         JsonObject body;
         try (InputStream input = exchange.getRequestBody()) {
             body = JsonParser.parseString(new String(input.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
@@ -104,7 +106,7 @@ public final class FolioController implements HttpHandler {
             c.setAutoCommit(false);
             try {
                 int bookingId = bookingId(c, folioId);
-                int routed = new FolioRoutingEngine().routeCharge(c, bookingId, chargeType);
+                long routed = new FolioRoutingEngine().routeCharge(c, bookingId, chargeType);
                 c.commit();
                 JsonObject result = new JsonObject(); result.addProperty("booking_id", bookingId);
                 result.addProperty("charge_type", chargeType); result.addProperty("folio_id", routed);
@@ -115,9 +117,9 @@ public final class FolioController implements HttpHandler {
         }
     }
 
-    private static int bookingId(Connection c, int folioId) throws SQLException {
+    private static int bookingId(Connection c, long folioId) throws SQLException {
         try (PreparedStatement q = c.prepareStatement("SELECT booking_id FROM folios WHERE id=? FOR UPDATE")) {
-            q.setInt(1, folioId); try (ResultSet r = q.executeQuery()) {
+            q.setLong(1, folioId); try (ResultSet r = q.executeQuery()) {
                 if (!r.next()) throw new SQLException("Folio not found"); return r.getInt(1);
             }
         }
@@ -132,7 +134,7 @@ public final class FolioController implements HttpHandler {
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
                     JsonObject row = new JsonObject();
-                    row.addProperty("id", result.getInt("id"));
+                    row.addProperty("id", result.getLong("id"));
                     row.addProperty("folio_type", result.getString("folio_type"));
                     row.addProperty("balance", result.getBigDecimal("balance"));
                     row.addProperty("status", result.getString("status"));
@@ -143,7 +145,7 @@ public final class FolioController implements HttpHandler {
         ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(rows));
     }
 
-    private void settle(HttpExchange exchange, int folioId) throws Exception {
+    private void settle(HttpExchange exchange, long folioId) throws Exception {
         String key = exchange.getRequestHeaders().getFirst("Idempotency-Key");
         UUID uuid;
         try {
