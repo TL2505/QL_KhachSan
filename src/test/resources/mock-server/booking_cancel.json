@@ -1,0 +1,8 @@
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "status": "cancelled",
+    "message": "Booking 1 has been cancelled successfully."
+  }
+}

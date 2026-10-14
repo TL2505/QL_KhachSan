@@ -1,0 +1,5 @@
+{
+  "error_code": "ERR_409_CONFLICT",
+  "message": "Room already assigned to another guest.",
+  "timestamp": "2026-10-10T00:00:00Z"
+}

@@ -1,0 +1,14 @@
+{
+  "status": "success",
+  "data": {
+    "id": 132,
+    "customerId": 1,
+    "roomId": 1,
+    "checkInDate": "2026-10-20 14:00:00",
+    "checkOutDate": "2026-10-22 12:00:00",
+    "totalPrice": 1000000.0,
+    "status": "confirmed",
+    "customerType": "Walk-in",
+    "version": 1
+  }
+}

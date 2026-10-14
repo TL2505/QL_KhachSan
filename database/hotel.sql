@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NULL, -- Compatible with modern schema; VARCHAR(255) prevents BCrypt 60-char truncation
   role_id INT NOT NULL,
   status ENUM('active', 'inactive', 'banned') DEFAULT 'active',
   full_name VARCHAR(100) NULL,
@@ -66,7 +67,8 @@ CREATE TABLE IF NOT EXISTS rooms (
   room_number VARCHAR(20) NOT NULL UNIQUE,
   room_type_id INT NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
-  status ENUM('available', 'booked', 'occupied', 'maintenance', 'cleaning', 'out_of_service') DEFAULT 'available',
+  status ENUM('available', 'booked', 'occupied', 'maintenance', 'cleaning', 'out_of_service', 'vacant_clean', 'vacant_dirty', 'occupied_clean', 'occupied_dirty', 'out_of_order', 'reserved') DEFAULT 'vacant_clean',
+  version INT NOT NULL DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   -- RESTRICT: Không cho xóa loại phòng nếu có phòng đang cấu hình loại này
@@ -259,6 +261,63 @@ CREATE TABLE IF NOT EXISTS loyalty_histories (
   description VARCHAR(255),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
+-- Table: system_settings (System State & Business Date Persistence)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS system_settings (
+  setting_key VARCHAR(100) PRIMARY KEY,
+  setting_value VARCHAR(255) NOT NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO system_settings (setting_key, setting_value) VALUES ('business_date', '2026-10-14');
+
+-- --------------------------------------------------------
+-- Table: pos_sync_records (Store-and-Forward POS Sync Idempotency)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS pos_sync_records (
+  idempotency_key VARCHAR(100) PRIMARY KEY,
+  batch_id VARCHAR(100) NOT NULL,
+  booking_id INT NOT NULL,
+  folio_id BIGINT NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  business_date DATE NOT NULL,
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
+-- Table: folios (ADR-06 Multi-Folio Ledger Engine)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS folios (
+  id VARCHAR(64) PRIMARY KEY,
+  booking_id INT NOT NULL,
+  folio_type ENUM('MASTER', 'GUEST') NOT NULL,
+  status ENUM('OPEN', 'SETTLED', 'CLOSED', 'VOID', 'CANCELLED') DEFAULT 'OPEN',
+  balance DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  paid_amount DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_folio_booking (booking_id),
+  INDEX idx_folio_status (status)
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
+-- Table: folio_transactions (Ledger Line Items & Charge Postings)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS folio_transactions (
+  id VARCHAR(64) PRIMARY KEY,
+  folio_id VARCHAR(64) NOT NULL,
+  category VARCHAR(50) NOT NULL,
+  description VARCHAR(255) NOT NULL,
+  amount DECIMAL(12, 2) NOT NULL,
+  business_date DATE NOT NULL,
+  offline_timestamp VARCHAR(64) NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_folio_trans_folio FOREIGN KEY (folio_id) REFERENCES folios(id) ON DELETE CASCADE,
+  INDEX idx_trans_folio (folio_id),
+  INDEX idx_trans_business_date (business_date)
 ) ENGINE=InnoDB;
 
 -- --------------------------------------------------------

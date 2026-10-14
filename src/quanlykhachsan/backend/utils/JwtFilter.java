@@ -2,63 +2,121 @@ package quanlykhachsan.backend.utils;
 
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
-// Requires: io.jsonwebtoken:jjwt:0.12.5
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import javax.crypto.SecretKey;
+import io.jsonwebtoken.JwtException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
+/**
+ * Production JWT Authentication Filter (TASK-A1.4).
+ * <p>
+ * Enforces token-based authentication on protected REST API endpoints.
+ * Validates HMAC-SHA256 signatures via {@link SecurityUtil#validateAndExtractClaims(String)}
+ * and binds authenticated claims (userId, username, role) to the request context.
+ */
 public class JwtFilter extends Filter {
 
-    private final SecretKey key;
-
-    public JwtFilter() {
-        String secret = System.getenv("JWT_SECRET");
-        if (secret == null || secret.length() < 32) {
-            secret = "hotel_pms_super_secure_secret_key_1234567890"; 
-        }
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-    }
+    private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
 
     @Override
     public String description() {
-        return "JWT Authentication Filter";
+        return "Production JWT Authentication Filter validating Bearer tokens";
     }
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
-        String path = exchange.getRequestURI().getPath();
+        String rawPath = exchange.getRequestURI().getPath();
+        String path = (rawPath == null || rawPath.isEmpty()) ? "/" : rawPath;
+        if (path.length() > 1 && path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1); // Normalize trailing slash
+        }
 
-        // Skip auth for open endpoints
-        if (path.equals("/api/v1/auth/login") || path.equals("/api/v1/health") || path.equals("/api/v1/auth/register")) {
+        // 1. Skip authentication checks for CORS preflight (OPTIONS)
+        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
             chain.doFilter(exchange);
             return;
         }
 
+        // 2. Public path whitelist (Login, Register, Deep Healthcheck)
+        if (isWhitelisted(path)) {
+            chain.doFilter(exchange);
+            return;
+        }
+
+        // 3. Inspect Authorization header
         String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
-        
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            GlobalExceptionHandler.sendError(exchange, 401, "ERR_401_UNAUTHORIZED", "Missing or invalid Bearer token format.");
+            ApiResponseUtil.sendError(
+                    exchange,
+                    401,
+                    "ERR_401_UNAUTHORIZED",
+                    "Missing or malformed Authorization header (Bearer <token>)"
+            );
             return;
         }
 
-        String token = authHeader.substring(7);
-        try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-            
-            // Set user info for downstream RBAC
-            exchange.setAttribute("user_id", claims.getSubject());
-            exchange.setAttribute("role", claims.get("role"));
-            
-            chain.doFilter(exchange);
-        } catch (Exception e) {
-            GlobalExceptionHandler.sendError(exchange, 401, "ERR_401_UNAUTHORIZED", "Invalid or expired token.");
+        String token = authHeader.substring(7).trim();
+        if (token.isEmpty()) {
+            ApiResponseUtil.sendError(
+                    exchange,
+                    401,
+                    "ERR_401_UNAUTHORIZED",
+                    "Missing or malformed Authorization header (Bearer <token>)"
+            );
+            return;
         }
+
+        // 4. Validate token and extract claims
+        try {
+            Claims claims = SecurityUtil.validateAndExtractClaims(token);
+
+            // Safely extract claims avoiding ClassCastException on numeric deserialization
+            Object rawUserId = claims.get("userId");
+            int userId = (rawUserId instanceof Number number)
+                    ? number.intValue()
+                    : (rawUserId != null ? Integer.parseInt(rawUserId.toString().trim()) : 0);
+
+            if (userId == 0 && claims.getSubject() != null) {
+                try {
+                    userId = Integer.parseInt(claims.getSubject().trim());
+                } catch (NumberFormatException ignored) {}
+            }
+
+            String username = claims.get("username", String.class);
+            if (username == null) {
+                username = claims.getSubject();
+            }
+
+            String role = claims.get("role", String.class);
+
+            // Attach user claims to the request context for downstream controllers & RBAC
+            exchange.setAttribute("userId", userId);
+            exchange.setAttribute("user_id", String.valueOf(userId));
+            exchange.setAttribute("username", username);
+            exchange.setAttribute("role", role);
+
+            chain.doFilter(exchange);
+
+        } catch (JwtException | IllegalArgumentException e) {
+            logger.warn("JWT authentication failed for path [{}]: {}", path, e.getMessage());
+            ApiResponseUtil.sendError(
+                    exchange,
+                    401,
+                    "ERR_401_TOKEN_INVALID",
+                    "Authentication token is invalid or expired"
+            );
+        }
+    }
+
+    /**
+     * Checks if a request path is exempted from authentication.
+     */
+    private boolean isWhitelisted(String path) {
+        return path.equals("/api/v1/auth/login")
+                || path.equals("/api/v1/auth/register")
+                || path.equals("/api/v1/health")
+                || path.equals("/health");
     }
 }

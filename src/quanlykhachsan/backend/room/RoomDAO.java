@@ -22,4 +22,8 @@ public interface RoomDAO {
     public Room findById(int id);
     public boolean updateStatus(int roomId, String status);
     public java.util.List<Room> findAvailableRooms(java.util.Date checkIn, java.util.Date checkOut);
+
+    // TASK-A2.1: Room Catalog & Dynamic Availability Engine
+    public java.util.List<java.util.Map<String, Object>> getAllRooms();
+    public java.util.List<java.util.Map<String, Object>> getAvailableRooms(String checkIn, String checkOut);
 }
