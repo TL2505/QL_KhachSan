@@ -132,7 +132,11 @@ public class SecurityUtil {
     // =========================================================================
 
     public static boolean hasPermission(HttpExchange exchange, int... allowedRoles) throws IOException {
-        String roleHeader = exchange.getRequestHeaders().getFirst("X-User-Role");
+
+        Object jwtRole = exchange.getAttribute("role");
+        String roleHeader = jwtRole == null
+            ? exchange.getRequestHeaders().getFirst("X-User-Role") : jwtRole.toString();
+        
 
         int roleId = -1;
         if (roleHeader != null) {

@@ -2,8 +2,6 @@ package quanlykhachsan.frontend;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.KeyboardFocusManager;
 import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.view.staff.BookingForm;
 import quanlykhachsan.frontend.view.staff.CustomerForm;
@@ -25,11 +23,22 @@ import quanlykhachsan.frontend.view.customer.CustomerDashboard;
 import quanlykhachsan.frontend.view.staff.LoyaltyForm;
 import quanlykhachsan.frontend.view.customer.RoomDiscoveryPanel;
 import quanlykhachsan.frontend.view.admin.SupportManagementForm;
+import quanlykhachsan.frontend.view.SystemStatusBanner;
+import quanlykhachsan.frontend.view.OfflinePosDialog;
+import quanlykhachsan.frontend.view.QuickFilterBar;
+import quanlykhachsan.frontend.utils.HttpUtil;
+import quanlykhachsan.frontend.utils.GlobalKeyDispatcher;
 
 public class MainUI extends JFrame {
 
     private User currentUser;
     private JTabbedPane tabbedPane;
+    /** TASK-C3.2: Persistent amber freeze-warning banner embedded below the app header. */
+    private SystemStatusBanner systemStatusBanner;
+    private QuickFilterBar quickFilterBar;
+    private RoomForm roomForm;
+    private BookingForm bookingForm;
+    private GlobalKeyDispatcher globalKeyDispatcher;
 
     public MainUI(User user) {
         this.currentUser = user;
@@ -40,7 +49,16 @@ public class MainUI extends JFrame {
 
         initUI();
         setupGlobalHotkeys();
-        
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosed(java.awt.event.WindowEvent event) {
+                if (globalKeyDispatcher != null) globalKeyDispatcher.close();
+            }
+        });
+
+        // Wire OfflinePosDialog to the banner (must be after initUI so banner is attached)
+        systemStatusBanner.bindOfflinePosDialog(this);
+        HttpUtil.setServiceUnavailableHandler(systemStatusBanner::handleServiceUnavailable);
+
         // Khởi chạy WebSocket để nhận thông báo real-time (chỉ dành cho Admin & Lễ tân)
         if (currentUser.getRoleId() == 1 || currentUser.getRoleId() == 2) {
             WebSocketService.connect();
@@ -76,7 +94,7 @@ public class MainUI extends JFrame {
         headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 30, 0, 30));
 
         JLabel lblTitle = new JLabel("HỆ THỐNG QUẢN LÝ KHÁCH SẠN");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblTitle.setForeground(Color.WHITE);
         headerPanel.add(lblTitle, BorderLayout.WEST);
 
@@ -91,7 +109,7 @@ public class MainUI extends JFrame {
         rightHeader.add(lblUser);
 
         JCheckBox chkThemeToggle = new JCheckBox("Dark mode", ThemeManager.isDarkMode());
-        chkThemeToggle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        chkThemeToggle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         chkThemeToggle.setForeground(Color.WHITE);
         chkThemeToggle.setOpaque(false);
         chkThemeToggle.setFocusPainted(false);
@@ -121,7 +139,7 @@ public class MainUI extends JFrame {
         rightHeader.add(chkThemeToggle);
 
         JButton btnLogout = new JButton("Đăng xuất");
-        btnLogout.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnLogout.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnLogout.setForeground(Color.WHITE);
         btnLogout.setBackground(new Color(239, 68, 68));
         btnLogout.setBorder(BorderFactory.createCompoundBorder(
@@ -135,10 +153,30 @@ public class MainUI extends JFrame {
         headerPanel.add(rightHeader, BorderLayout.EAST);
         add(headerPanel, BorderLayout.NORTH);
 
+        // ── TASK-C3.2: System freeze banner (amber, hidden by default) ──────────
+        // Inserted in a wrapper so header stays at absolute NORTH and banner
+        // appears directly underneath it without competing for BorderLayout.NORTH.
+        systemStatusBanner = new SystemStatusBanner();
+        JPanel northStack = new JPanel(new BorderLayout());
+        northStack.add(headerPanel,        BorderLayout.NORTH);
+        northStack.add(systemStatusBanner, BorderLayout.SOUTH);
+        if (currentUser.getRoleId() == 1 || currentUser.getRoleId() == 2) {
+            quickFilterBar = new QuickFilterBar();
+            JPanel staffToolbar = new JPanel(new BorderLayout());
+            staffToolbar.add(systemStatusBanner, BorderLayout.NORTH);
+            staffToolbar.add(quickFilterBar, BorderLayout.SOUTH);
+            northStack.remove(systemStatusBanner);
+            northStack.add(staffToolbar, BorderLayout.SOUTH);
+            quickFilterBar.setFilterListener(query -> {
+                if (roomForm != null) roomForm.applyQuickFilter(query);
+            });
+        }
+        add(northStack, BorderLayout.NORTH);
+
         // Tabs
         tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         tabbedPane.setBackground(ThemeManager.getSidebarBg());
         tabbedPane.setForeground(ThemeManager.getTextMain());
         tabbedPane.setOpaque(true);
@@ -183,7 +221,8 @@ public class MainUI extends JFrame {
 
         if (rId == 1) { // ADMIN
             addTab("Trang chủ", new AdminDashboard(idx -> tabbedPane.setSelectedIndex(idx)));
-            addTab("Sơ đồ Phòng", new RoomForm(currentUser));
+            roomForm = new RoomForm(currentUser, systemStatusBanner);
+            addTab("Sơ đồ Phòng", roomForm);
             addTab("Khách hàng", new CustomerForm());
             addTab("Hệ thành viên", new LoyaltyForm());
             addTab("Quản lý Đánh giá", new ReviewManagementForm());
@@ -192,8 +231,10 @@ public class MainUI extends JFrame {
             addTab("Quản lý Khuyến mãi", new PromotionForm());
             addTab("Quản trị & Báo cáo", new ReportForm());
         } else if (rId == 2) { // STAFF (Lễ tân)
-            addTab("Sơ đồ Phòng", new RoomForm(currentUser));
-            addTab("Đơn đặt phòng", new BookingForm());
+            roomForm = new RoomForm(currentUser, systemStatusBanner);
+            addTab("Sơ đồ Phòng", roomForm);
+            bookingForm = new BookingForm();
+            addTab("Đơn đặt phòng", bookingForm);
             addTab("Khách hàng", new CustomerForm());
             addTab("Thanh toán", new PaymentForm());
             addTab("Hệ thành viên", new LoyaltyForm());
@@ -219,7 +260,7 @@ public class MainUI extends JFrame {
         tabbedPane.addTab(title, panel);
         int index = tabbedPane.getTabCount() - 1;
         JLabel lbl = new JLabel(title);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lbl.setForeground(ThemeManager.getTextMain());
         lbl.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 15));
         tabbedPane.setTabComponentAt(index, lbl);
@@ -237,7 +278,7 @@ public class MainUI extends JFrame {
                     // lbl.setFont(new Font("Segoe UI", Font.BOLD, 14)); // Slightly larger if desired
                 } else {
                     lbl.setForeground(ThemeManager.getTextMain());
-                    // lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                    // lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
                 }
             }
         }
@@ -262,38 +303,99 @@ public class MainUI extends JFrame {
     }
 
     private void setupGlobalHotkeys() {
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
-            if (e.getID() == KeyEvent.KEY_PRESSED) {
-                int keyCode = e.getKeyCode();
-                
-                // F2: Phím tắt mở Quản lý Khách hàng
-                if (keyCode == KeyEvent.VK_F2) {
-                    if (currentUser.getRoleId() == 1 || currentUser.getRoleId() == 2) {
-                        setSelectedTab(2);
-                        return true;
-                    }
-                }
-                
-                // F5: Phím tắt làm mới (Refresh Sơ đồ phòng)
-                if (keyCode == KeyEvent.VK_F5) {
-                    Component currentPanel = tabbedPane.getSelectedComponent();
-                    if (currentPanel instanceof RoomForm) {
-                        ((RoomForm) currentPanel).loadRooms();
-                    }
-                    return true;
-                }
-                
-                // F12: Phím tắt mở tab Thanh toán / Hóa đơn
-                if (keyCode == KeyEvent.VK_F12) {
-                    if (currentUser.getRoleId() == 1) {
-                        setSelectedTab(5); // Admin -> Hóa đơn
-                    } else if (currentUser.getRoleId() == 2) {
-                        setSelectedTab(3); // Nhân viên -> Thanh toán
-                    }
-                    return true;
+        globalKeyDispatcher = new GlobalKeyDispatcher(this);
+        globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F1, this::showShortcutHelp);
+        globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F2, () -> withRoomForm("checkin"));
+        globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F3, () -> withRoomForm("checkout"));
+        globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F4, () -> {
+            if (quickFilterBar != null) {
+                setSelectedTab(currentUser.getRoleId() == 1 ? 1 : 0);
+                quickFilterBar.focusSearch();
+            }
+        });
+        globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F5, this::refreshSelectedPanel);
+        globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F6, () -> {
+            if (roomForm != null) { setSelectedTab(currentUser.getRoleId() == 1 ? 1 : 0); roomForm.selectAdjacentRoom(1); }
+        });
+        globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F7, () -> {
+            if (roomForm != null) { setSelectedTab(currentUser.getRoleId() == 1 ? 1 : 0); roomForm.selectAdjacentRoom(-1); }
+        });
+        globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F8, () -> withRoomForm(null));
+        globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F9, () -> {
+            if (bookingForm != null) {
+                setSelectedTab(currentUser.getRoleId() == 1 ? 1 : 1);
+                bookingForm.beginNewBooking();
+            }
+        });
+        globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F10, this::printCurrentView);
+        globalKeyDispatcher.install();
+    }
+
+    private void withRoomForm(String action) {
+        if (roomForm == null) return;
+        setSelectedTab(currentUser.getRoleId() == 1 ? 1 : 0);
+        roomForm.openSelectedRoomAction(action);
+    }
+
+    private void refreshSelectedPanel() {
+        Component selected = tabbedPane.getSelectedComponent();
+        if (selected instanceof RoomForm rooms) rooms.loadRooms();
+        else if (selected instanceof BookingForm bookings) bookings.refreshData();
+    }
+
+    private void showShortcutHelp() {
+        String help = "F1 Help   F2 Check-in   F3 Check-out   F4 Quick Search   F5 Refresh\n"
+            + "F6 Next room   F7 Previous room   F8 Open Folio   F9 New Booking   F10 Print\nEsc closes the active modal dialog.";
+        JDialog dialog = new JDialog(this, "Staff shortcuts", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        dialog.setLayout(new BorderLayout(12, 12));
+        JTextArea instructions = new JTextArea(help);
+        instructions.setEditable(false);
+        instructions.setOpaque(false);
+        instructions.setBorder(BorderFactory.createEmptyBorder(16, 16, 8, 16));
+        dialog.add(instructions, BorderLayout.CENTER);
+        JButton close = new JButton("Close");
+        close.addActionListener(event -> dialog.dispose());
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        actions.add(close);
+        dialog.add(actions, BorderLayout.SOUTH);
+        dialog.setSize(460, 180);
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+
+    private void printCurrentView() {
+        Component selected = tabbedPane.getSelectedComponent();
+        if (selected instanceof quanlykhachsan.frontend.view.staff.InvoiceForm invoices) {
+            invoices.printSelectedInvoice();
+            return;
+        }
+        if (selected == null || selected.getWidth() <= 0 || selected.getHeight() <= 0) return;
+        java.awt.image.BufferedImage snapshot = new java.awt.image.BufferedImage(selected.getWidth(),
+            selected.getHeight(), java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.awt.Graphics2D graphics = snapshot.createGraphics();
+        try { selected.printAll(graphics); } finally { graphics.dispose(); }
+        java.awt.print.PrinterJob printer = java.awt.print.PrinterJob.getPrinterJob();
+        printer.setJobName("Hotel PMS staff view");
+        printer.setPrintable((pageGraphics, pageFormat, pageIndex) -> {
+            if (pageIndex > 0) return java.awt.print.Printable.NO_SUCH_PAGE;
+            double scale = Math.min(pageFormat.getImageableWidth() / snapshot.getWidth(),
+                pageFormat.getImageableHeight() / snapshot.getHeight());
+            java.awt.Graphics2D output = (java.awt.Graphics2D) pageGraphics;
+            output.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+            output.scale(scale, scale);
+            output.drawImage(snapshot, 0, 0, null);
+            return java.awt.print.Printable.PAGE_EXISTS;
+        });
+        if (printer.printDialog()) new SwingWorker<Void, Void>() {
+            @Override protected Void doInBackground() throws Exception { printer.print(); return null; }
+            @Override protected void done() {
+                try { get(); }
+                catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
+                catch (java.util.concurrent.ExecutionException ex) {
+                    System.err.println("Unable to print the active staff view: " + ex.getCause());
                 }
             }
-            return false;
-        });
+        }.execute();
     }
 }

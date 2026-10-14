@@ -88,11 +88,11 @@ public class PaymentForm extends JPanel {
                 new EmptyBorder(12, 20, 12, 20)));
 
         JLabel title = new JLabel("Thanh toán & Hóa đơn");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         lblStatus = new JLabel("Đang tải...");
-        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblStatus.setForeground(MUTED);
 
         header.add(title, BorderLayout.WEST);
@@ -137,14 +137,14 @@ public class PaymentForm extends JPanel {
             }
         };
         bookingTable = new JTable(tableModel);
-        bookingTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        bookingTable.setRowHeight(40);
+        bookingTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        bookingTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         bookingTable.setShowGrid(false);
         bookingTable.setSelectionBackground(ROW_SELECT);
         bookingTable.setSelectionForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         // Header
-        bookingTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        bookingTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         bookingTable.getTableHeader().setReorderingAllowed(false);
         bookingTable.getTableHeader().setPreferredSize(new Dimension(0, 35));
 
@@ -232,7 +232,7 @@ public class PaymentForm extends JPanel {
         btnRedeem100 = createRedeemButton("100đ (-50k)");
         btnRedeem500 = createRedeemButton("500đ (-300k)");
         btnCancelRedeem = new JButton("Hủy");
-        btnCancelRedeem.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        btnCancelRedeem.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnCancelRedeem.setVisible(false);
 
         btnRedeem100.addActionListener(e -> applyRedeem(100, 50000));
@@ -256,7 +256,7 @@ public class PaymentForm extends JPanel {
         content.add(Box.createVerticalStrut(30));
 
         JLabel lblM = new JLabel("Phương thức thanh toán:");
-        lblM.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblM.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblM.setAlignmentX(LEFT_ALIGNMENT);
         content.add(lblM);
         content.add(Box.createVerticalStrut(8));
@@ -268,7 +268,7 @@ public class PaymentForm extends JPanel {
         content.add(cbMethod);
 
         btnShowQR = new JButton("HIỂN THỊ MÃ QR");
-        btnShowQR.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnShowQR.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnShowQR.setForeground(Color.WHITE);
         btnShowQR.setBackground(new Color(14, 165, 233));
         btnShowQR.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

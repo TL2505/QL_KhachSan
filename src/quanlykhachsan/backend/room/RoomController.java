@@ -165,7 +165,7 @@ public class RoomController implements HttpHandler {
                 return;
             }
             if (room.getStatus() == null || room.getStatus().isEmpty()) {
-                room.setStatus("available");
+                room.setStatus("vacant_clean");
             }
 
             boolean ok = roomService.addRoom(room);

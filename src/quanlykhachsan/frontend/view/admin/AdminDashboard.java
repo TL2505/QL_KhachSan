@@ -50,7 +50,7 @@ public class AdminDashboard extends JPanel {
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         JLabel lblTitle = new JLabel("TỔNG QUAN VẬN HÀNH HÔM NAY");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblTitle.setForeground(TEXT_MAIN);
         header.add(lblTitle, BorderLayout.WEST);
         
@@ -161,7 +161,7 @@ public class AdminDashboard extends JPanel {
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblTitle.setForeground(TEXT_MUT);
         
-        valLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        valLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         valLabel.setForeground(TEXT_MAIN);
 
         card.add(lblTitle, BorderLayout.NORTH);

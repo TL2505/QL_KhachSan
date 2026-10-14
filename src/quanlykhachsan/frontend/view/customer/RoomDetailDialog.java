@@ -68,7 +68,7 @@ public class RoomDetailDialog extends JDialog {
         ));
 
         JLabel lblTitle = new JLabel("Phòng " + room.getRoomNumber());
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblTitle.setForeground(ThemeManager.getTextMain());
         header.add(lblTitle, BorderLayout.WEST);
 
@@ -94,7 +94,7 @@ public class RoomDetailDialog extends JDialog {
         mainImage.setBorder(new LineBorder(BORDER, 1, true));
         mainImage.setText("HÌNH ẢNH PHÒNG");
         mainImage.setForeground(new Color(120, 120, 120));
-        mainImage.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        mainImage.setFont(new Font("Segoe UI", Font.BOLD, 20));
         leftCol.add(mainImage, BorderLayout.CENTER);
 
         JPanel thumbs = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
@@ -119,7 +119,7 @@ public class RoomDetailDialog extends JDialog {
         JPanel titleRow = new JPanel(new BorderLayout());
         titleRow.setOpaque(false);
         JLabel roomTitle = new JLabel("Phòng " + room.getRoomNumber());
-        roomTitle.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        roomTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
         roomTitle.setForeground(ThemeManager.getTextMain());
         titleRow.add(roomTitle, BorderLayout.WEST);
         titleRow.add(createStatusBadge(room.getStatus()), BorderLayout.EAST);
@@ -132,7 +132,7 @@ public class RoomDetailDialog extends JDialog {
         String[] amenities = {"Wifi miễn phí", "TV màn hình phẳng", "Điều hòa", "Bình đun nước", "Tủ lạnh mini", "Máy sấy tóc", "Dép đi trong phòng", "Ban công"};
         for (String a : amenities) {
             JLabel la = new JLabel("• " + a);
-            la.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            la.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             la.setForeground(ThemeManager.getTextMuted());
             am.add(la);
         }
@@ -140,17 +140,17 @@ public class RoomDetailDialog extends JDialog {
         centerCol.add(Box.createVerticalStrut(12));
 
         lblDescription = new JLabel("<html>Mô tả: Phòng rộng rãi, tiện nghi đầy đủ, phù hợp cho cặp đôi hoặc công tác.</html>");
-        lblDescription.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblDescription.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblDescription.setForeground(ThemeManager.getTextMuted());
         centerCol.add(lblDescription);
         centerCol.add(Box.createVerticalStrut(12));
 
         // Ensure spec labels exist
         lblTypeName = new JLabel("Đang tải loại phòng...");
-        lblTypeName.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblTypeName.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblTypeName.setForeground(ThemeManager.getTextMain());
         lblCapacity = new JLabel("👥 Sức chứa: -- người");
-        lblCapacity.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblCapacity.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblCapacity.setForeground(ThemeManager.getTextMain());
 
         // Specs table
@@ -213,7 +213,7 @@ public class RoomDetailDialog extends JDialog {
         // Total and button
         JPanel totalRow = new JPanel(new BorderLayout()); totalRow.setOpaque(false);
         JLabel ttl = new JLabel("Tổng tạm tính:"); ttl.setForeground(ThemeManager.getTextMuted()); totalRow.add(ttl, BorderLayout.WEST);
-        lblTotalFinal = new JLabel(formatPrice(room.getPrice())); lblTotalFinal.setFont(new Font("Segoe UI", Font.BOLD, 18)); lblTotalFinal.setForeground(PRIMARY); totalRow.add(lblTotalFinal, BorderLayout.EAST);
+        lblTotalFinal = new JLabel(formatPrice(room.getPrice())); lblTotalFinal.setFont(new Font("Segoe UI", Font.BOLD, 20)); lblTotalFinal.setForeground(PRIMARY); totalRow.add(lblTotalFinal, BorderLayout.EAST);
         bookingBox.add(totalRow);
         bookingBox.add(Box.createVerticalStrut(12));
 
@@ -261,7 +261,7 @@ public class RoomDetailDialog extends JDialog {
         actions.setBorder(new MatteBorder(1, 0, 0, 0, BORDER));
 
         JButton btnCancel = new JButton("Đóng");
-        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnCancel.setBackground(CARD_BG);
         btnCancel.setForeground(ThemeManager.getTextMain());
         btnCancel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -371,9 +371,9 @@ public class RoomDetailDialog extends JDialog {
                     java.util.List<quanlykhachsan.backend.room.Room> all = RoomAPI.getAllRooms();
                     for (quanlykhachsan.backend.room.Room rr : all) {
                         if (rr.getId() == room.getId()) {
-                            String st = rr.getStatus() != null ? rr.getStatus().toLowerCase() : "available";
-                            if ("maintenance".equals(st)) return "Phòng đang được bảo trì!";
-                            if ("cleaning".equals(st)) return "Phòng đang dọn dẹp!";
+                            String st = rr.getStatus() != null ? rr.getStatus().toLowerCase() : "vacant_clean";
+                            if ("out_of_order".equals(st)) return "Phòng đang được bảo trì!";
+                            if ("vacant_dirty".equals(st)) return "Phòng đang dọn dẹp!";
                             break;
                         }
                     }
@@ -466,7 +466,7 @@ public class RoomDetailDialog extends JDialog {
 
     private JLabel makeLabel(String text) {
         JLabel l = new JLabel(text);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        l.setFont(new Font("Segoe UI", Font.BOLD, 14));
         l.setForeground(ThemeManager.getTextMain());
         l.setBorder(new EmptyBorder(0, 0, 5, 0));
         return l;
@@ -479,11 +479,12 @@ public class RoomDetailDialog extends JDialog {
     private String toVietnamese(String status) {
         if (status == null) return "N/A";
         switch (status.toLowerCase()) {
-            case "available":      return "Trống - Sẵn sàng";
-            case "booked":         return "Đã được đặt";
-            case "occupied":       return "Đang có khách";
-            case "maintenance":    return "Đang bảo trì";
-            case "cleaning":       return "Đang dọn dẹp";
+            case "vacant_clean":   return "Trống - Sẵn sàng";
+            case "reserved":       return "Đã được đặt";
+            case "occupied_clean":
+            case "occupied_dirty": return "Đang có khách";
+            case "out_of_order":   return "Đang bảo trì";
+            case "vacant_dirty":   return "Đang dọn dẹp";
             default:               return status;
         }
     }
@@ -507,7 +508,7 @@ public class RoomDetailDialog extends JDialog {
     }
 
     private JLabel makeSpecValue(JLabel v) {
-        v.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        v.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         v.setForeground(ThemeManager.getTextMain());
         return v;
     }
@@ -516,26 +517,27 @@ public class RoomDetailDialog extends JDialog {
         String text = toVietnamese(status).toUpperCase();
         Color fgColor;
         Color bgColor;
-        if (status == null) status = "available";
+        if (status == null) status = "vacant_clean";
         switch (status.toLowerCase()) {
-            case "available":
+            case "vacant_clean":
                 fgColor = SUCCESS;
                 bgColor = new Color(SUCCESS.getRed(), SUCCESS.getGreen(), SUCCESS.getBlue(), 35);
                 break;
-            case "booked":
+            case "reserved":
                 fgColor = new Color(217, 119, 6);
                 bgColor = new Color(245, 158, 11, 35);
                 break;
-            case "occupied":
+            case "occupied_clean":
+            case "occupied_dirty":
                 fgColor = DANGER;
                 bgColor = new Color(DANGER.getRed(), DANGER.getGreen(), DANGER.getBlue(), 35);
                 break;
-            case "cleaning":
+            case "vacant_dirty":
                 Color cleaningColor = new Color(56, 189, 248);
                 fgColor = new Color(12, 74, 110);
                 bgColor = new Color(cleaningColor.getRed(), cleaningColor.getGreen(), cleaningColor.getBlue(), 35);
                 break;
-            case "maintenance":
+            case "out_of_order":
             default:
                 fgColor = MUTED;
                 bgColor = new Color(MUTED.getRed(), MUTED.getGreen(), MUTED.getBlue(), 35);
@@ -550,7 +552,7 @@ public class RoomDetailDialog extends JDialog {
             super(text, SwingConstants.CENTER);
             setForeground(fg);
             this.bg = bg;
-            setFont(new Font("Segoe UI", Font.BOLD, 11));
+            setFont(new Font("Segoe UI", Font.BOLD, 12));
             setOpaque(false);
             setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
         }

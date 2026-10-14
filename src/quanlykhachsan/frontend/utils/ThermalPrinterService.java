@@ -99,7 +99,7 @@ public class ThermalPrinterService implements Printable {
         y += 20;
 
         // THÔNG TIN CHUNG
-        g2d.setFont(new Font("Monospaced", Font.PLAIN, 10));
+        g2d.setFont(new Font("Monospaced", Font.PLAIN, 12));
         g2d.drawString("Ma Booking: BK" + booking.getId(), 0, y); y += 12;
         g2d.drawString("Khach hang: " + (customer != null ? removeAccents(customer.getFullName()) : "N/A"), 0, y); y += 12;
         g2d.drawString("Phong: " + (room != null ? room.getRoomNumber() : "N/A") + " (" + days + " dem)", 0, y); y += 12;
@@ -109,12 +109,12 @@ public class ThermalPrinterService implements Printable {
         drawDashedLine(g2d, width, y); y += 15;
 
         // CHI TIẾT
-        g2d.setFont(new Font("Monospaced", Font.BOLD, 10));
+        g2d.setFont(new Font("Monospaced", Font.BOLD, 12));
         g2d.drawString("Khoan thu", 0, y); 
         drawRightAlignedString(g2d, "Thanh tien", width, y);
         y += 15;
         
-        g2d.setFont(new Font("Monospaced", Font.PLAIN, 10));
+        g2d.setFont(new Font("Monospaced", Font.PLAIN, 12));
         double roomSub = days * (room != null ? room.getPrice() : 0);
         g2d.drawString("Tien phong", 0, y); 
         drawRightAlignedString(g2d, nf.format(roomSub), width, y);

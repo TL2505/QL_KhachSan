@@ -50,7 +50,7 @@ public class ServiceManagementForm extends JPanel {
         // --- Bảng dữ liệu (CENTER) ---
         tableModel = new DefaultTableModel(new String[]{"ID", "Tên Dịch Vụ", "Mô tả", "Đơn Giá", "Trạng Thái"}, 0);
         table = new JTable(tableModel);
-        table.setRowHeight(30);
+        table.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && table.getSelectedRow() != -1) {
                 int row = table.getSelectedRow();

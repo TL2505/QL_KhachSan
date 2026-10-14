@@ -60,12 +60,12 @@ public class BookingWizardDialog extends JDialog {
         header.setBorder(new EmptyBorder(20, 25, 20, 25));
         
         JLabel title = new JLabel("Xác nhận Đặt phòng");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 24));
         title.setForeground(Color.WHITE);
         header.add(title);
 
         JLabel sub = new JLabel("Bước cuối cùng để sở hữu căn phòng tuyệt vời");
-        sub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        sub.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         sub.setForeground(new Color(204, 251, 241));
         header.add(sub);
         add(header, BorderLayout.NORTH);
@@ -95,7 +95,7 @@ public class BookingWizardDialog extends JDialog {
         content.add(Box.createVerticalStrut(10));
 
         JButton btnShowQR = new JButton("HIỂN THỊ MÃ QR");
-        btnShowQR.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnShowQR.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnShowQR.setForeground(Color.WHITE);
         btnShowQR.setBackground(new Color(14, 165, 233));
         btnShowQR.setFocusPainted(false);
@@ -125,7 +125,7 @@ public class BookingWizardDialog extends JDialog {
         JButton btnConfirm = new JButton("Xác nhận & Thanh toán " + nf.format(totalPrice));
         btnConfirm.setBackground(PRIMARY);
         btnConfirm.setForeground(Color.WHITE);
-        btnConfirm.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        btnConfirm.setFont(new Font("Segoe UI", Font.BOLD, 16));
         btnConfirm.setPreferredSize(new Dimension(0, 50));
         btnConfirm.setFocusPainted(false);
         btnConfirm.addActionListener(e -> processBooking());
@@ -148,11 +148,11 @@ public class BookingWizardDialog extends JDialog {
         p.setBorder(new EmptyBorder(4, 0, 4, 0));
         
         JLabel lbl = new JLabel(label);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lbl.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         
         JLabel val = new JLabel(value);
-        val.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        val.setFont(new Font("Segoe UI", Font.BOLD, 14));
         val.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         
         p.add(lbl, BorderLayout.WEST);

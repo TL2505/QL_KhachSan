@@ -8,6 +8,7 @@ public class AuthUserInfo {
     private String email;
     private String phone;
     private Integer customerId;
+    private String token;
 
     public int getUserId() {
         return userId;
@@ -64,4 +65,7 @@ public class AuthUserInfo {
     public void setCustomerId(Integer customerId) {
         this.customerId = customerId;
     }
+
+    public String getToken() { return token; }
+    public void setToken(String token) { this.token = token; }
 }

@@ -66,7 +66,7 @@ public class ChatPanel extends JPanel {
         txtInput.addActionListener(e -> sendMessage());
 
         btnSend = new JButton("Gửi >>");
-        btnSend.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnSend.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnSend.setBackground(MSG_SELF);
         btnSend.setForeground(Color.WHITE);
         btnSend.setFocusPainted(false);

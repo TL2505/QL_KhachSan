@@ -46,7 +46,7 @@ public class RoomOrderForm extends JPanel {
         leftPanel.setPreferredSize(new Dimension(350, 0));
         
         JLabel lblLeft = new JLabel("📝 Chọn Phòng");
-        lblLeft.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblLeft.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblLeft.setBorder(new EmptyBorder(10, 10, 10, 10));
         leftPanel.add(lblLeft, BorderLayout.NORTH);
 
@@ -54,7 +54,7 @@ public class RoomOrderForm extends JPanel {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         bookingTable = new JTable(bookingModel);
-        bookingTable.setRowHeight(35);
+        bookingTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         bookingTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && bookingTable.getSelectedRow() != -1) {
                 int bid = (int) bookingModel.getValueAt(bookingTable.getSelectedRow(), 0);
@@ -93,7 +93,7 @@ public class RoomOrderForm extends JPanel {
         btnAddOrder = new JButton("➕ Ghi Hóa Đơn");
         btnAddOrder.setBackground(new Color(5, 150, 105));
         btnAddOrder.setForeground(Color.WHITE);
-        btnAddOrder.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnAddOrder.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnAddOrder.addActionListener(e -> addServiceToRoom());
         
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
@@ -116,7 +116,7 @@ public class RoomOrderForm extends JPanel {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         usageTable = new JTable(usageModel);
-        usageTable.setRowHeight(30);
+        usageTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         tablePanel.add(new JScrollPane(usageTable), BorderLayout.CENTER);
         
         // Vùng tổng tiền món (South của Right)
@@ -169,17 +169,30 @@ public class RoomOrderForm extends JPanel {
     private void loadUsageData() {
         if (selectedBooking == null) return;
         usageModel.setRowCount(0);
-        double sum = 0;
-        
-        List<ServiceUsage> usages = ServiceUsageAPI.getUsageByBooking(selectedBooking.getId());
-        for (ServiceUsage u : usages) {
-            String sName = getServiceName(u.getServiceId());
-            usageModel.addRow(new Object[]{
-                u.getId(), sName, u.getQuantity(), nf.format(u.getUnitPrice()), nf.format(u.getTotalPrice())
-            });
-            sum += u.getTotalPrice();
-        }
-        lblTotalServicePrice.setText("Tổng tiền Hóa đơn phụ: " + nf.format(sum) + " VNĐ");
+        int bookingId = selectedBooking.getId();
+        new SwingWorker<List<ServiceUsage>, Void>() {
+            @Override protected List<ServiceUsage> doInBackground() {
+                return ServiceUsageAPI.getUsageByBooking(bookingId);
+            }
+            @Override protected void done() {
+                try {
+                    double sum = 0;
+                    List<ServiceUsage> usages = get();
+                    if (usages != null) for (ServiceUsage usage : usages) {
+                        String name = getServiceName(usage.getServiceId());
+                        usageModel.addRow(new Object[]{usage.getId(), name, usage.getQuantity(),
+                            nf.format(usage.getUnitPrice()), nf.format(usage.getTotalPrice())});
+                        sum += usage.getTotalPrice();
+                    }
+                    lblTotalServicePrice.setText("Tổng tiền Hóa đơn phụ: " + nf.format(sum) + " VNĐ");
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    JOptionPane.showMessageDialog(RoomOrderForm.this, "Loading charges was interrupted.");
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    JOptionPane.showMessageDialog(RoomOrderForm.this, "Unable to load charges: " + ex.getCause());
+                }
+            }
+        }.execute();
     }
 
     private void addServiceToRoom() {
@@ -198,14 +211,23 @@ public class RoomOrderForm extends JPanel {
         u.setQuantity(qty);
         u.setUnitPrice(item.service.getPrice());
         
-        String res = ServiceUsageAPI.addUsage(u);
-        if (res.contains("Lỗi")) {
-            JOptionPane.showMessageDialog(this, res);
-        } else {
-            // Success
-            spinQty.setValue(1);
-            loadUsageData();
-        }
+        btnAddOrder.setEnabled(false);
+        new SwingWorker<String, Void>() {
+            @Override protected String doInBackground() { return ServiceUsageAPI.addUsage(u); }
+            @Override protected void done() {
+                btnAddOrder.setEnabled(true);
+                try {
+                    String response = get();
+                    if (response != null && response.contains("Lỗi")) JOptionPane.showMessageDialog(RoomOrderForm.this, response);
+                    else { spinQty.setValue(1); loadUsageData(); }
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    JOptionPane.showMessageDialog(RoomOrderForm.this, "Adding the charge was interrupted.");
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    JOptionPane.showMessageDialog(RoomOrderForm.this, "Unable to add charge: " + ex.getCause());
+                }
+            }
+        }.execute();
     }
 
     // Helpers

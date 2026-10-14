@@ -3,11 +3,11 @@ package quanlykhachsan.backend.utils;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import io.jsonwebtoken.Jwts;
 import java.io.IOException;
+import javax.crypto.SecretKey;
+
 
 /**
  * Production JWT Authentication Filter (TASK-A1.4).
@@ -18,7 +18,9 @@ import java.io.IOException;
  */
 public class JwtFilter extends Filter {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
+
+    private final SecretKey key = JwtTokenUtil.signingKey();
+
 
     @Override
     public String description() {

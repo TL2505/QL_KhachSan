@@ -51,7 +51,7 @@ public class ProfileForm extends JPanel {
             new javax.swing.border.EmptyBorder(10, 0, 20, 0)
         ));
         JLabel titleLabel = new JLabel("Hồ Sơ & Bảo Mật");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         titleLabel.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         header.add(titleLabel, BorderLayout.WEST);
         add(header, BorderLayout.NORTH);
@@ -175,7 +175,7 @@ public class ProfileForm extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         gbc.weightx = 0.3;
         JLabel lbl = new JLabel(labelText);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lbl.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
         panel.add(lbl, gbc);
         
@@ -220,19 +220,29 @@ public class ProfileForm extends JPanel {
         String mail = txtEmail.getText().trim();
         String sdt = txtPhone.getText().trim();
 
-        try {
-            String result = UserAPI.updateProfile(currentUser.getUsername(), fName, mail, sdt);
-            JOptionPane.showMessageDialog(this, result, "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            // Cập nhật lại cache hiện tại
-            currentUser.setFullName(fName);
-            currentUser.setEmail(mail);
-            currentUser.setPhone(sdt);
-            
-            // Xong trở về Readonly
-            setProfileEditMode(false);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
+        btnSaveProfile.setEnabled(false);
+        new SwingWorker<String, Void>() {
+            @Override protected String doInBackground() throws Exception {
+                return UserAPI.updateProfile(currentUser.getUsername(), fName, mail, sdt);
+            }
+            @Override protected void done() {
+                btnSaveProfile.setEnabled(true);
+                try {
+                    String result = get();
+                    JOptionPane.showMessageDialog(ProfileForm.this, result, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    currentUser.setFullName(fName);
+                    currentUser.setEmail(mail);
+                    currentUser.setPhone(sdt);
+                    setProfileEditMode(false);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    JOptionPane.showMessageDialog(ProfileForm.this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    Throwable cause = ex.getCause() == null ? ex : ex.getCause();
+                    JOptionPane.showMessageDialog(ProfileForm.this, cause.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     private void handleChangePassword(ActionEvent e) {
@@ -250,13 +260,26 @@ public class ProfileForm extends JPanel {
             return;
         }
 
-        try {
-            String result = UserAPI.changePassword(currentUser.getUsername(), oldPass, newPass);
-            JOptionPane.showMessageDialog(this, result + "\nVui lòng dùng mật khẩu mới cho lần đăng nhập kế.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            setPasswordEditMode(false);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
+        btnSavePassword.setEnabled(false);
+        new SwingWorker<String, Void>() {
+            @Override protected String doInBackground() throws Exception {
+                return UserAPI.changePassword(currentUser.getUsername(), oldPass, newPass);
+            }
+            @Override protected void done() {
+                btnSavePassword.setEnabled(true);
+                try {
+                    String result = get();
+                    JOptionPane.showMessageDialog(ProfileForm.this, result + "\nVui lòng dùng mật khẩu mới cho lần đăng nhập kế.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    setPasswordEditMode(false);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    JOptionPane.showMessageDialog(ProfileForm.this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    Throwable cause = ex.getCause() == null ? ex : ex.getCause();
+                    JOptionPane.showMessageDialog(ProfileForm.this, cause.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     private JTextField createStyledTextField() {
@@ -285,7 +308,7 @@ public class ProfileForm extends JPanel {
 
     private JButton createStyledButton(String text, Color color, boolean solid) {
         JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setFocusPainted(false);
         if (solid) {

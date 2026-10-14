@@ -9,7 +9,7 @@ public class RoomMapper {
         room.setRoomNumber(request.getRoomNumber());
         room.setRoomTypeId(request.getRoomTypeId() != null ? request.getRoomTypeId() : 1);
         room.setPrice(request.getPrice() != null ? request.getPrice() : 0.0);
-        room.setStatus(request.getStatus() != null ? request.getStatus() : "available");
+        room.setStatus(request.getStatus() != null ? request.getStatus() : "vacant_clean");
         return room;
     }
 

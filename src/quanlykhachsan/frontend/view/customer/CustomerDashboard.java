@@ -31,6 +31,7 @@ public class CustomerDashboard extends JPanel {
     private JPanel promoPanel;
     private JPanel activeBookingPanel;
     private Booking activeBooking;
+    private JButton btnCancelBooking;
 
     private final Color PRIMARY    = new Color(37, 99, 235);
     private final Color BG         = quanlykhachsan.frontend.utils.ThemeManager.getBgPanel();
@@ -74,7 +75,7 @@ public class CustomerDashboard extends JPanel {
         actions.setOpaque(false);
         btnNotifications = createNotificationButton();
         JButton btnReload = new JButton("🔄 Tải lại");
-        btnReload.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnReload.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnReload.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor());
         btnReload.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         btnReload.setFocusPainted(false);
@@ -82,7 +83,7 @@ public class CustomerDashboard extends JPanel {
         btnReload.addActionListener(e -> loadData());
 
         JButton btnChat = new JButton("Chat hỗ trợ trực tuyến");
-        btnChat.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnChat.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnChat.setBackground(PRIMARY);
         btnChat.setForeground(Color.WHITE);
         btnChat.setFocusPainted(false);
@@ -143,7 +144,7 @@ public class CustomerDashboard extends JPanel {
         card.add(Box.createVerticalStrut(20));
 
         lblTier = new JLabel("THÀNH VIÊN SILVER");
-        lblTier.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTier.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblTier.setForeground(SILVER_C);
         card.add(lblTier);
         card.add(Box.createVerticalStrut(10));
@@ -173,7 +174,7 @@ public class CustomerDashboard extends JPanel {
         card.add(Box.createVerticalStrut(20));
 
         JLabel bTitle = new JLabel("Quyền lợi của bạn:");
-        bTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        bTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         card.add(bTitle);
         card.add(Box.createVerticalStrut(10));
 
@@ -184,7 +185,7 @@ public class CustomerDashboard extends JPanel {
         };
         for (String p : perks) {
             JLabel lp = new JLabel(p);
-            lp.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            lp.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             lp.setForeground(new Color(51, 65, 85));
             lp.setBorder(new EmptyBorder(6, 0, 6, 0));
             card.add(lp);
@@ -220,10 +221,10 @@ public class CustomerDashboard extends JPanel {
         card.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(18, 18, 18, 18)));
 
         JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
 
-        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         valueLabel.setForeground(PRIMARY);
 
         card.add(lblTitle, BorderLayout.NORTH);
@@ -234,7 +235,7 @@ public class CustomerDashboard extends JPanel {
 
     private JButton createNotificationButton() {
         JButton btn = new JButton("🔔 Thông báo");
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor());
         btn.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         btn.setFocusPainted(false);
@@ -254,10 +255,10 @@ public class CustomerDashboard extends JPanel {
         JPanel heading = new JPanel(new BorderLayout());
         heading.setOpaque(false);
         JLabel title = new JLabel("ĐẶT PHÒNG HIỆN TẠI");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         JLabel subtitle = new JLabel("Xem nhanh đơn đang xử lý và trạng thái đặt phòng mới nhất.");
-        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMuted());
 
         heading.add(title, BorderLayout.NORTH);
@@ -340,14 +341,14 @@ public class CustomerDashboard extends JPanel {
         });
         actions.add(btnView);
 
-        JButton btnCancel = new JButton("Hủy đơn");
-        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnCancel.setBackground(new Color(239, 68, 68));
-        btnCancel.setForeground(Color.WHITE);
-        btnCancel.setFocusPainted(false);
-        btnCancel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnCancel.addActionListener(e -> cancelCurrentBooking());
-        actions.add(btnCancel);
+        btnCancelBooking = new JButton("Hủy đơn");
+        btnCancelBooking.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnCancelBooking.setBackground(new Color(239, 68, 68));
+        btnCancelBooking.setForeground(Color.WHITE);
+        btnCancelBooking.setFocusPainted(false);
+        btnCancelBooking.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnCancelBooking.addActionListener(e -> cancelCurrentBooking());
+        actions.add(btnCancelBooking);
 
         card.add(actions, BorderLayout.SOUTH);
         return card;
@@ -412,13 +413,26 @@ public class CustomerDashboard extends JPanel {
         int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn hủy đơn đặt phòng này?", "Xác nhận hủy", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
 
-        boolean success = BookingAPI.cancelBooking(activeBooking.getId());
-        if (success) {
-            JOptionPane.showMessageDialog(this, "Đã hủy đơn đặt phòng.");
-            loadData();
-        } else {
-            JOptionPane.showMessageDialog(this, "Hủy đơn thất bại, vui lòng thử lại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
+        int bookingId = activeBooking.getId();
+        btnCancelBooking.setEnabled(false);
+        new SwingWorker<Boolean, Void>() {
+            @Override protected Boolean doInBackground() { return BookingAPI.cancelBooking(bookingId); }
+            @Override protected void done() {
+                btnCancelBooking.setEnabled(true);
+                try {
+                    if (get()) {
+                        JOptionPane.showMessageDialog(CustomerDashboard.this, "Đã hủy đơn đặt phòng.");
+                        loadData();
+                    } else JOptionPane.showMessageDialog(CustomerDashboard.this,
+                        "Hủy đơn thất bại, vui lòng thử lại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    JOptionPane.showMessageDialog(CustomerDashboard.this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    JOptionPane.showMessageDialog(CustomerDashboard.this, ex.getCause().getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     private JPanel buildPromotionsSection() {
@@ -583,11 +597,11 @@ public class CustomerDashboard extends JPanel {
         right.setBorder(new EmptyBorder(10, 15, 10, 10));
 
         JLabel name = new JLabel(p.getName());
-        name.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        name.setFont(new Font("Segoe UI", Font.BOLD, 14));
         
         String val = p.getDiscountType().equals("percentage") ? p.getDiscountValue() + "% OFF" : String.format("-%,.0fđ", p.getDiscountValue());
         JLabel disc = new JLabel(val);
-        disc.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        disc.setFont(new Font("Segoe UI", Font.BOLD, 16));
         disc.setForeground(PRIMARY);
 
         right.add(name);
@@ -656,7 +670,7 @@ public class CustomerDashboard extends JPanel {
     class ActionBtnRenderer extends JButton implements javax.swing.table.TableCellRenderer {
         public ActionBtnRenderer() {
             setOpaque(true);
-            setFont(new Font("Segoe UI", Font.BOLD, 11));
+            setFont(new Font("Segoe UI", Font.BOLD, 12));
         }
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
