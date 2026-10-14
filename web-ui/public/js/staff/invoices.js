@@ -1,4 +1,4 @@
-import { api, getApiBaseUrl } from "../../api.js";
+import { api, fetchAuthenticatedFile } from "../../api.js";
 
 
 
@@ -255,8 +255,22 @@ const getFilters = () => {
         if(window.lucide) lucide.createIcons();
         modal.classList.add('active');
         
-        document.getElementById('btn-print-pdf-real').addEventListener('click', () => {
-            window.open(getApiBaseUrl() + '/invoices/' + inv.id + '/pdf', '_blank');
+        document.getElementById('btn-print-pdf-real').addEventListener('click', async (event) => {
+            const button = event.currentTarget;
+            button.disabled = true;
+            try {
+                const file = await fetchAuthenticatedFile(`/invoices/${encodeURIComponent(inv.id)}/pdf`);
+                const url = URL.createObjectURL(file);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `invoice-${inv.id}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 60_000);
+            } catch (error) {
+                await window.showCustomAlert(error.message || 'Không thể tải hóa đơn PDF.');
+            } finally { button.disabled = false; }
         });
     };
 

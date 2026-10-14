@@ -87,3 +87,25 @@
 - Added deep database health and incoming response hardening; corrected Compose schema/configuration forwarding and removed default production credentials.
 - C5.1 passed at 375/800/1920 px with rendering below 83 ms and no console errors. Saved evidence and a strict read-only acceptance validator.
 - User has no QA host access currently. Documented later Windows Swing and Docker-host execution; C5.3, C6.1, C6.2, C7.1, C7.2, C7.3, C8.1, C8.3 and final D8.4 sign-off remain open. No native or Docker pass is claimed.
+
+## [2026-10-15] — @codex — docs/dev-spec/web-ui-unification-review.md — Existing web inventory and unification proposal
+- Inventoried 23 existing web screen/workflow surfaces across Customer, Staff, Admin and shared authentication/profile; recorded keep/fix/replace dispositions and verified source-level integration bugs.
+- Proposed shared documented navy/Inter/light tokens, role-specific layouts/components, phased implementation and browser end-to-end acceptance; identified contradictory/future-phase documentation without silently expanding feature or framework scope.
+- Recorded versioned-route and customer-ownership backend blockers for prior alignment. No application/backend changes or new browser E2E pass are claimed; style guide and implementation order await agreement.
+
+## [2026-10-15] — @codex — web-ui/public/app.js, docs/dev-spec/web-ui-unification-review.md, web-ui tests — Role shell and session recovery
+- Wired explicit presentation roles into the portal shell; Admin, Customer, and Front Desk retain separate menus, while Housekeeping, Maintenance, and F&B receive a restricted informational shell without Front Desk actions. Unknown roles fail closed.
+- Connected expired-session notifications to shell logout and login feedback. Updated the review record for the agreed vanilla/navy/Inter direction and persisted light plus legacy dark modes; versioned-route and ownership backend changes remain unapproved.
+- Focused Node suite: 15 passed, 0 failed, 0 skipped. Browser verified login light/dark toggle and persisted preference on reload; role end-to-end flows and target viewport matrix remain outstanding.
+- `git fetch origin` could not read `.git/FETCH_HEAD` due environment permission denial; upstream movement was not verified. No merge, push, or backend changes were made.
+
+## [2026-10-15] — @codex — web-ui/public/js/staff/room-map.js, web-ui/public/portal.html, shared-theme.css — Canonical room map and API setup copy
+- Reworked the room map into a seven-state, text-labeled status overview using the shared canonical room-status helper, safe DOM text, responsive legend styles, and request-generation guards. Removed legacy click actions that posted client-calculated payments or reset room status to `available`; operational tasks remain in their separate modules.
+- Corrected the portal API configuration placeholder and ngrok guidance to use `/api/v1`.
+- Browser theme checks passed for light/dark toggle and preference persistence. Full role workflow/viewport acceptance has not been run because authenticated test access is unavailable here; backend checkout/ownership dependencies remain unresolved.
+- Reworked Staff checkout to read booking folios from existing APIs, show server balances, settle with UUIDv4 idempotency keys, create configured VietQR and poll server payment status, then require a separate explicit checkout action. No client amount field, external QR account or payment-rule change remains in this screen.
+- Added authenticated PDF blob retrieval for Admin and Staff invoices; session 401 handling is shared. Dashboard metrics now show loading/unavailable states rather than false zeros, with retry and theme-token chart styling.
+- Re-ran focused suite after integration: 16 passed, 0 failed, 0 skipped. JavaScript syntax and `git diff --check` passed. Authenticated financial workflows still require isolated fixture browser acceptance.
+- Elevated `git fetch origin` succeeded after the initial metadata permission failure. `origin/PHASE_1` and local `PHASE_1` remain at 3844597; `PHASE_2` remains 7 commits ahead of `origin/PHASE_2` with 0 incoming commits. No merge or push was performed.
+- Generic `STAFF` sessions now fail closed unless the backend supplies a distinct supported department role; label normalization accepts `Front Desk` and `FRONT_DESK` without merging departmental menus.
+- Replaced unsupported Staff loyalty discount promises with a shared status notice. Customer dashboard/bookings, account booking discovery, and personal loyalty views now show explicit blockers instead of sending customer-ID-dependent requests or calculating account booking prices locally. The distinct OTP Guest flow and unrelated Customer promotions/chat remain separate.

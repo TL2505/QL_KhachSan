@@ -84,3 +84,25 @@
 - Added deep database health and incoming response hardening; corrected Compose schema/configuration forwarding and removed default production credentials.
 - C5.1 passed at 375/800/1920 px with rendering below 83 ms and no console errors. Saved evidence and a strict read-only acceptance validator.
 - User has no QA host access currently. Documented later Windows Swing and Docker-host execution; C5.3, C6.1, C6.2, C7.1, C7.2, C7.3, C8.1, C8.3 and final D8.4 sign-off remain open. No native or Docker pass is claimed.
+
+## [2026-10-15] — @codex — docs/dev-spec/web-ui-unification-review.md — Existing web inventory and unification proposal
+- Inventoried 23 existing web screen/workflow surfaces across Customer, Staff, Admin and shared authentication/profile; recorded keep/fix/replace dispositions and verified source-level integration bugs.
+- Proposed shared documented navy/Inter/light tokens, role-specific layouts/components, phased implementation and browser end-to-end acceptance; identified contradictory/future-phase documentation without silently expanding feature or framework scope.
+- Recorded versioned-route and customer-ownership backend blockers for prior alignment. No application/backend changes or new browser E2E pass are claimed; style guide and implementation order await agreement.
+
+## [2026-10-15] — @codex — web-ui/public/app.js, docs/dev-spec/web-ui-unification-review.md, kiểm thử web-ui — Phân vai shell và khôi phục phiên
+- Kết nối vai trò trình bày tường minh vào shell portal; Admin, Customer và Front Desk giữ menu riêng. Housekeeping, Maintenance và F&B chỉ thấy màn hình thông tin giới hạn, không được nhận các thao tác Front Desk. Vai trò không nhận diện sẽ bị từ chối.
+- Kết nối thông báo phiên hết hạn với đăng xuất khỏi shell và phản hồi trên màn hình đăng nhập. Cập nhật biên bản theo hướng vanilla/navy/Inter đã thống nhất, đồng thời giữ giao diện sáng và tối cũ cùng tùy chọn được lưu; thay đổi route phiên bản và kiểm tra quyền sở hữu phía backend vẫn chưa được duyệt.
+- Bộ Node tập trung: 15 đạt, 0 lỗi, 0 bỏ qua. Trình duyệt đã xác minh nút đổi sáng/tối ở trang đăng nhập và tùy chọn được giữ sau khi tải lại; luồng E2E theo vai trò và ma trận kích thước màn hình vẫn còn.
+- `git fetch origin` không đọc được `.git/FETCH_HEAD` do môi trường từ chối quyền; chưa xác minh thay đổi upstream. Không merge, push hay sửa backend.
+
+## [2026-10-15] — @codex — web-ui/public/js/staff/room-map.js, web-ui/public/portal.html, shared-theme.css — Sơ đồ phòng theo trạng thái chuẩn và hướng dẫn API
+- Chuyển sơ đồ phòng thành màn hình tổng quan bảy trạng thái chuẩn, có nhãn chữ, dùng helper trạng thái chung, tạo nội dung DOM an toàn, bố cục chú giải đáp ứng và chặn kết quả request cũ. Bỏ thao tác cũ đặt phòng/thanh toán dùng số tiền phía client hoặc đặt trạng thái thành `available`; nghiệp vụ vẫn nằm trong các module riêng.
+- Sửa placeholder cấu hình API và hướng dẫn ngrok của portal để dùng `/api/v1`.
+- Đã kiểm tra nút giao diện sáng/tối và khả năng lưu tùy chọn bằng trình duyệt. Chưa chạy nghiệm thu workflow từng vai trò/ma trận kích thước vì chưa có quyền truy cập tài khoản kiểm thử; phụ thuộc backend cho checkout/quyền sở hữu vẫn còn.
+- Viết lại checkout Staff để đọc folio từ API hiện có, hiển thị số dư máy chủ, tất toán với khóa idempotency UUIDv4, tạo VietQR theo cấu hình server và dò trạng thái thanh toán; sau đó yêu cầu xác nhận trả phòng riêng. Màn hình không còn ô nhập tiền phía client, tài khoản QR ngoài hay thay đổi quy tắc thanh toán.
+- Bổ sung tải PDF bằng fetch có xác thực cho hóa đơn Admin và Staff; dùng chung xử lý phiên 401. Dashboard hiển thị trạng thái đang tải/không tải được thay cho số 0 sai, có thử lại và biểu đồ theo token màu.
+- Chạy lại bộ tập trung sau tích hợp: 16 đạt, 0 lỗi, 0 bỏ qua. Kiểm tra cú pháp JavaScript và `git diff --check` đạt. Workflow tài chính đã xác thực vẫn cần nghiệm thu bằng fixture cô lập trên trình duyệt.
+- `git fetch origin` với quyền Git metadata đã thành công sau lần đầu bị từ chối. `origin/PHASE_1` và `PHASE_1` cục bộ vẫn ở 3844597; `PHASE_2` vẫn đi trước `origin/PHASE_2` 7 commit, không có commit mới từ xa. Không merge hoặc push.
+- Phiên có vai trò chung `STAFF` nay bị từ chối nếu backend không cung cấp bộ phận cụ thể được hỗ trợ; chuẩn hóa nhãn nhận cả `Front Desk` và `FRONT_DESK` mà không gộp menu các bộ phận.
+- Thay lời hứa giảm giá loyalty không có căn cứ bằng thông báo trạng thái chung. Dashboard/booking Customer, đặt phòng bằng tài khoản và loyalty cá nhân hiện hiển thị lý do chặn thay vì gửi request dựa trên customerId hoặc tự tính giá. Luồng OTP Guest vẫn tách biệt; khuyến mãi/chat Customer không liên quan vẫn giữ riêng.

@@ -7,11 +7,12 @@
     <link rel="stylesheet" href="style.css">
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body>
+<link rel="stylesheet" href="css/shared-theme.css"><script type="module" src="js/shared/theme.js"></script></head>
+<body><a class="skip-link" href="#view-container">Đi đến nội dung</a>
 
     <!-- ==================== 1. AUTHENTICATION PAGES ==================== -->
     <div id="auth-page" class="auth-wrapper">
+        <button id="auth-theme-toggle" type="button" class="btn btn-secondary auth-theme-toggle" data-theme-toggle data-text-label="true">Giao diện tối</button>
         <!-- Login Card -->
         <div id="login-card" class="auth-card">
             <div class="auth-header">
@@ -153,9 +154,9 @@
             </div>
             <div class="form-group">
                 <label class="form-label" for="config-api-input">Địa chỉ API Server (Backend Java)</label>
-                <input class="form-input" type="text" id="config-api-input" placeholder="http://localhost:8081/api">
+                <input class="form-input" type="text" id="config-api-input" placeholder="http://localhost:8081/api/v1">
                 <p class="text-muted mt-4" style="font-size: 12px; line-height: 1.4;">
-                    * Lưu ý: Nếu bạn sử dụng ngrok để gọi API từ Internet (cloud), hãy nhập link ngrok của bạn (Ví dụ: <code>https://your-domain.ngrok-free.dev/api</code>).
+                    * Lưu ý: Nếu bạn sử dụng ngrok để gọi API từ Internet (cloud), hãy nhập địa chỉ gốc kèm <code>/api/v1</code> (Ví dụ: <code>https://your-domain.ngrok-free.dev/api/v1</code>).
                 </p>
             </div>
             <div class="flex-row mt-4" style="justify-content: flex-end;">

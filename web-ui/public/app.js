@@ -1,3 +1,4 @@
+import {escapeHtml} from "./js/shared/ui.js";
 // Application Shell Controller & Router
 import { api, getApiBaseUrl, setApiBaseUrl, getAuthSession, setAuthSession } from "./api.js";
 
@@ -7,6 +8,7 @@ import { loadStaffView } from "./js/view-staff.js";
 import { loadCustomerView } from "./js/view-customer.js";
 import { loadProfileView } from "./js/view-shared.js";
 import { renderAdminCustomers } from "./js/admin/customers.js";
+import { presentationRole, isDepartmentalRole } from "./js/shared/roles.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
@@ -107,11 +109,11 @@ function initApp() {
             if (activeApiDisplay) {
                 activeApiDisplay.textContent = getApiBaseUrl();
             }
-            alert("Đã lưu địa chỉ kết nối API!");
+            await window.showCustomAlert("Đã lưu địa chỉ kết nối API!");
             closeModal("modal-api-config");
             
             // Re-check api health
-            checkApiHealth();
+            // Health is reported by actual API requests; do not call an undefined helper.
         }
     });
 
@@ -137,28 +139,16 @@ function initApp() {
     document.getElementById("register-form").addEventListener("submit", handleRegister);
     document.getElementById("btn-logout").addEventListener("click", handleLogout);
 
-    // 5. Theme Toggle Logic
-    const themeToggleBtn = document.getElementById("theme-toggle");
-    const themeIcon = document.getElementById("theme-icon");
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    if (savedTheme === "light") {
-        document.documentElement.classList.add("light-theme");
-        if (themeIcon) themeIcon.setAttribute("data-lucide", "sun");
-    } else {
-        if (themeIcon) themeIcon.setAttribute("data-lucide", "moon");
-    }
+    // A 401 invalidates the saved session in api.js. Keep the shell in sync.
+    window.addEventListener("hotel:session-expired", () => {
+        setAuthSession(null);
+        showAuthPage();
+        const errorDiv = document.getElementById("login-error");
+        errorDiv.textContent = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+        errorDiv.style.display = "block";
+    });
 
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener("click", () => {
-            const isLight = document.documentElement.classList.toggle("light-theme");
-            localStorage.setItem("theme", isLight ? "light" : "dark");
-            
-            if (themeIcon) {
-                themeIcon.setAttribute("data-lucide", isLight ? "sun" : "moon");
-                lucide.createIcons();
-            }
-        });
-    }
+    // Shared theme.js initializes light/dark mode for both entry points.
 
     // 6. Sidebar Toggle Logic
     const sidebar = document.getElementById("app-sidebar");
@@ -231,6 +221,7 @@ async function handleRegister(e) {
         });
 
         document.getElementById("register-form").reset();
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Đăng ký tài khoản"; }
 
         // Hiển thị thông báo thành công với countdown
         let countdown = 3;
@@ -241,7 +232,7 @@ async function handleRegister(e) {
                     <span>Đăng ký thành công! Chuyển về đăng nhập sau <strong>${countdown}s</strong>...</span>
                 </div>`;
             successDiv.style.display = "block";
-            lucide.createIcons();
+            globalThis.lucide?.createIcons();
         };
         updateMsg();
 
@@ -268,10 +259,10 @@ async function handleRegister(e) {
         errorDiv.innerHTML = `
             <div style="display:flex;align-items:center;gap:8px;justify-content:center;">
                 <i data-lucide="x-circle" style="width:16px;height:16px;flex-shrink:0;"></i>
-                <span>${err.message || "Lỗi đăng ký!"}</span>
+                <span>${escapeHtml(err.message || "Lỗi đăng ký!")}</span>
             </div>`;
         errorDiv.style.display = "block";
-        lucide.createIcons();
+        globalThis.lucide?.createIcons();
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Đăng ký tài khoản"; }
     }
 }
@@ -304,7 +295,7 @@ function handleLogout(e) {
             </button>
         </div>
     `;
-    lucide.createIcons();
+    globalThis.lucide?.createIcons();
 
     document.getElementById("confirm-logout-btn").addEventListener("click", () => {
         closeModal("global-modal");
@@ -323,14 +314,27 @@ function showAuthPage() {
 
 // Build Layout Shell & Render Dynamic Menus
 function showAppShell(session) {
+    const role = presentationRole(session?.role);
+    if (!role) {
+        setAuthSession(null);
+        showAuthPage();
+        const errorDiv = document.getElementById("login-error");
+        errorDiv.textContent = "Vai trò tài khoản chưa được hỗ trợ trên giao diện này.";
+        errorDiv.style.display = "block";
+        return;
+    }
     document.getElementById("auth-page").style.display = "none";
     document.getElementById("app-page").style.display = "flex";
 
     document.getElementById("user-display-name").textContent = session.fullName || session.username;
-    document.getElementById("user-display-role").textContent = session.role;
+    document.getElementById("user-display-role").textContent = roleLabel(role);
 
     // Load dynamic navigation sidebar based on Role
-    buildSidebarMenu(session.role);
+    buildSidebarMenu(role);
+}
+
+function roleLabel(role) {
+    return ({admin: "Quản trị viên", front_desk: "Lễ tân", customer: "Khách hàng", housekeeping: "Buồng phòng", maintenance: "Bảo trì", "f&b": "Ẩm thực"})[role] || role;
 }
 
 function buildSidebarMenu(role) {
@@ -340,7 +344,7 @@ function buildSidebarMenu(role) {
     // Define navigation items based on Role
     const menus = [];
     
-    if (role === "ADMIN") {
+    if (role === "admin") {
         menus.push(
             { id: "dashboard",  label: "Trang chủ",          icon: "layout-dashboard", view: loadAdminView },
             { id: "rooms",      label: "Quản lý phòng",       icon: "key",              view: () => loadAdminView("rooms") },
@@ -354,7 +358,7 @@ function buildSidebarMenu(role) {
             { id: "reviews",    label: "Quản lý đánh giá",    icon: "star",             view: () => loadAdminView("reviews") },
             { id: "invoices",   label: "Hóa đơn",             icon: "receipt",          view: () => loadAdminView("invoices") }
         );
-    } else if (role === "STAFF") {
+    } else if (role === "front_desk") {
         menus.push(
             { id: "room-map", label: "Sơ đồ phòng", icon: "grid", view: loadStaffView },
             { id: "bookings", label: "Đơn đặt phòng", icon: "calendar-days", view: () => loadStaffView("bookings") },
@@ -364,7 +368,7 @@ function buildSidebarMenu(role) {
             { id: "loyalty", label: "Hệ thành viên", icon: "award", view: () => loadStaffView("loyalty") },
             { id: "chat", label: "Hỗ trợ khách", icon: "message-square", view: () => loadStaffView("chat") }
         );
-    } else if (role === "CUSTOMER") {
+    } else if (role === "customer") {
         menus.push(
             { id: "customer-home", label: "Bảng điều khiển", icon: "layout-dashboard", view: loadCustomerView },
             { id: "room-discovery", label: "Tìm phòng", icon: "search", view: () => loadCustomerView("discovery") },
@@ -374,6 +378,14 @@ function buildSidebarMenu(role) {
         );
     }
     
+    // Departmental accounts get only their explicitly implemented menu. Until
+    // dedicated modules exist, keep them on a restricted, informative shell.
+    if (isDepartmentalRole(role)) {
+        menus.push({id: "department-status", label: "Chức năng bộ phận", icon: "info", view: () => {
+            document.getElementById("view-container").innerHTML = `<section class="card" role="status"><h1>${roleLabel(role)}</h1><p>Giao diện hiện chưa có quy trình dành riêng cho bộ phận này. Các chức năng của lễ tân, quản trị và bộ phận khác không được cấp qua tài khoản này.</p></section>`;
+        }});
+    }
+
     // Shared Menu Item: Profile settings
     menus.push({ id: "profile", label: "Hồ sơ cá nhân", icon: "user-cog", view: loadProfileView });
 
@@ -405,7 +417,7 @@ function buildSidebarMenu(role) {
     });
 
     // Initialize lucide icons for dynamic sidebar elements
-    lucide.createIcons();
+    globalThis.lucide?.createIcons();
 
     // Load the first view by default
     if (menus.length > 0) {
