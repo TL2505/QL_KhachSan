@@ -25,7 +25,7 @@ public class BookingAPI {
             req.addProperty("checkInDate", checkInDate);
             req.addProperty("checkOutDate", checkOutDate);
 
-            String jsonResponse = HttpUtil.sendPostWithHeaders("/bookings", JsonUtil.getGson().toJson(req),
+            String jsonResponse = HttpUtil.sendPostWithHeaders("/v1/bookings", JsonUtil.getGson().toJson(req),
                 java.util.Map.of("Idempotency-Key", idempotencyKey)).getBody();
             return JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         } catch (Exception e) {
@@ -36,7 +36,7 @@ public class BookingAPI {
 
     public static String checkIn(int bookingId) {
         try {
-            String jsonResponse = HttpUtil.sendPut("/bookings/checkin/" + bookingId, "");
+            String jsonResponse = HttpUtil.sendPut("/v1/bookings/checkin/" + bookingId, "");
             JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
                 return ("success".equals(resObj.get("status").getAsString()) ? "Success: " : "Error: ") 
@@ -51,7 +51,7 @@ public class BookingAPI {
 
     public static String checkOut(int bookingId) {
         try {
-            String jsonResponse = HttpUtil.sendPut("/bookings/checkout/" + bookingId, "");
+            String jsonResponse = HttpUtil.sendPut("/v1/bookings/checkout/" + bookingId, "");
             JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
                 return ("success".equals(resObj.get("status").getAsString()) ? "Success: " : "Error: ") 
@@ -67,29 +67,23 @@ public class BookingAPI {
     public static List<Booking> getAllBookings() {
         List<Booking> bookings = new ArrayList<>();
         try {
-            String jsonResponse = HttpUtil.sendGet("/bookings");
+            String jsonResponse = HttpUtil.sendGet("/v1/bookings");
             Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
-            
-            if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
-                JsonArray dataArray = resObj.getAsJsonArray("data");
-                if (dataArray != null) {
-                    for (JsonElement element : dataArray) {
-                        Booking b = gson.fromJson(element, Booking.class);
-                        bookings.add(b);
-                    }
-                }
-            }
+            if (resObj == null || !resObj.has("status") || !"success".equals(resObj.get("status").getAsString()))
+                throw new IllegalStateException("Booking API returned an unsuccessful response");
+            JsonArray dataArray = resObj.getAsJsonArray("data");
+            if (dataArray != null) for (JsonElement element : dataArray) bookings.add(gson.fromJson(element, Booking.class));
+            return bookings;
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Unable to load bookings: " + e.getMessage(), e);
         }
-        return bookings;
     }
 
     public static List<Booking> getBookingsByCustomer(int customerId) {
         List<Booking> bookings = new ArrayList<>();
         try {
-            String jsonResponse = HttpUtil.sendGet("/bookings/customer/" + customerId);
+            String jsonResponse = HttpUtil.sendGet("/v1/bookings/customer/" + customerId);
             Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
             
@@ -110,7 +104,7 @@ public class BookingAPI {
 
     public static Booking getActiveBookingByRoom(int roomId) {
         try {
-            String jsonResponse = HttpUtil.sendGet("/bookings/room/" + roomId);
+            String jsonResponse = HttpUtil.sendGet("/v1/bookings/room/" + roomId);
             Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
             if (resObj != null && "success".equals(resObj.get("status").getAsString())) {

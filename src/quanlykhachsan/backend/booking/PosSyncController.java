@@ -96,14 +96,20 @@ public final class PosSyncController implements HttpHandler {
                             reserve.setString(2, hash);
                             reserve.executeUpdate();
                         }
-                        String status;
+                        int bookingId;
                         try (PreparedStatement folio = connection.prepareStatement(
-                                "SELECT status FROM folios WHERE id=? FOR UPDATE")) {
+                                "SELECT booking_id FROM folios WHERE id=? FOR UPDATE")) {
                             folio.setInt(1, folioId);
                             try (ResultSet rows = folio.executeQuery()) {
                                 if (!rows.next()) throw new ClientInputException(404, "ERR_404_NOT_FOUND", "Folio not found");
-                                status = rows.getString(1);
+                                bookingId = rows.getInt(1);
                             }
+                        }
+                        folioId = new FolioRoutingEngine().routeCharge(connection, bookingId, chargeType);
+                        String status;
+                        try (PreparedStatement folio = connection.prepareStatement("SELECT status FROM folios WHERE id=? FOR UPDATE")) {
+                            folio.setInt(1, folioId);
+                            try (ResultSet rows = folio.executeQuery()) { rows.next(); status = rows.getString(1); }
                         }
                         if (!"open".equals(status)) {
                             throw new ClientInputException(409, "ERR_409_CONFLICT", "Folio is not open");

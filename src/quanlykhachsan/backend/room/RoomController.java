@@ -31,6 +31,7 @@ public class RoomController implements HttpHandler {
         }
         String method = exchange.getRequestMethod();
 
+
         // TASK-A2.1 Endpoints
         if ("/api/v1/rooms/availability".equals(path) || path.endsWith("/rooms/availability")) {
             if ("GET".equalsIgnoreCase(method)) {
@@ -54,6 +55,7 @@ public class RoomController implements HttpHandler {
         // Lấy phần sau /api/rooms hoặc /api/v1/rooms
         String pathInfo = path.replace("/api/v1/rooms", "").replace("/api/rooms", "");
 
+
         if ("GET".equalsIgnoreCase(method) && (pathInfo.isEmpty() || pathInfo.equals("/"))) {
             handleGetAll(exchange);
         } else if ("GET".equalsIgnoreCase(method) && (pathInfo.equals("/search") || path.endsWith("/search"))) {
@@ -63,6 +65,8 @@ public class RoomController implements HttpHandler {
         } else if ("PUT".equalsIgnoreCase(method) && pathInfo.matches("/\\d+/status")) {
             int id = Integer.parseInt(pathInfo.split("/")[1]);
             handleUpdateStatus(exchange, id);
+
+
         } else if ("DELETE".equalsIgnoreCase(method) && pathInfo.matches("/\\d+")) {
             int id = Integer.parseInt(pathInfo.substring(1));
             handleDelete(exchange, id);
@@ -120,6 +124,7 @@ public class RoomController implements HttpHandler {
             ApiResponseUtil.sendSuccess(exchange, 200, available, java.util.Map.of("total", available.size()));
         } catch (Exception e) {
             GlobalExceptionHandler.handle(exchange, e);
+
         }
     }
 

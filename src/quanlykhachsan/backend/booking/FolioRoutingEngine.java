@@ -1,5 +1,6 @@
 package quanlykhachsan.backend.booking;
 
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -490,5 +491,6 @@ public class FolioRoutingEngine {
         routingPairsByGuest.clear();
         routingPairsByBooking.clear();
         groupMasterToGuests.clear();
+
     }
 }

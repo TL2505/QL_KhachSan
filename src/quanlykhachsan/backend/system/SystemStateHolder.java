@@ -1,5 +1,6 @@
 package quanlykhachsan.backend.system;
 
+
 import quanlykhachsan.backend.utils.DatabaseConnection;
 
 import java.sql.Connection;
@@ -183,4 +184,5 @@ public class SystemStateHolder {
     public static void reset() {
         resetToDefault();
     }
+
 }

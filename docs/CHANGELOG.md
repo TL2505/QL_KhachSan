@@ -58,3 +58,16 @@
 - Scoped migration metadata lookups to the active database, taught the schema integration test to honor SQL `DELIMITER` directives, and corrected booking seed 63 from invoice status `paid` to valid booking status `checked_out`.
 
 
+## [2026-10-14] — @codex — Dev B/C room allocation and desktop room-map files — Phase 1 remaining-task audit and partial implementation
+- Added a MariaDB 11 opt-in race test for two room reservations; it requires `HOTEL_RUN_DB_INTEGRATION=true` and a disposable schema whose name ends in `_test`, then checks one success, one conflict, and one version increment.
+- Added the fixed 80×60 room tile, 5-column detached map, six canonical status colors, in-memory room/guest/booking filtering, dense 24px booking status renderer, safe detached-window bounds persistence, and an EDT dispatch duration reporter.
+- Connected the compact map to `RoomForm`, quick filtering, booking table rendering, and `MainUI` startup. These additions advance B2.1, C2.2, C2.3, C3.3, C4.1, and C4.2; their full WBS definitions of done remain partially unverified.
+- Changed classes and focused tests compiled with JDK 17; focused UI tests passed (3 passed). The MariaDB race test was aborted by its environment assumption because no test schema was configured. Maven could not start: the user-level repository lock was unwritable, and the workspace-local retry could not resolve dependencies because Maven Central DNS was unavailable.
+
+## [2026-10-14] — @codex — Dev B/C Phase 1 service completion and integration review
+- Added atomic folio payment persistence, master/guest routing and split handling, scheduled 50-record no-show processing, seven-step persisted night-audit checkpoints with resume support, DBR aggregation, credit/refund math, and manager-authorized OOO-room downgrade handling.
+- Connected API load failures to the Swing room-map error state, retained the 5-column room map and detached-monitor persistence, and documented the repeatable two-hour front-desk simulation procedure.
+- Corrected new booking folios to begin with zero outstanding balance so nightly ledger postings do not duplicate the booking estimate; standardized audit freeze responses on `Retry-After: 300`.
+- JDK 17 compiled all production and test Java sources. Focused JUnit run: 6 passed, 0 failed, 2 opt-in MariaDB tests aborted because no disposable MariaDB test schema was configured. `mvn -o test` remains unavailable due an unwritable user-level Maven repository lock. The two-hour simulation and live MariaDB transaction/recovery scenarios still require execution in their target environments.
+
+

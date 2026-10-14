@@ -191,6 +191,7 @@ public class BookingController implements HttpHandler {
                 }
             }
 
+
             // GET /api/v1/bookings/{id} or /api/bookings/{id}
             if (path.matches("^/(api/v1/bookings|api/bookings)/\\d+$")) {
                 if ("GET".equalsIgnoreCase(method)) {
@@ -208,6 +209,7 @@ public class BookingController implements HttpHandler {
                     String id = parts[parts.length - 1];
                     handleCancel(exchange, Map.of("id", id));
                     return;
+
                 }
             }
 

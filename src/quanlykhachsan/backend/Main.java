@@ -312,6 +312,16 @@ public class Main {
             // Thiết lập cấu hình mặc định và chạy server
             server.setExecutor(Executors.newFixedThreadPool(20));
             server.start();
+            var nightAuditJob = new quanlykhachsan.backend.system.NightAuditJob();
+            nightAuditJob.start();
+            var noShowJob = new quanlykhachsan.backend.booking.NoShowJob();
+            noShowJob.start();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                noShowJob.close();
+                nightAuditJob.close();
+                server.stop(10);
+                quanlykhachsan.backend.utils.DatabaseConnection.close();
+            }, "hotel-shutdown"));
 
             System.out.println("Server đang chạy thành công tại: http://localhost:8081/");
             System.out.println("Hãy mở Postman và test API: POST http://localhost:8081/api/v1/auth/login");

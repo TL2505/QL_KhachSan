@@ -44,6 +44,7 @@ public class CustomerController implements HttpHandler {
         String method = exchange.getRequestMethod();
 
         try {
+
             // Collection endpoint: /api/v1/customers or /api/customers
             if ("/api/v1/customers".equals(path) || "/api/customers".equals(path)) {
                 if ("POST".equalsIgnoreCase(method)) {
@@ -70,6 +71,7 @@ public class CustomerController implements HttpHandler {
                 }
 
                 if ("GET".equalsIgnoreCase(method)) {
+
                     Customer c = customerService.getCustomerById(id);
                     if (c != null) {
                         CustomerResponse dto = CustomerMapper.toCustomerResponse(c);
@@ -82,9 +84,11 @@ public class CustomerController implements HttpHandler {
                 } else if ("DELETE".equalsIgnoreCase(method)) {
                     handleDelete(exchange, id);
                 } else {
+
                     ApiResponseUtil.sendError(exchange, 405, "ERR_405_METHOD_NOT_ALLOWED", "Method Not Allowed");
                 }
                 return;
+
             }
 
             ApiResponseUtil.sendError(exchange, 404, "ERR_404_NOT_FOUND", "Endpoint not found: " + path);
