@@ -1,0 +1,25 @@
+{
+  "verified_at": "2026-10-15",
+  "url": "http://127.0.0.1:8299/booking/performance.html",
+  "measurements": [
+    {
+      "content_width": 375,
+      "first_paint_ms": 60,
+      "render_ms": 80.5,
+      "viewport": 375
+    },
+    {
+      "content_width": 800,
+      "first_paint_ms": 56,
+      "render_ms": 80.60000000149012,
+      "viewport": 800
+    },
+    {
+      "content_width": 1920,
+      "first_paint_ms": 64,
+      "render_ms": 82.30000000447035,
+      "viewport": 1920
+    }
+  ],
+  "console_issues": []
+}

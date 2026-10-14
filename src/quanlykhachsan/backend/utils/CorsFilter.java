@@ -5,6 +5,10 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 
 public class CorsFilter extends Filter {
+    public static final String ALLOWED_ORIGIN = "*";
+    public static final String ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
+    public static final String ALLOWED_HEADERS = "Content-Type, Authorization, Idempotency-Key, X-Signature, X-Manager-Pin, ngrok-skip-browser-warning";
+    public static final String MAX_AGE = "86400";
 
     @Override
     public String description() {

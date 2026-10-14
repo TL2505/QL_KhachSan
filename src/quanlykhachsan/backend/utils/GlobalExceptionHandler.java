@@ -18,18 +18,16 @@ public class GlobalExceptionHandler extends Filter {
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
-        try {
-            chain.doFilter(exchange);
-        } catch (IllegalArgumentException e) {
-            sendError(exchange, 400, "ERR_400_BAD_REQUEST", e.getMessage());
-        } catch (SecurityException e) {
-            sendError(exchange, 403, "ERR_403_FORBIDDEN", e.getMessage());
-        } catch (IllegalStateException e) {
-            sendError(exchange, 409, "ERR_409_CONFLICT", e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-            sendError(exchange, 500, "ERR_500_SERVER_ERROR", "The request could not be completed.");
-        }
+        try { chain.doFilter(exchange); } catch (Exception e) { handle(exchange, e); }
+    }
+
+    public static void handle(HttpExchange exchange, Throwable exception) throws IOException {
+        Throwable cause = exception;
+        while (cause.getCause() != null && cause.getCause() != cause) cause = cause.getCause();
+        if (cause instanceof IllegalArgumentException) sendError(exchange,400,"ERR_400_BAD_REQUEST",cause.getMessage());
+        else if (cause instanceof SecurityException) sendError(exchange,403,"ERR_403_FORBIDDEN",cause.getMessage());
+        else if (cause instanceof IllegalStateException || cause instanceof OptimisticLockException) sendError(exchange,409,"ERR_409_CONFLICT",cause.getMessage());
+        else sendError(exchange,500,"ERR_500_SERVER_ERROR","The request could not be completed.");
     }
 
     public static void sendError(HttpExchange exchange, int statusCode, String errorCode, String message) throws IOException {

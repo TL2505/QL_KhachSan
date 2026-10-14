@@ -1,5 +1,6 @@
 package quanlykhachsan.backend.utils;
 
+
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
@@ -16,10 +17,12 @@ public final class SystemStatusFilter extends Filter {
     @Override
     public String description() {
         return "Night Audit write freeze";
+
     }
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+
         String method = exchange.getRequestMethod();
         boolean mutation = "POST".equalsIgnoreCase(method)
             || "PUT".equalsIgnoreCase(method)
@@ -41,4 +44,5 @@ public final class SystemStatusFilter extends Filter {
         }
         chain.doFilter(exchange);
     }
+
 }

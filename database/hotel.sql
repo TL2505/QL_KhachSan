@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NULL, -- Compatible with modern schema; VARCHAR(255) prevents BCrypt 60-char truncation
   role_id INT NOT NULL,
   status ENUM('active', 'inactive', 'banned') DEFAULT 'active',
   full_name VARCHAR(100) NULL,
@@ -66,8 +67,10 @@ CREATE TABLE IF NOT EXISTS rooms (
   room_number VARCHAR(20) NOT NULL UNIQUE,
   room_type_id INT NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
+
   status ENUM('vacant_clean', 'vacant_dirty', 'occupied_clean', 'occupied_dirty', 'out_of_order', 'reserved') NOT NULL DEFAULT 'vacant_clean',
   -- Optimistic Locking: tăng 1 mỗi lần cập nhật trạng thái để phát hiện giao dịch đồng thời xung đột
+
   version INT NOT NULL DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -265,6 +268,7 @@ CREATE TABLE IF NOT EXISTS loyalty_histories (
 ) ENGINE=InnoDB;
 
 -- --------------------------------------------------------
+
 -- Table: idempotency_keys
 -- Lưu kết quả của các request POST có thể xảy ra trùng lặp (POST /bookings, POST /folios/{id}/pay).
 -- Cho phép engine deduplication trả về chính xác response cũ mà không tạo bản ghi mới.
@@ -294,10 +298,12 @@ CREATE TABLE IF NOT EXISTS folios (
   -- RESTRICT: Không cho xóa booking nếu còn folio đang mở
   CONSTRAINT fk_folios_bookings FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE RESTRICT ON UPDATE CASCADE,
   INDEX idx_folio_booking_id (booking_id),
+
   INDEX idx_folio_status (status)
 ) ENGINE=InnoDB;
 
 -- --------------------------------------------------------
+
 -- Table: folio_transactions
 -- Bản ghi kế toán kép (double-entry) của từng giao dịch trên folio:
 -- Debit = phát sinh chi phí (tiền phòng, dịch vụ, thuế).
@@ -339,6 +345,7 @@ CREATE TABLE IF NOT EXISTS audit_checkpoints (
   UNIQUE KEY uq_audit_date_step (audit_date, step_number), -- Mỗi ngày chỉ có 1 bản ghi cho mỗi bước
   INDEX idx_checkpoint_audit_date (audit_date),
   INDEX idx_checkpoint_status (status)
+
 ) ENGINE=InnoDB;
 
 -- Current hotel business date (advanced only after the audit checkpoint completes).

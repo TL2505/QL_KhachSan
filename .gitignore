@@ -6,3 +6,4 @@ dist/
 .env
 /target/
 /.phase2-runtime/
+__pycache__/

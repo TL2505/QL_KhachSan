@@ -23,8 +23,8 @@ The reproducible command is `mvn clean test -Dtest=Phase2RegressionSuite`. The p
 
 | Gate | Result |
 | --- | --- |
-| Clean regression | **109 executed; 0 failures; 0 errors; 0 skipped**, 29.404 s |
-| Existing baseline inventory | 34 executed invocations across the 10 test classes checked into the starting Git revision |
+| Clean regression | **125 executed; 0 failures; 0 errors; 0 skipped**, 28.338 s (merged clean run) |
+| Existing baseline inventory | 47 designated baseline cases: 34 original invocations plus 13 recovered incoming endpoint cases; 2 supplemental recovered folio cases also execute |
 | Scenario 9 | 20 competing Web/walk-in requests: exactly 1 booking and 19 conflicts; version increments once; replay does not repost charges |
 | Scenario 7 | 50 same-bank-transaction HTTP callbacks: 1 settlement and 49 duplicate confirmations |
 | Scenario 8 | Front Desk cleaning forbidden; authorized dirty-to-clean succeeds; illegal occupied-to-vacant-clean rejected |
@@ -62,7 +62,7 @@ Evidence is saved in `docs/verification/phase2/`: `clean-regression.log`, `test-
 | Tasks | Implementation / verification |
 | --- | --- |
 | A5.1–A5.4; B5.1–B5.3 | Implemented; static/auth/migration/allocation/CRM/booking tests pass |
-| C5.1–C5.2 | Implemented; browser flow and responsive widths verified; full-page 500 ms render gate remains unmeasured |
+| C5.1–C5.2 | Implemented; browser flow, 375/800/1920 px responsiveness and render timing below 83 ms verified |
 | C5.3 | Implemented; backend atomic flow verified; native shortcut/grid timing pending |
 | D5.1–D5.3 | Mock contracts and concurrency/security gates pass |
 | A6.1–A6.3; B6.1–B6.3 | Implemented; QR/HMAC/ownership/payment/migration tests pass |
@@ -82,12 +82,12 @@ Evidence is saved in `docs/verification/phase2/`: `clean-regression.log`, `test-
 The remaining corrective steps are:
 
 1. On the installed Swing desktop, exercise Ctrl+W, QR settlement/chime, dirty-room cleaning, minibar posting, maintenance PIN, VAT reader launch, and DBR/CSV. Measure the specified EDT/visual timings; background-worker tests alone do not prove every 16 ms UI target.
-2. Measure full-page web rendering under the specified 500 ms target. The browser automation surface exposes DOM/layout verification but does not expose the Navigation Timing API used for this measurement.
+2. C5.1 is complete: the test-only browser probe captured Navigation/Paint Timing and render completion at all three required widths.
 3. Build/run the Maven-based Docker image and health check on a host with Docker. Docker is not installed/on PATH in this environment, so this is unverified rather than marked passed.
 4. Supply the approved production configuration and explicit voucher policies before live use. Connect an approved real OTP delivery provider if production SMS/email delivery is desired; this request authorized the development/test mock only.
 5. The PDF is a printable representation of finalized accounting data. Tax-provider issuance/signing and the approved verification destination must be provided and validated before claiming live electronic-invoice legal issuance. No tax registration, digital signature, or legal sign-off is fabricated.
 
-The WBS's asserted “47 Phase 1 baseline tests” does not match the starting repository inventory (34 executed invocations across 10 checked-in test classes). The suite selects every available checked-in test. Reconcile this count with the WBS or supply any missing historical test files; 13 tests are not fabricated to claim a 47-test baseline.
+The initial inventory gap is reconciled using the incoming CoreEndpointsIntegrationTest source. baseline-reconciliation.json lists each of the 47 designated baseline cases and its source provenance. The suite also runs two supplemental folio cases from that recovered class.
 
 ## Reproduction
 
@@ -104,3 +104,19 @@ Alternatively configure a disposable MariaDB 11 schema from `database/hotel.sql`
 The development mock is `quanlykhachsan.stubs.MockApiServer` in the test source set and binds only localhost port 8089. It is never included in production source/classes. Its fixed OTP and SUMMER50 coupon are synthetic fixtures, not production credentials/policies.
 
 See `phase2-production-configuration.md` for required settings and `phase2-changed-files.md` for the complete changed-file inventory. Temporary test processes are stopped after verification; the portable runtime is ignored and is not part of the source deliverable.
+
+## Initial acceptance gate follow-up (superseded by incoming integration below)
+
+Added `scripts/validate-phase2-acceptance.py`, the pending manual acceptance manifest, and `docs/phase2-manual-acceptance.md`. Four isolated gate unit checks pass. The read-only validator reports C5.1, C5.3, C6.1, C6.2, C7.1, C7.2, C7.3, C8.1, C8.3 and D8.4 as pending. It retains prior verified browser width/console checks but does not invent native or render timing. See `docs/verification/phase2/acceptance-gate-result.json`. The 109-test Java regression evidence is unchanged; no Java application behavior changed in this follow-up.
+
+The requested fetch from origin/PHASE_1 was not executed because automatic approval review failed at its usage limit. Local Phase 2 changes are preserved; no merge/conflict-resolution result is claimed. Completion needs a suitable native/Docker verification environment and reconciliation of the baseline inventory.
+
+## Incoming branch integration and QA handoff — 2026-10-15
+
+Fetched origin/PHASE_1 at 3844597 and refreshed origin/PHASE_2. Integrated the incoming baseline into PHASE_2, preserving Phase 2 transaction, JWT, availability, portal, invoice, and desktop behavior. Resolved the Windows FolioDAO/FolioDao collision by keeping the incompatible string-ID model only in recovered test fixtures. Incoming test source remains under src/test/java as a provenance snapshot excluded from the legacy production source root; executable tests are under tests/. The incoming Phase 1 certificate is a historical assertion, not current acceptance evidence: its full test tree references APIs absent from its checked-in runtime.
+
+Clean merged regression: **125 tests, 0 failures, 0 errors, 0 skips**, Maven total 28.338 s. The designated WBS baseline is exactly 47 cases: 34 original invocations plus 13 recovered core endpoint cases; two additional recovered folio contract cases also run. The other tests independently exercise Phase 2 production persistence, authentication, accounting, concurrency, and server registration. Source provenance and individual baseline case names are recorded in baseline-reconciliation.json.
+
+C5.1 now passes: 375/800/1920 px render times 80.5/80.6/82.3 ms and no console errors. Container configuration now matches hotel.sql schema naming, forwards required Phase 2 settings, requires approved credentials instead of incoming example secrets, and uses project-scoped container/volume names. Docker execution is unverified.
+
+The user reported no QA host access and requested remaining checks be documented for others. The current open IDs are **C5.3, C6.1, C6.2, C7.1, C7.2, C7.3, C8.1, C8.3, D8.4**. D8.4 awaits native Swing and Docker evidence; the automated/baseline portions pass. Follow phase2-manual-acceptance.md on a Windows interactive QA workstation and Docker-enabled Linux CI/VM. Phase 2 remains **partial acceptance**, with no invented native/Docker pass.

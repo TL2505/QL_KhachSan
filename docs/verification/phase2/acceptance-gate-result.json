@@ -1,0 +1,83 @@
+{
+  "phase2_complete": false,
+  "pending_tasks": {
+    "C5.3": [
+      "manual execution is not marked passed",
+      "requires measured edt_ms < 16",
+      "requires measured room_grid_update_ms < 200",
+      "requires ctrl_w_verified",
+      "requires atomic_check_in_verified",
+      "requires evidence files",
+      "requires verifier and verification date"
+    ],
+    "C6.1": [
+      "manual execution is not marked passed",
+      "requires measured edt_ms < 16",
+      "requires qr_visible",
+      "requires countdown_verified",
+      "requires server_polling_verified",
+      "requires evidence files",
+      "requires verifier and verification date"
+    ],
+    "C6.2": [
+      "manual execution is not marked passed",
+      "requires measured edt_ms < 16",
+      "requires settlement_overlay_visible",
+      "requires chime_heard",
+      "requires no_duplicate_notification",
+      "requires evidence files",
+      "requires verifier and verification date"
+    ],
+    "C7.1": [
+      "manual execution is not marked passed",
+      "requires measured edt_ms < 16",
+      "requires measured room_update_ms < 100",
+      "requires dirty_filter_verified",
+      "requires cleaning_audit_verified",
+      "requires evidence files",
+      "requires verifier and verification date"
+    ],
+    "C7.2": [
+      "manual execution is not marked passed",
+      "requires measured edt_ms < 16",
+      "requires pms_prices_verified",
+      "requires exact_posting_verified",
+      "requires stock_decrement_verified",
+      "requires evidence files",
+      "requires verifier and verification date"
+    ],
+    "C7.3": [
+      "manual execution is not marked passed",
+      "requires measured edt_ms < 16",
+      "requires conflict_without_pin_verified",
+      "requires authorized_override_verified",
+      "requires audit_verified",
+      "requires evidence files",
+      "requires verifier and verification date"
+    ],
+    "C8.1": [
+      "manual execution is not marked passed",
+      "requires measured edt_ms < 16",
+      "requires measured reader_open_ms < 500",
+      "requires default_reader_opened",
+      "requires invoice_details_verified",
+      "requires evidence files",
+      "requires verifier and verification date"
+    ],
+    "C8.3": [
+      "manual execution is not marked passed",
+      "requires measured edt_ms < 16",
+      "requires measured dashboard_update_ms < 300",
+      "requires kpis_verified",
+      "requires csv_verified",
+      "requires evidence files",
+      "requires verifier and verification date"
+    ],
+    "D8.4": [
+      "Docker build and health check are unverified",
+      "Docker verification requires logs, verifier and date",
+      "manual task evidence is incomplete"
+    ]
+  },
+  "automated_tests": 125
+}

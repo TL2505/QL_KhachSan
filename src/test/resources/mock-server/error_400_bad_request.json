@@ -1,0 +1,5 @@
+{
+  "error_code": "ERR_400_BAD_REQUEST",
+  "message": "Missing required header: Idempotency-Key",
+  "timestamp": "2026-10-13T16:15:00Z"
+}

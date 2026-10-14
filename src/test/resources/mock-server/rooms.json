@@ -1,0 +1,64 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "roomNumber": "101",
+      "roomTypeId": 1,
+      "roomTypeName": "Standard",
+      "price": 500000.0,
+      "status": "vacant_clean",
+      "version": 1
+    },
+    {
+      "id": 2,
+      "roomNumber": "102",
+      "roomTypeId": 1,
+      "roomTypeName": "Standard",
+      "price": 500000.0,
+      "status": "vacant_dirty",
+      "version": 1
+    },
+    {
+      "id": 3,
+      "roomNumber": "201",
+      "roomTypeId": 2,
+      "roomTypeName": "Deluxe",
+      "price": 1000000.0,
+      "status": "occupied_clean",
+      "version": 1
+    },
+    {
+      "id": 4,
+      "roomNumber": "202",
+      "roomTypeId": 2,
+      "roomTypeName": "Deluxe",
+      "price": 1000000.0,
+      "status": "occupied_dirty",
+      "version": 1
+    },
+    {
+      "id": 5,
+      "roomNumber": "301",
+      "roomTypeId": 3,
+      "roomTypeName": "Family",
+      "price": 1500000.0,
+      "status": "reserved",
+      "version": 1
+    },
+    {
+      "id": 6,
+      "roomNumber": "302",
+      "roomTypeId": 3,
+      "roomTypeName": "Family",
+      "price": 1500000.0,
+      "status": "out_of_order",
+      "version": 1
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "size": 20,
+    "total": 6
+  }
+}

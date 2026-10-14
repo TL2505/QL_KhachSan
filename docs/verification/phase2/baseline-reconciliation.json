@@ -1,0 +1,249 @@
+{
+  "required_baseline_count": 47,
+  "original_count": 34,
+  "recovered_count": 13,
+  "baseline_count": 47,
+  "baseline_cases": [
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[1]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[2]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[3]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[4]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[5]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[6]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[7]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[8]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[9]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[10]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[11]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[12]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[13]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[14]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[15]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[16]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[17]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[18]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[19]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "totalsBalanceToExactlyZeroCents(BigDecimal, BigDecimal, BigDecimal, TaxConfig)[20]",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
+      "test": "roundsHalfUpAndRejectsInvalidTaxRate",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FinancialEdgeCaseTest",
+      "test": "splitAcrossThreeCardsAdjustmentsRefundAndFxRoundingSettleToZero",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.FolioPaymentMariaDbIntegrationTest",
+      "test": "injectedFailureAfterLedgerInsertLeavesNoPaymentLedgerOrBalanceMutation",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.IdempotencyMariaDbIntegrationTest",
+      "test": "simultaneousDuplicateRequestsExecuteMutationOnceAndReplayIdenticalResponse",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.booking.IdempotencyMariaDbIntegrationTest",
+      "test": "completedFailureIsPersistedAndRetryDoesNotRepeatTheMutation",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.report.DbrReportServiceTest",
+      "test": "computesRevenueOccupancyAdrAndRevparExactly",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.report.DbrReportServiceTest",
+      "test": "zeroRoomAndZeroOccupancyNeverDivideByZero",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.room.RoomAllocationMariaDbIntegrationTest",
+      "test": "competingReservationsProduceOneWinnerOneConflictAndOneVersionIncrement",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.backend.utils.MariaDbMigrationIntegrationTest",
+      "test": "migrationIsCleanAndRepeatableOnMariaDb11",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.frontend.api.ApiClientTest",
+      "test": "delayedResponseDoesNotBlockEdtAndCallbackRunsOnEdt",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.frontend.api.ApiClientTest",
+      "test": "synchronousCompatibilityBridgeRejectsEdtCalls",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.frontend.view.DenseTableRendererTest",
+      "test": "usesAlternatingDenseRowColorsAndStatusDotPalette",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.frontend.view.RoomGridPanelTest",
+      "test": "rendersTwoHundredFixedSizeCellsForAllCanonicalStatuses",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.frontend.view.RoomGridPanelTest",
+      "test": "filtersByRoomGuestAndBookingAndRestoresAllWhenCleared",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testBookingsList",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testBookingCancel",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testRoomsAvailability",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testBookingGetById_NotFound",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testAuthLogin_Success",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testBookingUpdate",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testCustomerCreation",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testBookingGetById",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testBookingCreate_MissingIdempotencyKey",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testAuthLogin_InvalidCredentials",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testHealthCheck",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testBookingCreate_WithIdempotencyKeyAndReplay",
+      "passed": true
+    },
+    {
+      "class": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+      "test": "testRoomsList_CompliantStatuses",
+      "passed": true
+    }
+  ],
+  "incoming_commit": "3844597",
+  "incoming_source": "src/test/java/quanlykhachsan/api/CoreEndpointsIntegrationTest.java",
+  "executable_source": "tests/quanlykhachsan/api/CoreEndpointsIntegrationTest.java",
+  "source_sha256": "6c39de09d0dd9b4dfcf427b67a9e7fb6b489b54924bebd34c2f07dbf55b09475",
+  "additional_cases": "Two folio-payment cases from the same recovered class also execute; they are supplemental to the designated 47-case baseline.",
+  "scope": "Recovered HTTP cases verify synthetic Phase 1 mock contracts. Production Phase 2 persistence, authorization, concurrency, and accounting are independently exercised by the remaining integration tests."
+}

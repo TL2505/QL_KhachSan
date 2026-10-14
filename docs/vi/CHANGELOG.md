@@ -72,3 +72,15 @@
 - Bổ sung housekeeping, state machine phòng, minibar, maintenance OOO/OOS, hóa đơn PDF/thuế cấu hình tường minh, DBR và các giao diện Swing/web tương ứng; thêm migration, mock/stub và bộ kiểm thử Phase 2.
 - Thêm tài liệu kiểm kê tệp thay đổi, cấu hình production bắt buộc, báo cáo nghiệm thu và bằng chứng kiểm thử; chỉ dùng cấu hình/dữ liệu tổng hợp trong môi trường test, không đặt thông tin pháp lý/ngân hàng/OTP production giả định.
 - Xác minh theo báo cáo Phase 2: Java 17, MariaDB 11.4.2 cô lập; `mvn clean test -Dtest=Phase2RegressionSuite` đạt 109 test, 0 lỗi, 0 bỏ qua. Nghiệm thu tổng thể vẫn một phần: còn kiểm tra Swing/thời gian hiển thị thủ công, kiểm tra Docker và cấu hình production/nhà cung cấp cần phê duyệt.
+
+## [2026-10-15] — @codex — scripts/validate-phase2-acceptance.py, tests/acceptance/, docs/phase2-manual-acceptance.md, docs/verification/phase2/manual-acceptance.json — Cổng bằng chứng nghiệm thu Phase 2
+- Bổ sung bộ kiểm tra chỉ đọc, liệt kê task ID còn thiếu bằng chứng/thời gian đo, yêu cầu người xác minh và nhật ký; không coi kiểm thử tự động đạt là nghiệm thu đầy đủ.
+- Bổ sung bốn kiểm thử độc lập; giữ bằng chứng trình duyệt đã có, không tự tạo kết quả đo Swing hay thời gian render. Phase 2 vẫn chưa được nghiệm thu đầy đủ.
+- Chưa fetch origin/PHASE_1: dịch vụ xét duyệt tự động hết hạn mức sử dụng. Không xác nhận đã merge hoặc giải quyết xung đột mã incoming.
+
+## [2026-10-15] — @codex — Incoming Phase 1 integration, baseline recovery, configuration, and acceptance handoff
+- Fetched origin/PHASE_1 at 3844597 and refreshed PHASE_2. Resolved conflicts while preserving Phase 2 transactional and authorization behavior; retained incoming test source and recovered core endpoint cases in isolated test fixtures.
+- Reconciled the designated 47-case baseline (34 original + 13 recovered); clean merged regression passed 125 tests with 0 failures, errors, or skips, including a production server registration check.
+- Added deep database health and incoming response hardening; corrected Compose schema/configuration forwarding and removed default production credentials.
+- C5.1 passed at 375/800/1920 px with rendering below 83 ms and no console errors. Saved evidence and a strict read-only acceptance validator.
+- User has no QA host access currently. Documented later Windows Swing and Docker-host execution; C5.3, C6.1, C6.2, C7.1, C7.2, C7.3, C8.1, C8.3 and final D8.4 sign-off remain open. No native or Docker pass is claimed.

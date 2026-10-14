@@ -1,0 +1,147 @@
+{
+  "baseline_inventory_reconciled": true,
+  "docker": {
+    "build_passed": false,
+    "health_check_passed": false,
+    "evidence": [],
+    "verified_by": null,
+    "verified_at": null
+  },
+  "tasks": {
+    "C5.1": {
+      "status": "passed",
+      "measurements": {
+        "render_ms": 82.30000000447
+      },
+      "checks": {
+        "responsive_375": true,
+        "responsive_800": true,
+        "responsive_1920": true,
+        "no_console_errors": true
+      },
+      "verified_by": "Codex: browser Navigation/Paint Timing and viewport checks",
+      "verified_at": "2026-10-15",
+      "evidence": [
+        "docs/verification/phase2/browser-confirmation-mobile.png",
+        "docs/verification/phase2/browser-render-timing.json",
+        "docs/verification/phase2/browser-render-desktop.png"
+      ]
+    },
+    "C5.3": {
+      "status": "pending",
+      "measurements": {
+        "edt_ms": null,
+        "room_grid_update_ms": null
+      },
+      "checks": {
+        "ctrl_w_verified": null,
+        "atomic_check_in_verified": null
+      },
+      "verified_by": null,
+      "verified_at": null,
+      "evidence": []
+    },
+    "C6.1": {
+      "status": "pending",
+      "measurements": {
+        "edt_ms": null
+      },
+      "checks": {
+        "qr_visible": null,
+        "countdown_verified": null,
+        "server_polling_verified": null
+      },
+      "verified_by": null,
+      "verified_at": null,
+      "evidence": []
+    },
+    "C6.2": {
+      "status": "pending",
+      "measurements": {
+        "edt_ms": null
+      },
+      "checks": {
+        "settlement_overlay_visible": null,
+        "chime_heard": null,
+        "no_duplicate_notification": null
+      },
+      "verified_by": null,
+      "verified_at": null,
+      "evidence": []
+    },
+    "C7.1": {
+      "status": "pending",
+      "measurements": {
+        "edt_ms": null,
+        "room_update_ms": null
+      },
+      "checks": {
+        "dirty_filter_verified": null,
+        "cleaning_audit_verified": null
+      },
+      "verified_by": null,
+      "verified_at": null,
+      "evidence": []
+    },
+    "C7.2": {
+      "status": "pending",
+      "measurements": {
+        "edt_ms": null
+      },
+      "checks": {
+        "pms_prices_verified": null,
+        "exact_posting_verified": null,
+        "stock_decrement_verified": null
+      },
+      "verified_by": null,
+      "verified_at": null,
+      "evidence": []
+    },
+    "C7.3": {
+      "status": "pending",
+      "measurements": {
+        "edt_ms": null
+      },
+      "checks": {
+        "conflict_without_pin_verified": null,
+        "authorized_override_verified": null,
+        "audit_verified": null
+      },
+      "verified_by": null,
+      "verified_at": null,
+      "evidence": []
+    },
+    "C8.1": {
+      "status": "pending",
+      "measurements": {
+        "edt_ms": null,
+        "reader_open_ms": null
+      },
+      "checks": {
+        "default_reader_opened": null,
+        "invoice_details_verified": null
+      },
+      "verified_by": null,
+      "verified_at": null,
+      "evidence": []
+    },
+    "C8.3": {
+      "status": "pending",
+      "measurements": {
+        "edt_ms": null,
+        "dashboard_update_ms": null
+      },
+      "checks": {
+        "kpis_verified": null,
+        "csv_verified": null
+      },
+      "verified_by": null,
+      "verified_at": null,
+      "evidence": []
+    }
+  },
+  "baseline_reconciliation_evidence": [
+    "docs/verification/phase2/baseline-reconciliation.json",
+    "docs/verification/phase2/merged-clean-regression.log"
+  ]
+}

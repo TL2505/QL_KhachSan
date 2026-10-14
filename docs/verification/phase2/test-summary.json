@@ -1,378 +1,345 @@
 [
   {
+    "suite": "quanlykhachsan.api.CoreEndpointsIntegrationTest",
+    "tests": 15,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
     "suite": "quanlykhachsan.backend.auth.GuestAuthIntegrationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.216
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.booking.BankWebhookControllerTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.017
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.booking.FinancialCalculatorTest",
     "tests": 21,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.018
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.booking.FinancialEdgeCaseTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.001
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.booking.FolioPaymentMariaDbIntegrationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.044
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.booking.FolioPaymentServiceTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.241
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.booking.FolioQuerySecurityTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.328
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.booking.IdempotencyMariaDbIntegrationTest",
     "tests": 2,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.073
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.booking.VietQrGeneratorTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.023
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.customer.GuestIngestionDeduplicationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.691
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.pricing.DynamicPricingEngineTest",
     "tests": 16,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.02
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.pricing.PricingApiIntegrationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.235
+    "skipped": 0
+  },
+  {
+    "suite": "quanlykhachsan.backend.ProductionServerRegistrationTest",
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.report.DbrLedgerAggregatorTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.199
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.report.DbrReportServiceTest",
     "tests": 2,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.005
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.report.FinancialReportControllerTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.206
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.room.HousekeepingMigrationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.185
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.room.MaintenanceControllerTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.432
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.room.MinibarPostingServiceTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.261
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.room.RoomAllocationMariaDbIntegrationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.026
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.room.RoomAllocationServiceTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.177
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.room.RoomStateMachineTest",
     "tests": 25,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.053
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.utils.DatabaseMigrationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.117
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.utils.MariaDbMigrationIntegrationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 2.079
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.backend.utils.StaticFileHandlerTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.077
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.booking.MinibarConcurrentPostingTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.538
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.financial.FolioAccountingMigrationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.203
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.financial.FolioBigintIntegrationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.216
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.financial.OverpaymentCreditAdjustmentTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.188
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.frontend.api.ApiClientTest",
     "tests": 2,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 3.078
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.frontend.view.DenseTableRendererTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.087
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.frontend.view.RoomGridPanelTest",
     "tests": 2,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.085
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.invoice.Circular78PdfInvoiceTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.558
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.invoice.InvoicePdfControllerTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.28
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.invoice.VatInvoicePdfGeneratorTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.068
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.performance.DynamicPricingLoadTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 1.765
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.performance.MinibarConcurrencyTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.492
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.Phase2RegressionSuite",
     "tests": 0,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 15.294
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.promotion.VoucherRedemptionIntegrationTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.202
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.promotion.VoucherServiceTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.004
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.promotion.VoucherValidationControllerTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.195
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.scenarios.Scenario7DuplicateWebhookTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.322
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.scenarios.Scenario8HousekeepingRbacTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.204
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.scenarios.Scenario9WebVsWalkInRaceTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.276
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.security.CorsAndStaticServingTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.075
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.security.HousekeepingControllerSecurityTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.548
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.stubs.MockApiServerTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.016
+    "skipped": 0
   },
   {
     "suite": "quanlykhachsan.stubs.MockOperationsTest",
     "tests": 1,
     "failures": 0,
     "errors": 0,
-    "skipped": 0,
-    "seconds": 0.084
+    "skipped": 0
   }
 ]

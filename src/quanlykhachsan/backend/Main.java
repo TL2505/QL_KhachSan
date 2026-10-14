@@ -21,10 +21,31 @@ public class Main {
             quanlykhachsan.backend.utils.UpdateDbUtility.main(new String[] {});
 
             // Khởi tạo Server lắng nghe tại cổng 8081
-            HttpServer server = HttpServer.create(new InetSocketAddress(8081), 0);
+            HttpServer server = createServer(8081);
+            server.start();
+            var nightAuditJob = new quanlykhachsan.backend.system.NightAuditJob();
+            nightAuditJob.start();
+            var noShowJob = new quanlykhachsan.backend.booking.NoShowJob();
+            noShowJob.start();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                noShowJob.close();
+                nightAuditJob.close();
+                server.stop(10);
+                quanlykhachsan.backend.utils.DatabaseConnection.close();
+            }, "hotel-shutdown"));
 
-            System.out.println("🚀 Đang khởi động Backend Server API...");
+            System.out.println("Server đang chạy thành công tại: http://localhost:8081/");
+            System.out.println("Hãy mở Postman và test API: POST http://localhost:8081/api/v1/auth/login");
 
+        } catch (IOException e) {
+            System.err.println("Lỗi khi khởi động Server: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /** Configures the same production routes used by main, without starting jobs or migrating data. */
+    public static HttpServer createServer(int port) throws IOException {
+        HttpServer server = HttpServer.create(new InetSocketAddress(port),0);
             // Khởi tạo các Filter
             Filter corsFilter = new CorsFilter();
             Filter jwtFilter = new JwtFilter();
@@ -34,16 +55,7 @@ public class Main {
 
             // --- ĐĂNG KÝ CÁC ROUTE (API ENDPOINTS) TẠI ĐÂY ---
             // Route Health
-            server.createContext("/api/v1/health", exchange -> {
-                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-                exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-                String response = "{\"status\":\"success\",\"data\":\"OK\"}";
-                byte[] bytes = response.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                exchange.sendResponseHeaders(200, bytes.length);
-                try (java.io.OutputStream os = exchange.getResponseBody()) {
-                    os.write(bytes);
-                }
-            }).getFilters().addAll(Arrays.asList(exceptionFilter, corsFilter));
+            registerContext(server,"/api/v1/health", Main::handleHealthCheck, exceptionFilter, corsFilter);
 
             // Route Đăng nhập và Đăng ký (Được skip JWT auth bên trong JwtFilter)
             registerContext(server, "/api/v1/auth/login", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
@@ -99,29 +111,35 @@ public class Main {
             registerContext(server, "/booking", staticFiles, exceptionFilter, corsFilter);
             registerContext(server, "/", staticFiles, exceptionFilter, corsFilter);
             server.setExecutor(Executors.newFixedThreadPool(20));
-            server.start();
-            var nightAuditJob = new quanlykhachsan.backend.system.NightAuditJob();
-            nightAuditJob.start();
-            var noShowJob = new quanlykhachsan.backend.booking.NoShowJob();
-            noShowJob.start();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                noShowJob.close();
-                nightAuditJob.close();
-                server.stop(10);
-                quanlykhachsan.backend.utils.DatabaseConnection.close();
-            }, "hotel-shutdown"));
 
-            System.out.println("Server đang chạy thành công tại: http://localhost:8081/");
-            System.out.println("Hãy mở Postman và test API: POST http://localhost:8081/api/v1/auth/login");
+        return server;
+    }
 
-        } catch (IOException e) {
-            System.err.println("Lỗi khi khởi động Server: " + e.getMessage());
-            e.printStackTrace();
+    private static void handleHealthCheck(com.sun.net.httpserver.HttpExchange exchange) throws IOException {
+        if (!"GET".equals(exchange.getRequestMethod())) {
+            quanlykhachsan.backend.utils.GlobalExceptionHandler.sendError(exchange,405,"ERR_405_METHOD_NOT_ALLOWED","Method not allowed"); return;
+        }
+        com.google.gson.JsonObject health = new com.google.gson.JsonObject();
+        try (java.sql.Connection c = quanlykhachsan.backend.utils.DatabaseConnection.getConnection();
+             java.sql.Statement stmt = c.createStatement()) {
+            stmt.setQueryTimeout(1);
+            try (java.sql.ResultSet rows = stmt.executeQuery("SELECT 1")) {
+                if (!rows.next()) throw new java.sql.SQLException("Database health check failed");
+            }
+            health.addProperty("status","UP");
+            health.addProperty("database","CONNECTED");
+            health.addProperty("active_connections",quanlykhachsan.backend.utils.DatabaseConnection.activeConnections());
+            health.addProperty("awaiting_connections",quanlykhachsan.backend.utils.DatabaseConnection.awaitingConnections());
+            quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange,200,health.toString());
+        } catch (java.sql.SQLException e) {
+            health.addProperty("status","DOWN");health.addProperty("database","DISCONNECTED");
+            quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange,503,health.toString());
         }
     }
 
     private static void registerContext(HttpServer server, String path, HttpHandler handler, Filter... filters) {
         var context = server.createContext(path, handler);
+        context.getFilters().add(new quanlykhachsan.backend.utils.SecurityHardeningFilter());
         for (Filter filter : filters) {
             context.getFilters().add(filter);
         }
