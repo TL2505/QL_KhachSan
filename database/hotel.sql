@@ -341,6 +341,27 @@ CREATE TABLE IF NOT EXISTS audit_checkpoints (
   INDEX idx_checkpoint_status (status)
 ) ENGINE=InnoDB;
 
+-- Current hotel business date (advanced only after the audit checkpoint completes).
+CREATE TABLE IF NOT EXISTS hotel_business_state (
+  id TINYINT NOT NULL PRIMARY KEY,
+  business_date DATE NOT NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+INSERT IGNORE INTO hotel_business_state (id, business_date) VALUES (1, CURRENT_DATE());
+
+-- Idempotent Daily Business Report snapshot from the folio ledger.
+CREATE TABLE IF NOT EXISTS daily_business_reports (
+  audit_date DATE NOT NULL PRIMARY KEY,
+  total_revenue DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+  room_revenue DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+  occupied_rooms INT NOT NULL DEFAULT 0,
+  available_rooms INT NOT NULL DEFAULT 0,
+  occupancy_rate DECIMAL(7,2) NOT NULL DEFAULT 0.00,
+  adr DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+  revpar DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- --------------------------------------------------------
 -- VIEWS & TRIGGERS
 -- --------------------------------------------------------

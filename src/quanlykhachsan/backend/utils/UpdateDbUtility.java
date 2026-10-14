@@ -130,6 +130,14 @@ public class UpdateDbUtility {
                     + "  INDEX idx_checkpoint_status (status)\n"
                     + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+            ensureTable(conn, "hotel_business_state",
+                    "CREATE TABLE IF NOT EXISTS hotel_business_state (id TINYINT NOT NULL PRIMARY KEY, business_date DATE NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB");
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate("INSERT IGNORE INTO hotel_business_state (id,business_date) VALUES (1,CURRENT_DATE())");
+            }
+            ensureTable(conn, "daily_business_reports",
+                    "CREATE TABLE IF NOT EXISTS daily_business_reports (audit_date DATE NOT NULL PRIMARY KEY, total_revenue DECIMAL(14,2) NOT NULL DEFAULT 0.00, room_revenue DECIMAL(14,2) NOT NULL DEFAULT 0.00, occupied_rooms INT NOT NULL DEFAULT 0, available_rooms INT NOT NULL DEFAULT 0, occupancy_rate DECIMAL(7,2) NOT NULL DEFAULT 0.00, adr DECIMAL(14,2) NOT NULL DEFAULT 0.00, revpar DECIMAL(14,2) NOT NULL DEFAULT 0.00, created_at DATETIME DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
             System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.");
     }
 

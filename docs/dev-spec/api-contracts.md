@@ -46,6 +46,12 @@ All client/server errors (`400`, `401`, `403`, `404`, `409`, `429`, `500`, `503`
 | `X-Signature` | Hex String | `POST /api/v1/webhooks/vietqr` | `hex(HMAC_SHA256(bank_secret, raw_body))`; invalid signature rejected immediately with HTTP 401. |
 | `Origin` | Domain String | All Web CORS requests | Native `CorsFilter` verifies domain and responds to preflight `OPTIONS` with `204 No Content`. |
 
+### 1.4 Phase 1 Folio and Room Operations
+These routes support Phase 1 folio routing and the OOO-room manager override:
+- `POST /api/v1/folios/{id}/split` — create or return the booking's Guest Folio alongside the Master Folio.
+- `PUT /api/v1/folios/{id}/routing` — request folio selection with `{"charge_type":"room_rate|service|..."}`; room charges route to Master and incidentals to Guest.
+- `POST /api/v1/rooms/{bookingId}/downgrade` — admin/manager override with `{"replacement_room_id":123}`; reassigns an eligible booking to a lower-rate vacant room and applies a folio credit.
+
 ---
 
 ## 2. PHASE 2 API CONTRACT SPECIFICATIONS

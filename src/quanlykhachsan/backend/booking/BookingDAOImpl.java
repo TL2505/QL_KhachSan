@@ -41,27 +41,10 @@ public class BookingDAOImpl implements BookingDAO {
                     if (!rs.next()) throw new java.sql.SQLException("Booking insert did not return an ID");
                     int id = rs.getInt(1);
                     booking.setId(id);
-                    java.math.BigDecimal roomBalance = java.math.BigDecimal.valueOf(booking.getTotalPrice())
-                        .setScale(2, java.math.RoundingMode.HALF_UP);
                     try (PreparedStatement master = con.prepareStatement(
-                            "INSERT INTO folios (booking_id, folio_type, balance, status) VALUES (?, 'master', ?, 'open')",
-                         PreparedStatement.RETURN_GENERATED_KEYS)) {
+                            "INSERT INTO folios (booking_id, folio_type, balance, status) VALUES (?, 'master', 0.00, 'open')")) {
                         master.setInt(1, id);
-                        master.setBigDecimal(2, roomBalance);
                         master.executeUpdate();
-                        try (ResultSet masterId = master.getGeneratedKeys()) {
-                            if (!masterId.next()) throw new java.sql.SQLException("Master folio insert did not return an ID");
-                            try (PreparedStatement transaction = con.prepareStatement(
-                                    "INSERT INTO folio_transactions (folio_id, transaction_type, charge_type, description, amount, business_date, reference_id)"
-                                  + " VALUES (?, 'debit', 'room_rate', 'Room charge', ?, ?, ?)")) {
-                                transaction.setInt(1, masterId.getInt(1));
-                                transaction.setBigDecimal(2, roomBalance);
-                                transaction.setDate(3, java.sql.Date.valueOf(java.time.LocalDate.now(
-                                    java.time.ZoneId.of("Asia/Ho_Chi_Minh"))));
-                                transaction.setString(4, "BOOKING-" + id + "-ROOM-RATE");
-                                transaction.executeUpdate();
-                            }
-                        }
                     }
                     try (PreparedStatement guest = con.prepareStatement(
                             "INSERT INTO folios (booking_id, folio_type, balance, status) VALUES (?, 'guest', 0.00, 'open')")) {

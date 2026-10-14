@@ -41,6 +41,7 @@ public class MainUI extends JFrame {
     private GlobalKeyDispatcher globalKeyDispatcher;
 
     public MainUI(User user) {
+        quanlykhachsan.frontend.utils.EdtViolationDetector.install();
         this.currentUser = user;
         setTitle("Hệ thống Quản lý Khách sạn - User: " + user.getUsername());
         setSize(1200, 800);

@@ -26,11 +26,10 @@ public class CustomerController implements HttpHandler {
             // 1. GET /api/customers or /api/customers/{id}
             if ("GET".equalsIgnoreCase(method)) {
                 String path = exchange.getRequestURI().getPath();
-                String[] parts = path.split("/");
-                
-                if (parts.length >= 4) {
-                    // GET /api/customers/{id}
-                    int id = Integer.parseInt(parts[3]);
+                String suffix = path.startsWith("/api/v1/customers")
+                    ? path.substring("/api/v1/customers".length()) : path.substring("/api/customers".length());
+                if (suffix.matches("/\\d+")) {
+                    int id = Integer.parseInt(suffix.substring(1));
                     Customer c = customerService.getCustomerById(id);
                     if (c != null) {
                         CustomerResponse dto = CustomerMapper.toCustomerResponse(c);
@@ -55,23 +54,25 @@ public class CustomerController implements HttpHandler {
             // 3. PUT /api/customers/{id}
             else if ("PUT".equalsIgnoreCase(method)) {
                 String path = exchange.getRequestURI().getPath();
-                String[] parts = path.split("/");
-                if (parts.length < 4) {
+                String suffix = path.startsWith("/api/v1/customers")
+                    ? path.substring("/api/v1/customers".length()) : path.substring("/api/customers".length());
+                if (!suffix.matches("/\\d+")) {
                     ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu ID khách hàng!"));
                     return;
                 }
-                int id = Integer.parseInt(parts[3]);
+                int id = Integer.parseInt(suffix.substring(1));
                 handlePut(exchange, id, gson);
             }
             // 4. DELETE /api/customers/{id}
             else if ("DELETE".equalsIgnoreCase(method)) {
                 String path = exchange.getRequestURI().getPath();
-                String[] parts = path.split("/");
-                if (parts.length < 4) {
+                String suffix = path.startsWith("/api/v1/customers")
+                    ? path.substring("/api/v1/customers".length()) : path.substring("/api/customers".length());
+                if (!suffix.matches("/\\d+")) {
                     ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu ID khách hàng!"));
                     return;
                 }
-                int id = Integer.parseInt(parts[3]);
+                int id = Integer.parseInt(suffix.substring(1));
                 handleDelete(exchange, id);
             }
             else {

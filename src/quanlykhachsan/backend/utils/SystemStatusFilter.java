@@ -4,7 +4,6 @@ import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -27,8 +26,8 @@ public final class SystemStatusFilter extends Filter {
             || "DELETE".equalsIgnoreCase(method)
             || "PATCH".equalsIgnoreCase(method);
         LocalTime now = LocalTime.now(BUSINESS_ZONE);
-        if (mutation && now.isBefore(FREEZE_END)) {
-            long retrySeconds = Math.max(1, Duration.between(now, FREEZE_END).getSeconds());
+        if (mutation && (quanlykhachsan.backend.system.SystemStateHolder.isFrozen() || now.isBefore(FREEZE_END))) {
+            long retrySeconds = 300;
             byte[] body = ("{\"error_code\":\"ERR_503_SERVICE_UNAVAILABLE\","
                 + "\"message\":\"Night Audit in progress (00:00 - 00:05). Mutations temporarily locked.\","
                 + "\"timestamp\":\"" + Instant.now() + "\"}").getBytes(StandardCharsets.UTF_8);

@@ -28,8 +28,9 @@ public class RoomController implements HttpHandler {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath(); // /api/rooms hoặc /api/rooms/123
 
-        // Lấy phần sau /api/rooms
-        String pathInfo = path.replace("/api/rooms", "");
+        // Preserve the legacy alias while parsing the versioned Phase 1 route correctly.
+        String prefix = path.startsWith("/api/v1/rooms") ? "/api/v1/rooms" : "/api/rooms";
+        String pathInfo = path.startsWith(prefix) ? path.substring(prefix.length()) : path;
 
         if ("GET".equalsIgnoreCase(method) && (pathInfo.isEmpty() || pathInfo.equals("/"))) {
             // GET /api/rooms - Lấy danh sách tất cả phòng
@@ -45,6 +46,11 @@ public class RoomController implements HttpHandler {
             // PUT /api/rooms/{id}/status - Đổi trạng thái phòng
             int id = Integer.parseInt(pathInfo.split("/")[1]);
             handleUpdateStatus(exchange, id);
+
+        } else if ("POST".equalsIgnoreCase(method) && pathInfo.matches("/\\d+/downgrade")) {
+            int bookingId = Integer.parseInt(pathInfo.split("/")[1]);
+            if (!SecurityUtil.hasPermission(exchange, 1)) return;
+            handleDowngrade(exchange, bookingId);
 
         } else if ("DELETE".equalsIgnoreCase(method) && pathInfo.matches("/\\d+")) {
             // DELETE /api/rooms/{id} - Xóa phòng theo ID
@@ -62,6 +68,26 @@ public class RoomController implements HttpHandler {
 
         } else {
             ApiResponseUtil.write(exchange, 405, ApiResponseUtil.error("Phương thức không được hỗ trợ"));
+        }
+    }
+
+    private void handleDowngrade(HttpExchange exchange, int bookingId) throws IOException {
+        try {
+            com.google.gson.JsonObject body = com.google.gson.JsonParser.parseString(
+                new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
+            int replacementRoomId = body.get("replacement_room_id").getAsInt();
+            var result = new RoomDowngradeService().downgrade(bookingId, replacementRoomId, true);
+            com.google.gson.JsonObject data = new com.google.gson.JsonObject();
+            data.addProperty("booking_id", result.bookingId()); data.addProperty("room_id", result.roomId());
+            data.addProperty("old_rate", result.oldRate()); data.addProperty("new_rate", result.newRate());
+            data.addProperty("folio_credit", result.folioCredit());
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(data));
+        } catch (IllegalArgumentException ex) {
+            ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error(ex.getMessage()));
+        } catch (IllegalStateException ex) {
+            ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error(ex.getMessage()));
+        } catch (Exception ex) {
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Room downgrade failed"));
         }
     }
 

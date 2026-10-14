@@ -19,6 +19,8 @@ import quanlykhachsan.frontend.api.BookingAPI;
 import quanlykhachsan.frontend.api.CustomerAPI;
 import quanlykhachsan.frontend.utils.WrapLayout;
 import quanlykhachsan.frontend.view.customer.RoomDetailDialog;
+import quanlykhachsan.frontend.view.RoomGridPanel;
+import quanlykhachsan.frontend.view.DetachedRoomMapFrame;
 
 public class RoomForm extends JPanel {
 
@@ -34,6 +36,13 @@ public class RoomForm extends JPanel {
     private String quickFilter = "";
     private long roomLoadGeneration;
     private quanlykhachsan.frontend.view.SystemStatusBanner systemStatusBanner;
+    private DetachedRoomMapFrame detachedRoomMap;
+    private RoomGridPanel detachedGrid;
+    private boolean autoOpenedSecondaryMap;
+    private JLabel detailRoom = new JLabel("Select a room");
+    private JLabel detailStatus = new JLabel(" ");
+    private List<Booking> mapBookings = new ArrayList<>();
+    private List<Customer> mapCustomers = new ArrayList<>();
 
     // ── Màu sắc ──────────────────────────────────────────────────────────
     private final Color C_AVAILABLE   = new Color(34, 197, 94);   // xanh lá
@@ -127,6 +136,11 @@ public class RoomForm extends JPanel {
         btnRefresh.addActionListener(e -> loadRooms());
         actionButtons.add(btnRefresh);
 
+        JButton btnDetachedMap = makeToolBtn("Room Map", PRIMARY, false);
+        btnDetachedMap.setToolTipText("Open the fixed 5-column room map on another monitor");
+        btnDetachedMap.addActionListener(e -> openDetachedMap());
+        actionButtons.add(btnDetachedMap);
+
         if (currentUser.getRoleId() == 1) { // ADMIN
             JButton btnAdd = makeToolBtn("Thêm phòng", PRIMARY, true);
             if (systemStatusBanner != null) systemStatusBanner.registerMutationComponent(btnAdd);
@@ -172,6 +186,16 @@ public class RoomForm extends JPanel {
         scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         add(scroll, BorderLayout.CENTER);
+        JPanel details = new JPanel();
+        details.setLayout(new BoxLayout(details, BoxLayout.Y_AXIS));
+        details.setPreferredSize(new Dimension(300, 0));
+        details.setBorder(new EmptyBorder(16, 16, 16, 16));
+        details.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
+        detailRoom.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+        details.add(detailRoom);
+        details.add(Box.createVerticalStrut(8));
+        details.add(detailStatus);
+        add(details, BorderLayout.EAST);
     }
 
     // ── Load rooms ────────────────────────────────────────────────────────
@@ -208,6 +232,8 @@ public class RoomForm extends JPanel {
                 try {
                     RoomLoadData loaded = get();
                     List<Room> roomsList = loaded.rooms;
+                        mapBookings = loaded.bookings;
+                        mapCustomers = loaded.customers;
                     if (roomsList == null || roomsList.isEmpty()) {
                         JLabel empty = new JLabel("Chưa có phòng nào. Nhấn 'Thêm phòng' để bắt đầu!");
                         empty.setFont(new Font("Segoe UI", Font.ITALIC, 14));
@@ -247,6 +273,12 @@ public class RoomForm extends JPanel {
                                 + " " + bookingText).toLowerCase(Locale.ROOT));
                             gridPanel.add(card);
                         }
+                        updateDetachedRoomMap(roomsList, loaded.bookings, loaded.customers);
+                        if (!autoOpenedSecondaryMap
+                                && java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length > 1) {
+                            autoOpenedSecondaryMap = true;
+                            openDetachedMap();
+                        }
                         noSearchResults = new JLabel("Không tìm thấy phòng phù hợp.");
                         noSearchResults.setForeground(MUTED);
                         noSearchResults.setVisible(false);
@@ -267,6 +299,58 @@ public class RoomForm extends JPanel {
         worker.execute();
     }
 
+    private void openDetachedMap() {
+        if (detachedGrid == null) {
+            detachedGrid = new RoomGridPanel();
+            detachedGrid.setSelectionListener(room -> {
+                selectedRoom = room;
+                gridPanel.repaint();
+                if (room != null) showSelectedRoomDetail(room);
+            });
+            detachedGrid.setFolioListener(bookingId -> {
+                for (Booking booking : mapBookings) {
+                    if (Integer.toString(booking.getId()).equals(bookingId)) {
+                        for (Room room : loadedRooms) if (room.getId() == booking.getRoomId()) selectedRoom = room;
+                        break;
+                    }
+                }
+                if (selectedRoom != null) openSelectedRoomAction(null);
+            });
+            detachedGrid.setRooms(loadedRooms);
+        }
+        updateDetachedRoomMap(loadedRooms, mapBookings, mapCustomers);
+        if (detachedRoomMap == null || !detachedRoomMap.isDisplayable()) {
+            detachedRoomMap = new DetachedRoomMapFrame(detachedGrid);
+        }
+        detachedRoomMap.setVisible(true);
+        detachedRoomMap.toFront();
+    }
+
+    private void updateDetachedRoomMap(List<Room> rooms, List<Booking> bookings, List<Customer> customers) {
+        mapBookings = bookings == null ? new ArrayList<>() : bookings;
+        mapCustomers = customers == null ? new ArrayList<>() : customers;
+        if (detachedGrid == null) return;
+        detachedGrid.setRooms(rooms);
+        Map<Integer, String> namesByRoom = new HashMap<>();
+        Map<Integer, String> bookingByRoom = new HashMap<>();
+        Map<Integer, String> namesByCustomer = new HashMap<>();
+        for (Customer customer : mapCustomers) {
+            if (customer != null) namesByCustomer.put(customer.getId(), customer.getFullName());
+        }
+        for (Booking booking : mapBookings) {
+            if (booking == null) continue;
+            String name = namesByCustomer.get(booking.getCustomerId());
+            if (name != null) namesByRoom.put(booking.getRoomId(), name);
+            bookingByRoom.put(booking.getRoomId(), Integer.toString(booking.getId()));
+        }
+        for (Room room : rooms) detachedGrid.setRoomDetails(room.getId(), namesByRoom.get(room.getId()), bookingByRoom.get(room.getId()));
+    }
+
+    private void showSelectedRoomDetail(Room room) {
+        detailRoom.setText("Room " + room.getRoomNumber());
+        detailStatus.setText(room.getStatus());
+    }
+
     public void setSystemStatusBanner(quanlykhachsan.frontend.view.SystemStatusBanner banner) {
         this.systemStatusBanner = banner;
     }
@@ -279,6 +363,7 @@ public class RoomForm extends JPanel {
         }
         String normalized = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         quickFilter = normalized;
+        if (detachedGrid != null) detachedGrid.filter(normalized);
         int visible = 0;
         for (Room room : loadedRooms) {
             JPanel card = roomCards.get(room);

@@ -15,23 +15,18 @@ public class CustomerAPI {
     public static List<Customer> getAllCustomers() {
         List<Customer> customers = new ArrayList<>();
         try {
-            String jsonResponse = HttpUtil.sendGet("/customers");
+            String jsonResponse = HttpUtil.sendGet("/v1/customers");
             Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
 
-            if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
-                JsonArray dataArray = resObj.getAsJsonArray("data");
-                if (dataArray != null) {
-                    for (JsonElement element : dataArray) {
-                        Customer customer = gson.fromJson(element, Customer.class);
-                        customers.add(customer);
-                    }
-                }
-            }
+            if (resObj == null || !resObj.has("status") || !"success".equals(resObj.get("status").getAsString()))
+                throw new IllegalStateException("Customer API returned an unsuccessful response");
+            JsonArray dataArray = resObj.getAsJsonArray("data");
+            if (dataArray != null) for (JsonElement element : dataArray) customers.add(gson.fromJson(element, Customer.class));
+            return customers;
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Unable to load customers: " + e.getMessage(), e);
         }
-        return customers;
     }
 
     public static String addCustomer(Customer customer) {
@@ -41,7 +36,7 @@ public class CustomerAPI {
             req.addProperty("phone", customer.getPhone());
             req.addProperty("cccd", customer.getIdentityCard());
 
-            String jsonResponse = HttpUtil.sendPost("/customers", JsonUtil.getGson().toJson(req));
+            String jsonResponse = HttpUtil.sendPost("/v1/customers", JsonUtil.getGson().toJson(req));
             JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
                 if ("success".equals(resObj.get("status").getAsString())) {
@@ -64,7 +59,7 @@ public class CustomerAPI {
             req.addProperty("phone", customer.getPhone());
             req.addProperty("cccd", customer.getIdentityCard());
 
-            String jsonResponse = HttpUtil.sendPut("/customers/" + customer.getId(), JsonUtil.getGson().toJson(req));
+            String jsonResponse = HttpUtil.sendPut("/v1/customers/" + customer.getId(), JsonUtil.getGson().toJson(req));
             JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
                 if ("success".equals(resObj.get("status").getAsString())) {
@@ -82,7 +77,7 @@ public class CustomerAPI {
 
     public static String deleteCustomer(int id) {
         try {
-            String jsonResponse = HttpUtil.sendDelete("/customers/" + id);
+            String jsonResponse = HttpUtil.sendDelete("/v1/customers/" + id);
             Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
@@ -101,7 +96,7 @@ public class CustomerAPI {
 
     public static Customer getCustomerById(int id) {
         try {
-            String jsonResponse = HttpUtil.sendGet("/customers/" + id);
+            String jsonResponse = HttpUtil.sendGet("/v1/customers/" + id);
             Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
             if (resObj != null && "success".equals(resObj.get("status").getAsString())) {

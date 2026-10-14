@@ -19,8 +19,12 @@ public final class NoShowEngine {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     public int processBatch(LocalDateTime cutoff) throws SQLException {
+        return processBatch(cutoff, LocalDate.now(BUSINESS_ZONE));
+    }
+
+    public int processBatch(LocalDateTime cutoff, LocalDate businessDate) throws SQLException {
         if (cutoff == null) throw new IllegalArgumentException("cutoff is required");
-        LocalDate businessDate = LocalDate.now(BUSINESS_ZONE);
+        if (businessDate == null) throw new IllegalArgumentException("businessDate is required");
         try (Connection connection = DatabaseConnection.getConnection()) {
             connection.setAutoCommit(false);
             try {

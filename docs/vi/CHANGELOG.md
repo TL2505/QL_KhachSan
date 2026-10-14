@@ -55,3 +55,14 @@
 ## [2026-10-13] — @codex — UpdateDbUtility.java, MariaDbMigrationIntegrationTest.java, database/hotel.sql — Xác minh tích hợp MariaDB 11
 - Xác minh toàn bộ bộ kiểm thử trên MariaDB 11.8.6 cô lập: 26 kiểm thử đạt, 0 lỗi, 0 bị bỏ qua. Phạm vi gồm migration lặp lại trên schema cũ, nạp toàn bộ `database/hotel.sql`, xử lý đồng thời các request idempotency và phát lại phản hồi lỗi đã lưu.
 - Giới hạn tra cứu metadata migration trong đúng cơ sở dữ liệu hiện tại, cập nhật trình chạy kiểm thử schema để hỗ trợ chỉ thị SQL `DELIMITER`, và sửa trạng thái booking mẫu số 63 từ trạng thái invoice `paid` thành trạng thái booking hợp lệ `checked_out`.
+
+## [2026-10-14] — @codex — Các tệp phân bổ phòng Dev B/C và sơ đồ phòng desktop — Rà soát và triển khai một phần các việc Phase 1 còn lại
+- Bổ sung kiểm thử tranh chấp đặt cùng một phòng trên MariaDB 11; chỉ chạy khi bật `HOTEL_RUN_DB_INTEGRATION=true` và schema dùng riêng có tên kết thúc bằng `_test`. Kiểm thử xác nhận một lần thành công, một xung đột và version chỉ tăng một lần.
+- Bổ sung ô phòng 80×60, sơ đồ tách rời 5 cột, sáu màu trạng thái chuẩn, lọc bộ nhớ theo phòng/khách/booking, bộ hiển thị trạng thái bảng 24px, lưu kích thước/vị trí cửa sổ an toàn và bộ đo thời gian xử lý EDT.
+- Kết nối sơ đồ gọn vào `RoomForm`, bộ lọc nhanh, renderer bảng đặt phòng và khởi động `MainUI`. Các thay đổi hỗ trợ một phần B2.1, C2.2, C2.3, C3.3, C4.1 và C4.2; Definition of Done đầy đủ của các việc này vẫn chưa được xác minh hết.
+- Các lớp đã sửa và kiểm thử tập trung biên dịch bằng JDK 17; kiểm thử UI tập trung đạt (3 đạt). Kiểm thử tranh chấp MariaDB bị bỏ qua theo điều kiện môi trường do chưa cấu hình schema kiểm thử. Maven chưa chạy được: không ghi được lock của kho Maven cấp người dùng; lần thử dùng kho trong workspace không tải được dependency vì DNS Maven Central không khả dụng.
+## [2026-10-14] — @codex — Hoàn thiện dịch vụ Phase 1 cho Dev B/C
+- Bổ sung thanh toán folio nguyên tử, định tuyến Master/Guest, tách folio, tác vụ no-show theo lô 50, night audit 7 bước có checkpoint và khả năng phục hồi, tổng hợp DBR, phép tính điều chỉnh/hoàn tiền và hạ hạng phòng OOO có quyền quản lý.
+- Kết nối lỗi tải API với trạng thái lỗi trên bản đồ phòng, giữ hỗ trợ cửa sổ bản đồ màn hình phụ và ghi lại quy trình mô phỏng ca lễ tân hai giờ.
+- Đặt số dư folio mới về 0 để tránh tính trùng tiền phòng giữa ước tính booking và bút toán night audit; chuẩn hóa phản hồi đóng băng với `Retry-After: 300`.
+- JDK 17 biên dịch thành công toàn bộ mã Java production và test. Chạy JUnit tập trung: 6 đạt, 0 lỗi, 2 test MariaDB bị bỏ qua do chưa có schema kiểm thử riêng. `mvn -o test` chưa chạy được vì khóa kho Maven cấp người dùng không có quyền truy cập. Mô phỏng hai giờ và kiểm thử giao dịch/khôi phục trên MariaDB vẫn cần chạy trong môi trường tương ứng.

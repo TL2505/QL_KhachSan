@@ -278,6 +278,11 @@ public class BookingForm extends JPanel {
         bookingTable = new JTable(bookingModel);
         bookingTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         bookingTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
+        bookingTable.setAutoCreateRowSorter(true);
+        if (bookingTable.getColumnCount() > 5) {
+            bookingTable.getColumnModel().getColumn(5).setCellRenderer(
+                new quanlykhachsan.frontend.utils.DenseTableRenderer());
+        }
         bookingTable.setShowGrid(false);
         bookingTable.setIntercellSpacing(new Dimension(0, 0));
         bookingTable.setSelectionBackground(ROW_SELECT);
