@@ -68,3 +68,8 @@
 - Corrected new booking folios to begin with zero outstanding balance so nightly ledger postings do not duplicate the booking estimate; standardized audit freeze responses on `Retry-After: 300`.
 - JDK 17 compiled all production and test Java sources. Focused JUnit run: 6 passed, 0 failed, 2 opt-in MariaDB tests aborted because no disposable MariaDB test schema was configured. `mvn -o test` remains unavailable due an unwritable user-level Maven repository lock. The two-hour simulation and live MariaDB transaction/recovery scenarios still require execution in their target environments.
 
+## [2026-10-15] — @codex — Phase 2 backend, desktop/web UI, migrations, tests, scripts, and documentation — Phase 2 implementation and acceptance status
+- Added the guest portal, OTP, public booking, server-authoritative pricing and vouchers, concurrent room allocation, VietQR, HMAC-verified webhooks, idempotent folio settlement, and overpayment handling.
+- Added housekeeping and room-state workflows, minibar posting, OOO/OOS maintenance, PDF invoices with explicitly required tax configuration, DBR reporting, and corresponding Swing/web interfaces; included Phase 2 migrations, test doubles, and regression coverage.
+- Added the changed-file inventory, required production configuration, implementation/acceptance report, and verification evidence. Synthetic values are limited to test fixtures; no production legal, banking, or OTP values were fabricated.
+- The Phase 2 report records 109 automated tests passing with 0 failures and 0 skips on Java 17 and isolated MariaDB 11.4.2. Overall acceptance remains partial pending manual Swing/render-timing checks, Docker verification, and approved production configuration.
