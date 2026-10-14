@@ -1,90 +1,66 @@
 services:
-  # 1. Trung tâm Dữ liệu (MariaDB)
-  db:
-    image: mariadb:11
-    env_file:
-      - .env
+  # ============================================================================
+  # 1. Transactional Database: MariaDB 11.2 (Hardened Jammy Container)
+  # ============================================================================
+  mariadb:
+    image: mariadb:11.2-jammy
+    container_name: hotel-pms-mariadb
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: hotel_prod_db
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-hotel_pass}
+      MYSQL_DATABASE: hotel_db
+      MYSQL_USER: hotel_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-hotel_pass}
     volumes:
-      - db_data:/var/lib/mysql
-      - ./database/hotel.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: unless-stopped
+      - ./database/hotel.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - pms-internal-net
+    # Ports strictly isolated to internal bridge network
+    expose:
+      - "3306"
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-hotel_pass}"]
+      interval: 3s
+      timeout: 3s
       retries: 10
-      start_period: 30s
-  # 2. Công cụ quản lý DB qua Web (Adminer)
-  adminer:
-    image: adminer
-    ports:
-      - "127.0.0.1:8082:8080"
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
+      start_period: 10s
 
-  # 3. Backend API Server (Java HTTPServer)
+  # ============================================================================
+  # 2. 5★ Luxury Hotel PMS Core Backend API Server (Pure Java 17 Runtime)
+  # ============================================================================
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file:
-      - .env
+    container_name: hotel-pms-backend
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
     environment:
-      - DB_HOST=db
+      - DB_URL=jdbc:mysql://mariadb:3306/hotel_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      - DB_HOST=mariadb
       - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=hotel_prod_db
-      - JWT_SECRET=${JWT_SECRET}
+      - DB_USER=hotel_user
+      - DB_PASSWORD=${DB_PASSWORD:-hotel_pass}
+      - DB_NAME=hotel_db
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_2026_hotel_pms_5star_security}
     ports:
       - "8081:8081"
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
+    networks:
+      - pms-internal-net
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8081/api/v1/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/v1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
-  # 4. Web UI (Nginx Web Server)
-  web:
-    image: nginx:alpine
-    volumes:
-      - ./web-ui/public:/usr/share/nginx/html
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    ports:
-      - "3000:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-
-  # 5. AI Gateway (FastAPI Microservice)
-  ai-gateway:
-    build:
-      context: ./ai-gateway
-      dockerfile: Dockerfile
-    environment:
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_USER=ai_reader
-      - DB_PASSWORD=${AI_DB_PASSWORD:-ai_read_secure_pass_2026}
-      - DB_NAME=hotel_prod_db
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    ports:
-      - "8082:8082"
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
+networks:
+  pms-internal-net:
+    driver: bridge
 
 volumes:
-  db_data:
-
+  mariadb_data:
+    name: hotel_pms_mariadb_data

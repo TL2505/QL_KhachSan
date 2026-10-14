@@ -1,0 +1,15 @@
+{
+  "status": "success",
+  "data": {
+    "id": 14,
+    "fullName": "Nguyen Van B",
+    "identityCard": "012345678999",
+    "phone": "0987654321",
+    "email": "nvb@email.com",
+    "address": "TP. Ho Chi Minh",
+    "isVip": false,
+    "loyaltyPoints": 0,
+    "totalLoyaltyPoints": 0,
+    "loyaltyLevel": "Member"
+  }
+}

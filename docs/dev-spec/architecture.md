@@ -37,3 +37,23 @@
 - **POS Offline:** POS must queue charges locally during the 00:00 Lock.
 - **Race Condition:** Two bookings for the last room handled via Optimistic Locking on `ROOM-01`.
 - **Idempotency:** Payment webhooks to `BILL-01` require an `Idempotency-Key` to prevent double billing.
+
+## 4. NIGHT AUDIT DATABASE ISOLATION & "ZERO CONNECTION POOL" ARCHITECTURE
+- **Strict Isolation Commitment:** During the 00:00 – 00:05 Night Audit Lockout, the HikariCP database connection pool is isolated and dedicated to heavy end-of-day batch audit procedures (folio postings, date roll, report aggregation).
+- **Zero Pool Consumption on Intercepted Requests:** All mutating requests (`POST`, `PUT`, `DELETE`, `PATCH`) are intercepted by `SystemStatusFilter` at the filter boundary, returning `HTTP 503 Service Unavailable` with `Retry-After: 300` in $< 1\text{ms}$ with zero database connection consumption.
+- **Authentication Exemption & In-Memory Cache Verification:**
+  - Route `/api/v1/auth/login` is exempt from blanket 503 filtering to support night-shift operations (read-only audit monitoring).
+  - To eliminate pool contention with Night Audit transactions, `AuthController` resolves credentials via an in-memory cache (`CREDENTIAL_CACHE`) with **zero HikariCP pool allocation**.
+  - Uncached user credentials during the freeze window are safely rejected with `503 ERR_503_SYSTEM_FROZEN` without touching the database pool, strictly preserving pool isolation.
+
+## 5. REAL-WORLD DOMAIN GOVERNANCE & LEDGER INVARIANTS (ADR-06 & CAS DECOUPLING)
+- **Decoupled Room Availability vs Physical Status:**
+  - `rooms.status` represents today's current physical state of the room (`vacant_clean`, `vacant_dirty`, `occupied_clean`, `occupied_dirty`, `out_of_order`, `reserved`).
+  - Same-day bookings require `status = 'vacant_clean'` and transition room to `reserved`.
+  - Future bookings only require `status != 'out_of_order'` (room not broken/out of order) with no schedule conflicts in `bookings`. The room's physical status for today is preserved (`vacant_dirty`, `occupied_clean`, etc.), and `version` increments atomically for optimistic concurrency control.
+- **ADR-06 Ledger Immutability & Zero Phantom Debt:**
+  - `folios.balance` strictly matches ledger transactions ($\sum \text{CHARGE} - \sum \text{PAYMENT}$).
+  - When a reservation is cancelled before stay commencement, associated folios transition to `status = 'cancelled'` / `'void'` and balance is zeroed (`0.00`), eliminating phantom debt and unblocking folio closure (`closeFolio()`).
+  - Cancelling a future booking on an occupied room preserves today's physical room status (`occupied_clean` / `vacant_dirty`) via `CASE WHEN status = 'reserved' THEN 'vacant_clean' ELSE status END`.
+- **Synchronous Business Date Rollover:**
+  - `SystemStateHolder.rollNextBusinessDate()` writes directly and synchronously to the `system_settings` table to prevent date rollback upon unexpected server/container restart.

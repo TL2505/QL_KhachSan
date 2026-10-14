@@ -17,6 +17,7 @@
     <build>
         <!-- Giữ nguyên cấu trúc thư mục src cũ của NetBeans để không phải di chuyển file -->
         <sourceDirectory>src</sourceDirectory>
+
         <testSourceDirectory>tests</testSourceDirectory>
         <plugins>
             <plugin>
@@ -33,6 +34,7 @@
                 </configuration>
             </plugin>
             <!-- Plugin cấu hình file chạy chính (Main Class) -->
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -41,10 +43,12 @@
                     <mainClass>quanlykhachsan.Quanlykhachsan</mainClass>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+
             </plugin>
         </plugins>
     </build>
@@ -97,6 +101,11 @@
             <artifactId>mysql-connector-j</artifactId>
             <version>8.0.31</version>
         </dependency>
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>3.3.2</version>
+        </dependency>
         
         <!-- 7. WebSocket Client (Để nhận thông báo Real-time) -->
         <dependency>
@@ -132,12 +141,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.9</version>
+            <version>2.0.12</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>2.0.9</version>
+            <version>2.0.12</version>
         </dependency>
 
         <!-- 10. BCrypt Password Hashing -->
@@ -145,6 +154,32 @@
             <groupId>org.mindrot</groupId>
             <artifactId>jbcrypt</artifactId>
             <version>0.4</version>
+        </dependency>
+
+        <!-- 11. JUnit 5 (Jupiter) Integration Testing Framework (TASK-D1.3) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

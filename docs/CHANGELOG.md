@@ -40,6 +40,7 @@
 - Removed `DongBoSVN.bat` synchronization script.
 - Cleaned unused SVN placeholder folders (`trunk/`, `branches/`, `tags/`).
 
+
 ## [2026-10-13] — @codex — Dev C C3 frontend/backend files — C3 workflow review fixes
 - Added Phase 1 folio payment and POS batch-sync routes with idempotency handling; connected the desktop clients to the configured API and authenticated session.
 - Wired HTTP 503 responses to the Night Audit warning banner, disabled registered mutation controls during the freeze, and auto-syncs queued POS charges after unfreeze.
@@ -55,4 +56,5 @@
 ## [2026-10-13] — @codex — UpdateDbUtility.java, MariaDbMigrationIntegrationTest.java, database/hotel.sql — MariaDB 11 integration verification
 - Verified the full suite on an isolated MariaDB 11.8.6 instance: 26 tests passed, 0 failures, 0 skipped. Coverage includes repeatable legacy-schema migration, the complete `database/hotel.sql` import, concurrent idempotent requests, and persisted failure replay.
 - Scoped migration metadata lookups to the active database, taught the schema integration test to honor SQL `DELIMITER` directives, and corrected booking seed 63 from invoice status `paid` to valid booking status `checked_out`.
+
 

@@ -1,0 +1,11 @@
+{
+  "status": "success",
+  "data": {
+    "folioId": 1,
+    "transactionId": "TXN-987654",
+    "amount": 1500000.0,
+    "paymentMethod": "credit_card",
+    "status": "paid",
+    "timestamp": "2026-10-13T16:15:00Z"
+  }
+}

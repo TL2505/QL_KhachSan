@@ -1,0 +1,16 @@
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "customerId": 1,
+    "customerName": "Nguyen Van A",
+    "roomId": 1,
+    "roomNumber": "101",
+    "checkInDate": "2026-10-15T14:00:00Z",
+    "checkOutDate": "2026-10-18T12:00:00Z",
+    "totalPrice": 1500000.0,
+    "status": "confirmed",
+    "customerType": "Walk-in",
+    "version": 1
+  }
+}
