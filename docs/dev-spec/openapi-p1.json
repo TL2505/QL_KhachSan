@@ -1,0 +1,1444 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Luxury Hotel PMS - Phase 1 Core REST API",
+    "description": "Production OpenAPI 3.0 Contract Specification for 5-Star Luxury Hotel PMS Core Engine (Phase 1). Designed for zero-allocation streaming, strict RFC-7807 error envelopes, and automated parity testing.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Luxury Hotel PMS Core Team",
+      "email": "core-api@luxuryhotel.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8081",
+      "description": "Local Development & Embedded HTTPServer"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "User Authentication & JWT Token Issuance",
+        "description": "Authenticates user credentials using BCrypt and issues a signed JJWT bearer token for authorized sessions.",
+        "operationId": "loginUser",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication successful. Returns JWT token and user profile details.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Missing or malformed username/password payload.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Invalid username or incorrect password.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": "Deep Health & Resource Liveness Check",
+        "description": "Executes DB connectivity probe (SELECT 1), HikariCP pool statistics, and JVM memory utilization checks.",
+        "operationId": "getHealthStatus",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "System healthy and fully operational.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable. Database connection failed or system frozen during night audit.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms": {
+      "get": {
+        "summary": "List All Rooms",
+        "description": "Retrieves catalog of all 200 rooms including optimistic locking version, room type, status, and unit price.",
+        "operationId": "getAllRooms",
+        "responses": {
+          "200": {
+            "description": "Room catalog retrieved successfully.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomListEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT token.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rooms/availability": {
+      "get": {
+        "summary": "Check Dynamic Room Availability",
+        "description": "Queries available rooms within the specified date range, eliminating double-booking conflicts.",
+        "operationId": "checkRoomAvailability",
+        "parameters": [
+          {
+            "name": "check_in",
+            "in": "query",
+            "required": true,
+            "description": "Check-in date formatted as YYYY-MM-DD",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-15"
+            }
+          },
+          {
+            "name": "check_out",
+            "in": "query",
+            "required": true,
+            "description": "Check-out date formatted as YYYY-MM-DD",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-18"
+            }
+          },
+          {
+            "name": "room_type",
+            "in": "query",
+            "required": false,
+            "description": "Optional filter by room type (e.g. Deluxe, Suite, Presidential)",
+            "schema": {
+              "type": "string",
+              "example": "Deluxe"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of available rooms meeting criteria.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomListEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Invalid date format or check_out earlier than check_in.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT token.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers": {
+      "post": {
+        "summary": "Register Customer Profile",
+        "description": "Creates a guest profile with strict deduplication check on ID card number and phone number.",
+        "operationId": "createCustomer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer profile registered successfully.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Validation failure (missing name, phone, or ID card).",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT token.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Duplicate customer with the same ID card or phone number already exists.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Search Customer Profiles",
+        "description": "Performs fast indexed keyword lookup across customer names, ID cards, and phone numbers (<20ms).",
+        "operationId": "searchCustomers",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Keyword to search in customer name, phone, or ID card",
+            "schema": {
+              "type": "string",
+              "example": "Nguyen"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of matched customer profiles.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerListEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT token.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookings": {
+      "get": {
+        "summary": "List Recent Bookings",
+        "description": "Retrieves recent bookings with room details, customer references, and payment statuses.",
+        "operationId": "getBookings",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Optional status filter (e.g. reserved, checked_in, checked_out, cancelled)",
+            "schema": {
+              "type": "string",
+              "example": "reserved"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recent bookings retrieved successfully.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingListEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT token.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Atomic Booking with Optimistic Locking",
+        "description": "Creates an atomic booking using Compare-And-Swap (CAS) on room version and automatically initializes the Master Folio.",
+        "operationId": "createBooking",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking and Master Folio created successfully.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Missing required fields or invalid date logic.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT token.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Optimistic locking failure (room version changed) or room is not vacant_clean.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookings/{id}": {
+      "get": {
+        "summary": "Get Booking Details by ID",
+        "description": "Retrieves comprehensive booking details by ID including associated Master Folio and financial balances.",
+        "operationId": "getBookingById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Numeric booking identifier",
+            "schema": {
+              "type": "integer",
+              "example": 1001
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details retrieved successfully.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT token.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. Booking with specified ID does not exist.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Booking Information",
+        "description": "Modifies booking stay details such as guest notes or scheduled checkout date.",
+        "operationId": "updateBooking",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Numeric booking identifier",
+            "schema": {
+              "type": "integer",
+              "example": 1001
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking updated successfully.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Invalid update parameters.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT token.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. Booking does not exist.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Optimistic locking failure during modification.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookings/{id}/cancel": {
+      "post": {
+        "summary": "Cancel Booking & Release Room",
+        "description": "Cancels an active or reserved booking and transitions the allocated room status back to vacant_clean.",
+        "operationId": "cancelBooking",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Numeric booking identifier",
+            "schema": {
+              "type": "integer",
+              "example": 1001
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking cancelled and room returned to vacant_clean status.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT token.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found. Booking does not exist.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Cannot cancel an already completed, checked-out, or cancelled booking.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pos/sync": {
+      "post": {
+        "summary": "Store-and-Forward POS Integration Sync",
+        "description": "Receives offline buffered batches of POS restaurant, spa, and mini-bar transactions post-freeze.",
+        "operationId": "syncPosBatch",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PosSyncBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "POS batch processed and synchronized successfully.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosSyncEnvelopeSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. Malformed payload or missing transaction array.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT token.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Batch idempotency violation or unresolved transaction collision.",
+            "headers": {
+              "$ref": "#/components/headers/AllOwaspHeaders"
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Bearer authentication issued by POST /api/v1/auth/login. Include header: 'Authorization: Bearer <token>'."
+      }
+    },
+    "headers": {
+      "AllOwaspHeaders": {
+        "X-Content-Type-Options": {
+          "description": "Strictly prevents browser MIME-type sniffing.",
+          "schema": {
+            "type": "string",
+            "example": "nosniff"
+          }
+        },
+        "X-Frame-Options": {
+          "description": "Guards against UI redressing and clickjacking.",
+          "schema": {
+            "type": "string",
+            "example": "DENY"
+          }
+        },
+        "Content-Security-Policy": {
+          "description": "Restricts execution origins for scripts, styles, and embedded assets.",
+          "schema": {
+            "type": "string",
+            "example": "default-src 'self'"
+          }
+        },
+        "Strict-Transport-Security": {
+          "description": "Forces TLS transport security enforcement.",
+          "schema": {
+            "type": "string",
+            "example": "max-age=31536000; includeSubDomains"
+          }
+        },
+        "Referrer-Policy": {
+          "description": "Preserves privacy by governing referrer header transmissions.",
+          "schema": {
+            "type": "string",
+            "example": "strict-origin-when-cross-origin"
+          }
+        },
+        "Permissions-Policy": {
+          "description": "Restricts browser device access (camera, microphone, geolocation).",
+          "schema": {
+            "type": "string",
+            "example": "geolocation=(), camera=(), microphone=()"
+          }
+        }
+      }
+    },
+    "schemas": {
+      "EnvelopeMeta": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "example": "2026-10-14 20:00:00"
+          }
+        },
+        "required": [
+          "timestamp"
+        ]
+      },
+      "EnvelopeSuccess": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "SUCCESS"
+          },
+          "data": {
+            "type": "object"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "meta"
+        ]
+      },
+      "EnvelopeError": {
+        "type": "object",
+        "description": "RFC-7807 compliant standardized error representation.",
+        "properties": {
+          "error_code": {
+            "type": "string",
+            "example": "ERR_400_BAD_REQUEST"
+          },
+          "message": {
+            "type": "string",
+            "example": "Invalid request parameter or missing mandatory body attribute."
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-10-14 20:00:00"
+          }
+        },
+        "required": [
+          "error_code",
+          "message",
+          "timestamp"
+        ]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "admin"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "Admin@123"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      },
+      "LoginResponseData": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "role": {
+            "type": "string",
+            "example": "ADMIN"
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "username": {
+            "type": "string",
+            "example": "admin"
+          },
+          "full_name": {
+            "type": "string",
+            "example": "System Administrator"
+          }
+        },
+        "required": [
+          "token",
+          "role",
+          "user_id",
+          "username"
+        ]
+      },
+      "LoginEnvelopeSuccess": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "SUCCESS"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginResponseData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "meta"
+        ]
+      },
+      "HealthResponseData": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "UP"
+          },
+          "database": {
+            "type": "string",
+            "example": "CONNECTED"
+          },
+          "hikari_pool": {
+            "type": "object",
+            "properties": {
+              "active_connections": {
+                "type": "integer",
+                "example": 2
+              },
+              "idle_connections": {
+                "type": "integer",
+                "example": 8
+              },
+              "total_connections": {
+                "type": "integer",
+                "example": 10
+              },
+              "threads_awaiting_connection": {
+                "type": "integer",
+                "example": 0
+              }
+            }
+          },
+          "jvm": {
+            "type": "object",
+            "properties": {
+              "free_memory_mb": {
+                "type": "number",
+                "example": 182.4
+              },
+              "total_memory_mb": {
+                "type": "number",
+                "example": 256.0
+              },
+              "max_memory_mb": {
+                "type": "number",
+                "example": 1024.0
+              }
+            }
+          }
+        },
+        "required": [
+          "status",
+          "database",
+          "hikari_pool",
+          "jvm"
+        ]
+      },
+      "HealthEnvelopeSuccess": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "SUCCESS"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HealthResponseData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "meta"
+        ]
+      },
+      "Room": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 101
+          },
+          "room_number": {
+            "type": "string",
+            "example": "101"
+          },
+          "room_type": {
+            "type": "string",
+            "example": "Deluxe"
+          },
+          "unit_price": {
+            "type": "number",
+            "format": "double",
+            "example": 1800000.00
+          },
+          "status": {
+            "type": "string",
+            "example": "vacant_clean"
+          },
+          "version": {
+            "type": "integer",
+            "example": 0
+          }
+        },
+        "required": [
+          "id",
+          "room_number",
+          "room_type",
+          "unit_price",
+          "status",
+          "version"
+        ]
+      },
+      "RoomListEnvelopeSuccess": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "SUCCESS"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Room"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "meta"
+        ]
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "full_name": {
+            "type": "string",
+            "example": "Nguyen Van A"
+          },
+          "id_card": {
+            "type": "string",
+            "example": "001200001234"
+          },
+          "phone_number": {
+            "type": "string",
+            "example": "0987654321"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "nguyenvana@example.com"
+          },
+          "address": {
+            "type": "string",
+            "example": "123 Le Loi, Hanoi"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "format": "date",
+            "example": "1990-01-15"
+          }
+        },
+        "required": [
+          "id",
+          "full_name",
+          "id_card",
+          "phone_number"
+        ]
+      },
+      "CustomerCreateRequest": {
+        "type": "object",
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "example": "Nguyen Van A"
+          },
+          "id_card": {
+            "type": "string",
+            "example": "001200001234"
+          },
+          "phone_number": {
+            "type": "string",
+            "example": "0987654321"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "nguyenvana@example.com"
+          },
+          "address": {
+            "type": "string",
+            "example": "123 Le Loi, Hanoi"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "format": "date",
+            "example": "1990-01-15"
+          }
+        },
+        "required": [
+          "full_name",
+          "id_card",
+          "phone_number"
+        ]
+      },
+      "CustomerEnvelopeSuccess": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "SUCCESS"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Customer"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "meta"
+        ]
+      },
+      "CustomerListEnvelopeSuccess": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "SUCCESS"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Customer"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "meta"
+        ]
+      },
+      "BookingCreateRequest": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "room_id": {
+            "type": "integer",
+            "example": 101
+          },
+          "room_version": {
+            "type": "integer",
+            "example": 0
+          },
+          "check_in_date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-15 14:00:00"
+          },
+          "check_out_date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-18 12:00:00"
+          },
+          "num_guests": {
+            "type": "integer",
+            "example": 2
+          },
+          "deposit_amount": {
+            "type": "number",
+            "format": "double",
+            "example": 1000000.00
+          }
+        },
+        "required": [
+          "customer_id",
+          "room_id",
+          "room_version",
+          "check_in_date",
+          "check_out_date"
+        ]
+      },
+      "BookingUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "check_out_date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-19 12:00:00"
+          },
+          "num_guests": {
+            "type": "integer",
+            "example": 3
+          },
+          "notes": {
+            "type": "string",
+            "example": "Late check-out requested"
+          }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1001
+          },
+          "customer_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "room_id": {
+            "type": "integer",
+            "example": 101
+          },
+          "room_number": {
+            "type": "string",
+            "example": "101"
+          },
+          "check_in_date": {
+            "type": "string",
+            "example": "2026-10-15 14:00:00"
+          },
+          "check_out_date": {
+            "type": "string",
+            "example": "2026-10-18 12:00:00"
+          },
+          "status": {
+            "type": "string",
+            "example": "reserved"
+          },
+          "total_amount": {
+            "type": "number",
+            "format": "double",
+            "example": 5400000.00
+          },
+          "folio_id": {
+            "type": "integer",
+            "example": 501
+          }
+        },
+        "required": [
+          "id",
+          "customer_id",
+          "room_id",
+          "status"
+        ]
+      },
+      "BookingEnvelopeSuccess": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "SUCCESS"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Booking"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "meta"
+        ]
+      },
+      "BookingListEnvelopeSuccess": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "SUCCESS"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Booking"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "meta"
+        ]
+      },
+      "PosSyncBatchRequest": {
+        "type": "object",
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "example": "BATCH-20261014-POS-01"
+          },
+          "terminal_id": {
+            "type": "string",
+            "example": "POS-REST-01"
+          },
+          "transactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "transaction_id": {
+                  "type": "string",
+                  "example": "TXN-90812"
+                },
+                "folio_id": {
+                  "type": "integer",
+                  "example": 501
+                },
+                "amount": {
+                  "type": "number",
+                  "format": "double",
+                  "example": 450000.00
+                },
+                "service_code": {
+                  "type": "string",
+                  "example": "REST_DINING"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Dinner Buffet for 2"
+                },
+                "timestamp": {
+                  "type": "string",
+                  "example": "2026-10-14 00:02:15"
+                }
+              },
+              "required": [
+                "transaction_id",
+                "folio_id",
+                "amount"
+              ]
+            }
+          }
+        },
+        "required": [
+          "batch_id",
+          "transactions"
+        ]
+      },
+      "PosSyncEnvelopeSuccess": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "SUCCESS"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "processed_transactions": {
+                "type": "integer",
+                "example": 12
+              },
+              "batch_status": {
+                "type": "string",
+                "example": "SYNCED"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EnvelopeMeta"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "meta"
+        ]
+      }
+    }
+  }
+}

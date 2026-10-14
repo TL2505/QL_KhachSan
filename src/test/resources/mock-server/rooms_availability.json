@@ -1,0 +1,44 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "roomTypeId": 1,
+      "roomTypeName": "Standard",
+      "basePrice": 500000.0,
+      "availableCount": 2,
+      "rooms": [
+        {
+          "id": 1,
+          "roomNumber": "101",
+          "status": "vacant_clean"
+        }
+      ]
+    },
+    {
+      "roomTypeId": 2,
+      "roomTypeName": "Deluxe",
+      "basePrice": 1000000.0,
+      "availableCount": 1,
+      "rooms": [
+        {
+          "id": 7,
+          "roomNumber": "202",
+          "status": "vacant_clean"
+        }
+      ]
+    },
+    {
+      "roomTypeId": 3,
+      "roomTypeName": "Family",
+      "basePrice": 1500000.0,
+      "availableCount": 1,
+      "rooms": [
+        {
+          "id": 13,
+          "roomNumber": "303",
+          "status": "vacant_clean"
+        }
+      ]
+    }
+  ]
+}

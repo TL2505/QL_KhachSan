@@ -1,0 +1,36 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "customerId": 1,
+      "customerName": "Nguyen Van A",
+      "roomId": 1,
+      "roomNumber": "101",
+      "checkInDate": "2026-10-15T14:00:00Z",
+      "checkOutDate": "2026-10-18T12:00:00Z",
+      "totalPrice": 1500000.0,
+      "status": "confirmed",
+      "customerType": "Walk-in",
+      "version": 1
+    },
+    {
+      "id": 2,
+      "customerId": 2,
+      "customerName": "Tran Thi B",
+      "roomId": 3,
+      "roomNumber": "201",
+      "checkInDate": "2026-10-14T14:00:00Z",
+      "checkOutDate": "2026-10-16T12:00:00Z",
+      "totalPrice": 2000000.0,
+      "status": "checked_in",
+      "customerType": "OTA",
+      "version": 1
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "size": 20,
+    "total": 2
+  }
+}

@@ -2,6 +2,7 @@ package quanlykhachsan.backend.utils;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -41,5 +42,6 @@ public final class DatabaseConnection {
 
     public static void close() {
         if (!DATA_SOURCE.isClosed()) DATA_SOURCE.close();
+
     }
 }

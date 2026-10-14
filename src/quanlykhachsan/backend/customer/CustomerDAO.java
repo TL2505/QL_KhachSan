@@ -31,4 +31,8 @@ public interface CustomerDAO {
     public boolean insert(Customer customer) throws Exception;
     public int addAndReturnId(Customer customer) throws Exception;
     public void updateLoyaltyPoints(int customerId, int currentPointsChange, int totalPointsChange, String newLevel) throws Exception;
+
+    // TASK-A2.2: Customer Profile Management & Fast Lookup
+    public int createCustomer(String fullName, String phone, String identityCard, String email, String loyaltyLevel) throws java.sql.SQLException;
+    public java.util.List<java.util.Map<String, Object>> searchCustomers(String keyword);
 }

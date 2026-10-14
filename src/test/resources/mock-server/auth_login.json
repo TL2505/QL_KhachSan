@@ -1,0 +1,13 @@
+{
+  "status": "success",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbl9tYWluIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxODkzNDU2MDAwfQ.mock_signature_for_dev_c_unblocking",
+    "user": {
+      "id": 1,
+      "username": "admin_main",
+      "role": "admin",
+      "fullName": "Administrator",
+      "email": "admin@hotel.com"
+    }
+  }
+}

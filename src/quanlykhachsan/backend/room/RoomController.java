@@ -14,90 +14,118 @@ import quanlykhachsan.backend.room.dto.RoomCreateRequest;
 import quanlykhachsan.backend.room.dto.RoomStatusUpdateRequest;
 import quanlykhachsan.backend.room.dto.RoomResponse;
 
+import quanlykhachsan.backend.utils.GlobalExceptionHandler;
+
 public class RoomController implements HttpHandler {
 
     private RoomService roomService = new RoomService();
+    private final RoomDAO roomDao = new RoomDAOImpl();
     private Gson gson = JsonUtil.getGson();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        // Cho phép CORS
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-
+        String rawPath = exchange.getRequestURI().getPath();
+        String path = (rawPath == null || rawPath.isEmpty()) ? "/" : rawPath;
+        if (path.length() > 1 && path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
         String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath(); // /api/rooms hoặc /api/rooms/123
 
-        // Preserve the legacy alias while parsing the versioned Phase 1 route correctly.
-        String prefix = path.startsWith("/api/v1/rooms") ? "/api/v1/rooms" : "/api/rooms";
-        String pathInfo = path.startsWith(prefix) ? path.substring(prefix.length()) : path;
+
+        // TASK-A2.1 Endpoints
+        if ("/api/v1/rooms/availability".equals(path) || path.endsWith("/rooms/availability")) {
+            if ("GET".equalsIgnoreCase(method)) {
+                handleGetAvailability(exchange);
+            } else {
+                ApiResponseUtil.sendError(exchange, 405, "ERR_405_METHOD_NOT_ALLOWED", "Method Not Allowed. Expected GET.");
+            }
+            return;
+        }
+
+        if ("/api/v1/rooms".equals(path) || "/api/rooms".equals(path)) {
+            if ("GET".equalsIgnoreCase(method)) {
+                handleGetAll(exchange);
+                return;
+            } else if ("POST".equalsIgnoreCase(method)) {
+                handleAdd(exchange);
+                return;
+            }
+        }
+
+        // Lấy phần sau /api/rooms hoặc /api/v1/rooms
+        String pathInfo = path.replace("/api/v1/rooms", "").replace("/api/rooms", "");
+
 
         if ("GET".equalsIgnoreCase(method) && (pathInfo.isEmpty() || pathInfo.equals("/"))) {
-            // GET /api/rooms - Lấy danh sách tất cả phòng
             handleGetAll(exchange);
         } else if ("GET".equalsIgnoreCase(method) && (pathInfo.equals("/search") || path.endsWith("/search"))) {
-            // GET /api/rooms/search - Tìm phòng trống theo ngày
             handleSearch(exchange);
         } else if ("POST".equalsIgnoreCase(method) && (pathInfo.isEmpty() || pathInfo.equals("/"))) {
-            // POST /api/rooms - Thêm phòng mới
             handleAdd(exchange);
-
         } else if ("PUT".equalsIgnoreCase(method) && pathInfo.matches("/\\d+/status")) {
-            // PUT /api/rooms/{id}/status - Đổi trạng thái phòng
             int id = Integer.parseInt(pathInfo.split("/")[1]);
             handleUpdateStatus(exchange, id);
 
-        } else if ("POST".equalsIgnoreCase(method) && pathInfo.matches("/\\d+/downgrade")) {
-            int bookingId = Integer.parseInt(pathInfo.split("/")[1]);
-            if (!SecurityUtil.hasPermission(exchange, 1)) return;
-            handleDowngrade(exchange, bookingId);
 
         } else if ("DELETE".equalsIgnoreCase(method) && pathInfo.matches("/\\d+")) {
-            // DELETE /api/rooms/{id} - Xóa phòng theo ID
             int id = Integer.parseInt(pathInfo.substring(1));
             handleDelete(exchange, id);
-
         } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/room-types")) {
-            // GET /api/room-types - Lấy danh sách loại phòng
             handleGetAllRoomTypes(exchange);
-
         } else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/room-types/")) {
-            // GET /api/room-types/{id} - Lấy chi tiết loại phòng
             int typeId = Integer.parseInt(path.substring("/api/room-types/".length()));
             handleGetRoomTypeById(exchange, typeId);
-
         } else {
-            ApiResponseUtil.write(exchange, 405, ApiResponseUtil.error("Phương thức không được hỗ trợ"));
+            ApiResponseUtil.sendError(exchange, 404, "ERR_404_NOT_FOUND", "Endpoint not found: " + path);
         }
     }
 
-    private void handleDowngrade(HttpExchange exchange, int bookingId) throws IOException {
+    /**
+     * GET /api/v1/rooms - Returns room catalog with total room count metadata.
+     */
+    public void handleGetAll(HttpExchange exchange) throws IOException {
         try {
-            com.google.gson.JsonObject body = com.google.gson.JsonParser.parseString(
-                new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
-            int replacementRoomId = body.get("replacement_room_id").getAsInt();
-            var result = new RoomDowngradeService().downgrade(bookingId, replacementRoomId, true);
-            com.google.gson.JsonObject data = new com.google.gson.JsonObject();
-            data.addProperty("booking_id", result.bookingId()); data.addProperty("room_id", result.roomId());
-            data.addProperty("old_rate", result.oldRate()); data.addProperty("new_rate", result.newRate());
-            data.addProperty("folio_credit", result.folioCredit());
-            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(data));
-        } catch (IllegalArgumentException ex) {
-            ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error(ex.getMessage()));
-        } catch (IllegalStateException ex) {
-            ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error(ex.getMessage()));
-        } catch (Exception ex) {
-            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Room downgrade failed"));
+            List<java.util.Map<String, Object>> rooms = roomDao.getAllRooms();
+            ApiResponseUtil.sendSuccess(exchange, 200, rooms, java.util.Map.of("total", rooms.size()));
+        } catch (Exception e) {
+            GlobalExceptionHandler.handle(exchange, e);
         }
     }
 
-    private void handleGetAll(HttpExchange exchange) throws IOException {
-        List<Room> rooms = roomService.getAllRooms();
-        List<RoomResponse> dtoList = new java.util.ArrayList<>();
-        for (Room r : rooms) {
-            dtoList.add(RoomMapper.toRoomResponse(r));
+    /**
+     * GET /api/v1/rooms/availability - Queries dynamic availability for a stay window.
+     */
+    public void handleGetAvailability(HttpExchange exchange) throws IOException {
+        try {
+            String query = exchange.getRequestURI().getQuery();
+            if (query == null || query.isBlank()) {
+                throw new IllegalArgumentException("check_in and check_out are required");
+            }
+
+            String checkIn = null;
+            String checkOut = null;
+            for (String param : query.split("&")) {
+                String[] pair = param.split("=", 2);
+                if (pair.length < 2) continue;
+                String key = pair[0].trim();
+                String val = java.net.URLDecoder.decode(pair[1].trim(), StandardCharsets.UTF_8);
+                if ("check_in".equalsIgnoreCase(key) || "checkIn".equalsIgnoreCase(key)) {
+                    checkIn = val;
+                } else if ("check_out".equalsIgnoreCase(key) || "checkOut".equalsIgnoreCase(key)) {
+                    checkOut = val;
+                }
+            }
+
+            if (checkIn == null || checkIn.isBlank() || checkOut == null || checkOut.isBlank()) {
+                throw new IllegalArgumentException("check_in and check_out are required");
+            }
+
+            List<java.util.Map<String, Object>> available = roomDao.getAvailableRooms(checkIn, checkOut);
+            ApiResponseUtil.sendSuccess(exchange, 200, available, java.util.Map.of("total", available.size()));
+        } catch (Exception e) {
+            GlobalExceptionHandler.handle(exchange, e);
+
         }
-        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dtoList));
     }
 
     private void handleUpdateStatus(HttpExchange exchange, int roomId) throws IOException {
