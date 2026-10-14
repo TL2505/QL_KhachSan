@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.user;
 
-import quanlykhachsan.backend.user.RoleDAO;
-import quanlykhachsan.backend.user.Role;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

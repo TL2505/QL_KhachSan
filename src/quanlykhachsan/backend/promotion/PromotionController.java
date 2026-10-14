@@ -4,15 +4,14 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
-import quanlykhachsan.backend.promotion.Promotion;
-import quanlykhachsan.backend.promotion.PromotionService;
+import quanlykhachsan.backend.promotion.dto.PromotionCreateRequest;
 import quanlykhachsan.backend.booking.BookingService;
 import quanlykhachsan.backend.booking.Booking;
 import quanlykhachsan.backend.customer.Customer;
@@ -20,11 +19,8 @@ import quanlykhachsan.backend.room.Room;
 import quanlykhachsan.backend.customer.CustomerDAOImpl;
 import quanlykhachsan.backend.room.RoomDAOImpl;
 import quanlykhachsan.backend.utils.SecurityUtil;
-import java.net.URI;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.stream.Collectors;
-import java.util.Arrays;
 
 public class PromotionController implements HttpHandler {
 
@@ -49,10 +45,10 @@ public class PromotionController implements HttpHandler {
             if ("GET".equalsIgnoreCase(method)) {
                 if (pathInfo.isEmpty() || pathInfo.equals("/")) {
                     List<Promotion> list = promotionService.getAllPromotions();
-                    sendJson(exchange, 200, buildSuccessWithData(list));
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(list));
                 } else if (pathInfo.equals("/active")) {
                     List<Promotion> list = promotionService.getActivePromotions();
-                    sendJson(exchange, 200, buildSuccessWithData(list));
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(list));
                 } else if (pathInfo.startsWith("/best")) {
                     // Usage: /api/promotions/best?bookingId=5
                     String query = exchange.getRequestURI().getQuery();
@@ -80,12 +76,12 @@ public class PromotionController implements HttpHandler {
                                 }
                             }
                             res.addProperty("calculatedDiscount", discount);
-                            sendJson(exchange, 200, buildSuccessWithData(res));
+                            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(res));
                         } else {
-                            sendJson(exchange, 404, buildError("Booking không tồn tại"));
+                            ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Booking không tồn tại"));
                         }
                     } else {
-                        sendJson(exchange, 400, buildError("Thiếu bookingId"));
+                        ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu bookingId"));
                     }
                 } else if (pathInfo.startsWith("/preview")) {
                     // Usage: /api/promotions/preview?roomId=1&customerId=2&checkIn=2024-01-01&checkOut=2024-01-02
@@ -121,20 +117,20 @@ public class PromotionController implements HttpHandler {
                                 }
                             }
                             res.addProperty("calculatedDiscount", discount);
-                            sendJson(exchange, 200, buildSuccessWithData(res));
+                            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(res));
                         } catch (Exception ex) {
-                            sendJson(exchange, 400, buildError("Thông số không hợp lệ hoặc sai định dạng ngày (yyyy-MM-dd)"));
+                            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thông số không hợp lệ hoặc sai định dạng ngày (yyyy-MM-dd)"));
                         }
                     } else {
-                        sendJson(exchange, 400, buildError("Thiếu roomId hoặc customerId"));
+                        ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu roomId hoặc customerId"));
                     }
                 } else if (pathInfo.matches("/\\d+")) {
                     int id = Integer.parseInt(pathInfo.substring(1));
                     Promotion p = promotionService.getPromotionById(id);
                     if (p != null) {
-                        sendJson(exchange, 200, buildSuccessWithData(p));
+                        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(p));
                     } else {
-                        sendJson(exchange, 404, buildError("Không tìm thấy"));
+                        ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy"));
                     }
                 }
             } else if ("POST".equalsIgnoreCase(method) && (pathInfo.isEmpty() || pathInfo.equals("/"))) {
@@ -142,12 +138,20 @@ public class PromotionController implements HttpHandler {
                 
                 InputStream is = exchange.getRequestBody();
                 String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                Promotion p = gson.fromJson(body, Promotion.class);
+                PromotionCreateRequest req = gson.fromJson(body, PromotionCreateRequest.class);
+                Promotion p = new Promotion();
+                p.setName(req.getName());
+                p.setDescription(req.getDescription());
+                p.setDiscountType(req.getDiscountType());
+                p.setDiscountValue(req.getDiscountValue() != null ? req.getDiscountValue() : 0.0);
+                p.setStartDate(req.getStartDate());
+                p.setEndDate(req.getEndDate());
+                p.setStatus(req.getActive() != null && req.getActive() ? "active" : "inactive");
                 
                 if (promotionService.createPromotion(p)) {
-                    sendJson(exchange, 201, buildSuccess("Thêm mới thành công"));
+                    ApiResponseUtil.write(exchange, 201, ApiResponseUtil.success("Thêm mới thành công"));
                 } else {
-                    sendJson(exchange, 400, buildError("Lỗi cấu hình (trùng lắp hoặc ngày không hợp lệ)"));
+                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Lỗi cấu hình (trùng lắp hoặc ngày không hợp lệ)"));
                 }
             } else if ("PUT".equalsIgnoreCase(method) && pathInfo.matches("/\\d+")) {
                 if (!SecurityUtil.hasPermission(exchange, 1)) return;
@@ -155,22 +159,30 @@ public class PromotionController implements HttpHandler {
                 int id = Integer.parseInt(pathInfo.substring(1));
                 InputStream is = exchange.getRequestBody();
                 String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                Promotion p = gson.fromJson(body, Promotion.class);
+                PromotionCreateRequest req = gson.fromJson(body, PromotionCreateRequest.class);
+                Promotion p = new Promotion();
                 p.setId(id);
+                p.setName(req.getName());
+                p.setDescription(req.getDescription());
+                p.setDiscountType(req.getDiscountType());
+                p.setDiscountValue(req.getDiscountValue() != null ? req.getDiscountValue() : 0.0);
+                p.setStartDate(req.getStartDate());
+                p.setEndDate(req.getEndDate());
+                p.setStatus(req.getActive() != null && req.getActive() ? "active" : "inactive");
                 
                 if (promotionService.updatePromotion(p)) {
-                    sendJson(exchange, 200, buildSuccess("Cập nhật thành công"));
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Cập nhật thành công"));
                 } else {
-                    sendJson(exchange, 400, buildError("Lỗi cập nhật dữ liệu"));
+                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Lỗi cập nhật dữ liệu"));
                 }
             } else if ("DELETE".equalsIgnoreCase(method) && pathInfo.matches("/\\d+")) {
                 if (!SecurityUtil.hasPermission(exchange, 1)) return;
 
                 int id = Integer.parseInt(pathInfo.substring(1));
                 if (promotionService.deletePromotion(id)) {
-                    sendJson(exchange, 200, buildSuccess("Xóa thành công"));
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Xóa thành công"));
                 } else {
-                    sendJson(exchange, 400, buildError("Lỗi xóa dữ liệu"));
+                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Lỗi xóa dữ liệu"));
                 }
             } else {
                 exchange.sendResponseHeaders(405, -1);
@@ -178,37 +190,8 @@ public class PromotionController implements HttpHandler {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            sendJson(exchange, 500, buildError(e.getMessage()));
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error(e.getMessage()));
         }
-    }
-
-    private void sendJson(HttpExchange exchange, int statusCode, String response) throws IOException {
-        byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
-        exchange.sendResponseHeaders(statusCode, bytes.length);
-        OutputStream os = exchange.getResponseBody();
-        os.write(bytes);
-        os.close();
-    }
-    
-    private String buildSuccess(String msg) {
-        JsonObject obj = new JsonObject();
-        obj.addProperty("status", "success");
-        obj.addProperty("message", msg);
-        return gson.toJson(obj);
-    }
-    
-    private String buildSuccessWithData(Object data) {
-        JsonObject obj = new JsonObject();
-        obj.addProperty("status", "success");
-        obj.add("data", gson.toJsonTree(data));
-        return gson.toJson(obj);
-    }
-    
-    private String buildError(String msg) {
-        JsonObject obj = new JsonObject();
-        obj.addProperty("status", "error");
-        obj.addProperty("message", msg);
-        return gson.toJson(obj);
     }
 
     private Map<String, String> parseQuery(String query) {

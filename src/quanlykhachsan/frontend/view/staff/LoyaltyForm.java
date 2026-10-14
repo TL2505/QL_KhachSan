@@ -97,7 +97,7 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
         JLabel icon = new JLabel("⭐");
         icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
         JLabel title = new JLabel("Chương Trình Khách Hàng Thân Thiết");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 17));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
         title.setForeground(TEXT_DARK);
         titleRow.add(icon);
         titleRow.add(title);
@@ -192,7 +192,7 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
         lTitle.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
         lTitle.setForeground(new Color(71, 85, 105));
 
-        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         valueLabel.setForeground(fgColor);
 
         card.add(lTitle, BorderLayout.NORTH);
@@ -211,7 +211,7 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
                 new EmptyBorder(18, 16, 18, 16)));
 
         JLabel t = new JLabel("🏆 Hạng thành viên");
-        t.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        t.setFont(new Font("Segoe UI", Font.BOLD, 14));
         t.setForeground(TEXT_DARK);
         t.setAlignmentX(LEFT_ALIGNMENT);
         card.add(t);
@@ -247,7 +247,7 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
 
         // Redemption rules
         JLabel rTitle = new JLabel("🎁 Đổi điểm");
-        rTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        rTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         rTitle.setForeground(TEXT_DARK);
         rTitle.setAlignmentX(LEFT_ALIGNMENT);
         card.add(rTitle);
@@ -272,13 +272,13 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
         block.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
         JLabel lName = new JLabel(name);
-        lName.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lName.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lName.setForeground(fg);
         lName.setAlignmentX(LEFT_ALIGNMENT);
         block.add(lName);
 
         JLabel lRange = new JLabel(range);
-        lRange.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        lRange.setFont(new Font("Segoe UI", Font.ITALIC, 12));
         lRange.setForeground(fg);
         lRange.setAlignmentX(LEFT_ALIGNMENT);
         block.add(lRange);
@@ -286,7 +286,7 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
 
         for (String b : benefits) {
             JLabel lBenefit = new JLabel(b);
-            lBenefit.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            lBenefit.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             lBenefit.setForeground(TEXT_DARK);
             lBenefit.setAlignmentX(LEFT_ALIGNMENT);
             block.add(lBenefit);
@@ -375,7 +375,7 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
         };
         tblCustomers = new JTable(tblCustomersModel);
         styleTable(tblCustomers);
-        tblCustomers.setRowHeight(42);
+        tblCustomers.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         tblCustomers.getColumnModel().getColumn(0).setPreferredWidth(40);
         tblCustomers.getColumnModel().getColumn(1).setPreferredWidth(160);
         tblCustomers.getColumnModel().getColumn(2).setPreferredWidth(110);
@@ -473,7 +473,7 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
         };
         tblHistory = new JTable(tblHistoryModel);
         styleTable(tblHistory);
-        tblHistory.setRowHeight(38);
+        tblHistory.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         tblHistory.getColumnModel().getColumn(0).setPreferredWidth(40);
         tblHistory.getColumnModel().getColumn(1).setPreferredWidth(140);
         tblHistory.getColumnModel().getColumn(2).setPreferredWidth(80);
@@ -511,7 +511,7 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int col) {
                 JLabel lbl = new JLabel(value != null ? value.toString() : "");
-                lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
                 lbl.setHorizontalAlignment(SwingConstants.RIGHT);
                 lbl.setOpaque(true);
                 int pts = 0;
@@ -536,7 +536,7 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
 
         // Placeholder
         JLabel placeholder = new JLabel("← Chọn khách hàng để xem lịch sử tích điểm", SwingConstants.CENTER);
-        placeholder.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        placeholder.setFont(new Font("Segoe UI", Font.ITALIC, 14));
         placeholder.setForeground(TEXT_MUTED);
         placeholder.setBorder(new EmptyBorder(20, 0, 0, 0));
         card.add(placeholder, BorderLayout.SOUTH);
@@ -569,7 +569,20 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
                 } catch (Exception e) {
                     lblStatus.setText("❌ Lỗi tải dữ liệu!");
                     lblStatus.setForeground(DANGER);
-                    e.printStackTrace();
+                    String errorMsg = e.getMessage();
+                    if (e.getCause() != null) {
+                        errorMsg = e.getCause().getMessage();
+                    }
+                    if (errorMsg != null && errorMsg.contains("403")) {
+                        JOptionPane.showMessageDialog(LoyaltyForm.this,
+                                "Bạn không có quyền truy cập danh sách Khách hàng thân thiết.",
+                                "Từ chối truy cập", JOptionPane.WARNING_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(LoyaltyForm.this,
+                                "Không thể tải dữ liệu: " + (errorMsg != null ? errorMsg : "Lỗi không xác định"),
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        e.printStackTrace();
+                    }
                 }
             }
         };
@@ -667,7 +680,17 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
                         tblHistoryModel.addRow(new Object[] { "", "", "", "", "—— Chưa có lịch sử tích điểm ——" });
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    String errorMsg = e.getMessage();
+                    if (e.getCause() != null) {
+                        errorMsg = e.getCause().getMessage();
+                    }
+                    if (errorMsg != null && errorMsg.contains("403")) {
+                        JOptionPane.showMessageDialog(LoyaltyForm.this,
+                                "Bạn không có quyền xem lịch sử tích điểm.",
+                                "Từ chối truy cập", JOptionPane.WARNING_MESSAGE);
+                    } else {
+                        e.printStackTrace();
+                    }
                 }
             }
         };
@@ -679,14 +702,14 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
     // ═══════════════════════════════════════════════════════════════════════
 
     private void styleTable(JTable table) {
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setSelectionBackground(new Color(219, 234, 254));
         table.setSelectionForeground(TEXT_DARK);
         table.setFillsViewportHeight(true);
 
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         table.getTableHeader().setBackground(quanlykhachsan.frontend.utils.ThemeManager.getBgPanel());
         table.getTableHeader().setForeground(TEXT_MUTED);
         table.getTableHeader().setPreferredSize(new Dimension(0, 38));
@@ -749,7 +772,7 @@ private final Color SILVER_BG = quanlykhachsan.frontend.utils.ThemeManager.isDar
 
     private JButton makeFlatButton(String text, Color bg) {
         JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI Emoji", Font.BOLD, 13));
+        btn.setFont(new Font("Segoe UI Emoji", Font.BOLD, 14));
         btn.setForeground(Color.WHITE);
         btn.setBackground(bg);
         btn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));

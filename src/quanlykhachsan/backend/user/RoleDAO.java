@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.user;
 
-import quanlykhachsan.backend.user.Role;
 import java.util.ArrayList;
 
 public interface RoleDAO {

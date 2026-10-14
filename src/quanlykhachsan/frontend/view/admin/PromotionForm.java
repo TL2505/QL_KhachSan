@@ -5,7 +5,6 @@ import javax.swing.border.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.text.SimpleDateFormat;
@@ -57,10 +56,10 @@ public class PromotionForm extends JPanel {
                 new MatteBorder(0, 0, 1, 0, BORDER_CLR),
                 new EmptyBorder(10, 16, 10, 16)));
         JLabel pageTitle = new JLabel("Quản lý Chương trình Khuyến mãi");
-        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         pageTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         lblStatus = new JLabel(" ");
-        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         statusBar.add(pageTitle, BorderLayout.WEST);
         statusBar.add(lblStatus, BorderLayout.EAST);
         add(statusBar, BorderLayout.NORTH);
@@ -88,7 +87,7 @@ public class PromotionForm extends JPanel {
         form.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         lblFormTitle = new JLabel("Thêm Khuyến Mãi Mới");
-        lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblFormTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         lblFormTitle.setAlignmentX(LEFT_ALIGNMENT);
         form.add(lblFormTitle);
@@ -178,7 +177,7 @@ public class PromotionForm extends JPanel {
         txtSearch.putClientProperty("JTextField.placeholderText", "Tìm kiếm...");
 
         btnRefresh = new JButton("Tải Lại");
-        btnRefresh.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnRefresh.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnRefresh.addActionListener(e -> loadPromotions());
 
         searchBar.add(new JLabel("Tìm kiếm: "), BorderLayout.WEST);
@@ -195,7 +194,7 @@ public class PromotionForm extends JPanel {
         };
 
         promotionTable = new JTable(tableModel);
-        promotionTable.setRowHeight(38);
+        promotionTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         promotionTable.getTableHeader().setPreferredSize(new Dimension(0, 40));
 
         sorter = new TableRowSorter<>(tableModel);
@@ -419,7 +418,7 @@ public class PromotionForm extends JPanel {
         JButton btn = new JButton(text);
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btn.setAlignmentX(LEFT_ALIGNMENT);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setForeground(Color.WHITE);
         btn.setBackground(bg);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -430,7 +429,7 @@ public class PromotionForm extends JPanel {
         JButton btn = new JButton(text);
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btn.setAlignmentX(LEFT_ALIGNMENT);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setForeground(PRIMARY);
         btn.setContentAreaFilled(false);
         btn.setBorder(new LineBorder(PRIMARY, 1, true));

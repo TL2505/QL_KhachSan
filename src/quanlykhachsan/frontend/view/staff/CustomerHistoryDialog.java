@@ -51,7 +51,7 @@ public class CustomerHistoryDialog extends JDialog {
         headerPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
 
         JLabel titleLabel = new JLabel("Lịch sử thuê phòng");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         titleLabel.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         JLabel subLabel = new JLabel("Khách hàng: " + customerName);
@@ -89,12 +89,12 @@ public class CustomerHistoryDialog extends JDialog {
         };
 
         historyTable = new JTable(tableModel);
-        historyTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        historyTable.setRowHeight(35);
+        historyTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        historyTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         historyTable.setShowGrid(false);
         historyTable.setFocusable(false);
 
-        historyTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        historyTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         historyTable.getTableHeader().setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
         historyTable.getTableHeader().setForeground(new Color(71, 85, 105));
         historyTable.getTableHeader().setPreferredSize(new Dimension(0, 40));
@@ -150,12 +150,12 @@ public class CustomerHistoryDialog extends JDialog {
         footerPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
         lblStatus = new JLabel("Đang tải dữ liệu...");
-        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblStatus.setForeground(MUTED);
         footerPanel.add(lblStatus, BorderLayout.WEST);
 
         lblTotalSpent = new JLabel("Tổng đã chi: 0 VNĐ");
-        lblTotalSpent.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblTotalSpent.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblTotalSpent.setForeground(SUCCESS);
         footerPanel.add(lblTotalSpent, BorderLayout.EAST);
 

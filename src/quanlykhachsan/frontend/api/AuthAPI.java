@@ -1,10 +1,10 @@
 package quanlykhachsan.frontend.api;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.utils.HttpUtil;
 import quanlykhachsan.frontend.utils.JsonUtil;
+import quanlykhachsan.frontend.utils.SessionManagerUtil;
 
 public class AuthAPI {
 
@@ -15,7 +15,7 @@ public class AuthAPI {
 
         String jsonResponse;
         try {
-            jsonResponse = HttpUtil.sendPost("/auth/login", JsonUtil.getGson().toJson(req));
+            jsonResponse = HttpUtil.sendPost("/v1/auth/login", JsonUtil.getGson().toJson(req));
         } catch (java.net.ConnectException ex) {
             throw new Exception("Server chưa up");
         }
@@ -34,6 +34,9 @@ public class AuthAPI {
         if (resObj != null && resObj.has("status")) {
             if ("success".equals(resObj.get("status").getAsString())) {
                 JsonObject dataObj = resObj.getAsJsonObject("data");
+                if (dataObj.has("token") && !dataObj.get("token").isJsonNull()) {
+                    SessionManagerUtil.setAccessToken(dataObj.get("token").getAsString());
+                }
                 User user = new User();
                 user.setId(dataObj.get("userId").getAsInt());
                 user.setUsername(dataObj.get("username").getAsString());

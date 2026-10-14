@@ -1,18 +1,12 @@
 package quanlykhachsan.backend.booking;
 
-import quanlykhachsan.backend.booking.BookingDAO;
-import quanlykhachsan.backend.booking.BookingDAOImpl;
 import quanlykhachsan.backend.room.RoomDAOImpl;
-import quanlykhachsan.backend.booking.Booking;
-import quanlykhachsan.backend.booking.Invoice;
-import quanlykhachsan.backend.booking.InvoiceDAOImpl;
 import quanlykhachsan.backend.promotion.Promotion;
 import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.backend.room.Room;
 import quanlykhachsan.backend.customer.CustomerDAOImpl;
-import quanlykhachsan.backend.room.RoomDAOImpl;
-import quanlykhachsan.backend.booking.PaymentDAOImpl;
 import quanlykhachsan.backend.promotion.PromotionService;
+import quanlykhachsan.backend.room.OptimisticLockException;
 
 import java.util.List;
 
@@ -31,8 +25,12 @@ public class BookingService {
         List<Booking> bookings = bookingDAO.findByRoomId(roomId);
 
         for (Booking b : bookings) {
-            boolean overlap = checkIn.getTime() <= b.getCheckOutDate().getTime() &&
-                              checkOut.getTime() >= b.getCheckInDate().getTime();
+            String st = b.getStatus() != null ? b.getStatus().toLowerCase() : "";
+            if (st.equals("cancelled") || st.equals("no_show") || st.equals("completed") || st.equals("checked_out")) {
+                continue;
+            }
+            boolean overlap = checkIn.getTime() < b.getCheckOutDate().getTime() &&
+                              checkOut.getTime() > b.getCheckInDate().getTime();
             if (overlap) return false;
         }
         return true;
@@ -46,6 +44,13 @@ public class BookingService {
             return -1;
         }
         return bookingDAO.addBooking(booking);
+    }
+
+    public int addBooking(Booking booking, int expectedRoomVersion) throws OptimisticLockException {
+        if (!checkAvailable(booking.getRoomId(), booking.getCheckInDate(), booking.getCheckOutDate())) {
+            return -1;
+        }
+        return ((BookingDAOImpl) bookingDAO).addBooking(booking, expectedRoomVersion);
     }
 
     public List<Booking> getBookingsByCustomer(int customerId) {
@@ -63,6 +68,16 @@ public class BookingService {
         Booking b = getBookingById(bookingId);
         if (b != null) {
             b.setStatus(status);
+            bookingDAO.updateBooking(b);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean cancelBooking(int bookingId) {
+        Booking b = getBookingById(bookingId);
+        if (b != null) {
+            b.setStatus("cancelled");
             bookingDAO.updateBooking(b);
             return true;
         }
@@ -89,8 +104,8 @@ public class BookingService {
                 }
             }
 
-            // 3. Update Booking status to "paid"
-            b.setStatus("paid");
+            // 3. Update Booking status to "checked_out" (MySQL ENUM requires 'checked_out', not 'paid')
+            b.setStatus("checked_out");
             bookingDAO.updateBooking(b);
             
             // 4. Create Payment record
@@ -130,5 +145,28 @@ public class BookingService {
             return true;
         }
         return false;
+    }
+
+    public com.google.gson.JsonObject getBookingFolioDetails(Booking booking) throws java.sql.SQLException {
+        com.google.gson.JsonObject result = quanlykhachsan.backend.utils.JsonUtil.getGson()
+            .toJsonTree(booking).getAsJsonObject();
+        com.google.gson.JsonArray folioRows = new com.google.gson.JsonArray();
+        String sql = "SELECT id, folio_type, balance, status FROM folios WHERE booking_id = ? ORDER BY id";
+        try (java.sql.Connection connection = quanlykhachsan.backend.utils.DatabaseConnection.getConnection();
+             java.sql.PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, booking.getId());
+            try (java.sql.ResultSet rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    com.google.gson.JsonObject folio = new com.google.gson.JsonObject();
+                    folio.addProperty("id", rows.getInt("id"));
+                    folio.addProperty("folio_type", rows.getString("folio_type"));
+                    folio.addProperty("balance", rows.getBigDecimal("balance"));
+                    folio.addProperty("status", rows.getString("status"));
+                    folioRows.add(folio);
+                }
+            }
+        }
+        result.add("folios", folioRows);
+        return result;
     }
 }

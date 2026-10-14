@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.promotion;
 
-import quanlykhachsan.backend.promotion.Promotion;
 import java.util.List;
 
 public interface PromotionDAO {

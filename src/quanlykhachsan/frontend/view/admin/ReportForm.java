@@ -79,11 +79,11 @@ public class ReportForm extends JPanel {
             new EmptyBorder(10, 16, 10, 16)
         ));
         JLabel pageTitle = new JLabel("Báo cáo Phân tích Dữ liệu (Dashboard)");
-        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         pageTitle.setForeground(TEXT_MAIN);
         
         lblStatus = new JLabel(" ");
-        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         
         statusBar.add(pageTitle, BorderLayout.WEST);
         statusBar.add(lblStatus, BorderLayout.EAST);
@@ -141,14 +141,14 @@ public class ReportForm extends JPanel {
         btnApply.setBackground(PRIMARY);
         btnApply.setForeground(Color.WHITE);
         btnApply.setFocusPainted(false);
-        btnApply.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnApply.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnApply.addActionListener(e -> applyFilter());
 
         JButton btnExport = new JButton("Xuất PDF");
         btnExport.setBackground(DANGER);
         btnExport.setForeground(Color.WHITE);
         btnExport.setFocusPainted(false);
-        btnExport.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnExport.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnExport.addActionListener(e -> ReportPDFExporter.exportPDF(reportTable, "Báo Cáo Tùy Chỉnh"));
 
         pnl.add(lblStart); pnl.add(dpFrom);
@@ -235,7 +235,7 @@ public class ReportForm extends JPanel {
         reportTable = new JTable(tableModel);
         
         // Styling table
-        reportTable.setRowHeight(35);
+        reportTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         reportTable.setBackground(CARD_BG);
         reportTable.setForeground(TEXT_MAIN);
         reportTable.setSelectionBackground(ThemeManager.isDarkMode() ? new Color(51, 65, 85) : new Color(226, 232, 240));
@@ -284,7 +284,7 @@ public class ReportForm extends JPanel {
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblTitle.setForeground(MUTED);
         
-        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         valueLabel.setForeground(TEXT_MAIN);
 
         card.add(lblTitle, BorderLayout.NORTH);
@@ -369,7 +369,7 @@ public class ReportForm extends JPanel {
                     chartBarContainer.repaint();
 
                     // 3. Pie Chart
-                    DefaultPieDataset pieDataset = new DefaultPieDataset();
+                    DefaultPieDataset<String> pieDataset = new DefaultPieDataset<>();
                     if (data.getMarketSegmentData() != null) {
                         for (Map.Entry<String, Integer> entry : data.getMarketSegmentData().entrySet()) {
                             pieDataset.setValue(entry.getKey(), entry.getValue());
@@ -383,7 +383,7 @@ public class ReportForm extends JPanel {
                         pieChart.getLegend().setBackgroundPaint(CARD_BG);
                         pieChart.getLegend().setItemPaint(TEXT_MAIN);
                     }
-                    PiePlot piePlot = (PiePlot) pieChart.getPlot();
+                    PiePlot<String> piePlot = (PiePlot<String>) pieChart.getPlot();
                     piePlot.setBackgroundPaint(CARD_BG);
                     piePlot.setOutlineVisible(false);
                     piePlot.setShadowXOffset(0);

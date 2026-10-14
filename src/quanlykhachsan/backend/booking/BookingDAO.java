@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.booking;
 
-import quanlykhachsan.backend.booking.Booking;
 import java.util.ArrayList;
 
 public interface BookingDAO {

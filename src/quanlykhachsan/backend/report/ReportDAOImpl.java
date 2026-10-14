@@ -1,8 +1,5 @@
 package quanlykhachsan.backend.report;
 
-import quanlykhachsan.backend.report.ReportDAO;
-import quanlykhachsan.backend.report.DailyStats;
-import quanlykhachsan.backend.report.MonthlyRevenue;
 import quanlykhachsan.backend.utils.DBconn;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,9 +10,6 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.sql.Date;
-import quanlykhachsan.backend.report.DashboardData;
-import quanlykhachsan.backend.report.DashboardFilter;
-import java.util.LinkedHashMap;
 
 public class ReportDAOImpl implements ReportDAO {
 

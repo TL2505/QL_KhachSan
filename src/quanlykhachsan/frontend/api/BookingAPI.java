@@ -13,6 +13,11 @@ import quanlykhachsan.backend.booking.Booking;
 public class BookingAPI {
 
     public static JsonObject bookRoom(int customerId, int roomId, String checkInDate, String checkOutDate) {
+        return bookRoom(customerId, roomId, checkInDate, checkOutDate, java.util.UUID.randomUUID().toString());
+    }
+
+    public static JsonObject bookRoom(int customerId, int roomId, String checkInDate, String checkOutDate,
+                                      String idempotencyKey) {
         try {
             JsonObject req = new JsonObject();
             req.addProperty("customerId", customerId);
@@ -20,7 +25,8 @@ public class BookingAPI {
             req.addProperty("checkInDate", checkInDate);
             req.addProperty("checkOutDate", checkOutDate);
 
-            String jsonResponse = HttpUtil.sendPost("/bookings", JsonUtil.getGson().toJson(req));
+            String jsonResponse = HttpUtil.sendPostWithHeaders("/bookings", JsonUtil.getGson().toJson(req),
+                java.util.Map.of("Idempotency-Key", idempotencyKey)).getBody();
             return JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
         } catch (Exception e) {
             e.printStackTrace();
@@ -115,6 +121,17 @@ public class BookingAPI {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static boolean cancelBooking(int bookingId) {
+        try {
+            String jsonResponse = HttpUtil.sendDelete("/bookings/" + bookingId);
+            JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
+            return resObj != null && "success".equals(resObj.get("status").getAsString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public static boolean processPayment(int bookingId, int customerId, double amount, String paymentMethod) {

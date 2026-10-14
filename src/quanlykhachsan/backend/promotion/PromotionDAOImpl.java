@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.promotion;
 
-import quanlykhachsan.backend.promotion.PromotionDAO;
-import quanlykhachsan.backend.promotion.Promotion;
 import quanlykhachsan.backend.utils.DBconn;
 
 import java.sql.*;

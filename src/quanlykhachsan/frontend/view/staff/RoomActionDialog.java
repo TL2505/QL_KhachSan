@@ -6,9 +6,13 @@ import java.awt.*;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.math.BigDecimal;
 
 import com.toedter.calendar.JDateChooser;
 import quanlykhachsan.backend.booking.Booking;
@@ -16,7 +20,8 @@ import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.backend.room.Room;
 import quanlykhachsan.backend.user.User;
 import quanlykhachsan.frontend.api.BookingAPI;
-import quanlykhachsan.frontend.api.CustomerAPI;
+import quanlykhachsan.frontend.api.FolioAPI;
+import quanlykhachsan.frontend.view.SystemStatusBanner;
 import quanlykhachsan.frontend.utils.ThemeManager;
 
 /**
@@ -31,6 +36,9 @@ public class RoomActionDialog extends JDialog {
     private final Room room;
     private final User currentUser;
     private Runnable onSuccessCallback; // Called when an action succeeds, refresh map
+    private final SystemStatusBanner statusBanner;
+    private final Map<Integer, String> paymentKeys = new HashMap<>();
+    private String bookingIdempotencyKey;
 
     private final Color PRIMARY   = ThemeManager.getPrimary();
     private final Color SUCCESS   = ThemeManager.getSuccess();
@@ -47,10 +55,15 @@ public class RoomActionDialog extends JDialog {
     private final SimpleDateFormat displaySdf = new SimpleDateFormat("dd/MM/yyyy");
 
     public RoomActionDialog(Window owner, Room room, User user, Runnable onSuccess) {
+        this(owner, room, user, onSuccess, null);
+    }
+
+    public RoomActionDialog(Window owner, Room room, User user, Runnable onSuccess, SystemStatusBanner statusBanner) {
         super(owner, buildTitle(room), Dialog.ModalityType.APPLICATION_MODAL);
         this.room = room;
         this.currentUser = user;
         this.onSuccessCallback = onSuccess;
+        this.statusBanner = statusBanner;
 
         setSize(480, 520);
         setResizable(false);
@@ -64,10 +77,11 @@ public class RoomActionDialog extends JDialog {
 
     private static String buildTitle(Room room) {
         switch (room.getStatus().toLowerCase()) {
-            case "available": return "Đặt Phòng — Phòng " + room.getRoomNumber();
-            case "booked":    return "Nhận Phòng — Phòng " + room.getRoomNumber();
-            case "occupied":  return "Trả Phòng & Thanh Toán — Phòng " + room.getRoomNumber();
-            case "cleaning":  return "Xác nhận Dọn dẹp — Phòng " + room.getRoomNumber();
+            case "vacant_clean": return "Đặt Phòng — Phòng " + room.getRoomNumber();
+            case "reserved": return "Nhận Phòng — Phòng " + room.getRoomNumber();
+            case "occupied_clean":
+            case "occupied_dirty": return "Trả Phòng & Thanh Toán — Phòng " + room.getRoomNumber();
+            case "vacant_dirty": return "Xác nhận Dọn dẹp — Phòng " + room.getRoomNumber();
             default:          return "Phòng " + room.getRoomNumber();
         }
     }
@@ -76,10 +90,11 @@ public class RoomActionDialog extends JDialog {
         Color accentColor;
         String statusText;
         switch (room.getStatus().toLowerCase()) {
-            case "available": accentColor = SUCCESS;                  statusText = "Phòng Trống — Sẵn sàng nhận khách"; break;
-            case "booked":    accentColor = WARNING;                  statusText = "Đã Đặt — Chờ nhận phòng"; break;
-            case "occupied":  accentColor = DANGER;                   statusText = "Có Khách — Đang lưu trú"; break;
-            case "cleaning":  accentColor = new Color(56, 189, 248);  statusText = "Đang Dọn dẹp — Chờ xác nhận hoàn tất"; break;
+            case "vacant_clean": accentColor = SUCCESS; statusText = "Phòng Trống — Sẵn sàng nhận khách"; break;
+            case "reserved": accentColor = WARNING; statusText = "Đã Đặt — Chờ nhận phòng"; break;
+            case "occupied_clean":
+            case "occupied_dirty": accentColor = DANGER; statusText = "Có Khách — Đang lưu trú"; break;
+            case "vacant_dirty": accentColor = new Color(56, 189, 248); statusText = "Cần dọn dẹp"; break;
             default:          accentColor = MUTED;                    statusText = room.getStatus(); break;
         }
 
@@ -88,7 +103,7 @@ public class RoomActionDialog extends JDialog {
         header.setBorder(new EmptyBorder(20, 24, 20, 24));
 
         JLabel lblRoom = new JLabel("Phòng " + room.getRoomNumber());
-        lblRoom.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        lblRoom.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblRoom.setForeground(Color.WHITE);
 
         JLabel lblStatus = new JLabel(statusText);
@@ -96,7 +111,7 @@ public class RoomActionDialog extends JDialog {
         lblStatus.setForeground(new Color(255, 255, 255, 200));
 
         JLabel lblPrice = new JLabel(nf.format(room.getPrice()) + " đ / đêm");
-        lblPrice.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblPrice.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblPrice.setForeground(Color.WHITE);
 
         JPanel left = new JPanel();
@@ -113,10 +128,11 @@ public class RoomActionDialog extends JDialog {
 
     private void buildBody() {
         switch (room.getStatus().toLowerCase()) {
-            case "available": buildBookingPanel(); break;
-            case "booked":    buildCheckInPanel(); break;
-            case "occupied":  buildCheckOutPanel(); break;
-            case "cleaning":  buildCleaningPanel(); break;
+            case "vacant_clean": buildBookingPanel(); break;
+            case "reserved": buildCheckInPanel(); break;
+            case "occupied_clean":
+            case "occupied_dirty": buildCheckOutPanel(); break;
+            case "vacant_dirty": buildCleaningPanel(); break;
             default:
                 JLabel msg = new JLabel("Phòng này đang " + room.getStatus() + ", không có thao tác.", SwingConstants.CENTER);
                 msg.setForeground(MUTED);
@@ -139,7 +155,7 @@ public class RoomActionDialog extends JDialog {
         body.add(Box.createVerticalStrut(6));
 
         JButton btnSelectCustomer = new JButton("  Nhấn để chọn khách hàng...");
-        btnSelectCustomer.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btnSelectCustomer.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btnSelectCustomer.setHorizontalAlignment(SwingConstants.LEFT);
         btnSelectCustomer.setForeground(MUTED);
         btnSelectCustomer.setBackground(CARD_BG);
@@ -198,7 +214,7 @@ public class RoomActionDialog extends JDialog {
 
         // Estimate display
         JLabel lblEstimate = new JLabel(" ");
-        lblEstimate.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblEstimate.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblEstimate.setForeground(PRIMARY);
         lblEstimate.setAlignmentX(LEFT_ALIGNMENT);
         body.add(lblEstimate);
@@ -239,13 +255,15 @@ public class RoomActionDialog extends JDialog {
             }
             btnBook.setEnabled(false);
             btnBook.setText("Đang xử lý...");
+            if (bookingIdempotencyKey == null) bookingIdempotencyKey = java.util.UUID.randomUUID().toString();
+            final String requestKey = bookingIdempotencyKey;
             String ciStr = sdf.format(di);
             String coStr = sdf.format(co);
             int cId = selectedCustomer[0].getId();
 
             new SwingWorker<com.google.gson.JsonObject, Void>() {
                 @Override protected com.google.gson.JsonObject doInBackground() {
-                    return BookingAPI.bookRoom(cId, room.getId(), ciStr, coStr);
+                    return BookingAPI.bookRoom(cId, room.getId(), ciStr, coStr, requestKey);
                 }
                 @Override protected void done() {
                     try {
@@ -389,13 +407,16 @@ public class RoomActionDialog extends JDialog {
         btnCheckOut.setEnabled(false);
         add(makeFooter(btnCheckOut), BorderLayout.SOUTH);
 
-        new SwingWorker<Booking, Void>() {
-            @Override protected Booking doInBackground() {
-                return BookingAPI.getActiveBookingByRoom(room.getId());
+        new SwingWorker<CheckoutData, Void>() {
+            @Override protected CheckoutData doInBackground() throws Exception {
+                Booking booking = BookingAPI.getActiveBookingByRoom(room.getId());
+                return booking == null ? new CheckoutData(null, List.of())
+                    : new CheckoutData(booking, FolioAPI.getForBooking(booking.getId()));
             }
             @Override protected void done() {
                 try {
-                    Booking b = get();
+                    CheckoutData data = get();
+                    Booking b = data.booking;
                     body.remove(lblLoading);
 
                     if (b == null) {
@@ -403,13 +424,21 @@ public class RoomActionDialog extends JDialog {
                         err.setForeground(DANGER);
                         body.add(err);
                     } else {
-                        // Calculate nights and amount
+                        if (data.folios.isEmpty()) {
+                            lblLoading.setText("Folio balances are unavailable; checkout is disabled.");
+                            body.add(lblLoading);
+                            body.revalidate();
+                            return;
+                        }
+                        // Calculate nights and use current master/guest folio balances.
                         long nights = 1;
                         if (b.getCheckInDate() != null && b.getCheckOutDate() != null) {
                             nights = Math.max(1, TimeUnit.MILLISECONDS.toDays(
                                 b.getCheckOutDate().getTime() - b.getCheckInDate().getTime()));
                         }
-                        final double totalAmount = b.getTotalPrice() > 0 ? b.getTotalPrice() : nights * room.getPrice();
+                        BigDecimal due = BigDecimal.ZERO;
+                        for (FolioAPI.FolioBalance folio : data.folios) due = due.add(folio.getBalance());
+                        final BigDecimal totalAmount = due;
 
                         body.add(makeLabel("Thông tin Lưu trú"));
                         body.add(Box.createVerticalStrut(12));
@@ -421,6 +450,11 @@ public class RoomActionDialog extends JDialog {
                         body.add(Box.createVerticalStrut(6));
                         body.add(makeInfoRow("Số đêm:", nights + " đêm"));
                         body.add(Box.createVerticalStrut(12));
+                        for (FolioAPI.FolioBalance folio : data.folios) {
+                            body.add(makeInfoRow("Folio " + folio.getType() + " (#" + folio.getId() + "):",
+                                nf.format(folio.getBalance()) + " đ"));
+                            body.add(Box.createVerticalStrut(5));
+                        }
 
                         // Total with highlight
                         JPanel totalRow = new JPanel(new BorderLayout());
@@ -462,12 +496,23 @@ public class RoomActionDialog extends JDialog {
 
                             new SwingWorker<Boolean, Void>() {
                                 @Override protected Boolean doInBackground() throws Exception {
-                                    // 1. Process payment (which internally also updates room status to cleaning)
-                                    String dbMethod;
-                                    if (method.contains("khoản")) dbMethod = "bank_transfer";
-                                    else if (method.contains("tín dụng")) dbMethod = "credit_card";
-                                    else dbMethod = "cash";
-                                    return BookingAPI.processPayment(b.getId(), b.getCustomerId(), totalAmount, dbMethod);
+                                    String dbMethod = method.contains("khoản") ? "bank_transfer"
+                                        : method.contains("tín dụng") ? "credit_card" : "cash";
+                                    if (totalAmount.signum() == 0) {
+                                        FolioAPI.FolioBalance folio = data.folios.get(0);
+                                        String key = paymentKeys.computeIfAbsent(folio.getId(), ignored -> FolioAPI.newIdempotencyKey());
+                                        quanlykhachsan.frontend.utils.HttpUtil.HttpResult result =
+                                            FolioAPI.pay(folio.getId(), BigDecimal.ZERO, dbMethod, true, key);
+                                        return result.getStatusCode() >= 200 && result.getStatusCode() < 300;
+                                    }
+                                    for (FolioAPI.FolioBalance folio : data.folios) {
+                                        if (folio.getBalance().signum() <= 0) continue;
+                                        String key = paymentKeys.computeIfAbsent(folio.getId(), ignored -> FolioAPI.newIdempotencyKey());
+                                        quanlykhachsan.frontend.utils.HttpUtil.HttpResult result =
+                                            FolioAPI.pay(folio.getId(), folio.getBalance(), dbMethod, true, key);
+                                        if (result.getStatusCode() < 200 || result.getStatusCode() >= 300) return false;
+                                    }
+                                    return true;
                                 }
                                 @Override protected void done() {
                                     try {
@@ -525,14 +570,14 @@ public class RoomActionDialog extends JDialog {
         body.add(Box.createVerticalStrut(16));
 
         JLabel lblTitle = new JLabel("Phòng đang được dọn dẹp", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblTitle.setForeground(TEXT_MAIN);
         lblTitle.setAlignmentX(CENTER_ALIGNMENT);
         body.add(lblTitle);
         body.add(Box.createVerticalStrut(8));
 
         JLabel lblSub = new JLabel("Phòng " + room.getRoomNumber() + " hiện đang trong quá trình vệ sinh.", SwingConstants.CENTER);
-        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblSub.setForeground(MUTED);
         lblSub.setAlignmentX(CENTER_ALIGNMENT);
         body.add(lblSub);
@@ -561,7 +606,7 @@ public class RoomActionDialog extends JDialog {
 
             new SwingWorker<String, Void>() {
                 @Override protected String doInBackground() {
-                    return quanlykhachsan.frontend.api.RoomAPI.updateRoomStatus(room.getId(), "available");
+                    return quanlykhachsan.frontend.api.RoomAPI.updateRoomStatus(room.getId(), "vacant_clean");
                 }
                 @Override protected void done() {
                     try {
@@ -595,7 +640,7 @@ public class RoomActionDialog extends JDialog {
 
     private JLabel makeLabel(String text) {
         JLabel l = new JLabel(text);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        l.setFont(new Font("Segoe UI", Font.BOLD, 14));
         l.setForeground(TEXT_MAIN);
         l.setAlignmentX(LEFT_ALIGNMENT);
         return l;
@@ -607,14 +652,24 @@ public class RoomActionDialog extends JDialog {
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
         row.setAlignmentX(LEFT_ALIGNMENT);
         JLabel lbl = new JLabel(label);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lbl.setForeground(MUTED);
         JLabel val = new JLabel(value);
-        val.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        val.setFont(new Font("Segoe UI", Font.BOLD, 14));
         val.setForeground(TEXT_MAIN);
         row.add(lbl, BorderLayout.WEST);
         row.add(val, BorderLayout.EAST);
         return row;
+    }
+
+    private static final class CheckoutData {
+        private final Booking booking;
+        private final List<FolioAPI.FolioBalance> folios;
+
+        private CheckoutData(Booking booking, List<FolioAPI.FolioBalance> folios) {
+            this.booking = booking;
+            this.folios = new ArrayList<>(folios);
+        }
     }
 
     private JButton makeActionBtn(String text, Color bg) {
@@ -634,6 +689,7 @@ public class RoomActionDialog extends JDialog {
         btn.setFocusPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setPreferredSize(new Dimension(0, 48));
+        if (statusBanner != null) statusBanner.registerMutationComponent(btn);
         return btn;
     }
 
@@ -646,7 +702,7 @@ public class RoomActionDialog extends JDialog {
         ));
 
         JButton btnCancel = new JButton("Hủy");
-        btnCancel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btnCancel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btnCancel.setForeground(MUTED);
         btnCancel.setFocusPainted(false);
         btnCancel.setBackground(CARD_BG);

@@ -5,9 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
 import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatIntelliJLaf;
+import com.formdev.flatlaf.FlatLightLaf;
 
 public class ThemeManager {
     private static boolean isDarkMode = false;
@@ -46,7 +45,7 @@ public class ThemeManager {
             if (isDarkMode) {
                 FlatDarkLaf.setup();
             } else {
-                FlatIntelliJLaf.setup();
+                FlatLightLaf.setup();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -61,6 +60,8 @@ public class ThemeManager {
         javax.swing.UIManager.put("ScrollPane.background", getBgPanel());
         javax.swing.UIManager.put("Viewport.background", getBgPanel());
         javax.swing.UIManager.put("Table.background", getCardBg());
+        javax.swing.UIManager.put("Table.rowHeight", UIThemeTokens.TABLE_ROW_HEIGHT);
+        javax.swing.UIManager.put("Component.arc", UIThemeTokens.COMPONENT_ARC);
         javax.swing.UIManager.put("Table.foreground", getTextMain());
         javax.swing.UIManager.put("Button.background", getCardBg());
         javax.swing.UIManager.put("Button.foreground", getTextMain());
@@ -163,18 +164,18 @@ public class ThemeManager {
 
     // Fixed branding colors that stay the same in Light/Dark
     public static Color getPrimary() {
-        return new Color(37, 99, 235); // Blue
+        return UIThemeTokens.PRIMARY;
     }
 
     public static Color getSuccess() {
-        return new Color(34, 197, 94); // Green
+        return UIThemeTokens.SUCCESS;
     }
 
     public static Color getWarning() {
-        return new Color(245, 158, 11); // Amber/Yellow
+        return UIThemeTokens.WARNING;
     }
 
     public static Color getDanger() {
-        return new Color(239, 68, 68); // Red
+        return UIThemeTokens.ERROR;
     }
 }

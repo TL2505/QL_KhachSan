@@ -1,8 +1,5 @@
 package quanlykhachsan.backend.customer;
 
-import quanlykhachsan.backend.customer.CustomerDAO;
-import quanlykhachsan.backend.customer.CustomerDAOImpl;
-import quanlykhachsan.backend.customer.Customer;
 
 import java.util.List;
 

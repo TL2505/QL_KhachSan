@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.booking;
 
-import quanlykhachsan.backend.booking.Payment;
 import java.util.ArrayList;
 
 public interface PaymentDAO {

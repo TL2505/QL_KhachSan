@@ -1,7 +1,5 @@
 package quanlykhachsan.backend.room;
 
-import quanlykhachsan.backend.room.RoomDAO;
-import quanlykhachsan.backend.room.Room;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -93,14 +91,12 @@ public class RoomDAOImpl implements RoomDAO {
 
     @Override
     public boolean updateStatus(int roomId, String status) {
-        try {
-            Room r = findById(roomId);
-            if (r != null) {
-                r.setStatus(status);
-                updateRoom(r);
-                return true;
-            }
-            return false;
+        String sql = "UPDATE rooms SET status=?, version=version+1 WHERE id=?";
+        try (Connection con = quanlykhachsan.backend.utils.DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, roomId);
+            return ps.executeUpdate() == 1;
         } catch (Exception e) {
             return false;
         }
@@ -109,7 +105,7 @@ public class RoomDAOImpl implements RoomDAO {
     public java.util.List<Room> findAvailableRooms(java.util.Date checkIn, java.util.Date checkOut) {
         java.util.List<Room> list = new java.util.ArrayList<>();
         String query = "SELECT * FROM rooms r " +
-                       "WHERE r.status NOT IN ('out_of_service', 'maintenance') " +
+                       "WHERE r.status <> 'out_of_order' " +
                        "AND r.id NOT IN (" +
                        "  SELECT b.room_id FROM bookings b " +
                        "  WHERE b.status IN ('confirmed', 'checked_in', 'pending') " +

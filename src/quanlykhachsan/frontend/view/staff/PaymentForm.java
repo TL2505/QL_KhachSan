@@ -21,10 +21,11 @@ import quanlykhachsan.frontend.utils.InvoicePDFExporter;
 import java.net.URL;
 import java.awt.Image;
 import javax.imageio.ImageIO;
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import quanlykhachsan.backend.hotelservice.ServiceUsage;
 import quanlykhachsan.frontend.api.ServiceUsageAPI;
+import java.awt.event.KeyEvent;
+import quanlykhachsan.frontend.utils.ThermalPrinterService;
 
 public class PaymentForm extends JPanel {
 
@@ -65,12 +66,17 @@ public class PaymentForm extends JPanel {
     private JPanel loyaltyPanel;
     private JLabel lblLoyaltyPoints, lblLoyaltyTier, lblRedeemInfo;
     private JButton btnRedeem100, btnRedeem500, btnCancelRedeem;
+    
+    // Barcode state
+    private StringBuilder barcodeBuffer = new StringBuilder();
+    private long lastKeyTime = 0;
 
     public PaymentForm() {
         setLayout(new BorderLayout());
         setBackground(BG_PANEL);
         initUI();
         loadInitialData();
+        setupBarcodeScannerListener();
     }
 
     private void initUI() {
@@ -82,11 +88,11 @@ public class PaymentForm extends JPanel {
                 new EmptyBorder(12, 20, 12, 20)));
 
         JLabel title = new JLabel("Thanh toán & Hóa đơn");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         lblStatus = new JLabel("Đang tải...");
-        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblStatus.setForeground(MUTED);
 
         header.add(title, BorderLayout.WEST);
@@ -131,14 +137,14 @@ public class PaymentForm extends JPanel {
             }
         };
         bookingTable = new JTable(tableModel);
-        bookingTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        bookingTable.setRowHeight(40);
+        bookingTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        bookingTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         bookingTable.setShowGrid(false);
         bookingTable.setSelectionBackground(ROW_SELECT);
         bookingTable.setSelectionForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
 
         // Header
-        bookingTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        bookingTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         bookingTable.getTableHeader().setReorderingAllowed(false);
         bookingTable.getTableHeader().setPreferredSize(new Dimension(0, 35));
 
@@ -226,7 +232,7 @@ public class PaymentForm extends JPanel {
         btnRedeem100 = createRedeemButton("100đ (-50k)");
         btnRedeem500 = createRedeemButton("500đ (-300k)");
         btnCancelRedeem = new JButton("Hủy");
-        btnCancelRedeem.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        btnCancelRedeem.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnCancelRedeem.setVisible(false);
 
         btnRedeem100.addActionListener(e -> applyRedeem(100, 50000));
@@ -250,7 +256,7 @@ public class PaymentForm extends JPanel {
         content.add(Box.createVerticalStrut(30));
 
         JLabel lblM = new JLabel("Phương thức thanh toán:");
-        lblM.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblM.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblM.setAlignmentX(LEFT_ALIGNMENT);
         content.add(lblM);
         content.add(Box.createVerticalStrut(8));
@@ -262,7 +268,7 @@ public class PaymentForm extends JPanel {
         content.add(cbMethod);
 
         btnShowQR = new JButton("HIỂN THỊ MÃ QR");
-        btnShowQR.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnShowQR.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnShowQR.setForeground(Color.WHITE);
         btnShowQR.setBackground(new Color(14, 165, 233));
         btnShowQR.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -340,6 +346,51 @@ public class PaymentForm extends JPanel {
     }
 
     // ─── Logic ────────────────────────────────────────────────────────────
+
+    private void setupBarcodeScannerListener() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
+            if (!this.isShowing()) return false;
+            if (e.getID() == KeyEvent.KEY_TYPED) {
+                long currentTime = System.currentTimeMillis();
+                // Nếu khoảng cách giữa 2 ký tự > 100ms -> người nhập tay (không phải máy quét), reset buffer
+                if (currentTime - lastKeyTime > 100) {
+                    barcodeBuffer.setLength(0); 
+                }
+                char c = e.getKeyChar();
+                if (c == KeyEvent.VK_ENTER) {
+                    processBarcode(barcodeBuffer.toString());
+                    barcodeBuffer.setLength(0);
+                } else {
+                    barcodeBuffer.append(c);
+                }
+                lastKeyTime = currentTime;
+            }
+            return false;
+        });
+    }
+
+    private void processBarcode(String code) {
+        if (code == null || code.trim().isEmpty()) return;
+        code = code.trim().toUpperCase();
+        
+        // Hỗ trợ mã dạng BK...
+        if (code.startsWith("BK")) {
+            try {
+                int id = Integer.parseInt(code.substring(2));
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    int bId = (int) tableModel.getValueAt(i, 0);
+                    if (bId == id) {
+                        bookingTable.setRowSelectionInterval(i, i);
+                        JOptionPane.showMessageDialog(this, "Đã quét thành công mã đơn hàng #" + id);
+                        return;
+                    }
+                }
+                JOptionPane.showMessageDialog(this, "Không tìm thấy đơn đặt phòng có mã: " + code + " trong danh sách chờ.", "Lỗi Quét Mã", JOptionPane.WARNING_MESSAGE);
+            } catch (Exception ex) {
+                // Ignore parse errors
+            }
+        }
+    }
 
     private void loadInitialData() {
         lblStatus.setText("Đang tải dữ liệu...");
@@ -669,6 +720,15 @@ public class PaymentForm extends JPanel {
 
                             // Gọi Export PDF
                             InvoicePDFExporter.exportPDF(bKeep, cKeep, rKeep, selectedServiceUsages, (int) finalDays, finalAmount);
+                            
+                            // Hỏi in bill K80
+                            int printConfirm = JOptionPane.showConfirmDialog(PaymentForm.this, 
+                                    "Bạn có muốn in bill máy in nhiệt (K80) không?", 
+                                    "In Hóa Đơn K80", JOptionPane.YES_NO_OPTION);
+                            if (printConfirm == JOptionPane.YES_OPTION) {
+                                ThermalPrinterService printer = new ThermalPrinterService(bKeep, cKeep, rKeep, selectedServiceUsages, (int) finalDays, finalAmount);
+                                printer.printReceipt();
+                            }
 
                             loadInitialData();
                         } else {

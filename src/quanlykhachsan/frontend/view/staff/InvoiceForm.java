@@ -46,11 +46,11 @@ public class InvoiceForm extends JPanel {
         ));
         
         JLabel title = new JLabel("Quản lý Hóa Đơn (Doanh thu)");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         
         lblStatus = new JLabel("Đang tải...");
-        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblStatus.setForeground(new Color(107, 114, 128));
         
         header.add(title, BorderLayout.WEST);
@@ -88,7 +88,7 @@ public class InvoiceForm extends JPanel {
         bottomBar.setBorder(new MatteBorder(1, 0, 0, 0, quanlykhachsan.frontend.utils.ThemeManager.getBorderColor()));
 
         btnPrintPDF = new JButton("In Hóa Đơn PDF");
-        btnPrintPDF.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnPrintPDF.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnPrintPDF.setBackground(new Color(5, 150, 105));
         btnPrintPDF.setForeground(Color.WHITE);
         btnPrintPDF.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -102,12 +102,12 @@ public class InvoiceForm extends JPanel {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         table = new JTable(tableModel);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.setRowHeight(35);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         table.setShowGrid(false);
         table.setSelectionBackground(new Color(219, 234, 254));
         table.setSelectionForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         table.getTableHeader().setReorderingAllowed(false);
         
         table.getSelectionModel().addListSelectionListener(e -> {
@@ -166,6 +166,8 @@ public class InvoiceForm extends JPanel {
         };
         worker.execute();
     }
+
+    public void printSelectedInvoice() { actionPrintPDF(); }
 
     private void actionPrintPDF() {
         int index = table.getSelectedRow();

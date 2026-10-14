@@ -2,13 +2,13 @@ package quanlykhachsan.frontend.utils;
 
 import quanlykhachsan.backend.user.User;
 
-import quanlykhachsan.frontend.utils.ThemeManager;
 
 /**
  * Singleton class to manage the current user session on the frontend.
  */
 public class SessionManagerUtil {
     private static User currentUser;
+    private static String accessToken;
 
     public static void setUser(User user) {
         currentUser = user;
@@ -23,7 +23,16 @@ public class SessionManagerUtil {
         return (currentUser != null) ? currentUser.getRoleId() : -1;
     }
 
+    public static void setAccessToken(String token) {
+        accessToken = token;
+    }
+
+    public static String getAccessToken() {
+        return accessToken;
+    }
+
     public static void clear() {
         currentUser = null;
+        accessToken = null;
     }
 }

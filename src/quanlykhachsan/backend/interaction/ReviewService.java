@@ -1,8 +1,5 @@
 package quanlykhachsan.backend.interaction;
 
-import quanlykhachsan.backend.interaction.ReviewDAO;
-import quanlykhachsan.backend.interaction.ReviewDAOImpl;
-import quanlykhachsan.backend.interaction.Review;
 import java.util.List;
 
 public class ReviewService {

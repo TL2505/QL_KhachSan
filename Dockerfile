@@ -16,6 +16,9 @@ RUN mkdir -p build/classes && \
     find src -name "*.java" > sources.txt && \
     javac -encoding utf-8 -cp "lib/*:build/classes" -d build/classes @sources.txt
 
+# Install curl cho healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Mở cửa cho cổng 8080 (Cổng mà Backend của bạn đang lắng nghe)
 EXPOSE 8081
 

@@ -4,7 +4,6 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.RoundRectangle2D;
 import quanlykhachsan.frontend.api.AuthAPI;
 import quanlykhachsan.frontend.utils.SessionManagerUtil;
 import quanlykhachsan.frontend.utils.ThemeManager;
@@ -62,12 +61,12 @@ public class LoginForm extends JFrame {
         iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel titleLabel = new JLabel("ĐĂNG NHẬP", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 30));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
         titleLabel.setForeground(TEXT_MAIN);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel subLabel = new JLabel("Hệ thống Quản lý Khách sạn Chuyên nghiệp", SwingConstants.CENTER);
-        subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subLabel.setForeground(TEXT_MUTED);
         subLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -124,7 +123,7 @@ public class LoginForm extends JFrame {
         // Remove fixed sizes to let HTML content determine the height
 
         JLabel lblUsername = new JLabel("Tên đăng nhập");
-        lblUsername.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblUsername.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblUsername.setForeground(TEXT_MAIN);
         lblUsername.setAlignmentX(LEFT_ALIGNMENT);
 
@@ -133,7 +132,7 @@ public class LoginForm extends JFrame {
         txtUsername.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
         JLabel lblPassword = new JLabel("Mật khẩu");
-        lblPassword.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblPassword.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblPassword.setForeground(TEXT_MAIN);
         lblPassword.setAlignmentX(LEFT_ALIGNMENT);
 
@@ -224,7 +223,7 @@ public class LoginForm extends JFrame {
         int currentYear = java.time.Year.now().getValue();
         JLabel lblAppFooter = new JLabel("\u00A9 " + currentYear + " Hotel Manager System  |  v1.0",
                 SwingConstants.CENTER);
-        lblAppFooter.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblAppFooter.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblAppFooter.setForeground(TEXT_MUTED);
         lblAppFooter.setBorder(new EmptyBorder(0, 0, 14, 0));
         root.add(lblAppFooter, BorderLayout.SOUTH);
@@ -382,3 +381,4 @@ public class LoginForm extends JFrame {
         }
     }
 }
+

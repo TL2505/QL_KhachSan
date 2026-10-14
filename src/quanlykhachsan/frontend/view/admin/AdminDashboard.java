@@ -50,7 +50,7 @@ public class AdminDashboard extends JPanel {
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         JLabel lblTitle = new JLabel("TỔNG QUAN VẬN HÀNH HÔM NAY");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblTitle.setForeground(TEXT_MAIN);
         header.add(lblTitle, BorderLayout.WEST);
         
@@ -161,7 +161,7 @@ public class AdminDashboard extends JPanel {
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblTitle.setForeground(TEXT_MUT);
         
-        valLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        valLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         valLabel.setForeground(TEXT_MAIN);
 
         card.add(lblTitle, BorderLayout.NORTH);
@@ -226,7 +226,7 @@ public class AdminDashboard extends JPanel {
     }
 
     private void updateChart(Map<String, Integer> data) {
-        DefaultPieDataset dataset = new DefaultPieDataset();
+        DefaultPieDataset<String> dataset = new DefaultPieDataset<>();
         if (data != null) {
             data.forEach((k, v) -> {
                 String label;
@@ -246,7 +246,7 @@ public class AdminDashboard extends JPanel {
         chart.setBackgroundPaint(CARD_BG);
         chart.setBorderVisible(false);
         
-        org.jfree.chart.plot.PiePlot plot = (org.jfree.chart.plot.PiePlot) chart.getPlot();
+        org.jfree.chart.plot.PiePlot<String> plot = (org.jfree.chart.plot.PiePlot<String>) chart.getPlot();
         plot.setOutlineVisible(false);
         plot.setLabelGenerator(null);
         

@@ -36,7 +36,7 @@ public class ReviewSubmissionDialog extends JDialog {
         header.setBorder(new EmptyBorder(15, 20, 15, 20));
         
         JLabel title = new JLabel("Chia sẻ trải nghiệm của bạn");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(Color.WHITE);
         header.add(title);
 
@@ -65,7 +65,7 @@ public class ReviewSubmissionDialog extends JDialog {
         txtComment = new JTextArea(5, 20);
         txtComment.setLineWrap(true);
         txtComment.setWrapStyleWord(true);
-        txtComment.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtComment.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         JScrollPane scroll = new JScrollPane(txtComment);
         scroll.setBorder(new LineBorder(quanlykhachsan.frontend.utils.ThemeManager.getBorderColor()));
         content.add(scroll);
@@ -84,7 +84,7 @@ public class ReviewSubmissionDialog extends JDialog {
         JButton btnSubmit = new JButton("Gửi đánh giá");
         btnSubmit.setBackground(PRIMARY);
         btnSubmit.setForeground(Color.WHITE);
-        btnSubmit.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnSubmit.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnSubmit.addActionListener(e -> submitReview());
         footer.add(btnSubmit);
 

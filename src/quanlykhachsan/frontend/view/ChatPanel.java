@@ -3,9 +3,6 @@ package quanlykhachsan.frontend.view;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
-import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.ArrayList;
 import quanlykhachsan.backend.interaction.Message;
@@ -69,7 +66,7 @@ public class ChatPanel extends JPanel {
         txtInput.addActionListener(e -> sendMessage());
 
         btnSend = new JButton("Gửi >>");
-        btnSend.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnSend.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnSend.setBackground(MSG_SELF);
         btnSend.setForeground(Color.WHITE);
         btnSend.setFocusPainted(false);

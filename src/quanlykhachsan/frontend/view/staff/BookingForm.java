@@ -5,7 +5,6 @@ import javax.swing.border.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -17,7 +16,6 @@ import quanlykhachsan.frontend.api.BookingAPI;
 import quanlykhachsan.frontend.api.CustomerAPI;
 import quanlykhachsan.frontend.api.RoomAPI;
 import com.toedter.calendar.JDateChooser;
-import quanlykhachsan.frontend.utils.WrapLayout;
 import com.google.gson.JsonObject;
 
 public class BookingForm extends JPanel {
@@ -70,10 +68,10 @@ public class BookingForm extends JPanel {
                 new MatteBorder(0, 0, 1, 0, BORDER_CLR),
                 new EmptyBorder(12, 16, 12, 16)));
         JLabel pageTitle = new JLabel("Phòng & Đặt phòng");
-        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         pageTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         lblStatus = new JLabel(" ");
-        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         header.add(pageTitle, BorderLayout.WEST);
         header.add(lblStatus, BorderLayout.EAST);
         add(header, BorderLayout.NORTH);
@@ -113,7 +111,7 @@ public class BookingForm extends JPanel {
         // Khách hàng
         cardNew.add(createFieldLabel("Khách Hàng"));
         btnSelectCustomer = new JButton(" Chọn khách hàng...");
-        btnSelectCustomer.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnSelectCustomer.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnSelectCustomer.setHorizontalAlignment(SwingConstants.LEFT);
         btnSelectCustomer.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         btnSelectCustomer.setBackground(quanlykhachsan.frontend.utils.ThemeManager.getCardBg());
@@ -146,7 +144,7 @@ public class BookingForm extends JPanel {
         // Phòng
         cardNew.add(createFieldLabel("Phòng Trống"));
         cbRoom = new JComboBox<>();
-        cbRoom.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cbRoom.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         cbRoom.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         cbRoom.setAlignmentX(LEFT_ALIGNMENT);
         cardNew.add(cbRoom);
@@ -182,7 +180,7 @@ public class BookingForm extends JPanel {
 
         // Ước tính tiền
         lblEstimate = new JLabel(" ");
-        lblEstimate.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblEstimate.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblEstimate.setForeground(PRIMARY);
         lblEstimate.setAlignmentX(LEFT_ALIGNMENT);
         cardNew.add(lblEstimate);
@@ -278,14 +276,14 @@ public class BookingForm extends JPanel {
         };
 
         bookingTable = new JTable(bookingModel);
-        bookingTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        bookingTable.setRowHeight(38);
+        bookingTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        bookingTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         bookingTable.setShowGrid(false);
         bookingTable.setIntercellSpacing(new Dimension(0, 0));
         bookingTable.setSelectionBackground(ROW_SELECT);
         bookingTable.setFocusable(false);
 
-        bookingTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        bookingTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         bookingTable.getTableHeader().setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
         bookingTable.getTableHeader().setForeground(new Color(71, 85, 105));
         bookingTable.getTableHeader().setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
@@ -364,6 +362,14 @@ public class BookingForm extends JPanel {
     }
 
     // ── LOAD DỮ LIỆU ──────────────────────────────────────────────────────
+
+    public void refreshData() { loadInitialData(); }
+
+    /** Starts the new-booking flow for the F9 hardware shortcut. */
+    public void beginNewBooking() {
+        btnSelectCustomer.requestFocusInWindow();
+        btnSelectCustomer.doClick();
+    }
 
     private void loadInitialData() {
         cbRoom.removeAllItems();
@@ -700,7 +706,7 @@ public class BookingForm extends JPanel {
                 super.paintComponent(g);
             }
         };
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setForeground(Color.WHITE);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
@@ -711,7 +717,7 @@ public class BookingForm extends JPanel {
 
     private JButton createGhostBtn(String text) {
         JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btn.setForeground(MUTED);
         btn.setFocusPainted(false);
         btn.setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));

@@ -8,7 +8,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.List;
 import java.util.ArrayList;
 import quanlykhachsan.backend.user.User;
@@ -81,10 +80,10 @@ public class PersonnelForm extends JPanel {
             new EmptyBorder(10, 16, 10, 16)
         ));
         JLabel pageTitle = new JLabel("Quản lý Người dùng & Phân quyền");
-        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         pageTitle.setForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         lblStatus = new JLabel(" ");
-        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         statusBar.add(pageTitle, BorderLayout.WEST);
         statusBar.add(lblStatus, BorderLayout.EAST);
         add(statusBar, BorderLayout.NORTH);
@@ -202,9 +201,9 @@ public class PersonnelForm extends JPanel {
         searchBar.setBorder(new EmptyBorder(12, 16, 12, 16));
 
         JLabel searchIcon = new JLabel("TÌM: ");
-        searchIcon.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        searchIcon.setFont(new Font("Segoe UI", Font.BOLD, 14));
         txtSearch = new JTextField();
-        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txtSearch.setBorder(BorderFactory.createCompoundBorder(
             new LineBorder(BORDER_CLR, 1, true),
             new EmptyBorder(6, 10, 6, 10)
@@ -212,7 +211,7 @@ public class PersonnelForm extends JPanel {
         txtSearch.putClientProperty("JTextField.placeholderText", "Tìm kiếm nhân viên...");
 
         btnRefresh = new JButton("Tải Lại");
-        btnRefresh.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btnRefresh.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btnRefresh.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnRefresh.addActionListener(e -> loadUsers());
 
@@ -228,15 +227,15 @@ public class PersonnelForm extends JPanel {
         };
 
         userTable = new JTable(tableModel);
-        userTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        userTable.setRowHeight(38);
+        userTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        userTable.setRowHeight(quanlykhachsan.frontend.utils.UIThemeTokens.TABLE_ROW_HEIGHT);
         userTable.setShowGrid(false);
         userTable.setIntercellSpacing(new Dimension(0, 0));
         userTable.setSelectionBackground(ROW_SELECT);
         userTable.setSelectionForeground(quanlykhachsan.frontend.utils.ThemeManager.getTextMain());
         userTable.setFocusable(false);
 
-        userTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        userTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         userTable.getTableHeader().setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
         userTable.getTableHeader().setForeground(new Color(71, 85, 105));
         userTable.getTableHeader().setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
@@ -514,7 +513,7 @@ public class PersonnelForm extends JPanel {
 
     private JTextField createField(String placeholder) {
         JTextField f = new JTextField();
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         f.putClientProperty("JTextField.placeholderText", placeholder);
         f.setBorder(BorderFactory.createCompoundBorder(
             new LineBorder(BORDER_CLR, 1, true) {
@@ -544,7 +543,7 @@ public class PersonnelForm extends JPanel {
                 super.paintComponent(g);
             }
         };
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setForeground(Color.WHITE);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
@@ -555,7 +554,7 @@ public class PersonnelForm extends JPanel {
 
     private JButton createGhostButton(String text) {
         JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btn.setForeground(MUTED);
         btn.setBackground(quanlykhachsan.frontend.utils.ThemeManager.isDarkMode() ? new Color(30, 41, 59) : new Color(241, 245, 249));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

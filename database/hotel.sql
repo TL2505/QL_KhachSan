@@ -7,7 +7,7 @@ USE hotel_prod_db;
 
 -- CLEANUP OLD TABLES
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS loyalty_histories, reviews, promotions, messages, payments, invoices, service_usage, services, booking_details, bookings, customers, rooms, room_types, users, roles;
+DROP TABLE IF EXISTS loyalty_histories, reviews, promotions, messages, payments, invoices, service_usage, services, folio_transactions, folios, booking_details, bookings, customers, audit_checkpoints, idempotency_keys, rooms, room_types, users, roles;
 DROP VIEW IF EXISTS v_monthly_revenue;
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -66,12 +66,15 @@ CREATE TABLE IF NOT EXISTS rooms (
   room_number VARCHAR(20) NOT NULL UNIQUE,
   room_type_id INT NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
-  status ENUM('available', 'booked', 'occupied', 'maintenance', 'cleaning', 'out_of_service') DEFAULT 'available',
+  status ENUM('vacant_clean', 'vacant_dirty', 'occupied_clean', 'occupied_dirty', 'out_of_order', 'reserved') NOT NULL DEFAULT 'vacant_clean',
+  -- Optimistic Locking: tăng 1 mỗi lần cập nhật trạng thái để phát hiện giao dịch đồng thời xung đột
+  version INT NOT NULL DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   -- RESTRICT: Không cho xóa loại phòng nếu có phòng đang cấu hình loại này
   CONSTRAINT fk_rooms_room_types FOREIGN KEY (room_type_id) REFERENCES room_types(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-  INDEX idx_room_number (room_number),
+  -- Composite index phục vụ Optimistic Locking query: WHERE room_number = ? AND version = ?
+  INDEX idx_room_number_version (room_number, version),
   INDEX idx_room_status (status)
 ) ENGINE=InnoDB;
 
@@ -106,7 +109,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   check_in_date DATETIME NOT NULL,
   check_out_date DATETIME NOT NULL,
   total_price DECIMAL(10, 2) DEFAULT 0,
-  status ENUM('pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled') DEFAULT 'pending',
+  status ENUM('pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'no_show') DEFAULT 'pending',
   customer_type ENUM('OTA', 'Walk-in', 'Corporate') DEFAULT 'Walk-in',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -262,6 +265,83 @@ CREATE TABLE IF NOT EXISTS loyalty_histories (
 ) ENGINE=InnoDB;
 
 -- --------------------------------------------------------
+-- Table: idempotency_keys
+-- Lưu kết quả của các request POST có thể xảy ra trùng lặp (POST /bookings, POST /folios/{id}/pay).
+-- Cho phép engine deduplication trả về chính xác response cũ mà không tạo bản ghi mới.
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS idempotency_keys (
+  id VARCHAR(64) NOT NULL PRIMARY KEY,          -- UUIDv4 do client gửi trong header Idempotency-Key
+  request_hash VARCHAR(64) NOT NULL,            -- SHA-256 hash của (method + path + body) để phát hiện thay đổi payload
+  response_body LONGTEXT NOT NULL,              -- JSON response body đã được serialize đầy đủ
+  status_code INT NOT NULL,                     -- HTTP status code của response (200, 201, ...)
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_idempotency_created_at (created_at) -- Index cho TTL cleanup job (xóa key hết hạn sau 24h)
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
+-- Table: folios
+-- Hóa đơn tổng hợp (Folio) cho mỗi booking. Một booking có thể có nhiều folio:
+-- MASTER (tiền phòng, thuế) và GUEST/INCIDENTAL (dịch vụ phát sinh).
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS folios (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  booking_id INT NOT NULL,
+  folio_type ENUM('master', 'guest', 'incidental') NOT NULL DEFAULT 'master',
+  balance DECIMAL(12, 2) NOT NULL DEFAULT 0.00, -- Số dư = Tổng debit - Tổng credit
+  status ENUM('open', 'closed', 'settled') NOT NULL DEFAULT 'open',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  -- RESTRICT: Không cho xóa booking nếu còn folio đang mở
+  CONSTRAINT fk_folios_bookings FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  INDEX idx_folio_booking_id (booking_id),
+  INDEX idx_folio_status (status)
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
+-- Table: folio_transactions
+-- Bản ghi kế toán kép (double-entry) của từng giao dịch trên folio:
+-- Debit = phát sinh chi phí (tiền phòng, dịch vụ, thuế).
+-- Credit = thanh toán hoặc điều chỉnh giảm (deposit, payment, discount).
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS folio_transactions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  folio_id INT NOT NULL,
+  transaction_type ENUM('debit', 'credit') NOT NULL,
+  charge_type VARCHAR(50) NOT NULL,             -- 'room_rate', 'vat', 'service_charge', 'payment', 'deposit', 'penalty', 'adjustment'
+  description VARCHAR(255),
+  amount DECIMAL(12, 2) NOT NULL,               -- Luôn dương; dấu được xác định bởi transaction_type
+  business_date DATE NOT NULL,                  -- Ngày kinh doanh (không phải ngày tạo bản ghi) để hỗ trợ Night Audit POS recon
+  reference_id VARCHAR(64) NULL,               -- Idempotency-Key tham chiếu hoặc mã giao dịch ngoại vi
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  -- CASCADE: Xóa folio thì xóa toàn bộ giao dịch con
+  CONSTRAINT fk_folio_transactions_folios FOREIGN KEY (folio_id) REFERENCES folios(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  INDEX idx_ft_folio_id (folio_id),
+  INDEX idx_ft_business_date (business_date)
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
+-- Table: audit_checkpoints
+-- Lưu trạng thái từng bước trong tiến trình Night Audit 7 bước.
+-- Cho phép phục hồi (resume) từ bước thất bại mà không cần chạy lại từ đầu,
+-- tránh Undo Log bloat và lock timeout trên MariaDB.
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS audit_checkpoints (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  audit_date DATE NOT NULL,                     -- Ngày kinh doanh đang được audit (ví dụ: 2026-10-13)
+  step_number INT NOT NULL,                     -- 1–7 tương ứng với 7 bước của Night Audit Engine
+  step_name VARCHAR(100) NOT NULL,              -- Tên mô tả bước: 'LOCK_SYSTEM', 'ROLL_ROOM_RATES', v.v.
+  status ENUM('pending', 'running', 'completed', 'failed') NOT NULL DEFAULT 'pending',
+  processed_count INT NOT NULL DEFAULT 0,       -- Số bản ghi đã xử lý trong bước này (cho chunking)
+  error_message TEXT NULL,                      -- Chi tiết lỗi nếu status = 'failed'
+  started_at DATETIME NULL,
+  completed_at DATETIME NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_audit_date_step (audit_date, step_number), -- Mỗi ngày chỉ có 1 bản ghi cho mỗi bước
+  INDEX idx_checkpoint_audit_date (audit_date),
+  INDEX idx_checkpoint_status (status)
+) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
 -- VIEWS & TRIGGERS
 -- --------------------------------------------------------
 
@@ -317,21 +397,21 @@ INSERT INTO `room_types` (`id`, `name`, `description`, `base_price`, `capacity`,
 
 
 INSERT INTO `rooms` (`id`, `room_number`, `room_type_id`, `price`, `status`, `created_at`, `updated_at`) VALUES
-(1, '101', 1, 500000.00, 'cleaning', '2026-04-20 04:03:26', '2026-04-20 04:40:20'),
-(2, '102', 1, 500000.00, 'available', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(3, '103', 1, 500000.00, 'available', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(4, '104', 1, 500000.00, 'cleaning', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(5, '105', 1, 500000.00, 'available', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(6, '201', 2, 1000000.00, 'booked', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(7, '202', 2, 1000000.00, 'available', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(8, '203', 2, 1000000.00, 'occupied', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(9, '204', 2, 1000000.00, 'available', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(10, '205', 2, 1000000.00, 'maintenance', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(11, '301', 3, 1500000.00, 'occupied', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(12, '302', 3, 1500000.00, 'maintenance', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(13, '303', 3, 1500000.00, 'available', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(14, '304', 3, 1500000.00, 'available', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(15, '305', 3, 1500000.00, 'booked', '2026-04-20 04:03:26', '2026-04-20 04:03:26');
+(1, '101', 1, 500000.00, 'vacant_dirty', '2026-04-20 04:03:26', '2026-04-20 04:40:20'),
+(2, '102', 1, 500000.00, 'vacant_clean', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(3, '103', 1, 500000.00, 'vacant_clean', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(4, '104', 1, 500000.00, 'vacant_dirty', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(5, '105', 1, 500000.00, 'vacant_clean', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(6, '201', 2, 1000000.00, 'reserved', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(7, '202', 2, 1000000.00, 'vacant_clean', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(8, '203', 2, 1000000.00, 'occupied_clean', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(9, '204', 2, 1000000.00, 'vacant_clean', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(10, '205', 2, 1000000.00, 'out_of_order', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(11, '301', 3, 1500000.00, 'occupied_clean', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(12, '302', 3, 1500000.00, 'out_of_order', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(13, '303', 3, 1500000.00, 'vacant_clean', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(14, '304', 3, 1500000.00, 'vacant_clean', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
+(15, '305', 3, 1500000.00, 'reserved', '2026-04-20 04:03:26', '2026-04-20 04:03:26');
 
 
 INSERT INTO `customers` (`id`, `full_name`, `identity_card`, `phone`, `email`, `address`, `is_vip`, `loyalty_points`, `total_loyalty_points`, `loyalty_level`, `created_at`, `updated_at`) VALUES
@@ -419,7 +499,7 @@ INSERT INTO `bookings` (`id`, `customer_id`, `room_id`, `check_in_date`, `check_
 (60, 8, 12, '2025-07-24 04:00:00', '2025-07-27 12:00:00', 4500000.00, 'checked_out', 'Walk-in', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
 (61, 7, 15, '2026-01-25 07:00:00', '2026-01-26 12:00:00', 1500000.00, 'checked_out', 'Corporate', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
 (62, 10, 15, '2025-07-23 15:00:00', '2025-07-25 12:00:00', 3000000.00, 'checked_out', 'Walk-in', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
-(63, 4, 1, '2026-04-08 05:00:00', '2026-04-09 12:00:00', 500000.00, 'paid', 'OTA', '2026-04-20 04:03:26', '2026-04-20 04:40:20'),
+(63, 4, 1, '2026-04-08 05:00:00', '2026-04-09 12:00:00', 500000.00, 'checked_out', 'OTA', '2026-04-20 04:03:26', '2026-04-20 04:40:20'),
 (64, 11, 13, '2025-06-29 15:00:00', '2025-07-04 12:00:00', 7500000.00, 'checked_in', 'Walk-in', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
 (65, 7, 1, '2026-02-07 20:00:00', '2026-02-08 12:00:00', 500000.00, 'confirmed', 'Walk-in', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
 (66, 5, 13, '2025-06-28 01:00:00', '2025-06-30 12:00:00', 3000000.00, 'confirmed', 'Walk-in', '2026-04-20 04:03:26', '2026-04-20 04:03:26'),
@@ -533,5 +613,20 @@ INSERT INTO `loyalty_histories` (`id`, `customer_id`, `points`, `type`, `descrip
 (4, 4, 5000, 'earn', 'Điểm thưởng từ booking ID 4 (Khách hàng đặc biệt)', '2026-04-20 04:03:26'),
 (5, 8, 2200, 'earn', 'Tích điểm theo chương trình khuyến mãi đầu năm', '2026-04-20 04:03:26'),
 (6, 11, 800, 'earn', 'Khách hàng thân thiết check-in nhiều lần', '2026-04-20 04:03:26');
+
+-- ===================================================
+-- SECURITY: PHYSICAL BOUNDARY FOR AI GATEWAY
+-- ===================================================
+CREATE USER IF NOT EXISTS 'ai_reader'@'%' IDENTIFIED BY 'ai_read_secure_pass_2026';
+
+-- Cấp quyền SELECT trên các danh mục công khai
+GRANT SELECT ON hotel_prod_db.rooms TO 'ai_reader'@'%';
+GRANT SELECT ON hotel_prod_db.room_types TO 'ai_reader'@'%';
+GRANT SELECT ON hotel_prod_db.promotions TO 'ai_reader'@'%';
+GRANT SELECT ON hotel_prod_db.services TO 'ai_reader'@'%';
+
+-- TUYỆT ĐỐI KHÔNG CẤP QUYỀN trên: users, customers, bookings, folios, payments
+FLUSH PRIVILEGES;
+
 
 
