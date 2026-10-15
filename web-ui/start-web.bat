@@ -1,7 +1,10 @@
 @echo off
 title Aurelia Hotel Web UI
-echo Dang khoi dong Web UI tai http://localhost:3000...
-echo (Dam bao Backend Java dang chay tai http://localhost:8081)
+echo ======================================================
+echo  Aurelia Grand Palace - 5-Star Web Booking Engine
+echo  Khoi dong Web Server tai http://localhost:3000...
+echo ======================================================
 set PORT=3000
+start http://localhost:3000
 node server.js
 pause

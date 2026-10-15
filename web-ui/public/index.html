@@ -1,9 +1,920 @@
+<<<<<<< HEAD
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aurelia · Đặt phòng</title><link rel="stylesheet" href="css/booking.css"><link rel="stylesheet" href="css/payment.css"><script type="module" src="js/booking-core.js"></script><link rel="stylesheet" href="css/shared-theme.css"><script type="module" src="js/shared/theme.js"></script></head>
-<body><a class="skip-link" href="#rooms-heading">Đi đến nội dung</a><header><a class="brand" href="index.html">AURELIA <span>SAIGON</span></a><div class="header-actions"><button id="theme-toggle" type="button" class="secondary" data-text-label="true" aria-label="Đổi giao diện">Giao diện tối</button><a href="portal.html">Cổng nhân viên & khách hàng ↗</a></div></header><main>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aurelia · Đặt phòng</title><link rel="stylesheet" href="css/booking.css"><link rel="stylesheet" href="css/payment.css"><script type="module" src="js/booking-core.js"></script></head>
+<body><header><a class="brand" href="index.html">AURELIA <span>SAIGON</span></a><a href="portal.html">Cổng nhân viên & khách hàng ↗</a></header><main>
 <section class="hero"><p class="eyebrow">CHÀO MỪNG ĐẾN THÀNH PHỐ HỒ CHÍ MINH</p><h1>Một kỳ nghỉ<br>đáng nhớ.</h1><p>Chọn ngày lưu trú và tìm phòng phù hợp với bạn.</p></section>
 <form id="search-form" class="search" aria-label="Tìm phòng"><label>Nhận phòng<input id="check-in" type="date" required></label><label>Trả phòng<input id="check-out" type="date" required></label><label>Hạng phòng<select id="room-category"><option value="">Tất cả hạng phòng</option></select></label><button id="search-button" type="submit">Tìm phòng trống</button></form>
 <p id="message" role="status" aria-live="polite"></p><section aria-labelledby="rooms-heading"><div class="section-title"><h2 id="rooms-heading">Phòng dành cho bạn</h2><span id="room-count"></span></div><div id="rooms" class="rooms"></div></section>
 <section id="reservation" class="reservation" hidden><div><p class="eyebrow">ĐẶT PHÒNG TRỰC TIẾP</p><h2 id="selected-room"></h2><div id="quote" role="status"></div><p id="occupancy-price"></p><p>Giá được xác nhận từ hệ thống khách sạn.</p><label>Mã giảm giá / Voucher<input id="voucher-code" maxlength="50" autocomplete="off"></label><button id="apply-voucher" type="button" class="secondary">Áp dụng</button><p id="voucher-status" role="status"></p></div><form id="guest-form"><label>Họ và tên<input id="guest-name" required maxlength="100" autocomplete="name"></label><label>Số điện thoại<input id="guest-phone" type="tel" required pattern="(0|\+84)[35789][0-9]{8}" autocomplete="tel" placeholder="0901234567"></label><label>Email (không bắt buộc)<input id="guest-email" type="email" maxlength="100" autocomplete="email"></label><button id="reserve-button" type="submit">Xác thực & đặt phòng</button></form></section>
 <section id="payment-step" class="payment-step" hidden aria-live="polite"></section><section id="receipt" class="receipt" hidden aria-live="polite"><p class="eyebrow">ĐẶT PHÒNG ĐÃ ĐƯỢC XÁC NHẬN</p><h2>Cảm ơn bạn.</h2><p id="booking-reference"></p><p id="booking-details"></p><p id="booking-payment"></p><p>Vui lòng liên hệ lễ tân để được hỗ trợ về thanh toán và kỳ lưu trú.</p></section></main>
 <dialog id="otp-dialog" aria-labelledby="otp-title"><form id="otp-form"><button id="close-otp" class="close" type="button" aria-label="Đóng">×</button><p class="eyebrow">XÁC THỰC KHÁCH HÀNG</p><h2 id="otp-title">Nhập mã xác thực</h2><p>Mã có hiệu lực trong 5 phút.</p><div id="otp-digits" class="otp-digits"></div><p id="otp-error" role="alert"></p><button id="verify-otp" type="submit">Xác nhận</button><button id="resend-otp" type="button" class="secondary">Gửi lại mã</button></form></dialog><footer>Aurelia Saigon · Dịch vụ hỗ trợ từ lễ tân</footer></body></html>
+=======
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aurelia Grand Palace | Khách Sạn Nghỉ Dưỡng 5★ Quốc Tế</title>
+  <meta name="description" content="Khám phá Aurelia Grand Palace - Tuyệt tác nghỉ dưỡng 5 sao quốc tế bên bờ Vịnh Ngọc. Dịch vụ quản gia 24/7, ẩm thực thượng hạng và hồ bơi vô cực chân mây.">
+
+  <!-- Google Fonts: Playfair Display (Serif Luxury) & Plus Jakarta Sans (Modern Clean Body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#0b0f17',
+            slateNight: '#131b2e',
+            slateSurface: '#1a233a',
+            goldChampagne: '#d4af37',
+            goldSoft: '#f3e5ab',
+            goldDark: '#aa820a'
+          },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Native CSS3 Luxury Design Tokens -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    // Protocol guard: Warn user if attempting to run directly via file:/// due to browser ES Module CORS policies
+    if (window.location.protocol === 'file:') {
+      console.warn('[Aurelia Luxury PMS] Trình duyệt chặn nạp JavaScript ES Modules trên giao thức file:/// theo chính sách CORS của W3C (Origin: null). Vui lòng khởi chạy qua máy chủ Web: node web-ui/server.js hoặc nhấp đúp start-web.bat và truy cập http://localhost:3000');
+      window.addEventListener('DOMContentLoaded', () => {
+        const warningBanner = document.createElement('div');
+        warningBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:linear-gradient(135deg,#991b1b,#b45309);color:#ffffff;padding:12px 16px;text-align:center;font-size:13px;font-family:sans-serif;box-shadow:0 8px 30px rgba(0,0,0,0.8);border-bottom:1px solid #f59e0b;display:flex;align-items:center;justify-content:center;gap:12px;';
+        warningBanner.innerHTML = '<span>⚠️ <strong>Cảnh báo giao thức file:///</strong>: Trình duyệt chặn JavaScript ES Modules qua file:///. Vui lòng chạy <code>node web-ui/server.js</code> hoặc mở <code>start-web.bat</code> rồi truy cập <a href="http://localhost:3000" style="color:#fef08a;text-decoration:underline;font-weight:bold;">http://localhost:3000</a> để trải nghiệm đầy đủ!</span><button onclick="this.parentElement.remove()" style="background:rgba(0,0,0,0.4);border:none;color:#fff;border-radius:999px;width:24px;height:24px;cursor:pointer;font-weight:bold;">✕</button>';
+        document.body.prepend(warningBanner);
+      });
+    }
+  </script>
+</head>
+<body class="bg-obsidian text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950 min-h-screen flex flex-col justify-between">
+
+  <!-- =========================================================================
+       1. HEADER & NAVIGATION (Thanh điều hướng sang trọng & Sticky CTA)
+       ========================================================================= -->
+  <header id="main-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4 px-4 sm:px-8">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      
+      <!-- Brand Logo & 5-Star Luxury Badge -->
+      <a href="#hero" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-full border border-amber-400/40 bg-slate-900/80 flex items-center justify-center text-amber-300 shadow-md group-hover:border-amber-400 group-hover:scale-105 transition-all">
+          <i data-lucide="crown" class="w-5 h-5 fill-amber-400 text-amber-400"></i>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-serif text-lg sm:text-xl font-bold tracking-wider text-white group-hover:text-amber-200 transition-colors uppercase">
+            Aurelia <span class="text-gold-gradient font-light">Palace</span>
+          </span>
+          <span class="text-[9px] tracking-widest uppercase font-semibold text-amber-400/90 flex items-center gap-1">
+            <i data-lucide="sparkle" class="w-2.5 h-2.5"></i> 5★ Luxury Hotel & Resort
+          </span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Links -->
+      <nav class="hidden lg:flex items-center gap-7 text-xs font-semibold uppercase tracking-wider text-slate-300">
+        <a href="#hero" class="hover:text-amber-300 transition-colors py-1" data-i18n="navHome">Trang Chủ</a>
+        <a href="#rooms" class="hover:text-amber-300 transition-colors py-1" data-i18n="navRooms">Hạng Phòng</a>
+        <a href="#services" class="hover:text-amber-300 transition-colors py-1" data-i18n="navServices">Dịch Vụ</a>
+        <a href="#about" class="hover:text-amber-300 transition-colors py-1" data-i18n="navAbout">Giới Thiệu</a>
+        <a href="#reviews" class="hover:text-amber-300 transition-colors py-1" data-i18n="navReviews">Đánh Giá</a>
+        <a href="#gallery" class="hover:text-amber-300 transition-colors py-1" data-i18n="navGallery">Bộ Sưu Tập</a>
+        <a href="#contact" class="hover:text-amber-300 transition-colors py-1" data-i18n="navContact">Liên Hệ</a>
+      </nav>
+
+      <!-- Right Actions: Language, Currency, Sticky Book Now CTA -->
+      <div class="flex items-center gap-3">
+        
+        <!-- Language Switcher -->
+        <div class="relative hidden sm:block">
+          <select id="lang-selector" class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
+            <option value="vi">VI 🇻🇳</option>
+            <option value="en">EN 🇬🇧</option>
+          </select>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+        </div>
+
+        <!-- Currency Switcher -->
+        <div class="relative hidden sm:block">
+          <select id="currency-selector" class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
+            <option value="VND">VND (₫)</option>
+            <option value="USD">USD ($)</option>
+          </select>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+        </div>
+
+        <!-- Book Now Button (Metallic Gold CTA) -->
+        <button type="button" id="header-book-now" class="btn-gold px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="calendar" class="w-4 h-4"></i>
+          <span data-i18n="btnBookNow">Đặt Phòng</span>
+        </button>
+
+        <!-- Mobile Menu Trigger -->
+        <button type="button" id="mobile-menu-btn" class="lg:hidden w-10 h-10 rounded-xl bg-slate-900/80 border border-amber-500/30 flex items-center justify-center text-amber-400">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer Menu -->
+  <div id="mobile-drawer" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl p-6 flex flex-col justify-between">
+    <div>
+      <div class="flex items-center justify-between pb-6 border-b border-amber-500/20">
+        <div class="flex items-center gap-2">
+          <i data-lucide="crown" class="w-5 h-5 fill-amber-400 text-amber-400"></i>
+          <span class="font-serif text-lg font-bold text-white uppercase">Aurelia Palace</span>
+        </div>
+        <button type="button" id="close-drawer-btn" class="w-9 h-9 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <nav class="flex flex-col gap-4 text-sm font-semibold uppercase tracking-wider text-slate-300 mt-6">
+        <a href="#hero" class="hover:text-amber-300 py-2 border-b border-slate-800" onclick="document.getElementById('mobile-drawer').classList.add('hidden')">Trang Chủ</a>
+        <a href="#rooms" class="hover:text-amber-300 py-2 border-b border-slate-800" onclick="document.getElementById('mobile-drawer').classList.add('hidden')">Hạng Phòng</a>
+        <a href="#services" class="hover:text-amber-300 py-2 border-b border-slate-800" onclick="document.getElementById('mobile-drawer').classList.add('hidden')">Dịch Vụ</a>
+        <a href="#about" class="hover:text-amber-300 py-2 border-b border-slate-800" onclick="document.getElementById('mobile-drawer').classList.add('hidden')">Giới Thiệu</a>
+        <a href="#reviews" class="hover:text-amber-300 py-2 border-b border-slate-800" onclick="document.getElementById('mobile-drawer').classList.add('hidden')">Đánh Giá</a>
+        <a href="#gallery" class="hover:text-amber-300 py-2 border-b border-slate-800" onclick="document.getElementById('mobile-drawer').classList.add('hidden')">Bộ Sưu Tập</a>
+        <a href="#contact" class="hover:text-amber-300 py-2 border-b border-slate-800" onclick="document.getElementById('mobile-drawer').classList.add('hidden')">Liên Hệ</a>
+      </nav>
+    </div>
+    <div class="pt-6 border-t border-amber-500/20 flex gap-4">
+      <button type="button" class="btn-gold flex-1 py-3 rounded-xl font-bold uppercase text-xs tracking-wider" onclick="document.getElementById('mobile-drawer').classList.add('hidden'); openBookingModal();">
+        Đặt Phòng Ngay
+      </button>
+    </div>
+  </div>
+
+
+  <!-- =========================================================================
+       2. HERO SECTION & FLOATING BOOKING BAR (Banner chính & Thanh tìm kiếm nổi)
+       ========================================================================= -->
+  <section id="hero" class="relative min-h-screen flex flex-col justify-center pt-28 pb-36 px-4 sm:px-8 overflow-hidden">
+    
+    <!-- Hero Background Image with Multi-layer Gradient -->
+    <div class="absolute inset-0 z-0">
+      <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=2000&q=85" alt="Aurelia Grand Palace" class="w-full h-full object-cover scale-105 animate-[pulse_10s_ease-in-out_infinite]">
+      <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/75 to-obsidian/40"></div>
+      <div class="absolute inset-0 bg-radial-at-c from-transparent via-obsidian/50 to-obsidian"></div>
+    </div>
+
+    <!-- Hero Content -->
+    <div class="relative z-10 max-w-5xl mx-auto text-center my-auto">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-amber-500/30 backdrop-blur-md mb-6 shadow-xl">
+        <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
+        <span class="text-xs uppercase tracking-widest font-semibold text-amber-300">
+          World Luxury Hotel Awards 2026 Winner
+        </span>
+      </div>
+
+      <h1 class="text-4xl sm:text-6xl md:text-7xl font-serif text-white font-medium tracking-tight leading-tight sm:leading-tight mb-6">
+        Khẳng Định <span class="text-gold-gradient italic">Đẳng Cấp</span> Thượng Lưu
+      </h1>
+
+      <p class="text-base sm:text-lg md:text-xl font-sans text-slate-300 max-w-2xl mx-auto font-light leading-relaxed mb-10">
+        Nơi hội tụ tinh hoa kiến trúc tân cổ điển Indochine, dịch vụ quản gia vương giả 24/7 và trải nghiệm nghỉ dưỡng 5 sao đỉnh cao bên bờ vịnh di sản.
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <a href="#rooms" class="btn-gold px-8 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider flex items-center gap-2 shadow-xl">
+          <span>Khám Phá Hạng Phòng</span>
+          <i data-lucide="arrow-down" class="w-4 h-4"></i>
+        </a>
+        <a href="#about" class="btn-outline-gold px-7 py-3.5 rounded-xl font-semibold uppercase text-xs tracking-wider flex items-center gap-2">
+          <span>Di Sản Khách Sạn</span>
+          <i data-lucide="compass" class="w-4 h-4"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- FLOATING BOOKING BAR (Search Widget) -->
+    <div class="relative z-20 max-w-6xl mx-auto w-full mt-12 sm:mt-16">
+      <div class="glass-panel rounded-2xl p-4 sm:p-6 shadow-2xl">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 items-end font-sans">
+          
+          <!-- Check-in Date -->
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center gap-1">
+              <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+              <span data-i18n="checkIn">Ngày Nhận Phòng</span>
+            </label>
+            <input type="date" id="search-checkin" class="w-full bg-slate-900/90 border border-slate-700/80 text-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:border-amber-400 focus:outline-none transition-colors">
+          </div>
+
+          <!-- Check-out Date -->
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center gap-1">
+              <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+              <span data-i18n="checkOut">Ngày Trả Phòng</span>
+            </label>
+            <input type="date" id="search-checkout" class="w-full bg-slate-900/90 border border-slate-700/80 text-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:border-amber-400 focus:outline-none transition-colors">
+          </div>
+
+          <!-- Guests Count -->
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center gap-1">
+              <i data-lucide="users" class="w-3.5 h-3.5"></i>
+              <span data-i18n="guests">Số Khách</span>
+            </label>
+            <select id="search-guests" class="w-full bg-slate-900/90 border border-slate-700/80 text-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:border-amber-400 focus:outline-none transition-colors">
+              <option value="1">1 Người lớn</option>
+              <option value="2" selected>2 Người lớn (Tiêu chuẩn)</option>
+              <option value="3">3 Người lớn</option>
+              <option value="4">4 Người lớn (Gia đình)</option>
+              <option value="6">Nhóm 5 - 6 khách</option>
+            </select>
+          </div>
+
+          <!-- Promo Code -->
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center gap-1">
+              <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+              <span data-i18n="promoCode">Mã Ưu Đãi</span>
+            </label>
+            <input type="text" id="search-promo" placeholder="LUXURY2026" class="w-full uppercase bg-slate-900/90 border border-slate-700/80 text-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:border-amber-400 focus:outline-none transition-colors placeholder:text-slate-600">
+          </div>
+
+          <!-- Check Availability CTA -->
+          <div class="sm:col-span-2 lg:col-span-1">
+            <button type="button" id="btn-check-availability" class="btn-gold w-full py-3 rounded-xl font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 shadow-lg">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <span data-i18n="searchBtn">Kiểm Tra Phòng</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- =========================================================================
+       3. ABOUT SECTION & QUICK METRICS GRID (Di sản & Giá trị 5 sao)
+       ========================================================================= -->
+  <section id="about" class="py-24 px-4 sm:px-8 border-t border-amber-500/10 relative">
+    <div class="max-w-7xl mx-auto">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <!-- Story & Philosophy -->
+        <div>
+          <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-amber-400 mb-3">
+            <i data-lucide="feather" class="w-4 h-4"></i>
+            <span>Di Sản & Triết Lý Nghỉ Dưỡng</span>
+          </div>
+          <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium leading-tight mb-6">
+            Kiệt Tác Kiến Trúc Hoàng Gia <br class="hidden sm:inline">Giữa Lòng <span class="text-gold-gradient">Vịnh Ngọc Di Sản</span>
+          </h2>
+          <p class="text-slate-300 font-sans text-sm sm:text-base leading-relaxed mb-6 font-light">
+            Khởi nguồn từ khao khát kiến tạo biểu tượng lưu trú xa hoa bậc nhất, Aurelia Grand Palace kết hợp hoàn hảo giữa nét cổ kính tráng lệ của kiến trúc Pháp thế kỷ 19 và sự tinh tế, duy mỹ của văn hóa Á Đông. 
+          </p>
+          <p class="text-slate-400 font-sans text-xs sm:text-sm leading-relaxed mb-8">
+            Mỗi căn phòng, mỗi sảnh đón tiếp đều là một bảo tàng nghệ thuật sống động. Chúng tôi tôn vinh sự riêng tư tuyệt đối, cá nhân hóa đến từng chi tiết nhỏ nhất bởi đội ngũ quản gia hoàng gia được đào tạo theo tiêu chuẩn khắt khe từ Thụy Sĩ.
+          </p>
+
+          <div class="flex items-center gap-6 pt-4 border-t border-amber-500/15">
+            <div>
+              <div class="font-serif text-xl text-amber-300 font-bold">Jean-Pierre Laurent</div>
+              <div class="text-xs text-slate-400 uppercase tracking-widest">Tổng Giám Đốc Điều Hành</div>
+            </div>
+            <div class="h-10 w-px bg-amber-500/20"></div>
+            <div class="font-serif italic text-amber-200/70 text-lg">
+              "Excellence is our tradition."
+            </div>
+          </div>
+        </div>
+
+        <!-- Featured Visual Card -->
+        <div class="relative">
+          <div class="relative rounded-3xl overflow-hidden glass-card p-2 shadow-2xl border border-amber-500/30">
+            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80" alt="Aurelia Palace Architecture" class="w-full h-[440px] object-cover rounded-2xl">
+          </div>
+          <!-- Floating Badge -->
+          <div class="absolute -bottom-6 -left-4 sm:left-6 glass-panel rounded-2xl p-4 sm:p-5 shadow-2xl flex items-center gap-4 max-w-xs border border-amber-400/40">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-white uppercase tracking-wider">Tiêu Chuẩn 5 Sao Toàn Cầu</div>
+              <div class="text-[11px] text-slate-300 mt-0.5">Xác nhận bởi Hiệp hội Khách sạn Hoàng Gia Quốc Tế</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-20 pt-12 border-t border-amber-500/15 text-center font-sans">
+        <div class="glass-card p-6 rounded-2xl">
+          <div class="text-3xl sm:text-4xl font-serif font-bold text-gold-gradient mb-1">200+</div>
+          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold">Phòng & Biệt Thự Hạng Sang</div>
+          <div class="text-[11px] text-slate-400 mt-1">100% hướng biển & vườn nhiệt đới</div>
+        </div>
+        <div class="glass-card p-6 rounded-2xl">
+          <div class="text-3xl sm:text-4xl font-serif font-bold text-gold-gradient mb-1">5★ Luxury</div>
+          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold">Tiêu Chuẩn Quốc Tế</div>
+          <div class="text-[11px] text-slate-400 mt-1">Chứng nhận xuất sắc toàn cầu 2026</div>
+        </div>
+        <div class="glass-card p-6 rounded-2xl">
+          <div class="text-3xl sm:text-4xl font-serif font-bold text-gold-gradient mb-1">Prime</div>
+          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold">Vị Trí Kim Cương</div>
+          <div class="text-[11px] text-slate-400 mt-1">Trực diện bờ biển Vịnh Ngọc</div>
+        </div>
+        <div class="glass-card p-6 rounded-2xl">
+          <div class="text-3xl sm:text-4xl font-serif font-bold text-gold-gradient mb-1">9.8 / 10</div>
+          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold">Độ Hài Lòng Tuyệt Đối</div>
+          <div class="text-[11px] text-slate-400 mt-1">Từ hơn 15,000 khách thượng lưu</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- =========================================================================
+       4. ROOM SHOWCASE / ROOM GRID (Bộ sưu tập hạng phòng đẳng cấp)
+       ========================================================================= -->
+  <section id="rooms" class="py-24 px-4 sm:px-8 border-t border-amber-500/10 bg-slateNight/40 relative">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Section Header -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-amber-400 mb-2">
+            <i data-lucide="key" class="w-4 h-4"></i>
+            <span>Không Gian Nghỉ Dưỡng Vương Giả</span>
+          </div>
+          <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium">
+            Bộ Sưu Tập <span class="text-gold-gradient">Hạng Phòng 5★</span>
+          </h2>
+        </div>
+        
+        <!-- Category Filter Pills -->
+        <div class="flex flex-wrap items-center gap-2 font-sans text-xs">
+          <button type="button" class="room-filter-tab bg-amber-500 text-slate-950 font-bold px-4 py-2 rounded-xl transition-all" data-category="all">
+            Tất Cả
+          </button>
+          <button type="button" class="room-filter-tab text-slate-400 hover:text-white px-4 py-2 rounded-xl transition-all" data-category="deluxe">
+            Deluxe
+          </button>
+          <button type="button" class="room-filter-tab text-slate-400 hover:text-white px-4 py-2 rounded-xl transition-all" data-category="suite">
+            Suite
+          </button>
+          <button type="button" class="room-filter-tab text-slate-400 hover:text-white px-4 py-2 rounded-xl transition-all" data-category="villa">
+            Villa
+          </button>
+          <button type="button" class="room-filter-tab text-slate-400 hover:text-white px-4 py-2 rounded-xl transition-all" data-category="family">
+            Family
+          </button>
+          <button type="button" class="room-filter-tab text-slate-400 hover:text-white px-4 py-2 rounded-xl transition-all" data-category="penthouse">
+            Penthouse
+          </button>
+        </div>
+      </div>
+
+      <!-- Dynamic Rooms Grid -->
+      <div id="rooms-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        <!-- Rendered dynamically by app.js from GET /api/v1/rooms -->
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- =========================================================================
+       5. AMENITIES & SERVICES SECTION (Tiện ích & Dịch vụ 5 sao)
+       ========================================================================= -->
+  <section id="services" class="py-24 px-4 sm:px-8 border-t border-amber-500/10 relative">
+    <div class="max-w-7xl mx-auto">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-amber-400 mb-2">
+          <i data-lucide="gem" class="w-4 h-4"></i>
+          <span>Đặc Quyền Thượng Lưu</span>
+        </div>
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium mb-4">
+          Dịch Vụ & Tiện Ích <span class="text-gold-gradient">Đỉnh Cao</span>
+        </h2>
+        <p class="text-slate-300 font-sans text-sm sm:text-base font-light">
+          Hệ sinh thái tiện ích khép kín đáp ứng trọn vẹn mọi phong cách sống xa hoa, từ ẩm thực sao Michelin đến liệu trình phục hồi sinh lực chuyên sâu.
+        </p>
+      </div>
+
+      <!-- 6 Core Services Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        
+        <!-- 1. Infinity Pool -->
+        <div class="glass-card p-8 rounded-2xl flex flex-col justify-between group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
+              <i data-lucide="waves" class="w-7 h-7"></i>
+            </div>
+            <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
+              Hồ Bơi Vô Cực Chân Mây
+            </h3>
+            <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
+              Tọa lạc trên đỉnh tháp tầng 32 với tầm nhìn 360 độ ôm trọn biển trời. Hệ thống lọc nước khoáng điện phân muối biển và quầy pool bar sang trọng.
+            </p>
+          </div>
+          <div class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
+            <span>Mở cửa 06:00 - 22:00</span>
+          </div>
+        </div>
+
+        <!-- 2. Fine Dining Restaurant & Sky Bar -->
+        <div class="glass-card p-8 rounded-2xl flex flex-col justify-between group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
+              <i data-lucide="utensils-crossed" class="w-7 h-7"></i>
+            </div>
+            <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
+              Nhà Hàng Ẩm Thực 5★ & Sky Bar
+            </h3>
+            <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
+              Hành trình vị giác đỉnh cao với bếp trưởng chuẩn Michelin. Hầm rượu vang quý hiếm hơn 500 năm tuổi và quầy Sky Bar ngắm hoàng hôn rực rỡ.
+            </p>
+          </div>
+          <div class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
+            <span>Phục vụ 24/7 & Bếp Michelin</span>
+          </div>
+        </div>
+
+        <!-- 3. Spa & Relaxation Therapies -->
+        <div class="glass-card p-8 rounded-2xl flex flex-col justify-between group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
+              <i data-lucide="flower2" class="w-7 h-7"></i>
+            </div>
+            <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
+              Aurelia Spa & Trị Liệu Trẻ Hóa
+            </h3>
+            <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
+              Tái tạo năng lượng với tinh dầu hữu cơ Thụy Điển, massage đá nóng núi lửa, phòng tắm xông hơi tuyết lạnh và bồn ngâm thủy lực thảo dược.
+            </p>
+          </div>
+          <div class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
+            <span>Phòng VIP Đơn & Đôi Biệt Lập</span>
+          </div>
+        </div>
+
+        <!-- 4. 24/7 Gym & Yoga Center -->
+        <div class="glass-card p-8 rounded-2xl flex flex-col justify-between group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
+              <i data-lucide="dumbbell" class="w-7 h-7"></i>
+            </div>
+            <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
+              Trung Tâm Thể Thao & Yoga 24/7
+            </h3>
+            <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
+              Trang thiết bị cardio và tập cơ đỉnh cao từ Technogym Ý. Huấn luyện viên cá nhân 1-kèm-1 và các buổi Yoga đón bình minh bên bờ cát trắng.
+            </p>
+          </div>
+          <div class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
+            <span>Technogym Hiện Đại 24/7</span>
+          </div>
+        </div>
+
+        <!-- 5. VIP Airport Transfer Service -->
+        <div class="glass-card p-8 rounded-2xl flex flex-col justify-between group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
+              <i data-lucide="car" class="w-7 h-7"></i>
+            </div>
+            <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
+              Đưa Đón Sân Bay VIP Rolls-Royce
+            </h3>
+            <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
+              Đoàn xe siêu sang Rolls-Royce Phantom và Maybach đưa đón tận cửa. Dịch vụ Fast-track thủ tục an ninh hàng không và đón tiếp tại phòng chờ VIP.
+            </p>
+          </div>
+          <div class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
+            <span>Fast-Track & Check-in Trên Xe</span>
+          </div>
+        </div>
+
+        <!-- 6. International Conference Center -->
+        <div class="glass-card p-8 rounded-2xl flex flex-col justify-between group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
+              <i data-lucide="building-2" class="w-7 h-7"></i>
+            </div>
+            <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
+              Trung Tâm Hội Nghị & Sự Kiện Quốc Tế
+            </h3>
+            <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
+              Đại sảnh Grand Ballroom sức chứa 1,000 khách, trần cao 9m không cột. Hệ thống màn hình LED cong 4K và âm thanh ánh sáng hội nghị thượng đỉnh quốc gia.
+            </p>
+          </div>
+          <div class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
+            <span>Sức Chứa 1,000 Khách VIP</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- =========================================================================
+       6. TESTIMONIALS & SOCIAL PROOF (Minh chứng chất lượng & Đánh giá)
+       ========================================================================= -->
+  <section id="reviews" class="py-24 px-4 sm:px-8 border-t border-amber-500/10 bg-slateNight/40 relative">
+    <div class="max-w-7xl mx-auto">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-amber-400 mb-2">
+          <i data-lucide="heart" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
+          <span>Cảm Nhận Từ Giới Tinh Hoa</span>
+        </div>
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium mb-4">
+          Khách Hàng Nói Về <span class="text-gold-gradient">Aurelia Palace</span>
+        </h2>
+        <p class="text-slate-300 font-sans text-sm sm:text-base font-light">
+          Sự hài lòng tuyệt đối của những vị khách trân quý là thước đo danh giá nhất cho chuẩn mực 5 sao của chúng tôi.
+        </p>
+      </div>
+
+      <!-- Testimonial Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-16">
+        
+        <!-- Review 1 -->
+        <div class="glass-card p-8 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-1 text-amber-400 mb-4">
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+            </div>
+            <p class="text-slate-200 font-sans text-sm leading-relaxed italic font-light mb-6">
+              "Kỳ nghỉ tại Presidential Villa đã vượt qua mọi kỳ vọng của gia đình tôi. Hồ bơi riêng tuyệt đẹp, quản gia riêng chăm sóc chu đáo từng chi tiết. Chắc chắn tôi sẽ quay lại mỗi năm."
+            </p>
+          </div>
+          <div class="flex items-center gap-3 pt-4 border-t border-amber-500/15">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80" alt="Sophia Anderson" class="w-11 h-11 rounded-full object-cover border border-amber-400">
+            <div>
+              <div class="font-serif text-sm font-semibold text-white">Bà Sophia Anderson</div>
+              <div class="text-[11px] text-amber-300/80">CEO Quỹ Đầu Tư Tài Chính (Anh Quốc)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Review 2 -->
+        <div class="glass-card p-8 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-1 text-amber-400 mb-4">
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+            </div>
+            <p class="text-slate-200 font-sans text-sm leading-relaxed italic font-light mb-6">
+              "Ẩm thực tại nhà hàng L'Étoile và Sky Bar thực sự xuất sắc. Hương vị rượu vang và không gian ngắm vịnh biển từ tầng 32 là trải nghiệm không thể nào quên. Đội ngũ lễ tân vô cùng tinh tế."
+            </p>
+          </div>
+          <div class="flex items-center gap-3 pt-4 border-t border-amber-500/15">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80" alt="Trần Đình Hưng" class="w-11 h-11 rounded-full object-cover border border-amber-400">
+            <div>
+              <div class="font-serif text-sm font-semibold text-white">Ông Trần Đình Hưng</div>
+              <div class="text-[11px] text-amber-300/80">Nhà Sáng Lập Tập Đoàn Công Nghệ (Hà Nội)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Review 3 -->
+        <div class="glass-card p-8 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-1 text-amber-400 mb-4">
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+            </div>
+            <p class="text-slate-200 font-sans text-sm leading-relaxed italic font-light mb-6">
+              "Thủ tục đặt phòng và thanh toán VietQR diễn ra chỉ trong 1 phút, nhận mã phòng và hóa đơn điện tử tức thời. Dịch vụ spa Thụy Điển giúp tôi lấy lại toàn bộ sinh lực sau chuyến công tác dài."
+            </p>
+          </div>
+          <div class="flex items-center gap-3 pt-4 border-t border-amber-500/15">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80" alt="Elena Rostova" class="w-11 h-11 rounded-full object-cover border border-amber-400">
+            <div>
+              <div class="font-serif text-sm font-semibold text-white">Bà Elena Rostova</div>
+              <div class="text-[11px] text-amber-300/80">Nhiếp Ảnh Gia Quốc Tế (Singapore)</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Trust Badges & Certifications -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 rounded-2xl glass-panel text-center items-center">
+        <div class="p-3">
+          <div class="font-serif text-lg font-bold text-amber-300">TripAdvisor</div>
+          <div class="text-xs text-slate-300 font-semibold mt-0.5">Travellers' Choice 2026</div>
+          <div class="text-[10px] text-slate-400">Top 1% Khách Sạn Xa Xỉ Nhất</div>
+        </div>
+        <div class="p-3 border-l border-amber-500/15">
+          <div class="font-serif text-lg font-bold text-amber-300">Booking.com</div>
+          <div class="text-xs text-emerald-400 font-semibold mt-0.5">9.6 / 10 Exceptional</div>
+          <div class="text-[10px] text-slate-400">Từ 4,200+ đánh giá xác thực</div>
+        </div>
+        <div class="p-3 border-l border-amber-500/15">
+          <div class="font-serif text-lg font-bold text-amber-300">Agoda</div>
+          <div class="text-xs text-amber-300 font-semibold mt-0.5">Top Luxury Resort 2026</div>
+          <div class="text-[10px] text-slate-400">Dịch Vụ Khách Hàng Xuất Sắc</div>
+        </div>
+        <div class="p-3 border-l border-amber-500/15">
+          <div class="font-serif text-lg font-bold text-amber-300">Google Reviews</div>
+          <div class="text-xs text-amber-400 font-semibold mt-0.5">4.9 / 5.0 (2,800+ Votes)</div>
+          <div class="text-[10px] text-slate-400">Bảo Chứng Trải Nghiệm Thượng Lưu</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- =========================================================================
+       7. GALLERY SECTION & VANILLA JS LIGHTBOX (Bộ sưu tập & Lightbox)
+       ========================================================================= -->
+  <section id="gallery" class="py-24 px-4 sm:px-8 border-t border-amber-500/10 relative">
+    <div class="max-w-7xl mx-auto">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-amber-400 mb-2">
+            <i data-lucide="image" class="w-4 h-4"></i>
+            <span>Không Gian Tráng Lệ</span>
+          </div>
+          <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium">
+            Bộ Sưu Tập <span class="text-gold-gradient">Hình Ảnh</span>
+          </h2>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex flex-wrap items-center gap-3 border-b border-amber-500/20 font-sans text-xs">
+          <button type="button" class="gallery-tab pb-2 border-b-2 border-amber-400 text-amber-300 font-semibold transition-all" data-tab="all">
+            Tất Cả
+          </button>
+          <button type="button" class="gallery-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-white transition-all" data-tab="rooms">
+            Phòng Nghỉ
+          </button>
+          <button type="button" class="gallery-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-white transition-all" data-tab="dining">
+            Ẩm Thực & Bar
+          </button>
+          <button type="button" class="gallery-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-white transition-all" data-tab="amenities">
+            Tiện Ích & Spa
+          </button>
+          <button type="button" class="gallery-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-white transition-all" data-tab="views">
+            Cảnh Quan
+          </button>
+        </div>
+      </div>
+
+      <!-- Masonry Grid -->
+      <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <!-- Rendered by app.js -->
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- =========================================================================
+       8. FOOTER AREA (Chân trang toàn diện & Minh bạch chính sách)
+       ========================================================================= -->
+  <footer id="contact" class="pt-20 pb-12 px-4 sm:px-8 border-t border-amber-500/20 bg-slateNight/80 font-sans relative">
+    <div class="max-w-7xl mx-auto">
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
+        
+        <!-- Column 1: Brand & License -->
+        <div>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 rounded-full border border-amber-400/40 bg-slate-900 flex items-center justify-center text-amber-300">
+              <i data-lucide="crown" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
+            </div>
+            <span class="font-serif text-lg font-bold text-white uppercase tracking-wider">
+              Aurelia <span class="text-gold-gradient font-light">Palace</span>
+            </span>
+          </div>
+          <p class="text-slate-400 text-xs leading-relaxed mb-4 font-light">
+            Tuyệt tác kiến trúc và dịch vụ hiếu khách thượng lưu 5 sao quốc tế. Nơi mỗi khoảnh khắc đều trở thành kỷ niệm di sản vượt thời gian.
+          </p>
+          <div class="text-[11px] text-amber-300/80 space-y-1">
+            <div>Giấy phép kinh doanh lưu trú 5★:</div>
+            <div class="font-mono text-white">GP-0108868688/TCDL</div>
+            <div class="text-slate-400">Cấp bởi Tổng cục Du lịch Việt Nam</div>
+          </div>
+        </div>
+
+        <!-- Column 2: 24/7 Contact -->
+        <div>
+          <h4 class="font-serif text-base text-white font-medium uppercase tracking-wider mb-4 text-amber-300">
+            Liên Hệ 24/7
+          </h4>
+          <ul class="space-y-3 text-xs text-slate-300">
+            <li class="flex items-start gap-2.5">
+              <i data-lucide="map-pin" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+              <span>Số 88 Đại Lộ Hoàng Gia (Aurelia Boulevard), Bãi biển Vịnh Ngọc, Việt Nam</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="phone-call" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <a href="tel:+842438889999" class="hover:text-amber-300 font-mono text-sm font-semibold">+84 (0) 24 3888 9999</a>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="mail" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <a href="mailto:concierge@aureliahotel.com" class="hover:text-amber-300">concierge@aureliahotel.com</a>
+            </li>
+            <li class="pt-2">
+              <a href="https://maps.google.com" target="_blank" class="btn-outline-gold inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs">
+                <i data-lucide="navigation" class="w-3.5 h-3.5"></i> Mở Google Maps
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Column 3: Transparent Policies -->
+        <div>
+          <h4 class="font-serif text-base text-white font-medium uppercase tracking-wider mb-4 text-amber-300">
+            Chính Sách Khách Sạn
+          </h4>
+          <ul class="space-y-2.5 text-xs text-slate-300 font-light">
+            <li class="flex items-center gap-2">
+              <i data-lucide="check" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Giờ nhận phòng: <strong>Từ 14:00</strong></span>
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="check" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Giờ trả phòng: <strong>Trước 12:00 trưa</strong></span>
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Miễn phí hủy phòng trước 48 giờ</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="credit-card" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Hoàn cọc 100% trong 24 giờ làm việc</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Bảo mật thông tin khách hàng (ISO 27001)</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Column 4: Newsletter & Socials -->
+        <div>
+          <h4 class="font-serif text-base text-white font-medium uppercase tracking-wider mb-4 text-amber-300">
+            Bản Tin Thượng Lưu
+          </h4>
+          <p class="text-xs text-slate-400 mb-4 font-light">
+            Đăng ký để nhận thông tin ưu đãi độc quyền, dạ tiệc rượu vang và sự kiện văn hóa nghệ thuật định kỳ.
+          </p>
+          <form id="newsletter-form" class="space-y-2 mb-6">
+            <input type="email" id="newsletter-email" required placeholder="Nhập email của bạn..." class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3.5 py-2 text-xs focus:border-amber-400 focus:outline-none">
+            <button type="submit" class="btn-gold w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
+              Đăng Ký Ưu Đãi VIP
+            </button>
+          </form>
+          <div class="flex items-center gap-3">
+            <a href="#" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-amber-300 hover:bg-slate-700 flex items-center justify-center transition-colors">
+              <i data-lucide="facebook" class="w-4 h-4"></i>
+            </a>
+            <a href="#" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-amber-300 hover:bg-slate-700 flex items-center justify-center transition-colors">
+              <i data-lucide="instagram" class="w-4 h-4"></i>
+            </a>
+            <a href="#" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-amber-300 hover:bg-slate-700 flex items-center justify-center transition-colors">
+              <i data-lucide="linkedin" class="w-4 h-4"></i>
+            </a>
+            <a href="#" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-amber-300 hover:bg-slate-700 flex items-center justify-center transition-colors">
+              <i data-lucide="youtube" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Copyright Bar -->
+      <div class="pt-8 border-t border-amber-500/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-4">
+        <div>
+          © 2026 Aurelia Grand Luxury Hotel & Resort PMS Platform. Toàn bộ quyền được bảo lưu.
+        </div>
+        <div class="flex items-center gap-6">
+          <a href="#" class="hover:text-amber-300 transition-colors">Điều Khoản Dịch Vụ</a>
+          <a href="#" class="hover:text-amber-300 transition-colors">Chính Sách Bảo Mật</a>
+          <a href="#" class="hover:text-amber-300 transition-colors">Tiêu Chuẩn 5 Sao</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+
+  <!-- =========================================================================
+       9. QUICK-INTERACTION FLOATING WIDGETS (Thành phần tương tác nhanh)
+       ========================================================================= -->
+  
+  <!-- Floating Hotline (Call Button) with Radar Pulse -->
+  <div class="fixed bottom-6 left-6 z-40">
+    <a href="tel:+842438889999" class="floating-widget radar-pulse relative w-13 h-13 sm:w-14 sm:h-14 rounded-full btn-gold flex items-center justify-center text-slate-950 shadow-2xl group" title="Gọi Hotline 24/7">
+      <i data-lucide="phone" class="w-6 h-6 animate-[bounce_2s_infinite]"></i>
+    </a>
+  </div>
+
+  <!-- Floating Chat (Zalo / LiveChat) & Back to Top (Right Side) -->
+  <div class="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3">
+    
+    <!-- Back to Top Button -->
+    <button type="button" id="back-to-top" class="floating-widget opacity-0 pointer-events-none translate-y-4 transition-all duration-300 w-11 h-11 rounded-full bg-slate-900/90 border border-amber-500/30 text-amber-400 flex items-center justify-center shadow-xl hover:bg-amber-500 hover:text-slate-950" title="Về đầu trang">
+      <i data-lucide="chevron-up" class="w-5 h-5"></i>
+    </button>
+
+    <!-- Quick Concierge LiveChat Button -->
+    <button type="button" id="quick-chat-btn" class="floating-widget w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-slate-900/95 border border-amber-400 text-amber-300 flex items-center justify-center shadow-2xl hover:scale-105 transition-all group" title="Nhắn tin với Quản gia AI">
+      <i data-lucide="message-square" class="w-6 h-6"></i>
+    </button>
+  </div>
+
+
+  <!-- =========================================================================
+       MODALS: 3-STEP BOOKING MODAL, ROOM DETAIL MODAL, LIGHTBOX, TOASTS
+       ========================================================================= -->
+
+  <!-- 3-Step Booking Modal -->
+  <div id="booking-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+    <div class="modal-content glass-panel rounded-3xl w-full max-w-2xl p-6 sm:p-8 relative max-h-[92vh] overflow-y-auto my-auto shadow-2xl border border-amber-500/30">
+      
+      <!-- Close Button -->
+      <button type="button" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-800/80 text-slate-300 hover:text-white flex items-center justify-center" onclick="closeBookingModal()">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Content injected by app.js (Step 1, Step 2, Step 3) -->
+      <div id="booking-modal-body"></div>
+
+    </div>
+  </div>
+
+  <!-- Room Detail Modal -->
+  <div id="room-detail-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+    <div class="modal-content glass-panel rounded-3xl w-full max-w-3xl p-6 sm:p-8 relative max-h-[92vh] overflow-y-auto my-auto shadow-2xl border border-amber-500/30">
+      
+      <!-- Close Button -->
+      <button type="button" class="absolute top-5 right-5 z-10 w-9 h-9 rounded-full bg-slate-900/80 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700" onclick="closeRoomDetailModal()">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Content injected by app.js -->
+      <div id="room-detail-body"></div>
+
+    </div>
+  </div>
+
+  <!-- Vanilla JS Lightbox Modal -->
+  <div id="lightbox-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-4">
+    <button type="button" class="absolute top-6 right-6 w-11 h-11 rounded-full bg-slate-800/90 text-white flex items-center justify-center border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition-colors z-20" onclick="closeLightbox()">
+      <i data-lucide="x" class="w-6 h-6"></i>
+    </button>
+    <button type="button" class="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-slate-900/80 text-white flex items-center justify-center border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition-colors z-20" onclick="prevLightboxImage()">
+      <i data-lucide="chevron-left" class="w-6 h-6"></i>
+    </button>
+    <button type="button" class="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-slate-900/80 text-white flex items-center justify-center border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition-colors z-20" onclick="nextLightboxImage()">
+      <i data-lucide="chevron-right" class="w-6 h-6"></i>
+    </button>
+
+    <div class="relative max-w-5xl max-h-[80vh] flex flex-col items-center">
+      <img id="lightbox-image" src="" alt="Enlarged gallery visual" class="lightbox-img rounded-2xl object-contain shadow-2xl border border-amber-500/20">
+      <div id="lightbox-caption" class="mt-4 text-center"></div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Main ES Module Script -->
+  <script type="module" src="js/app.js"></script>
+
+</body>
+</html>
+>>>>>>> 741d755 (feat(web-ui): implement 5-star luxury booking engine, fix CORS preflight and add regression tests)

@@ -1,426 +1,1390 @@
-import {escapeHtml} from "./js/shared/ui.js";
-// Application Shell Controller & Router
-import { api, getApiBaseUrl, setApiBaseUrl, getAuthSession, setAuthSession } from "./api.js";
+/**
+ * ==========================================================================
+ * AURELIA GRAND LUXURY HOTEL - 5★ NO-BUILD APPLICATION CONTROLLER
+ * Native JavaScript ES Module
+ * Full Component Orchestration & 3-Step VietQR Booking State Machine
+ * ==========================================================================
+ */
 
-// Core View Modules
-import { loadAdminView } from "./js/view-admin.js";
-import { loadStaffView } from "./js/view-staff.js";
-import { loadCustomerView } from "./js/view-customer.js";
-import { loadProfileView } from "./js/view-shared.js";
-import { renderAdminCustomers } from "./js/admin/customers.js";
-import { presentationRole, isDepartmentalRole } from "./js/shared/roles.js";
+import {
+  getRooms,
+  submitBooking,
+  formatCurrency,
+  generateVietQRUrl,
+  LUXURY_ROOMS_CATALOG
+} from './api.js';
 
-document.addEventListener("DOMContentLoaded", () => {
-    initApp();
-});
+// Cross-environment safe global reference (Browser Window vs Node.js test environment)
+const _global = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
 
-// Define global pagination component renderer
-window.renderPaginationComponent = (containerId, totalItems, itemsPerPage, currentPage, onPageChange, onItemsPerPageChange) => {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+// Application State
+const state = {
+  language: (typeof localStorage !== 'undefined' ? localStorage.getItem('aurelia_lang') : null) || 'vi',
+  currency: (typeof localStorage !== 'undefined' ? localStorage.getItem('aurelia_currency') : null) || 'VND',
+  rooms: [],
+  filteredRooms: [],
+  selectedCategory: 'all',
+  activeGalleryTab: 'all',
+  
+  // Search parameters
+  search: {
+    checkIn: '',
+    checkOut: '',
+    adults: 2,
+    children: 0,
+    roomsCount: 1,
+    promoCode: ''
+  },
+  
+  // Booking modal flow
+  booking: {
+    step: 1, // 1: Review & Dates, 2: Guest Details, 3: Success & VietQR
+    room: null,
+    nights: 1,
+    roomSubtotal: 0,
+    discountAmount: 0,
+    vatAmount: 0,
+    serviceChargeAmount: 0,
+    totalAmount: 0,
+    bookingId: null,
+    guest: {
+      fullName: '',
+      phone: '',
+      email: '',
+      identityCard: '',
+      notes: ''
+    },
+    countdownTimer: null,
+    countdownSeconds: 900 // 15 minutes
+  },
+  
+  // Room detail modal
+  detailRoom: null,
 
-    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-    
-    // Safety boundaries
-    if (currentPage < 1) currentPage = 1;
-    if (currentPage > totalPages) currentPage = totalPages;
-
-    let html = `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding: 16px; border-top: 1px solid var(--border); font-size: 13px;">
-            <div style="display:flex; align-items:center; gap: 8px; color: var(--text-muted);">
-                <span>Hiển thị</span>
-                <select class="form-input" style="padding: 4px 8px; width: auto; font-size: 13px; height: 32px;" id="sel-per-page-${containerId}">
-                    <option value="5" ${itemsPerPage === 5 ? 'selected' : ''}>5</option>
-                    <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
-                    <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
-                    <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
-                </select>
-                <span>bản ghi / trang (Tổng: ${totalItems})</span>
-            </div>
-            
-            <div style="display:flex; align-items:center; gap: 4px;">
-                <button class="btn btn-secondary" style="padding: 4px 8px; min-width: 32px; height: 32px; font-size: 13px;" id="btn-prev-${containerId}" ${currentPage === 1 ? 'disabled' : ''}>&lt;</button>
-    `;
-
-    for (let i = 1; i <= totalPages; i++) {
-        if (totalPages > 5) {
-            if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
-                html += `<button class="btn ${i === currentPage ? 'btn-primary' : 'btn-secondary'}" style="padding: 4px 8px; min-width: 32px; height: 32px; font-size: 13px;" data-page="${i}">${i}</button>`;
-            } else if (i === currentPage - 2 || i === currentPage + 2) {
-                html += `<span style="padding: 4px; color: var(--text-muted);">...</span>`;
-            }
-        } else {
-            html += `<button class="btn ${i === currentPage ? 'btn-primary' : 'btn-secondary'}" style="padding: 4px 8px; min-width: 32px; height: 32px; font-size: 13px;" data-page="${i}">${i}</button>`;
-        }
-    }
-
-    html += `
-                <button class="btn btn-secondary" style="padding: 4px 8px; min-width: 32px; height: 32px; font-size: 13px;" id="btn-next-${containerId}" ${currentPage === totalPages ? 'disabled' : ''}>&gt;</button>
-            </div>
-        </div>
-    `;
-
-    container.innerHTML = html;
-
-    // Events
-    document.getElementById(`sel-per-page-${containerId}`).addEventListener("change", (e) => {
-        onItemsPerPageChange(parseInt(e.target.value));
-    });
-
-    if (currentPage > 1) {
-        document.getElementById(`btn-prev-${containerId}`).addEventListener("click", () => {
-            onPageChange(currentPage - 1);
-        });
-    }
-
-    if (currentPage < totalPages) {
-        document.getElementById(`btn-next-${containerId}`).addEventListener("click", () => {
-            onPageChange(currentPage + 1);
-        });
-    }
-
-    const pageBtns = container.querySelectorAll("button[data-page]");
-    pageBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const page = parseInt(btn.getAttribute("data-page"));
-            if (page !== currentPage) {
-                onPageChange(page);
-            }
-        });
-    });
+  // Lightbox
+  lightbox: {
+    images: [],
+    currentIndex: 0
+  }
 };
 
-function initApp() {
-    // 1. Setup API Connection Display
-    const apiBaseInput = document.getElementById("config-api-input");
-    const activeApiDisplay = document.getElementById("active-api-url");
-    const currentBase = getApiBaseUrl();
-    
-    apiBaseInput.value = currentBase;
-    if (activeApiDisplay) {
-        activeApiDisplay.textContent = currentBase;
-    }
+// Gallery Data with Categories
+const GALLERY_ITEMS = [
+  {
+    category: 'rooms',
+    title: 'Presidential Royal Villa',
+    subtitle: 'Hồ bơi tràn chân mây riêng tư 180m²',
+    image: 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    category: 'rooms',
+    title: 'Executive Heritage Suite',
+    subtitle: 'Nội thất gỗ sồi & sảnh tiếp khách Indochine',
+    image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    category: 'dining',
+    title: 'L\'Étoile Fine Dining Restaurant',
+    subtitle: 'Ẩm thực Pháp chuẩn sao Michelin',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    category: 'dining',
+    title: 'Aurelia 360° Sky Bar',
+    subtitle: 'Cocktail thượng hạng giữa trời sao',
+    image: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    category: 'amenities',
+    title: 'Hồ Bơi Vô Cực Chân Mây',
+    subtitle: 'Tầng 32 ôm trọn đường chân trời vịnh biển',
+    image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    category: 'amenities',
+    title: 'Aurelia Imperial Spa',
+    subtitle: 'Liệu pháp trẻ hóa tinh dầu Thụy Điển',
+    image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    category: 'views',
+    title: 'Hoàng Hôn Vịnh Ngọc',
+    subtitle: 'Tầm nhìn ngoạn mục từ ban công phòng Suite',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    category: 'views',
+    title: 'Toàn Cảnh Khách Sạn Về Đêm',
+    subtitle: 'Kiến trúc tân cổ điển lung linh bên đại lộ',
+    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
+  }
+];
 
-    // 2. Event Listener for Saving API Configuration
-    document.getElementById("btn-save-api-config").addEventListener("click", async () => {
-        const val = apiBaseInput.value.trim();
-        if (val) {
-            setApiBaseUrl(val);
-            if (activeApiDisplay) {
-                activeApiDisplay.textContent = getApiBaseUrl();
-            }
-            await window.showCustomAlert("Đã lưu địa chỉ kết nối API!");
-            closeModal("modal-api-config");
-            
-            // Re-check api health
-            // Health is reported by actual API requests; do not call an undefined helper.
-        }
-    });
+// Translations Dictionary (VI & EN)
+const I18N = {
+  vi: {
+    navHome: "Trang Chủ",
+    navRooms: "Hạng Phòng",
+    navServices: "Dịch Vụ & Tiện Ích",
+    navAbout: "Giới Thiệu",
+    navReviews: "Đánh Giá",
+    navGallery: "Bộ Sưu Tập",
+    navContact: "Liên Hệ",
+    btnBookNow: "Đặt Phòng",
+    searchBtn: "Kiểm Tra Phòng Trống",
+    perNight: "/ đêm",
+    viewDetails: "Xem Chi Tiết",
+    bookRoom: "Đặt Phòng Này",
+    checkIn: "Ngày Nhận Phòng",
+    checkOut: "Ngày Trả Phòng",
+    guests: "Số Khách",
+    rooms: "Số Phòng",
+    promoCode: "Mã Ưu Đãi"
+  },
+  en: {
+    navHome: "Home",
+    navRooms: "Rooms & Suites",
+    navServices: "Services & Amenities",
+    navAbout: "About Us",
+    navReviews: "Reviews",
+    navGallery: "Gallery",
+    navContact: "Contact",
+    btnBookNow: "Book Now",
+    searchBtn: "Check Availability",
+    perNight: "/ night",
+    viewDetails: "View Details",
+    bookRoom: "Book This Room",
+    checkIn: "Check-in Date",
+    checkOut: "Check-out Date",
+    guests: "Guests",
+    rooms: "Rooms",
+    promoCode: "Promo Code"
+  }
+};
 
-    document.getElementById("btn-config-api").addEventListener("click", (e) => {
-        e.preventDefault();
-        openModal("modal-api-config");
-    });
-
-    // 3. Routing toggle between login/register cards
-    document.getElementById("to-register").addEventListener("click", (e) => {
-        e.preventDefault();
-        document.getElementById("login-card").style.display = "none";
-        document.getElementById("register-card").style.display = "block";
-    });
-    document.getElementById("to-login").addEventListener("click", (e) => {
-        e.preventDefault();
-        document.getElementById("register-card").style.display = "none";
-        document.getElementById("login-card").style.display = "block";
-    });
-
-    // 4. Submit Authentication forms
-    document.getElementById("login-form").addEventListener("submit", handleLogin);
-    document.getElementById("register-form").addEventListener("submit", handleRegister);
-    document.getElementById("btn-logout").addEventListener("click", handleLogout);
-
-    // A 401 invalidates the saved session in api.js. Keep the shell in sync.
-    window.addEventListener("hotel:session-expired", () => {
-        setAuthSession(null);
-        showAuthPage();
-        const errorDiv = document.getElementById("login-error");
-        errorDiv.textContent = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-        errorDiv.style.display = "block";
-    });
-
-    // Shared theme.js initializes light/dark mode for both entry points.
-
-    // 6. Sidebar Toggle Logic
-    const sidebar = document.getElementById("app-sidebar");
-    const btnToggleSidebar = document.getElementById("btn-toggle-sidebar");
-    const sidebarToggleIcon = document.getElementById("sidebar-toggle-icon");
-    const isCompact = localStorage.getItem("sidebarCompact") === "true";
-    
-    if (sidebar && isCompact) {
-        sidebar.classList.add("compact");
-    }
-
-    if (btnToggleSidebar && sidebar) {
-        btnToggleSidebar.addEventListener("click", () => {
-            const compact = sidebar.classList.toggle("compact");
-            localStorage.setItem("sidebarCompact", compact);
-        });
-    }
-
-    // 7. Load Session state
-    const session = getAuthSession();
-    if (session) {
-        showAppShell(session);
-    } else {
-        showAuthPage();
-    }
+// ==========================================
+// INITIALIZATION
+// ==========================================
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', async () => {
+    initDefaultDates();
+    initEventListeners();
+    initScrollObservers();
+    await loadRooms();
+    renderGallery();
+    refreshLucideIcons();
+    applyLanguage(state.language);
+    updateCurrencyDisplay();
+  });
 }
 
-async function handleLogin(e) {
-    e.preventDefault();
-    const errorDiv = document.getElementById("login-error");
-    errorDiv.style.display = "none";
-
-    const username = document.getElementById("login-username").value.trim();
-    const password = document.getElementById("login-password").value;
-
-    try {
-        const data = await api.post("/auth/login", { username, password });
-        // Expected data structure: { userId, username, role, fullName, email, phone, customerId }
-        setAuthSession(data);
-        showAppShell(data);
-    } catch (err) {
-        errorDiv.textContent = err.message || "Lỗi đăng nhập!";
-        errorDiv.style.display = "block";
-    }
+// Refresh Lucide Icons Helper
+function refreshLucideIcons() {
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
-async function handleRegister(e) {
-    e.preventDefault();
-    const errorDiv   = document.getElementById("register-error");
-    const successDiv = document.getElementById("register-success");
-    const submitBtn  = e.target.querySelector("button[type='submit']");
-
-    errorDiv.style.display   = "none";
-    successDiv.style.display = "none";
-
-    const username    = document.getElementById("reg-username").value.trim();
-    const password    = document.getElementById("reg-password").value;
-    const fullName    = document.getElementById("reg-name").value.trim();
-    const identityCard = document.getElementById("reg-identity").value.trim();
-    const phone       = document.getElementById("reg-phone").value.trim();
-    const email       = document.getElementById("reg-email").value.trim();
-    const address     = document.getElementById("reg-address").value.trim();
-
-    // Disable button while submitting
-    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Đang xử lý..."; }
-
-    try {
-        await api.post("/auth/register", {
-            username, password, fullName, identityCard, phone, email, address
-        });
-
-        document.getElementById("register-form").reset();
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Đăng ký tài khoản"; }
-
-        // Hiển thị thông báo thành công với countdown
-        let countdown = 3;
-        const updateMsg = () => {
-            successDiv.innerHTML = `
-                <div style="display:flex;align-items:center;gap:8px;justify-content:center;">
-                    <i data-lucide="check-circle" style="width:16px;height:16px;color:var(--success);flex-shrink:0;"></i>
-                    <span>Đăng ký thành công! Chuyển về đăng nhập sau <strong>${countdown}s</strong>...</span>
-                </div>`;
-            successDiv.style.display = "block";
-            globalThis.lucide?.createIcons();
-        };
-        updateMsg();
-
-        const timer = setInterval(() => {
-            countdown--;
-            if (countdown <= 0) {
-                clearInterval(timer);
-                // Chuyển sang form đăng nhập và điền sẵn username
-                successDiv.style.display = "none";
-                document.getElementById("register-card").style.display = "none";
-                document.getElementById("login-card").style.display    = "block";
-                // Pre-fill username để người dùng chỉ cần nhập password
-                const loginUsernameField = document.getElementById("login-username");
-                if (loginUsernameField) {
-                    loginUsernameField.value = username;
-                    document.getElementById("login-password").focus();
-                }
-            } else {
-                updateMsg();
-            }
-        }, 1000);
-
-    } catch (err) {
-        errorDiv.innerHTML = `
-            <div style="display:flex;align-items:center;gap:8px;justify-content:center;">
-                <i data-lucide="x-circle" style="width:16px;height:16px;flex-shrink:0;"></i>
-                <span>${escapeHtml(err.message || "Lỗi đăng ký!")}</span>
-            </div>`;
-        errorDiv.style.display = "block";
-        globalThis.lucide?.createIcons();
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Đăng ký tài khoản"; }
+// ==========================================
+// DATE UTILITIES (TIMEZONE SAFE FOR UTC+7)
+// ==========================================
+/**
+ * Parse YYYY-MM-DD input date string in local time zone,
+ * preventing UTC shift bugs in Vietnam (UTC+7).
+ */
+export function parseLocalDate(dateString) {
+  if (!dateString) return new Date();
+  if (dateString instanceof Date) return dateString;
+  const parts = String(dateString).trim().split('-');
+  if (parts.length === 3) {
+    const [year, month, day] = parts.map(Number);
+    if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+      return new Date(year, month - 1, day, 12, 0, 0); // 12:00 PM local noon to prevent day boundary shifts
     }
+  }
+  return new Date(dateString);
 }
 
+export function formatLocalDate(date) {
+  if (!date) return '';
+  const d = date instanceof Date ? date : parseLocalDate(date);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
-function handleLogout(e) {
-    e.preventDefault();
+// ==========================================
+// DATE LOGIC & VALIDATION
+// ==========================================
+function initDefaultDates() {
+  const today = new Date();
+  const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0);
+  const tomorrowLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 12, 0, 0);
 
-    // Show styled confirmation modal instead of native confirm()
-    const modal   = document.getElementById("global-modal");
-    const content = document.getElementById("global-modal-content");
-    modal.classList.add("active");
+  const todayStr = formatLocalDate(todayLocal);
+  const tomorrowStr = formatLocalDate(tomorrowLocal);
 
-    content.innerHTML = `
-        <div class="modal-header">
-            <h2>Xác nhận đăng xuất</h2>
-            <button class="modal-close" onclick="closeModal('global-modal')">&times;</button>
-        </div>
-        <div style="text-align:center; padding: 12px 0 28px;">
-            <div style="width:60px;height:60px;border-radius:50%;background:rgba(217,119,6,0.12);border:1px solid rgba(217,119,6,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-                <i data-lucide="log-out" style="width:26px;height:26px;color:var(--primary);"></i>
-            </div>
-            <p style="font-size:16px;font-weight:600;margin-bottom:8px;">Bạn muốn đăng xuất?</p>
-            <p style="font-size:13px;color:var(--text-muted);">Phiên làm việc hiện tại sẽ kết thúc.</p>
-        </div>
-        <div class="flex-row" style="justify-content:flex-end;">
-            <button class="btn btn-secondary" onclick="closeModal('global-modal')">Ở lại</button>
-            <button class="btn btn-primary" id="confirm-logout-btn">
-                <i data-lucide="log-out" style="width:14px;height:14px;"></i> Đăng xuất
-            </button>
-        </div>
+  state.search.checkIn = todayStr;
+  state.search.checkOut = tomorrowStr;
+
+  const checkInInput = document.getElementById('search-checkin');
+  const checkOutInput = document.getElementById('search-checkout');
+
+  if (checkInInput && checkOutInput) {
+    checkInInput.min = todayStr;
+    checkInInput.value = todayStr;
+
+    checkOutInput.min = tomorrowStr;
+    checkOutInput.value = tomorrowStr;
+
+    // Validation: Check-out must be > Check-in >= Today (Local time zone safe)
+    checkInInput.addEventListener('change', () => {
+      const selectedCheckIn = parseLocalDate(checkInInput.value);
+      const minCheckOut = new Date(selectedCheckIn.getFullYear(), selectedCheckIn.getMonth(), selectedCheckIn.getDate() + 1, 12, 0, 0);
+
+      const minCheckOutStr = formatLocalDate(minCheckOut);
+      checkOutInput.min = minCheckOutStr;
+
+      const currentCheckOut = parseLocalDate(checkOutInput.value);
+      if (currentCheckOut <= selectedCheckIn) {
+        checkOutInput.value = minCheckOutStr;
+      }
+      state.search.checkIn = checkInInput.value;
+      state.search.checkOut = checkOutInput.value;
+    });
+
+    checkOutInput.addEventListener('change', () => {
+      const checkIn = parseLocalDate(checkInInput.value);
+      const checkOut = parseLocalDate(checkOutInput.value);
+      if (checkOut <= checkIn) {
+        showToast('Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 đêm!', 'warning');
+        const nextDay = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate() + 1, 12, 0, 0);
+        checkOutInput.value = formatLocalDate(nextDay);
+      }
+      state.search.checkOut = checkOutInput.value;
+    });
+  }
+}
+
+// ==========================================
+// TOAST NOTIFICATIONS
+// ==========================================
+export function showToast(message, type = 'info', duration = 4000) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+
+  const icons = {
+    success: '<i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400 shrink-0"></i>',
+    error: '<i data-lucide="alert-octagon" class="w-5 h-5 text-rose-400 shrink-0"></i>',
+    warning: '<i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400 shrink-0"></i>',
+    info: '<i data-lucide="info" class="w-5 h-5 text-amber-300 shrink-0"></i>'
+  };
+
+  const borders = {
+    success: 'border-emerald-500/40',
+    error: 'border-rose-500/40',
+    warning: 'border-amber-500/40',
+    info: 'border-amber-400/40'
+  };
+
+  toast.classList.add(borders[type] || borders.info);
+
+  toast.innerHTML = `
+    ${icons[type] || icons.info}
+    <div class="flex-1 text-sm text-slate-200 leading-relaxed font-sans">${message}</div>
+    <button type="button" class="text-slate-400 hover:text-white transition-colors" onclick="this.parentElement.remove()">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+  `;
+
+  container.appendChild(toast);
+  refreshLucideIcons();
+
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  // Auto remove
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.classList.add('hide');
+    setTimeout(() => toast.remove(), 400);
+  }, duration);
+}
+
+// ==========================================
+// ROOMS DATA & RENDERING
+// ==========================================
+async function loadRooms(filterParams = {}) {
+  const grid = document.getElementById('rooms-grid');
+  if (grid) {
+    grid.innerHTML = `
+      <div class="col-span-full py-20 flex flex-col items-center justify-center text-center">
+        <div class="w-12 h-12 rounded-full border-2 border-amber-500/20 border-t-amber-400 animate-spin mb-4"></div>
+        <p class="text-amber-200/80 font-sans tracking-widest text-sm uppercase">Đang nạp dữ liệu phòng 5★...</p>
+      </div>
     `;
-    globalThis.lucide?.createIcons();
+  }
 
-    document.getElementById("confirm-logout-btn").addEventListener("click", () => {
-        closeModal("global-modal");
-        setAuthSession(null);
-        showAuthPage();
+  try {
+    state.rooms = await getRooms(filterParams);
+    filterAndRenderRooms();
+  } catch (err) {
+    showToast('Không thể kết nối máy chủ, kích hoạt danh mục Luxury dự phòng.', 'warning');
+    state.rooms = LUXURY_ROOMS_CATALOG;
+    filterAndRenderRooms();
+  }
+}
+
+function filterAndRenderRooms() {
+  const grid = document.getElementById('rooms-grid');
+  if (!grid) return;
+
+  let filtered = state.rooms;
+  if (state.selectedCategory !== 'all') {
+    filtered = state.rooms.filter(r => r.category.toLowerCase() === state.selectedCategory.toLowerCase());
+  }
+
+  state.filteredRooms = filtered;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="col-span-full py-16 text-center text-slate-400 glass-card rounded-2xl p-8">
+        <i data-lucide="bed-double" class="w-12 h-12 text-amber-500/50 mx-auto mb-3"></i>
+        <h4 class="text-lg font-serif text-white">Không tìm thấy phòng phù hợp</h4>
+        <p class="text-sm mt-1">Quý khách vui lòng thử thay đổi khoảng ngày lưu trú hoặc danh mục lọc.</p>
+      </div>
+    `;
+    refreshLucideIcons();
+    return;
+  }
+
+  grid.innerHTML = filtered.map(room => {
+    const formattedPrice = formatCurrency(room.price, state.currency);
+    const primaryAmenities = room.amenities.slice(0, 3);
+
+    return `
+      <div class="room-card glass-card rounded-2xl overflow-hidden flex flex-col group" data-room-id="${room.id}">
+        <!-- Image Container -->
+        <div class="room-image-container relative h-64 overflow-hidden">
+          <img src="${room.image}" alt="${room.name}" class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20"></div>
+          
+          <!-- Badge -->
+          ${room.badge ? `
+            <div class="absolute top-4 left-4 bg-amber-500/90 text-slate-950 font-sans font-bold text-xs uppercase tracking-wider px-3 py-1 rounded-full backdrop-blur-md shadow-lg">
+              ${room.badge}
+            </div>
+          ` : ''}
+
+          <!-- Rating -->
+          <div class="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md border border-amber-500/30 text-amber-300 font-sans text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
+            <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+            <span>${room.rating}</span>
+            <span class="text-slate-400 font-normal">(${room.reviewsCount})</span>
+          </div>
+
+          <!-- Bottom View Badge -->
+          <div class="absolute bottom-3 left-4 text-xs font-medium text-amber-200/90 flex items-center gap-1.5 drop-shadow">
+            <i data-lucide="compass" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>${room.view}</span>
+          </div>
+        </div>
+
+        <!-- Content Body -->
+        <div class="p-6 flex-1 flex flex-col justify-between">
+          <div>
+            <!-- Category & Title -->
+            <div class="flex items-center justify-between text-xs tracking-widest uppercase font-semibold text-amber-400 mb-1">
+              <span>${room.category} Class</span>
+              <span class="text-slate-400">#${room.roomNumber}</span>
+            </div>
+            <h3 class="font-serif text-xl text-white font-medium group-hover:text-amber-200 transition-colors line-clamp-1 mb-3">
+              ${room.name}
+            </h3>
+
+            <!-- Room Specs -->
+            <div class="grid grid-cols-3 gap-2 py-3 border-y border-amber-500/10 text-xs text-slate-300 mb-4 font-sans">
+              <div class="flex items-center gap-1.5" title="Diện tích">
+                <i data-lucide="maximize" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+                <span>${room.area} m²</span>
+              </div>
+              <div class="flex items-center gap-1.5" title="Sức chứa">
+                <i data-lucide="users" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+                <span>${room.capacity} Khách</span>
+              </div>
+              <div class="flex items-center gap-1.5 truncate" title="${room.bedType}">
+                <i data-lucide="bed" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+                <span class="truncate">${room.bedType.split(' ')[1] || 'King'}</span>
+              </div>
+            </div>
+
+            <!-- Quick Amenities -->
+            <div class="flex flex-wrap gap-1.5 mb-5">
+              ${primaryAmenities.map(am => `
+                <span class="text-[11px] bg-slate-800/80 text-slate-300 border border-slate-700/60 px-2.5 py-0.5 rounded-md flex items-center gap-1">
+                  <i data-lucide="sparkles" class="w-2.5 h-2.5 text-amber-400"></i>
+                  ${am}
+                </span>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Price & Actions Footer -->
+          <div class="pt-4 border-t border-amber-500/15 flex items-end justify-between gap-3">
+            <div>
+              <div class="text-[11px] uppercase tracking-wider text-slate-400">Giá nghỉ đêm từ</div>
+              <div class="text-xl font-serif font-bold text-gold-gradient">${formattedPrice}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" class="btn-detail btn-outline-gold px-3.5 py-2 rounded-xl text-xs font-medium flex items-center gap-1" data-id="${room.id}">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Chi Tiết</span>
+              </button>
+              <button type="button" class="btn-book btn-gold px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-md" data-id="${room.id}">
+                <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
+                <span>Đặt Phòng</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  refreshLucideIcons();
+  attachRoomCardListeners();
+}
+
+function attachRoomCardListeners() {
+  document.querySelectorAll('.btn-detail').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const roomId = Number(e.currentTarget.dataset.id);
+      openRoomDetailModal(roomId);
     });
-}
+  });
 
-
-function showAuthPage() {
-    document.getElementById("app-page").style.display = "none";
-    document.getElementById("auth-page").style.display = "flex";
-    document.getElementById("login-form").reset();
-    document.getElementById("register-form").reset();
-}
-
-// Build Layout Shell & Render Dynamic Menus
-function showAppShell(session) {
-    const role = presentationRole(session?.role);
-    if (!role) {
-        setAuthSession(null);
-        showAuthPage();
-        const errorDiv = document.getElementById("login-error");
-        errorDiv.textContent = "Vai trò tài khoản chưa được hỗ trợ trên giao diện này.";
-        errorDiv.style.display = "block";
-        return;
-    }
-    document.getElementById("auth-page").style.display = "none";
-    document.getElementById("app-page").style.display = "flex";
-
-    document.getElementById("user-display-name").textContent = session.fullName || session.username;
-    document.getElementById("user-display-role").textContent = roleLabel(role);
-
-    // Load dynamic navigation sidebar based on Role
-    buildSidebarMenu(role);
-}
-
-function roleLabel(role) {
-    return ({admin: "Quản trị viên", front_desk: "Lễ tân", customer: "Khách hàng", housekeeping: "Buồng phòng", maintenance: "Bảo trì", "f&b": "Ẩm thực"})[role] || role;
-}
-
-function buildSidebarMenu(role) {
-    const menuList = document.getElementById("sidebar-menu");
-    menuList.innerHTML = ""; // Clear
-    
-    // Define navigation items based on Role
-    const menus = [];
-    
-    if (role === "admin") {
-        menus.push(
-            { id: "dashboard",  label: "Trang chủ",          icon: "layout-dashboard", view: loadAdminView },
-            { id: "rooms",      label: "Quản lý phòng",       icon: "key",              view: () => loadAdminView("rooms") },
-            { id: "users",      label: "Quản lý nhân viên",   icon: "users",            view: () => loadAdminView("users") },
-            { id: "customers",  label: "Quản lý khách hàng",  icon: "contact",          view: () => {
-                const container = document.getElementById("view-container");
-                const session   = JSON.parse(localStorage.getItem("hotel_auth_session"));
-                renderAdminCustomers(container, session);
-            }},
-            { id: "promotions", label: "Khuyến mãi",          icon: "percent",          view: () => loadAdminView("promotions") },
-            { id: "reviews",    label: "Quản lý đánh giá",    icon: "star",             view: () => loadAdminView("reviews") },
-            { id: "invoices",   label: "Hóa đơn",             icon: "receipt",          view: () => loadAdminView("invoices") }
-        );
-    } else if (role === "front_desk") {
-        menus.push(
-            { id: "room-map", label: "Sơ đồ phòng", icon: "grid", view: loadStaffView },
-            { id: "bookings", label: "Đơn đặt phòng", icon: "calendar-days", view: () => loadStaffView("bookings") },
-            { id: "customers", label: "Khách hàng", icon: "users", view: () => loadStaffView("customers") },
-            { id: "checkout", label: "Thanh toán", icon: "wallet", view: () => loadStaffView("checkout") },
-            { id: "invoices", label: "Hóa đơn", icon: "receipt", view: () => loadStaffView("invoices") },
-            { id: "loyalty", label: "Hệ thành viên", icon: "award", view: () => loadStaffView("loyalty") },
-            { id: "chat", label: "Hỗ trợ khách", icon: "message-square", view: () => loadStaffView("chat") }
-        );
-    } else if (role === "customer") {
-        menus.push(
-            { id: "customer-home", label: "Bảng điều khiển", icon: "layout-dashboard", view: loadCustomerView },
-            { id: "room-discovery", label: "Tìm phòng", icon: "search", view: () => loadCustomerView("discovery") },
-            { id: "loyalty-rank", label: "Điểm tích lũy", icon: "award", view: () => loadCustomerView("loyalty") },
-            { id: "promotions-view", label: "Ưu đãi của tôi", icon: "gift", view: () => loadCustomerView("promotions") },
-            { id: "support-chat", label: "Hỗ trợ trực tuyến", icon: "message-circle", view: () => loadCustomerView("chat") }
-        );
-    }
-    
-    // Departmental accounts get only their explicitly implemented menu. Until
-    // dedicated modules exist, keep them on a restricted, informative shell.
-    if (isDepartmentalRole(role)) {
-        menus.push({id: "department-status", label: "Chức năng bộ phận", icon: "info", view: () => {
-            document.getElementById("view-container").innerHTML = `<section class="card" role="status"><h1>${roleLabel(role)}</h1><p>Giao diện hiện chưa có quy trình dành riêng cho bộ phận này. Các chức năng của lễ tân, quản trị và bộ phận khác không được cấp qua tài khoản này.</p></section>`;
-        }});
-    }
-
-    // Shared Menu Item: Profile settings
-    menus.push({ id: "profile", label: "Hồ sơ cá nhân", icon: "user-cog", view: loadProfileView });
-
-    // Render HTML nodes for menus
-    menus.forEach(m => {
-        const li = document.createElement("li");
-        li.className = "menu-item";
-        li.dataset.id = m.id;
-        
-        li.innerHTML = `
-            <a href="#" class="menu-link">
-                <i data-lucide="${m.icon}" style="width: 18px; height: 18px;"></i>
-                <span>${m.label}</span>
-            </a>
-        `;
-        
-        li.addEventListener("click", (e) => {
-            e.preventDefault();
-            
-            // Set active state styling
-            document.querySelectorAll(".menu-item").forEach(item => item.classList.remove("active"));
-            li.classList.add("active");
-            
-            // Load the corresponding view
-            m.view();
-        });
-        
-        menuList.appendChild(li);
+  document.querySelectorAll('.btn-book').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const roomId = Number(e.currentTarget.dataset.id);
+      openBookingModal(roomId);
     });
+  });
+}
 
-    // Initialize lucide icons for dynamic sidebar elements
-    globalThis.lucide?.createIcons();
+// ==========================================
+// ROOM DETAIL MODAL
+// ==========================================
+function openRoomDetailModal(roomId) {
+  const room = state.rooms.find(r => r.id === roomId);
+  if (!room) return;
+  state.detailRoom = room;
 
-    // Load the first view by default
-    if (menus.length > 0) {
-        menuList.firstChild.click();
+  const modal = document.getElementById('room-detail-modal');
+  const body = document.getElementById('room-detail-body');
+  if (!modal || !body) return;
+
+  const formattedPrice = formatCurrency(room.price, state.currency);
+
+  body.innerHTML = `
+    <!-- Top Image Hero -->
+    <div class="relative h-72 md:h-96 w-full rounded-2xl overflow-hidden mb-6">
+      <img src="${room.image}" alt="${room.name}" class="w-full h-full object-cover">
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+      
+      <div class="absolute bottom-4 left-6 right-6 flex items-end justify-between">
+        <div>
+          <span class="text-xs font-semibold tracking-widest text-amber-400 uppercase bg-slate-900/80 px-3 py-1 rounded-full border border-amber-500/30">
+            ${room.category} - Phòng #${room.roomNumber}
+          </span>
+          <h2 class="text-2xl md:text-3xl font-serif text-white font-medium mt-2">${room.name}</h2>
+          <p class="text-sm text-amber-200/90 flex items-center gap-1.5 mt-1">
+            <i data-lucide="compass" class="w-4 h-4 text-amber-400"></i> ${room.view}
+          </p>
+        </div>
+        <div class="text-right hidden sm:block">
+          <div class="text-xs text-slate-400">Đơn giá tiêu chuẩn</div>
+          <div class="text-2xl font-serif font-bold text-gold-gradient">${formattedPrice} <span class="text-xs font-sans text-slate-400">/đêm</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="mb-6">
+      <h4 class="text-sm uppercase tracking-widest font-semibold text-amber-400 mb-2">Mô tả tổng quan</h4>
+      <p class="text-slate-300 font-sans text-sm leading-relaxed">${room.description}</p>
+    </div>
+
+    <!-- Technical Specs Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl bg-slate-900/60 border border-amber-500/20 mb-6 text-sm">
+      <div>
+        <div class="text-xs text-slate-400">Diện tích</div>
+        <div class="font-semibold text-white mt-0.5">${room.area} m²</div>
+      </div>
+      <div>
+        <div class="text-xs text-slate-400">Sức chứa</div>
+        <div class="font-semibold text-white mt-0.5">${room.capacity} Người lớn ${room.childrenCapacity ? `+ ${room.childrenCapacity} Bé` : ''}</div>
+      </div>
+      <div>
+        <div class="text-xs text-slate-400">Loại giường</div>
+        <div class="font-semibold text-white mt-0.5">${room.bedType}</div>
+      </div>
+      <div>
+        <div class="text-xs text-slate-400">Đánh giá khách hàng</div>
+        <div class="font-semibold text-amber-300 mt-0.5 flex items-center gap-1">
+          <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+          ${room.rating} / 5.0
+        </div>
+      </div>
+    </div>
+
+    <!-- Amenities Grid -->
+    <div class="mb-6">
+      <h4 class="text-sm uppercase tracking-widest font-semibold text-amber-400 mb-3">Tiện ích thượng hạng trong phòng</h4>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        ${room.amenities.map(am => `
+          <div class="flex items-center gap-2 text-sm text-slate-300 bg-slate-800/40 p-2.5 rounded-lg border border-slate-700/40">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-amber-400 shrink-0"></i>
+            <span>${am}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- Booking CTA Footer -->
+    <div class="pt-4 border-t border-amber-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="w-full sm:w-auto text-left">
+        <span class="text-xs text-slate-400">Tổng quan đơn giá</span>
+        <div class="text-2xl font-serif font-bold text-gold-gradient">${formattedPrice} <span class="text-xs text-slate-400">/đêm</span></div>
+      </div>
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <button type="button" class="btn-outline-gold px-5 py-2.5 rounded-xl text-sm flex-1 sm:flex-none justify-center" onclick="closeRoomDetailModal()">
+          Đóng
+        </button>
+        <button type="button" class="btn-gold px-6 py-2.5 rounded-xl text-sm font-semibold flex-1 sm:flex-none justify-center flex items-center gap-2 shadow-lg" onclick="proceedToBookingFromDetail()">
+          <i data-lucide="calendar-check" class="w-4 h-4"></i>
+          Đặt Phòng Ngay
+        </button>
+      </div>
+    </div>
+  `;
+
+  refreshLucideIcons();
+  modal.classList.add('active');
+}
+
+_global.closeRoomDetailModal = function() {
+  const modal = document.getElementById('room-detail-modal');
+  if (modal) modal.classList.remove('active');
+  state.detailRoom = null;
+};
+
+_global.proceedToBookingFromDetail = function() {
+  if (state.detailRoom) {
+    const roomId = state.detailRoom.id;
+    _global.closeRoomDetailModal();
+    openBookingModal(roomId);
+  }
+};
+
+// ==========================================
+// 3-STEP VIETQR BOOKING MODAL
+// ==========================================
+export function openBookingModal(roomId = null) {
+  let targetRoom = null;
+  if (roomId) {
+    targetRoom = state.rooms.find(r => r.id === roomId);
+  }
+  if (!targetRoom && state.rooms.length > 0) {
+    targetRoom = state.rooms[0];
+  }
+  if (!targetRoom) {
+    targetRoom = LUXURY_ROOMS_CATALOG[0];
+  }
+
+  state.booking.room = targetRoom;
+  state.booking.step = 1;
+
+  // Sync dates from search bar if available
+  const searchCheckIn = document.getElementById('search-checkin')?.value;
+  const searchCheckOut = document.getElementById('search-checkout')?.value;
+  if (searchCheckIn && searchCheckOut) {
+    state.search.checkIn = searchCheckIn;
+    state.search.checkOut = searchCheckOut;
+  }
+
+  calculateBookingPricing();
+
+  const modal = document.getElementById('booking-modal');
+  if (modal) {
+    renderBookingModalContent();
+    modal.classList.add('active');
+  }
+}
+
+_global.closeBookingModal = function() {
+  const modal = document.getElementById('booking-modal');
+  if (modal) modal.classList.remove('active');
+  if (state.booking.countdownTimer) {
+    clearInterval(state.booking.countdownTimer);
+    state.booking.countdownTimer = null;
+  }
+};
+
+function calculateBookingPricing() {
+  const b = state.booking;
+  if (!b.room) return;
+
+  const checkIn = parseLocalDate(state.search.checkIn);
+  const checkOut = parseLocalDate(state.search.checkOut);
+  
+  const diffTime = checkOut.getTime() - checkIn.getTime();
+  let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  if (diffDays < 1) diffDays = 1;
+  b.nights = diffDays;
+
+  // Base Room Subtotal
+  b.roomSubtotal = Math.round(b.room.price * b.nights);
+
+  // Promo Code calculation
+  const promo = (state.search.promoCode || '').trim().toUpperCase();
+  let discountRate = 0;
+  if (promo === 'LUXURY2026') {
+    discountRate = 0.10; // 10%
+  } else if (promo === 'VIP5STAR') {
+    discountRate = 0.15; // 15%
+  }
+  b.discountAmount = Math.round(b.roomSubtotal * discountRate);
+
+  const afterDiscount = b.roomSubtotal - b.discountAmount;
+
+  // Taxes & 5-Star Service Charge (Rounded pure integers)
+  b.vatAmount = Math.round(afterDiscount * 0.08); // 8% VAT
+  b.serviceChargeAmount = Math.round(afterDiscount * 0.05); // 5% Service charge
+
+  // Final Total strictly cast to pure positive integer for VietQR
+  b.totalAmount = Math.max(0, Math.round(afterDiscount + b.vatAmount + b.serviceChargeAmount));
+}
+
+function renderBookingModalContent() {
+  const body = document.getElementById('booking-modal-body');
+  if (!body) return;
+
+  const b = state.booking;
+  const currentStep = b.step;
+
+  // Step Indicators Header
+  const stepHeader = `
+    <!-- Step Navigation Bar -->
+    <div class="flex items-center justify-between border-b border-amber-500/20 pb-5 mb-6">
+      <div class="flex items-center gap-2">
+        <span class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 1 ? 'bg-amber-500 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400'}">
+          ${currentStep > 1 ? '<i data-lucide="check" class="w-4 h-4"></i>' : '1'}
+        </span>
+        <span class="text-xs md:text-sm font-medium ${currentStep === 1 ? 'text-amber-300 font-semibold' : 'text-slate-400'}">
+          1. Lịch Trình & Chi Phí
+        </span>
+      </div>
+      <div class="h-0.5 flex-1 mx-3 bg-slate-800">
+        <div class="h-full bg-amber-500 transition-all duration-300" style="width: ${currentStep === 1 ? '0%' : (currentStep === 2 ? '50%' : '100%')}"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 2 ? 'bg-amber-500 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400'}">
+          ${currentStep > 2 ? '<i data-lucide="check" class="w-4 h-4"></i>' : '2'}
+        </span>
+        <span class="text-xs md:text-sm font-medium ${currentStep === 2 ? 'text-amber-300 font-semibold' : 'text-slate-400'}">
+          2. Thông Tin Khách Hàng
+        </span>
+      </div>
+      <div class="h-0.5 flex-1 mx-3 bg-slate-800">
+        <div class="h-full bg-amber-500 transition-all duration-300" style="width: ${currentStep === 3 ? '100%' : '0%'}"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${currentStep >= 3 ? 'bg-amber-500 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400'}">
+          3
+        </span>
+        <span class="text-xs md:text-sm font-medium ${currentStep === 3 ? 'text-amber-300 font-semibold' : 'text-slate-400'}">
+          3. Thanh Toán VietQR
+        </span>
+      </div>
+    </div>
+  `;
+
+  // Step 1: Review selected room & stay dates
+  if (currentStep === 1) {
+    const formattedSubtotal = formatCurrency(b.roomSubtotal, state.currency);
+    const formattedDiscount = formatCurrency(b.discountAmount, state.currency);
+    const formattedVat = formatCurrency(b.vatAmount, state.currency);
+    const formattedService = formatCurrency(b.serviceChargeAmount, state.currency);
+    const formattedTotal = formatCurrency(b.totalAmount, state.currency);
+
+    body.innerHTML = `
+      ${stepHeader}
+
+      <!-- Selected Room Highlight Card -->
+      <div class="p-4 rounded-xl bg-slate-900/80 border border-amber-500/25 flex flex-col sm:flex-row gap-4 items-center mb-6">
+        <img src="${b.room.image}" alt="${b.room.name}" class="w-full sm:w-36 h-28 object-cover rounded-lg shrink-0">
+        <div class="flex-1 w-full text-left">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-amber-400 font-bold tracking-wider uppercase">${b.room.category} - #${b.room.roomNumber}</span>
+            <span class="text-xs text-slate-400">${b.room.area} m² | ${b.room.capacity} Khách</span>
+          </div>
+          <h3 class="font-serif text-lg text-white font-medium my-1">${b.room.name}</h3>
+          <p class="text-xs text-slate-400">${b.room.bedType} • ${b.room.view}</p>
+        </div>
+      </div>
+
+      <!-- Stay Dates & Promo Code Configuration -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Ngày nhận phòng</label>
+          <input type="date" id="booking-checkin" value="${state.search.checkIn}" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Ngày trả phòng</label>
+          <input type="date" id="booking-checkout" value="${state.search.checkOut}" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Mã ưu đãi (Promo Code)</label>
+          <div class="flex gap-2">
+            <input type="text" id="booking-promo" value="${state.search.promoCode}" placeholder="Nhập mã ví dụ: LUXURY2026 hoặc VIP5STAR" class="flex-1 uppercase bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+            <button type="button" id="btn-apply-promo" class="btn-outline-gold px-4 py-2.5 rounded-xl text-xs font-semibold">
+              Áp Dụng
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Price Breakdown Table -->
+      <div class="rounded-xl bg-slate-900/60 p-4 border border-amber-500/15 mb-6 text-sm">
+        <div class="flex justify-between py-1.5 text-slate-300">
+          <span>Tiền phòng (${formatCurrency(b.room.price, state.currency)} × ${b.nights} đêm):</span>
+          <span class="font-medium text-white">${formattedSubtotal}</span>
+        </div>
+        ${b.discountAmount > 0 ? `
+          <div class="flex justify-between py-1.5 text-emerald-400 font-medium">
+            <span>Giảm giá mã ưu đãi (${state.search.promoCode.toUpperCase()}):</span>
+            <span>-${formattedDiscount}</span>
+          </div>
+        ` : ''}
+        <div class="flex justify-between py-1.5 text-slate-400 text-xs">
+          <span>Thuế giá trị gia tăng (VAT 8%):</span>
+          <span>${formattedVat}</span>
+        </div>
+        <div class="flex justify-between py-1.5 text-slate-400 text-xs">
+          <span>Phí phục vụ khách sạn 5★ (5%):</span>
+          <span>${formattedService}</span>
+        </div>
+        <div class="flex justify-between pt-3 mt-2 border-t border-amber-500/20 text-base font-serif">
+          <span class="text-amber-200 font-bold">Tổng thanh toán dự kiến:</span>
+          <span class="font-bold text-xl text-gold-gradient">${formattedTotal}</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-between pt-2">
+        <button type="button" class="btn-outline-gold px-5 py-2.5 rounded-xl text-sm" onclick="closeBookingModal()">
+          Hủy Bỏ
+        </button>
+        <button type="button" id="btn-step1-next" class="btn-gold px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg">
+          Tiếp Tục Nhập Thông Tin
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+
+    // Step 1 Event Listeners
+    const dateIn = document.getElementById('booking-checkin');
+    const dateOut = document.getElementById('booking-checkout');
+    if (dateIn && dateOut) {
+      dateIn.addEventListener('change', () => {
+        state.search.checkIn = dateIn.value;
+        calculateBookingPricing();
+        renderBookingModalContent();
+      });
+      dateOut.addEventListener('change', () => {
+        state.search.checkOut = dateOut.value;
+        calculateBookingPricing();
+        renderBookingModalContent();
+      });
     }
+
+    const promoBtn = document.getElementById('btn-apply-promo');
+    if (promoBtn) {
+      promoBtn.addEventListener('click', () => {
+        const promoVal = document.getElementById('booking-promo').value.trim();
+        state.search.promoCode = promoVal;
+        calculateBookingPricing();
+        if (state.booking.discountAmount > 0) {
+          showToast(`Đã áp dụng mã ưu đãi ${promoVal.toUpperCase()}!`, 'success');
+        } else if (promoVal) {
+          showToast('Mã ưu đãi không hợp lệ hoặc đã hết hạn!', 'warning');
+        }
+        renderBookingModalContent();
+      });
+    }
+
+    const nextBtn = document.getElementById('btn-step1-next');
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        state.booking.step = 2;
+        renderBookingModalContent();
+      });
+    }
+  }
+
+  // Step 2: Guest Details Form
+  else if (currentStep === 2) {
+    const formattedTotal = formatCurrency(b.totalAmount, state.currency);
+
+    body.innerHTML = `
+      ${stepHeader}
+
+      <div class="mb-4">
+        <h4 class="text-sm font-serif text-white font-medium">Thông tin định danh khách lưu trú</h4>
+        <p class="text-xs text-slate-400 mt-0.5">Vui lòng cung cấp chính xác để hệ thống gửi vé phòng điện tử và hóa đơn.</p>
+      </div>
+
+      <form id="guest-booking-form" class="space-y-4 mb-6">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+            Họ và tên quý khách <span class="text-rose-400">*</span>
+          </label>
+          <input type="text" id="guest-name" required value="${b.guest.fullName}" placeholder="Ví dụ: Nguyễn Văn An" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              Số điện thoại <span class="text-rose-400">*</span>
+            </label>
+            <input type="tel" id="guest-phone" required value="${b.guest.phone}" placeholder="Ví dụ: 0901234567" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              Địa chỉ Email <span class="text-rose-400">*</span>
+            </label>
+            <input type="email" id="guest-email" required value="${b.guest.email}" placeholder="Ví dụ: an.nguyen@gmail.com" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              Số CCCD / Hộ chiếu <span class="text-rose-400">*</span>
+            </label>
+            <input type="text" id="guest-identity" required value="${b.guest.identityCard}" placeholder="Ví dụ: 012345678901" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              Yêu cầu đặc biệt
+            </label>
+            <input type="text" id="guest-notes" value="${b.guest.notes}" placeholder="Tầng cao, phòng yên tĩnh, hoa tươi..." class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+          </div>
+        </div>
+      </form>
+
+      <!-- Mini Price Reminder -->
+      <div class="p-3.5 rounded-xl bg-slate-900/60 border border-amber-500/20 flex items-center justify-between text-xs text-slate-300 mb-6">
+        <span>Đặt phòng: <strong class="text-white">${b.room.name}</strong> (${b.nights} đêm)</span>
+        <span class="font-bold text-amber-300 text-sm">${formattedTotal}</span>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-between pt-2">
+        <button type="button" class="btn-outline-gold px-5 py-2.5 rounded-xl text-sm flex items-center gap-1.5" onclick="goToStep(1)">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i> Quay Lại
+        </button>
+        <button type="button" id="btn-submit-booking" class="btn-gold px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg">
+          <span id="btn-submit-text">Xác Nhận & Đặt Phòng</span>
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+
+    // Step 2 Submission Handler
+    const submitBtn = document.getElementById('btn-submit-booking');
+    if (submitBtn) {
+      submitBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const form = document.getElementById('guest-booking-form');
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+
+        b.guest.fullName = document.getElementById('guest-name').value.trim();
+        b.guest.phone = document.getElementById('guest-phone').value.trim();
+        b.guest.email = document.getElementById('guest-email').value.trim();
+        b.guest.identityCard = document.getElementById('guest-identity').value.trim();
+        b.guest.notes = document.getElementById('guest-notes').value.trim();
+
+        // UI Loading
+        submitBtn.disabled = true;
+        const textSpan = document.getElementById('btn-submit-text');
+        if (textSpan) textSpan.innerHTML = 'Đang xử lý đặt phòng...';
+
+        try {
+          const res = await submitBooking({
+            customerId: 1,
+            roomId: b.room.id,
+            checkInDate: state.search.checkIn,
+            checkOutDate: state.search.checkOut,
+            fullName: b.guest.fullName,
+            phone: b.guest.phone,
+            email: b.guest.email,
+            identityCard: b.guest.identityCard,
+            promoCode: state.search.promoCode
+          });
+
+          b.bookingId = res.bookingId;
+          b.step = 3;
+          showToast(`Đã tạo mã đặt phòng #${b.bookingId} thành công!`, 'success');
+          startBookingCountdown();
+          renderBookingModalContent();
+
+        } catch (err) {
+          submitBtn.disabled = false;
+          if (textSpan) textSpan.innerHTML = 'Xác Nhận & Đặt Phòng';
+          showToast(err.message, 'error', 6000);
+        }
+      });
+    }
+  }
+
+  // Step 3: Success & Dynamic VietQR Generation
+  else if (currentStep === 3) {
+    const formattedTotal = formatCurrency(b.totalAmount, state.currency);
+    const qrUrl = generateVietQRUrl(b.totalAmount, b.bookingId);
+    const bankAccount = "0987654321";
+    const bankName = "MB Bank (Ngân hàng Quân Đội)";
+    const accountName = "AURELIA GRAND LUXURY HOTEL";
+    const transferContent = `BOOKING_${b.bookingId}`;
+
+    body.innerHTML = `
+      ${stepHeader}
+
+      <!-- Success Congratulatory Banner -->
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-full bg-emerald-500/20 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-400 mx-auto mb-3 shadow-lg">
+          <i data-lucide="check-check" class="w-7 h-7"></i>
+        </div>
+        <span class="text-xs font-semibold uppercase tracking-widest text-amber-400">Xác nhận giữ chỗ thành công</span>
+        <h3 class="font-serif text-2xl text-white font-medium mt-1">Đơn Đặt Phòng #${b.bookingId}</h3>
+        <p class="text-xs text-slate-300 mt-1">
+          Kính chào Quý khách <strong class="text-amber-200">${b.guest.fullName}</strong>, vé phòng đã được giữ tạm thời.
+        </p>
+      </div>
+
+      <!-- VietQR Container Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center vietqr-card rounded-2xl p-6 mb-6">
+        <!-- QR Code Image -->
+        <div class="flex flex-col items-center justify-center bg-white p-4 rounded-xl shadow-2xl">
+          <img src="${qrUrl}" alt="VietQR Thanh Toán" class="w-60 h-60 object-contain rounded-lg">
+          <div class="mt-2 text-center text-slate-800 text-xs font-medium flex items-center gap-1.5">
+            <i data-lucide="scan" class="w-4 h-4 text-emerald-600"></i>
+            <span>Quét bằng ứng dụng Ngân hàng bất kỳ</span>
+          </div>
+        </div>
+
+        <!-- Transfer Information Details -->
+        <div class="text-left space-y-3 font-sans text-sm">
+          <div>
+            <span class="text-xs text-slate-400 uppercase tracking-wider">Ngân hàng thụ hưởng</span>
+            <div class="text-white font-semibold">${bankName}</div>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 uppercase tracking-wider">Chủ tài khoản</span>
+            <div class="text-amber-200 font-semibold">${accountName}</div>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 uppercase tracking-wider">Số tài khoản</span>
+            <div class="flex items-center gap-2">
+              <span class="text-lg font-mono font-bold text-white">${bankAccount}</span>
+              <button type="button" class="text-xs text-amber-400 hover:text-white transition-colors bg-slate-800/80 px-2 py-1 rounded" onclick="copyToClipboard('${bankAccount}', 'Đã sao chép số tài khoản!')">
+                Sao chép
+              </button>
+            </div>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 uppercase tracking-wider">Số tiền thanh toán</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xl font-serif font-bold text-gold-gradient">${formattedTotal}</span>
+              <button type="button" class="text-xs text-amber-400 hover:text-white transition-colors bg-slate-800/80 px-2 py-1 rounded" onclick="copyToClipboard('${b.totalAmount}', 'Đã sao chép số tiền!')">
+                Sao chép
+              </button>
+            </div>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 uppercase tracking-wider">Nội dung chuyển khoản</span>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-mono font-bold text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/30">${transferContent}</span>
+              <button type="button" class="text-xs text-amber-400 hover:text-white transition-colors bg-slate-800/80 px-2 py-1 rounded" onclick="copyToClipboard('${transferContent}', 'Đã sao chép nội dung!')">
+                Sao chép
+              </button>
+            </div>
+          </div>
+
+          <!-- Countdown Timer -->
+          <div class="pt-2">
+            <div class="text-xs text-amber-300/80 flex items-center gap-1.5">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400 animate-pulse"></i>
+              Thời gian giữ phòng còn lại: <strong id="booking-timer" class="font-mono text-white">15:00</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+        <button type="button" class="btn-outline-gold px-5 py-2.5 rounded-xl text-sm w-full sm:w-auto flex items-center justify-center gap-2" onclick="window.print()">
+          <i data-lucide="printer" class="w-4 h-4"></i> In Giấy Xác Nhận
+        </button>
+        <button type="button" class="btn-gold px-6 py-2.5 rounded-xl text-sm font-semibold w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg" onclick="closeBookingModal()">
+          <i data-lucide="check" class="w-4 h-4"></i> Hoàn Tất
+        </button>
+      </div>
+    `;
+  }
+
+  refreshLucideIcons();
+}
+
+_global.goToStep = function(stepNum) {
+  state.booking.step = stepNum;
+  renderBookingModalContent();
+};
+
+_global.copyToClipboard = function(text, successMsg = 'Đã sao chép!') {
+  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(successMsg, 'success');
+    }).catch(() => {
+      showToast(`Thông tin: ${text}`, 'info');
+    });
+  } else {
+    showToast(`Thông tin: ${text}`, 'info');
+  }
+};
+
+function startBookingCountdown() {
+  if (state.booking.countdownTimer) {
+    clearInterval(state.booking.countdownTimer);
+  }
+  state.booking.countdownSeconds = 900; // 15 mins
+
+  state.booking.countdownTimer = setInterval(() => {
+    state.booking.countdownSeconds--;
+    const timerEl = document.getElementById('booking-timer');
+    if (timerEl) {
+      const minutes = Math.floor(state.booking.countdownSeconds / 60);
+      const seconds = state.booking.countdownSeconds % 60;
+      timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+    if (state.booking.countdownSeconds <= 0) {
+      clearInterval(state.booking.countdownTimer);
+      state.booking.countdownTimer = null;
+      showToast('Hết thời gian giữ phòng, vui lòng thao tác lại nếu chưa thanh toán.', 'warning');
+    }
+  }, 1000);
+}
+
+// ==========================================
+// GALLERY & VANILLA JS LIGHTBOX
+// ==========================================
+function renderGallery() {
+  const container = document.getElementById('gallery-grid');
+  if (!container) return;
+
+  let items = GALLERY_ITEMS;
+  if (state.activeGalleryTab !== 'all') {
+    items = GALLERY_ITEMS.filter(it => it.category === state.activeGalleryTab);
+  }
+
+  container.innerHTML = items.map((item, index) => `
+    <div class="gallery-card relative group rounded-2xl overflow-hidden cursor-pointer h-72 shadow-lg border border-amber-500/10" data-index="${index}">
+      <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110">
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
+      
+      <div class="absolute bottom-4 left-4 right-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+        <span class="text-[11px] font-semibold uppercase tracking-widest text-amber-400 drop-shadow">
+          ${item.category}
+        </span>
+        <h4 class="font-serif text-lg text-white font-medium drop-shadow">${item.title}</h4>
+        <p class="text-xs text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-1">${item.subtitle}</p>
+      </div>
+
+      <div class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-900/80 backdrop-blur-md border border-amber-500/30 text-amber-300 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+        <i data-lucide="zoom-in" class="w-4 h-4"></i>
+      </div>
+    </div>
+  `).join('');
+
+  refreshLucideIcons();
+
+  // Attach Lightbox click triggers
+  container.querySelectorAll('.gallery-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const idx = Number(card.dataset.index);
+      openLightbox(items, idx);
+    });
+  });
+}
+
+function openLightbox(itemsList, startIndex) {
+  state.lightbox.images = itemsList;
+  state.lightbox.currentIndex = startIndex;
+
+  const modal = document.getElementById('lightbox-modal');
+  const imgEl = document.getElementById('lightbox-image');
+  const captionEl = document.getElementById('lightbox-caption');
+
+  if (!modal || !imgEl) return;
+
+  const current = itemsList[startIndex];
+  imgEl.src = current.image;
+  if (captionEl) {
+    captionEl.innerHTML = `<h3 class="font-serif text-lg text-white font-medium">${current.title}</h3><p class="text-xs text-amber-300">${current.subtitle}</p>`;
+  }
+
+  modal.classList.add('active');
+  refreshLucideIcons();
+}
+
+_global.closeLightbox = function() {
+  const modal = document.getElementById('lightbox-modal');
+  if (modal) modal.classList.remove('active');
+};
+
+_global.prevLightboxImage = function() {
+  const lb = state.lightbox;
+  if (lb.images.length === 0) return;
+  lb.currentIndex = (lb.currentIndex - 1 + lb.images.length) % lb.images.length;
+  updateLightboxContent();
+};
+
+_global.nextLightboxImage = function() {
+  const lb = state.lightbox;
+  if (lb.images.length === 0) return;
+  lb.currentIndex = (lb.currentIndex + 1) % lb.images.length;
+  updateLightboxContent();
+};
+
+function updateLightboxContent() {
+  const lb = state.lightbox;
+  const current = lb.images[lb.currentIndex];
+  const imgEl = document.getElementById('lightbox-image');
+  const captionEl = document.getElementById('lightbox-caption');
+
+  if (imgEl && current) {
+    imgEl.src = current.image;
+  }
+  if (captionEl && current) {
+    captionEl.innerHTML = `<h3 class="font-serif text-lg text-white font-medium">${current.title}</h3><p class="text-xs text-amber-300">${current.subtitle}</p>`;
+  }
+}
+
+// ==========================================
+// SCROLL OBSERVERS & FLOATING CONTROLS
+// ==========================================
+function initScrollObservers() {
+  if (typeof window === 'undefined') return;
+  const header = document.getElementById('main-header');
+  const backToTopBtn = document.getElementById('back-to-top');
+
+  window.addEventListener('scroll', () => {
+    const scrollY = window.scrollY;
+
+    // Sticky Header Glassmorphic background
+    if (header) {
+      if (scrollY > 80) {
+        header.classList.add('header-scrolled');
+      } else {
+        header.classList.remove('header-scrolled');
+      }
+    }
+
+    // Back to top button visibility (appears past Hero Section > 450px)
+    if (backToTopBtn) {
+      if (scrollY > 450) {
+        backToTopBtn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+        backToTopBtn.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+      } else {
+        backToTopBtn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+        backToTopBtn.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+      }
+    }
+  });
+
+  if (backToTopBtn) {
+    backToTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+}
+
+// ==========================================
+// EVENT LISTENERS & UI CONTROLS
+// ==========================================
+function initEventListeners() {
+  // Mobile Drawer Toggle
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const mobileDrawer = document.getElementById('mobile-drawer');
+  const closeDrawerBtn = document.getElementById('close-drawer-btn');
+
+  if (mobileMenuBtn && mobileDrawer) {
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileDrawer.classList.toggle('hidden');
+    });
+  }
+  if (closeDrawerBtn && mobileDrawer) {
+    closeDrawerBtn.addEventListener('click', () => {
+      mobileDrawer.classList.add('hidden');
+    });
+  }
+
+  // Language Dropdown Switcher
+  const langSelector = document.getElementById('lang-selector');
+  if (langSelector) {
+    langSelector.value = state.language;
+    langSelector.addEventListener('change', (e) => {
+      state.language = e.target.value;
+      localStorage.setItem('aurelia_lang', state.language);
+      applyLanguage(state.language);
+      showToast(state.language === 'vi' ? 'Đã đổi ngôn ngữ sang Tiếng Việt' : 'Language switched to English', 'info');
+    });
+  }
+
+  // Currency Dropdown Switcher
+  const currencySelector = document.getElementById('currency-selector');
+  if (currencySelector) {
+    currencySelector.value = state.currency;
+    currencySelector.addEventListener('change', (e) => {
+      state.currency = e.target.value;
+      localStorage.setItem('aurelia_currency', state.currency);
+      updateCurrencyDisplay();
+      filterAndRenderRooms();
+      showToast(`Đã chuyển đơn vị tiền tệ sang ${state.currency}`, 'info');
+    });
+  }
+
+  // Booking Bar "Check Availability" Button
+  const checkAvailabilityBtn = document.getElementById('btn-check-availability');
+  if (checkAvailabilityBtn) {
+    checkAvailabilityBtn.addEventListener('click', async () => {
+      const checkIn = document.getElementById('search-checkin')?.value;
+      const checkOut = document.getElementById('search-checkout')?.value;
+      const promo = document.getElementById('search-promo')?.value;
+
+      state.search.checkIn = checkIn;
+      state.search.checkOut = checkOut;
+      state.search.promoCode = promo;
+
+      showToast('Đang tìm kiếm phòng trống theo tiêu chuẩn của bạn...', 'info');
+      await loadRooms({ checkIn, checkOut });
+
+      const roomsSection = document.getElementById('rooms');
+      if (roomsSection) {
+        roomsSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
+
+  // Category Filter Tabs
+  document.querySelectorAll('.room-filter-tab').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      document.querySelectorAll('.room-filter-tab').forEach(t => {
+        t.classList.remove('bg-amber-500', 'text-slate-950', 'font-bold');
+        t.classList.add('text-slate-400', 'hover:text-white');
+      });
+      e.currentTarget.classList.add('bg-amber-500', 'text-slate-950', 'font-bold');
+      e.currentTarget.classList.remove('text-slate-400', 'hover:text-white');
+
+      state.selectedCategory = e.currentTarget.dataset.category;
+      filterAndRenderRooms();
+    });
+  });
+
+  // Gallery Filter Tabs
+  document.querySelectorAll('.gallery-tab').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      document.querySelectorAll('.gallery-tab').forEach(t => {
+        t.classList.remove('border-amber-400', 'text-amber-300');
+        t.classList.add('border-transparent', 'text-slate-400');
+      });
+      e.currentTarget.classList.add('border-amber-400', 'text-amber-300');
+      e.currentTarget.classList.remove('border-transparent', 'text-slate-400');
+
+      state.activeGalleryTab = e.currentTarget.dataset.tab;
+      renderGallery();
+    });
+  });
+
+  // Header "Book Now" CTA
+  const headerBookBtn = document.getElementById('header-book-now');
+  if (headerBookBtn) {
+    headerBookBtn.addEventListener('click', () => {
+      openBookingModal();
+    });
+  }
+
+  // Keyboard navigation for Lightbox
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('lightbox-modal');
+      if (modal && modal.classList.contains('active')) {
+        if (e.key === 'Escape') _global.closeLightbox();
+        if (e.key === 'ArrowLeft') _global.prevLightboxImage();
+        if (e.key === 'ArrowRight') _global.nextLightboxImage();
+      }
+    });
+  }
+
+  // Newsletter Form
+  const newsletterForm = document.getElementById('newsletter-form');
+  if (newsletterForm) {
+    newsletterForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('newsletter-email');
+      if (emailInput && emailInput.value) {
+        showToast('Cảm ơn Quý khách đã đăng ký nhận tin thư ưu đãi độc quyền 5★!', 'success');
+        emailInput.value = '';
+      }
+    });
+  }
+
+  // Quick Chat Widget Trigger
+  const quickChatBtn = document.getElementById('quick-chat-btn');
+  if (quickChatBtn) {
+    quickChatBtn.addEventListener('click', () => {
+      showToast('Đang kết nối tới Quản gia Concierge AI của Aurelia...', 'info');
+      setTimeout(() => {
+        window.open('https://zalo.me', '_blank');
+      }, 700);
+    });
+  }
+}
+
+// Language Application Helper
+function applyLanguage(lang) {
+  const dict = I18N[lang] || I18N.vi;
+  
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (dict[key]) {
+      el.textContent = dict[key];
+    }
+  });
+}
+
+// Currency Display Helper
+function updateCurrencyDisplay() {
+  document.querySelectorAll('.currency-indicator').forEach(el => {
+    el.textContent = state.currency;
+  });
 }

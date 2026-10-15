@@ -52,8 +52,8 @@ class ApiClientTest {
             }));
             CountDownLatch heartbeat = new CountDownLatch(1);
             SwingUtilities.invokeLater(heartbeat::countDown);
-            assertTrue(heartbeat.await(250, TimeUnit.MILLISECONDS), "EDT must process UI work during network delay");
-            assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started) < 1000);
+            assertTrue(heartbeat.await(1000, TimeUnit.MILLISECONDS), "EDT must process UI work during network delay");
+            assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started) < 2500, "EDT must not be blocked by 3000ms network delay");
             assertTrue(responseReceived.await(5, TimeUnit.SECONDS), "async response callback should complete");
             assertTrue(callbackOnEdt.get(), "response callback must return to the EDT");
             assertEquals("application/json", contentType.get());

@@ -1,0 +1,325 @@
+/* ==========================================================================
+   AURELIA GRAND LUXURY HOTEL - 5★ NO-BUILD LUXURY STYLESHEET
+   Obsidian Black (#0b0f17) | Slate Night (#131b2e) | Champagne Gold (#d4af37)
+   ========================================================================== */
+
+:root {
+  --bg-obsidian: #0b0f17;
+  --bg-slate-night: #131b2e;
+  --bg-surface: #1a233a;
+  --bg-card: rgba(19, 27, 46, 0.78);
+  --bg-glass: rgba(15, 23, 42, 0.82);
+  --bg-glass-card: rgba(19, 27, 46, 0.65);
+  
+  --gold-champagne: #d4af37;
+  --gold-soft: #f3e5ab;
+  --gold-dark: #aa820a;
+  --gold-metallic: linear-gradient(135deg, #d4af37 0%, #f3e5ab 50%, #aa820a 100%);
+  --gold-glow: rgba(212, 175, 55, 0.35);
+
+  --border-metallic: rgba(212, 175, 55, 0.22);
+  --border-metallic-hover: rgba(212, 175, 55, 0.55);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+
+  --text-primary: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-gold: #f3e5ab;
+
+  --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* Global Smoothness & Scrollbar */
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-sans);
+  background-color: var(--bg-obsidian);
+  color: var(--text-primary);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  overflow-x: hidden;
+  background-color: var(--bg-obsidian);
+  min-height: 100vh;
+}
+
+/* Luxury Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-obsidian);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 9999px;
+  border: 1px solid rgba(212, 175, 55, 0.1);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.6);
+}
+
+/* Typography Enhancements */
+.font-serif {
+  font-family: var(--font-serif);
+}
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+/* Gold Gradient Text */
+.text-gold-gradient {
+  background: var(--gold-metallic);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-metallic);
+}
+
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-metallic);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--border-metallic-hover);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), 0 0 25px -5px rgba(212, 175, 55, 0.2);
+  transform: translateY(-4px);
+}
+
+/* Gold Metallic Buttons */
+.btn-gold {
+  background: var(--gold-metallic);
+  color: #0b0f17;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.25);
+}
+
+.btn-gold::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 20%;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.4);
+  transform: rotate(25deg);
+  transition: all 0.75s ease;
+}
+
+.btn-gold:hover::after {
+  left: 140%;
+}
+
+.btn-gold:hover {
+  box-shadow: 0 6px 25px rgba(212, 175, 55, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-gold:active {
+  transform: translateY(0);
+}
+
+.btn-outline-gold {
+  background: transparent;
+  color: var(--gold-soft);
+  border: 1px solid var(--gold-champagne);
+  transition: all 0.3s ease;
+}
+
+.btn-outline-gold:hover {
+  background: rgba(212, 175, 55, 0.15);
+  color: #ffffff;
+  border-color: var(--gold-soft);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+/* Sticky Header Scrolled State */
+.header-scrolled {
+  background: rgba(11, 15, 23, 0.94) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid var(--border-metallic) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+/* Floating Hotline Radar Pulse */
+@keyframes radar-ripple {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.radar-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  border: 2px solid var(--gold-champagne);
+  animation: radar-ripple 2s infinite ease-out;
+  pointer-events: none;
+}
+
+/* Shimmer Highlight */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-text {
+  background: linear-gradient(90deg, #d4af37 0%, #ffffff 50%, #d4af37 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+/* Floating Widget Hover Effects */
+.floating-widget {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.floating-widget:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 12px 30px rgba(212, 175, 55, 0.35);
+}
+
+/* Room Card Image Zoom Container */
+.room-image-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.room-image-container img {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.room-card:hover .room-image-container img {
+  transform: scale(1.08);
+}
+
+/* Modal Animations */
+.modal-overlay {
+  transition: opacity 0.3s ease;
+}
+
+.modal-content {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-overlay:not(.active) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-overlay.active .modal-content {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.modal-overlay:not(.active) .modal-content {
+  transform: scale(0.95) translateY(20px);
+  opacity: 0;
+}
+
+/* Toast Notifications */
+#toast-container {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 320px;
+  max-width: 420px;
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background: rgba(19, 27, 46, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-metallic);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  transform: translateX(120%);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast.hide {
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+/* Lightbox Styling */
+.lightbox-container {
+  transition: opacity 0.3s ease;
+}
+
+.lightbox-img {
+  transition: transform 0.3s ease;
+  max-height: 85vh;
+  max-width: 90vw;
+}
+
+/* QR Code Container Glass Card */
+.vietqr-card {
+  background: linear-gradient(145deg, rgba(25, 36, 61, 0.9), rgba(11, 15, 23, 0.95));
+  border: 1px solid var(--gold-champagne);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+/* Custom Checkbox and Radio styling */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8) sepia(1) saturate(5) hue-rotate(5deg);
+  cursor: pointer;
+}

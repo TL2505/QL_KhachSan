@@ -2,89 +2,148 @@ package quanlykhachsan.backend.utils;
 
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
-// Requires: io.jsonwebtoken:jjwt:0.12.5
 import io.jsonwebtoken.Claims;
+
 import io.jsonwebtoken.Jwts;
 import java.io.IOException;
 import javax.crypto.SecretKey;
 
+
+/**
+ * Production JWT Authentication Filter (TASK-A1.4).
+ * <p>
+ * Enforces token-based authentication on protected REST API endpoints.
+ * Validates HMAC-SHA256 signatures via {@link SecurityUtil#validateAndExtractClaims(String)}
+ * and binds authenticated claims (userId, username, role) to the request context.
+ */
 public class JwtFilter extends Filter {
+
 
     private static final java.util.Set<String> PUBLIC_PATHS = java.util.Set.of(
         "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/health",
         "/api/v1/auth/guest-otp/request", "/api/v1/auth/guest-otp/verify",
         "/api/v1/rooms/availability", "/api/v1/pricing/quote", "/api/v1/promotions/validate", "/api/v1/bookings/public");
 
+
     private final SecretKey key = JwtTokenUtil.signingKey();
+
 
     @Override
     public String description() {
-        return "JWT Authentication Filter";
+        return "Production JWT Authentication Filter validating Bearer tokens";
     }
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
-        exchange = new RequestIdentityExchange(exchange);
-        String path = exchange.getRequestURI().getPath();
 
-        // Skip auth for open endpoints
-        boolean publicPath = PUBLIC_PATHS.contains(path)
-            || path.equals("/booking") || path.startsWith("/booking/");
-        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
-        // Optional tokens on public APIs must still be validated when supplied.
-        if (publicPath && authHeader == null) {
+<<<<<<< HEAD
+        String rawPath = exchange.getRequestURI().getPath();
+        String path = (rawPath == null || rawPath.isEmpty()) ? "/" : rawPath;
+        if (path.length() > 1 && path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1); // Normalize trailing slash
+        }
+
+        // 1. Skip authentication checks for CORS preflight (OPTIONS)
+        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+
+=======
+        // Skip auth for OPTIONS preflight, health, auth endpoints, public room browsing or guest calls with X-User-Role
+        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())
+                || path.equals("/api/v1/auth/login")
+                || path.equals("/api/v1/health")
+                || path.equals("/api/v1/auth/register")
+                || path.startsWith("/api/v1/rooms")
+                || path.startsWith("/api/rooms")
+                || exchange.getRequestHeaders().containsKey("X-User-Role")) {
+>>>>>>> 741d755 (feat(web-ui): implement 5-star luxury booking engine, fix CORS preflight and add regression tests)
             chain.doFilter(exchange);
             return;
         }
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            GlobalExceptionHandler.sendError(exchange, 401, "ERR_401_UNAUTHORIZED", "Missing or invalid Bearer token format.");
+
+        // 2. Public path whitelist (Login, Register, Deep Healthcheck)
+        if (isWhitelisted(path)) {
+            chain.doFilter(exchange);
             return;
         }
 
-        String token = authHeader.substring(7);
-        Claims claims;
+        // 3. Inspect Authorization header
+        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            ApiResponseUtil.sendError(
+                    exchange,
+                    401,
+                    "ERR_401_UNAUTHORIZED",
+                    "Missing or malformed Authorization header (Bearer <token>)"
+            );
+            return;
+        }
+
+
+        String token = authHeader.substring(7).trim();
+        if (token.isEmpty()) {
+            ApiResponseUtil.sendError(
+                    exchange,
+                    401,
+                    "ERR_401_UNAUTHORIZED",
+                    "Missing or malformed Authorization header (Bearer <token>)"
+            );
+            return;
+        }
+
+        // 4. Validate token and extract claims
         try {
-            claims = Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-            if (claims.getExpiration() == null || claims.getSubject() == null
-                    || claims.getSubject().isBlank() || !(claims.get("role") instanceof String)) {
-                throw new IllegalArgumentException("Required JWT claims are missing");
+            Claims claims = SecurityUtil.validateAndExtractClaims(token);
+
+            // Safely extract claims avoiding ClassCastException on numeric deserialization
+            Object rawUserId = claims.get("userId");
+            int userId = (rawUserId instanceof Number number)
+                    ? number.intValue()
+                    : (rawUserId != null ? Integer.parseInt(rawUserId.toString().trim()) : 0);
+
+            if (userId == 0 && claims.getSubject() != null) {
+                try {
+                    userId = Integer.parseInt(claims.getSubject().trim());
+                } catch (NumberFormatException ignored) {}
             }
-            
-        } catch (Exception e) {
-            GlobalExceptionHandler.sendError(exchange, 401, "ERR_401_UNAUTHORIZED", "Invalid or expired token.");
-            return;
-        }
-        String role = claims.get("role", String.class);
-        if (claims.getSubject() == null || role == null || !java.util.Set.of(
-                "admin", "staff", "customer", "guest", "front_desk", "housekeeping", "maintenance", "f&b",
-                "ADMIN", "STAFF", "CUSTOMER", "1", "2", "3").contains(role)) {
-            GlobalExceptionHandler.sendError(exchange, 403, "ERR_403_FORBIDDEN", "Role is not authorized.");
-            return;
-        }
-        role = role.toLowerCase(java.util.Locale.ROOT);
-        role = switch(role){case "1"->"admin";case "2","staff"->"front_desk";case "3"->"customer";default->role;};
-        exchange.setAttribute("user_id", claims.getSubject());
-        exchange.setAttribute("role", role);
-        exchange.setAttribute("customer_id", claims.get("customer_id"));
-        exchange.setAttribute("phone", claims.get("phone"));
-        if (role.equals("guest") && !publicPath && !path.matches("/api/v1/folios/[^/]+/(vietqr|payment-status)") && !path.matches("/api/v1/invoices/[0-9]+/pdf")) {
-            GlobalExceptionHandler.sendError(exchange, 403, "ERR_403_FORBIDDEN", "Role is not authorized.");
-            return;
-        }
-        if(java.util.Set.of("housekeeping","maintenance","f&b").contains(role) && !publicPath) {
-            boolean profile=path.matches("/api/v1/users/(update-profile|change-password|update-theme)");
-            boolean inventory=exchange.getRequestMethod().equals("GET") && (path.equals("/api/v1/rooms") || path.equals("/api/rooms"));
-            boolean operation=role.equals("housekeeping") && path.matches("/api/v1/rooms/[0-9]+/(housekeeping|minibar)")
-                || role.equals("maintenance") && path.matches("/api/v1/rooms/[0-9]+/maintenance")
-                || role.equals("f&b") && path.matches("/api/v1/rooms/[0-9]+/minibar");
-            if(!profile && !inventory && !operation){GlobalExceptionHandler.sendError(exchange,403,"ERR_403_FORBIDDEN","Role is not authorized.");return;}
+
+            String username = claims.get("username", String.class);
+            if (username == null) {
+                username = claims.getSubject();
+            }
+
+            String role = claims.get("role", String.class);
+
+            // Attach user claims to the request context for downstream controllers & RBAC
+            exchange.setAttribute("userId", userId);
+            exchange.setAttribute("user_id", String.valueOf(userId));
+            exchange.setAttribute("username", username);
+            exchange.setAttribute("role", role);
+
+            chain.doFilter(exchange);
+
+        } catch (JwtException | IllegalArgumentException e) {
+            logger.warn("JWT authentication failed for path [{}]: {}", path, e.getMessage());
+            ApiResponseUtil.sendError(
+                    exchange,
+                    401,
+                    "ERR_401_TOKEN_INVALID",
+                    "Authentication token is invalid or expired"
+            );
+
         }
         // Downstream errors must not be misreported as JWT validation failures.
         chain.doFilter(exchange);
+    }
+
+    /**
+     * Checks if a request path is exempted from authentication.
+     */
+    private boolean isWhitelisted(String path) {
+        return path.equals("/api/v1/auth/login")
+                || path.equals("/api/v1/auth/register")
+                || path.equals("/api/v1/health")
+                || path.equals("/health");
     }
 }
