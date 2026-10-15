@@ -1388,3 +1388,68 @@ function updateCurrencyDisplay() {
     el.textContent = state.currency;
   });
 }
+
+// ==========================================================================
+// TASK C5.1: W3C NAVIGATION TIMING API AUTOMATED PERFORMANCE MEASUREMENT
+// ==========================================================================
+function measureW3cPagePerformance() {
+  if (typeof window === 'undefined' || typeof performance === 'undefined') return;
+
+  const calculateAndLog = () => {
+    try {
+      let navStart = 0;
+      let domInteractive = 0;
+      let complete = 0;
+      let totalRenderTime = 0;
+
+      const navEntries = typeof performance.getEntriesByType === 'function'
+        ? performance.getEntriesByType('navigation')
+        : [];
+
+      if (navEntries && navEntries.length > 0) {
+        const nav = navEntries[0];
+        navStart = 0;
+        domInteractive = nav.domInteractive || 0;
+        complete = nav.loadEventEnd || nav.domComplete || nav.duration || 0;
+        totalRenderTime = complete > 0 ? complete : (domInteractive || nav.responseEnd || 0);
+      } else if (performance.timing) {
+        const t = performance.timing;
+        navStart = t.navigationStart;
+        domInteractive = Math.max(0, t.domInteractive - navStart);
+        const loadEnd = t.loadEventEnd > 0 ? t.loadEventEnd : (t.domComplete > 0 ? t.domComplete : Date.now());
+        complete = Math.max(0, loadEnd - navStart);
+        totalRenderTime = complete;
+      }
+
+      const interactiveMs = Math.round(domInteractive);
+      const completeMs = Math.round(totalRenderTime);
+
+      console.log(`[W3C Timing] Navigation Start -> DOM Interactive: ${interactiveMs}ms | Complete: ${completeMs}ms`);
+
+      if (totalRenderTime <= 500) {
+        console.log(`%c[PASS C5.1: ${completeMs} ms]`, 'color: #10b981; font-weight: bold; font-size: 13px; background: #ecfdf5; padding: 2px 6px; border-radius: 4px;');
+      } else {
+        console.warn(`%c[FAIL C5.1: ${completeMs} ms exceeds 500ms threshold]`, 'color: #ef4444; font-weight: bold; font-size: 13px; background: #fef2f2; padding: 2px 6px; border-radius: 4px;');
+      }
+
+      _global.__AURELIA_PERF_METRICS__ = {
+        navigationStart: navStart,
+        domInteractive: domInteractive,
+        complete: totalRenderTime,
+        passed: totalRenderTime <= 500
+      };
+    } catch (e) {
+      console.error('[TASK C5.1] Error measuring navigation timing:', e);
+    }
+  };
+
+  if (document.readyState === 'complete') {
+    setTimeout(calculateAndLog, 50);
+  } else {
+    window.addEventListener('load', () => {
+      setTimeout(calculateAndLog, 50);
+    });
+  }
+}
+
+measureW3cPagePerformance();

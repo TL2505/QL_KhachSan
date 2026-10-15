@@ -204,6 +204,10 @@ public class RoomForm extends JPanel {
     // ── Load rooms ────────────────────────────────────────────────────────
 
     public void loadRooms() {
+        loadRooms(null);
+    }
+
+    public void loadRooms(Runnable onFinished) {
         final long requestGeneration = ++roomLoadGeneration;
         selectedRoom = null;
         loadedRooms.clear();
@@ -297,6 +301,9 @@ public class RoomForm extends JPanel {
                 }
                 gridPanel.revalidate();
                 gridPanel.repaint();
+                if (onFinished != null) {
+                    onFinished.run();
+                }
             }
         };
         worker.execute();

@@ -194,57 +194,6 @@ export function generateVietQRUrl(totalAmount, bookingId) {
   return `https://img.vietqr.io/image/MB-0987654321-compact.png?amount=${cleanAmount}&addInfo=BOOKING_${cleanBookingId}`;
 }
 
-<<<<<<< HEAD
-// Main fetch wrapper
-export async function apiFetch(path, init = {}) {
-    const apiBase = getApiBaseUrl();
-    const session = getAuthSession();
-    
-    const headers = new Headers(init.headers || {});
-    
-    // Add default JSON Content-Type if body exists and is not form-data
-    if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
-        headers.set("Content-Type", "application/json; charset=utf-8");
-    }
-
-    
-    // Bypass Ngrok security warning screen automatically
-    headers.set("ngrok-skip-browser-warning", "69420");
-
-    const url = `${apiBase}${path.startsWith('/') ? path : '/' + path}`;
-    
-    let response;
-    try {
-        response = await fetch(url, { ...init, headers });
-    } catch (err) {
-        throw new Error(`Không thể kết nối đến máy chủ API (${apiBase}). Vui lòng kiểm tra Server Java hoặc ngrok đã hoạt động chưa.`);
-    }
-
-    let result;
-    const text = await response.text();
-    if (text) {
-        try {
-            result = JSON.parse(text);
-        } catch (e) {
-            throw new Error(`Phản hồi từ Server không đúng định dạng JSON: ${text.substring(0, 100)}`);
-        }
-    }
-
-    // Handle standard server envelopes { status, message, data }
-    if (result && typeof result === 'object' && 'status' in result) {
-        if (result.status === 'success') {
-            return result.data;
-        } else {
-            throw new Error(result.message || 'Yêu cầu thất bại từ Server');
-        }
-    }
-
-    // Fallback for direct responses
-    if (!response.ok) {
-        throw new Error(result?.message || `Yêu cầu thất bại với mã lỗi HTTP ${response.status}`);
-    }
-    return result;
-=======
 /**
  * Generate a random UUIDv4 for Idempotency-Key
  */
@@ -256,7 +205,6 @@ export function generateUUID() {
     const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
->>>>>>> 741d755 (feat(web-ui): implement 5-star luxury booking engine, fix CORS preflight and add regression tests)
 }
 
 /**

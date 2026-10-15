@@ -76,6 +76,17 @@ public class SecurityUtil {
         }
     }
 
+    public static io.jsonwebtoken.Claims validateAndExtractClaims(String token) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("JWT token cannot be null or blank");
+        }
+        return io.jsonwebtoken.Jwts.parser()
+                .verifyWith(JwtTokenUtil.signingKey())
+                .build()
+                .parseSignedClaims(token.trim())
+                .getPayload();
+    }
+
     private static void sendError(HttpExchange exchange, int code, String message) throws IOException {
         String json = String.format("{\"status\":\"error\",\"message\":\"%s\"}", message);
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);

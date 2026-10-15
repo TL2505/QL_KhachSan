@@ -3,72 +3,65 @@ package quanlykhachsan.backend.utils;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import io.jsonwebtoken.Claims;
-
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.JwtException;
 import java.io.IOException;
-import javax.crypto.SecretKey;
+import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-
-/**
- * Production JWT Authentication Filter (TASK-A1.4).
- * <p>
- * Enforces token-based authentication on protected REST API endpoints.
- * Validates HMAC-SHA256 signatures via {@link SecurityUtil#validateAndExtractClaims(String)}
- * and binds authenticated claims (userId, username, role) to the request context.
- */
 public class JwtFilter extends Filter {
+    private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
 
-
-    private static final java.util.Set<String> PUBLIC_PATHS = java.util.Set.of(
-        "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/health",
-        "/api/v1/auth/guest-otp/request", "/api/v1/auth/guest-otp/verify",
-        "/api/v1/rooms/availability", "/api/v1/pricing/quote", "/api/v1/promotions/validate", "/api/v1/bookings/public");
-
-
-    private final SecretKey key = JwtTokenUtil.signingKey();
-
+    private static final Set<String> PUBLIC_PATHS = Set.of(
+        "/api/v1/auth/login",
+        "/api/v1/auth/register",
+        "/api/v1/health",
+        "/health",
+        "/api/v1/rooms/availability",
+        "/api/v1/pricing/quote",
+        "/api/v1/promotions/validate",
+        "/api/v1/bookings/public",
+        "/api/v1/auth/guest-otp/request",
+        "/api/v1/auth/guest-otp/verify"
+    );
 
     @Override
     public String description() {
-        return "Production JWT Authentication Filter validating Bearer tokens";
+        return "Production JWT Authentication Filter validating Bearer tokens with Guest Web bypass";
     }
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+        exchange = new RequestIdentityExchange(exchange);
 
-<<<<<<< HEAD
+        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+            chain.doFilter(exchange);
+            return;
+        }
+
         String rawPath = exchange.getRequestURI().getPath();
         String path = (rawPath == null || rawPath.isEmpty()) ? "/" : rawPath;
         if (path.length() > 1 && path.endsWith("/")) {
-            path = path.substring(0, path.length() - 1); // Normalize trailing slash
+            path = path.substring(0, path.length() - 1);
         }
 
-        // 1. Skip authentication checks for CORS preflight (OPTIONS)
-        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+        boolean isPublic = PUBLIC_PATHS.contains(path)
+                || path.startsWith("/booking")
+                || path.equals("/api/v1/rooms")
+                || path.equals("/api/rooms");
 
-=======
-        // Skip auth for OPTIONS preflight, health, auth endpoints, public room browsing or guest calls with X-User-Role
-        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())
-                || path.equals("/api/v1/auth/login")
-                || path.equals("/api/v1/health")
-                || path.equals("/api/v1/auth/register")
-                || path.startsWith("/api/v1/rooms")
-                || path.startsWith("/api/rooms")
-                || exchange.getRequestHeaders().containsKey("X-User-Role")) {
->>>>>>> 741d755 (feat(web-ui): implement 5-star luxury booking engine, fix CORS preflight and add regression tests)
-            chain.doFilter(exchange);
-            return;
-        }
+        boolean isGuestRoleHeader = exchange.getRequestHeaders().containsKey("X-User-Role")
+                && "guest".equalsIgnoreCase(exchange.getRequestHeaders().getFirst("X-User-Role"));
 
-
-        // 2. Public path whitelist (Login, Register, Deep Healthcheck)
-        if (isWhitelisted(path)) {
-            chain.doFilter(exchange);
-            return;
-        }
-
-        // 3. Inspect Authorization header
         String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+
+        if ((isPublic || isGuestRoleHeader) && (authHeader == null || authHeader.isBlank())) {
+            if (isGuestRoleHeader) {
+                exchange.setAttribute("role", "guest");
+            }
+            chain.doFilter(exchange);
+            return;
+        }
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             ApiResponseUtil.sendError(
@@ -79,7 +72,6 @@ public class JwtFilter extends Filter {
             );
             return;
         }
-
 
         String token = authHeader.substring(7).trim();
         if (token.isEmpty()) {
@@ -92,11 +84,9 @@ public class JwtFilter extends Filter {
             return;
         }
 
-        // 4. Validate token and extract claims
         try {
             Claims claims = SecurityUtil.validateAndExtractClaims(token);
 
-            // Safely extract claims avoiding ClassCastException on numeric deserialization
             Object rawUserId = claims.get("userId");
             int userId = (rawUserId instanceof Number number)
                     ? number.intValue()
@@ -115,12 +105,19 @@ public class JwtFilter extends Filter {
 
             String role = claims.get("role", String.class);
 
-            // Attach user claims to the request context for downstream controllers & RBAC
+            if (role == null || !Set.of(
+                    "admin", "staff", "customer", "guest", "front_desk", "housekeeping", "maintenance", "f&b",
+                    "ADMIN", "STAFF", "CUSTOMER", "1", "2", "3", "manager").contains(role)) {
+                ApiResponseUtil.sendError(exchange, 403, "ERR_403_FORBIDDEN", "Role is not authorized");
+                return;
+            }
+
             exchange.setAttribute("userId", userId);
             exchange.setAttribute("user_id", String.valueOf(userId));
             exchange.setAttribute("username", username);
             exchange.setAttribute("role", role);
 
+            // Only call chain.doFilter once inside the try block
             chain.doFilter(exchange);
 
         } catch (JwtException | IllegalArgumentException e) {
@@ -131,19 +128,6 @@ public class JwtFilter extends Filter {
                     "ERR_401_TOKEN_INVALID",
                     "Authentication token is invalid or expired"
             );
-
         }
-        // Downstream errors must not be misreported as JWT validation failures.
-        chain.doFilter(exchange);
-    }
-
-    /**
-     * Checks if a request path is exempted from authentication.
-     */
-    private boolean isWhitelisted(String path) {
-        return path.equals("/api/v1/auth/login")
-                || path.equals("/api/v1/auth/register")
-                || path.equals("/api/v1/health")
-                || path.equals("/health");
     }
 }

@@ -335,8 +335,26 @@ public class MainUI extends JFrame {
         });
         globalKeyDispatcher.bind(java.awt.event.KeyEvent.VK_F10, this::printCurrentView);
         globalKeyDispatcher.install();
-        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W,java.awt.event.InputEvent.CTRL_DOWN_MASK),"walk-in");
-        getRootPane().getActionMap().put("walk-in",new AbstractAction(){@Override public void actionPerformed(java.awt.event.ActionEvent e){if(currentUser.getRoleId()==1 || currentUser.getRoleId()==2)new quanlykhachsan.frontend.view.WalkInWizardDialog(MainUI.this,()->{if(roomForm!=null)roomForm.loadRooms();}).setVisible(true);}});
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+            KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_DOWN_MASK), "walk-in");
+        getRootPane().getActionMap().put("walk-in", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                final long keyPressNano = System.nanoTime();
+                if (currentUser.getRoleId() == 1 || currentUser.getRoleId() == 2) {
+                    new quanlykhachsan.frontend.view.WalkInWizardDialog(MainUI.this, () -> {
+                        if (roomForm != null) {
+                            roomForm.loadRooms(() -> {
+                                long elapsedMs = (System.nanoTime() - keyPressNano) / 1_000_000;
+                                System.out.println("[TASK C5.3] Walk-in completed & room grid loaded in: " + elapsedMs + " ms" + (elapsedMs < 200 ? " (< 200ms PASS)" : ""));
+                            });
+                        }
+                    }).setVisible(true);
+                    long openMs = (System.nanoTime() - keyPressNano) / 1_000_000;
+                    System.out.println("[TASK C5.3] Ctrl+W Walk-in opened in: " + openMs + " ms");
+                }
+            }
+        });
     }
 
     private void withRoomForm(String action) {

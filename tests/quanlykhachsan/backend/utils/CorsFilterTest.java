@@ -46,7 +46,7 @@ class CorsFilterTest {
     }
 
     @Test
-    void preflightOptionsReturns200WithAllowHeadersAndSkipsHandler() throws Exception {
+    void preflightOptionsReturns204WithAllowHeadersAndSkipsHandler() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/test"))
@@ -58,7 +58,7 @@ class CorsFilterTest {
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertEquals(200, response.statusCode());
+        assertEquals(204, response.statusCode());
         assertTrue(!handlerInvoked.get(), "Handler should not be reached for OPTIONS preflight");
         assertEquals("*", response.headers().firstValue("Access-Control-Allow-Origin").orElse(null));
         String allowedHeaders = response.headers().firstValue("Access-Control-Allow-Headers").orElse("");

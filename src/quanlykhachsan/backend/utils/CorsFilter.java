@@ -4,15 +4,12 @@ import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 
-/**
- * Global CORS filter to enable browser & external webhook HTTP calls (W3C & ADR-05 compliant).
- */
 public class CorsFilter extends Filter {
 
     public static final String ALLOWED_ORIGIN = "*";
     public static final String ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
     public static final String ALLOWED_HEADERS = "Content-Type, Authorization, X-User-Role, Idempotency-Key, X-Signature, ngrok-skip-browser-warning";
-    public static final String MAX_AGE = "86400"; // 24 hours caching
+    public static final String MAX_AGE = "86400";
 
     @Override
     public String description() {
@@ -21,29 +18,17 @@ public class CorsFilter extends Filter {
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
-        // Set standard CORS response headers
-<<<<<<< HEAD
-=======
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, X-User-Role, Idempotency-Key, Authorization, Accept, ngrok-skip-browser-warning");
-        exchange.getResponseHeaders().set("Access-Control-Max-Age", "86400"); // 24 hours caching
->>>>>>> 741d755 (feat(web-ui): implement 5-star luxury booking engine, fix CORS preflight and add regression tests)
-
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", ALLOWED_METHODS);
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", ALLOWED_HEADERS);
         exchange.getResponseHeaders().set("Access-Control-Max-Age", MAX_AGE);
 
-
-        // Handle OPTIONS request pre-flight checks per W3C & ADR-05 (204 No Content)
+        // REQUIRED HTTP 204 No Content according to W3C / ADR-05 standards
         if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
             exchange.sendResponseHeaders(204, -1);
-
             return;
         }
 
-        // Pass control to the next handler/filter in the chain
         chain.doFilter(exchange);
     }
 }
