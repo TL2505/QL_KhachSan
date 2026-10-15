@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="public/css/style.css">
   <link rel="stylesheet" href="portal.css">
+  <link rel="stylesheet" href="portal-customer.css">
+  <link rel="stylesheet" href="portal-theme.css">
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="portal-body">
@@ -19,6 +21,9 @@
       <span><strong>Aurelia <em>Palace</em></strong><small>5★ LUXURY HOTEL & RESORT</small></span>
     </a>
     <a class="portal-return" href="index.html"><i data-lucide="arrow-left"></i> Về trang khách sạn</a>
+    <button type="button" class="portal-theme-toggle" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
+      <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
+    </button>
   </header>
 
   <main>
@@ -62,7 +67,10 @@
         <div class="sidebar-account"><div class="account-avatar" id="account-avatar">A</div><div class="account-meta"><strong id="user-display-name">Aurelia</strong><small id="account-role">Thành viên</small></div><button id="logout-button" type="button" aria-label="Đăng xuất"><i data-lucide="log-out"></i></button></div>
       </aside>
       <section class="portal-content">
-        <div class="portal-content-bar"><div><p class="portal-eyebrow">AURELIA GRAND PALACE</p><h1 id="portal-heading">Tổng quan</h1></div><a class="portal-return" href="index.html"><i data-lucide="external-link"></i> Trang khách sạn</a></div>
+        <div class="portal-content-bar">
+          <div><p class="portal-eyebrow">AURELIA GRAND PALACE</p><h1 id="portal-heading">Tổng quan</h1></div>
+          <a class="portal-return" href="index.html"><i data-lucide="external-link"></i> Trang khách sạn</a>
+        </div>
         <div id="portal-message" class="portal-message" role="status" aria-live="polite" hidden></div>
         <main id="view-container" class="portal-view"></main>
       </section>

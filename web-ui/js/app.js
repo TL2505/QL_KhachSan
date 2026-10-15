@@ -13,6 +13,7 @@ import {
   generateVietQRUrl,
   LUXURY_ROOMS_CATALOG
 } from './api.js';
+import '../public/js/shared/theme.js';
 
 // Cross-environment safe global reference (Browser Window vs Node.js test environment)
 const _global = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});

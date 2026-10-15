@@ -3,6 +3,7 @@ import { loadAdminView } from './public/js/view-admin.js';
 import { loadStaffView } from './public/js/view-staff.js';
 import { loadCustomerView } from './public/js/view-customer.js';
 import { loadProfileView } from './public/js/view-shared.js';
+import './public/js/shared/theme.js';
 
 const menus = {
   ADMIN: [
@@ -39,6 +40,7 @@ function status(message, kind = 'error') {
 }
 
 function showAuth(tab = 'login') {
+  document.body.classList.remove('customer-portal');
   byId('auth-view').hidden = false;
   byId('app-view').hidden = true;
   const login = tab === 'login';
@@ -89,6 +91,9 @@ function enterPortal(session) {
     status('Tài khoản này chưa được cấp quyền truy cập cổng web.');
     return;
   }
+  const isCustomer = role === 'CUSTOMER';
+  document.body.classList.toggle('customer-portal', isCustomer);
+  byId('app-view').setAttribute('aria-label', role === 'CUSTOMER' ? 'Cổng khách hàng Aurelia' : 'Cổng quản lý Aurelia');
   byId('auth-view').hidden = true;
   byId('app-view').hidden = false;
   const requested = new URLSearchParams(location.search).get('view');

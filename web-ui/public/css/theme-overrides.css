@@ -1,0 +1,128 @@
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg-obsidian: #f6f3ed;
+  --bg-slate-night: #fff;
+  --bg-surface: #f0ebe2;
+  --bg-card: rgba(255, 255, 255, .94);
+  --bg-glass: rgba(255, 255, 255, .9);
+  --bg-glass-card: rgba(255, 255, 255, .84);
+  --gold-champagne: #986b3f;
+  --gold-soft: #6f4a2b;
+  --gold-dark: #805c3b;
+  --border-metallic: rgba(128, 92, 59, .2);
+  --border-metallic-hover: rgba(128, 92, 59, .45);
+  --border-subtle: rgba(67, 49, 29, .12);
+  --text-primary: #29251f;
+  --text-muted: #777168;
+  --text-gold: #6f4a2b;
+}
+
+html[data-theme="light"] body.bg-obsidian {
+  color: var(--text-primary);
+  background: var(--bg-obsidian);
+}
+
+html[data-theme="light"] .bg-obsidian,
+html[data-theme="light"] [class~="bg-slate-950"],
+html[data-theme="light"] [class~="bg-slate-900"],
+html[data-theme="light"] [class~="bg-slate-800"],
+html[data-theme="light"] [class~="bg-slate-900/80"],
+html[data-theme="light"] [class~="bg-slate-900/90"],
+html[data-theme="light"] [class~="bg-slate-900/50"],
+html[data-theme="light"] [class~="bg-slate-800/80"] {
+  background-color: #fff !important;
+}
+
+html[data-theme="light"] body.bg-obsidian {
+  background-color: var(--bg-obsidian) !important;
+}
+
+html[data-theme="light"] [class~="text-white"],
+html[data-theme="light"] [class~="text-slate-50"],
+html[data-theme="light"] [class~="text-slate-100"],
+html[data-theme="light"] [class~="text-slate-200"],
+html[data-theme="light"] [class~="text-slate-300"] {
+  color: #29251f !important;
+}
+
+html[data-theme="light"] [class~="text-amber-200"],
+html[data-theme="light"] [class~="text-amber-300"],
+html[data-theme="light"] [class~="text-amber-400"] {
+  color: #805c3b !important;
+}
+
+html[data-theme="light"] [class~="border-amber-500/30"],
+html[data-theme="light"] [class~="border-amber-400/40"],
+html[data-theme="light"] [class~="border-amber-500/20"] {
+  border-color: rgba(128, 92, 59, .28) !important;
+}
+
+html[data-theme="light"] #main-header {
+  color: #29251f;
+}
+
+html[data-theme="light"] #main-header.header-scrolled {
+  background: rgba(255, 255, 255, .96) !important;
+  border-color: rgba(128, 92, 59, .2) !important;
+  box-shadow: 0 10px 30px rgba(67, 49, 29, .12) !important;
+}
+
+html[data-theme="light"] .glass-panel,
+html[data-theme="light"] .glass-card {
+  color: #29251f;
+  border-color: rgba(128, 92, 59, .2);
+  background: rgba(255, 255, 255, .9);
+}
+
+html[data-theme="light"] .glass-card:hover {
+  box-shadow: 0 10px 30px rgba(67, 49, 29, .12), 0 0 25px rgba(128, 92, 59, .08);
+}
+
+html[data-theme="light"] .theme-toggle {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid rgba(212, 175, 55, .4);
+  border-radius: 999px;
+  color: #805c3b;
+  background: rgba(255, 255, 255, .9);
+  cursor: pointer;
+}
+
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid rgba(212, 175, 55, .35);
+  border-radius: 999px;
+  color: #f3e5ab;
+  background: rgba(15, 23, 42, .8);
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: #d4af37;
+}
+
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 640px) {
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+  }
+}

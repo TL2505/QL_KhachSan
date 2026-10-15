@@ -106,3 +106,9 @@
 - `git fetch origin` với quyền Git metadata đã thành công sau lần đầu bị từ chối. `origin/PHASE_1` và `PHASE_1` cục bộ vẫn ở 3844597; `PHASE_2` vẫn đi trước `origin/PHASE_2` 7 commit, không có commit mới từ xa. Không merge hoặc push.
 - Phiên có vai trò chung `STAFF` nay bị từ chối nếu backend không cung cấp bộ phận cụ thể được hỗ trợ; chuẩn hóa nhãn nhận cả `Front Desk` và `FRONT_DESK` mà không gộp menu các bộ phận.
 - Thay lời hứa giảm giá loyalty không có căn cứ bằng thông báo trạng thái chung. Dashboard/booking Customer, đặt phòng bằng tài khoản và loyalty cá nhân hiện hiển thị lý do chặn thay vì gửi request dựa trên customerId hoặc tự tính giá. Luồng OTP Guest vẫn tách biệt; khuyến mãi/chat Customer không liên quan vẫn giữ riêng.
+
+## [2026-10-15] — @codex — các giao diện theme web-ui, docs/WEB_UI_ISSUES.md, docs/CHANGELOG.md, docs/vi/CHANGELOG.md — Theme toàn cục và theo dõi lỗi UI
+- Bổ sung một nút theme Tự động/Sáng/Tối dùng chung cho trang khách sạn và portal; hỗ trợ theo dõi cài đặt trình duyệt, lưu lựa chọn dùng xuyên các trang, nhãn truy cập rõ ràng và bảng màu sáng tương ứng; giữ nguyên bố cục riêng của khách hàng và giao diện quản lý.
+- Bổ sung kiểm thử hành vi theme và cập nhật màu trình duyệt theo theme. Bộ Node tập trung đạt 6/6; kiểm tra cú pháp JavaScript và `git diff --check` đạt.
+- Tạo GitHub issue cho các lỗi UI/tích hợp còn tồn đọng: #36 biểu tượng mạng xã hội không hỗ trợ, #37 nút đóng lightbox bị che, #38 nhận diện/giá phòng, #39 bản dịch tiếng Anh chưa đầy đủ, #40 thiếu bộ chọn khách/phòng, #41 endpoint thống kê admin, #42 trạng thái tải dashboard/loyalty khách hàng và #43 trang ưu đãi bị kẹt khi tải.
+- Gắn số issue vào `docs/WEB_UI_ISSUES.md`. Không mở lại các lỗi đã được đánh dấu khắc phục; giữ `.phase2-runtime/` ngoài Git.

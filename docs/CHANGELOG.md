@@ -109,3 +109,9 @@
 - Elevated `git fetch origin` succeeded after the initial metadata permission failure. `origin/PHASE_1` and local `PHASE_1` remain at 3844597; `PHASE_2` remains 7 commits ahead of `origin/PHASE_2` with 0 incoming commits. No merge or push was performed.
 - Generic `STAFF` sessions now fail closed unless the backend supplies a distinct supported department role; label normalization accepts `Front Desk` and `FRONT_DESK` without merging departmental menus.
 - Replaced unsupported Staff loyalty discount promises with a shared status notice. Customer dashboard/bookings, account booking discovery, and personal loyalty views now show explicit blockers instead of sending customer-ID-dependent requests or calculating account booking prices locally. The distinct OTP Guest flow and unrelated Customer promotions/chat remain separate.
+
+## [2026-10-15] — @codex — web-ui theme surfaces, docs/WEB_UI_ISSUES.md, docs/CHANGELOG.md, docs/vi/CHANGELOG.md — Global theme and UI issue tracking
+- Added one shared Auto/Light/Dark theme control across the hotel landing pages and portal, with browser-preference tracking, persistent cross-page selection, accessible control labels, and matching light palettes; preserved customer and management layouts.
+- Added theme behavior tests and recorded browser theme-color updates. Focused Node tests passed (6/6); JavaScript syntax and `git diff --check` passed.
+- Created GitHub issues for outstanding UI/integration findings: #36 unsupported social icons, #37 lightbox close control, #38 room identity/pricing, #39 incomplete English localization, #40 missing party/room selectors, #41 admin statistics endpoint, #42 customer dashboard/loyalty loading, and #43 offers loading state.
+- Documented the issue references in `docs/WEB_UI_ISSUES.md`. No issues already marked resolved were re-opened; `.phase2-runtime/` remains excluded from version control.

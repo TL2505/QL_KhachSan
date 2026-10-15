@@ -1,0 +1,122 @@
+html[data-theme="light"] body.portal-body:not(.customer-portal) {
+  --portal-bg: #f6f3ed;
+  --portal-panel: #fff;
+  --portal-surface: #f0ebe2;
+  --portal-gold: #986b3f;
+  --portal-soft: #6f4a2b;
+  --portal-text: #29251f;
+  --portal-muted: #777168;
+  --portal-border: #e6dfd3;
+  color-scheme: light;
+  background:
+    radial-gradient(ellipse at 15% 25%, rgba(183, 143, 95, .09), transparent 34%),
+    var(--portal-bg);
+  color: var(--portal-text);
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-topbar,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-sidebar {
+  background: rgba(255, 255, 255, .94);
+  border-color: var(--portal-border);
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-brand,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-return,
+html[data-theme="light"] .portal-body:not(.customer-portal) .sidebar-logo,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-nav button {
+  color: var(--portal-text);
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-brand-mark {
+  color: var(--portal-gold);
+  border-color: var(--portal-border);
+  background: #fbf8f2;
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-brand em,
+html[data-theme="light"] .portal-body:not(.customer-portal) .sidebar-logo em,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-nav button svg {
+  color: var(--portal-gold);
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-nav button:hover,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-nav button.active {
+  color: var(--portal-soft);
+  background: #f4ede2;
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .account-meta strong,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-content-bar h1,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view .page-header h1,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view td {
+  color: var(--portal-text);
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .auth-story>p:not(.portal-eyebrow),
+html[data-theme="light"] .portal-body:not(.customer-portal) .auth-form label {
+  color: #625d54;
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .auth-card,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view .card {
+  color: var(--portal-text);
+  background: rgba(255, 255, 255, .96);
+  border-color: var(--portal-border);
+  box-shadow: 0 12px 32px rgba(67, 49, 29, .07);
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .auth-form input,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view input,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view select,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view textarea,
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view .form-input {
+  color: var(--portal-text);
+  background: #fff;
+  border-color: #ded6c9;
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view th {
+  color: var(--portal-soft);
+}
+
+.portal-theme-toggle {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--portal-border);
+  border-radius: 50%;
+  color: var(--portal-soft);
+  background: var(--portal-surface);
+  cursor: pointer;
+}
+
+.portal-theme-toggle:hover {
+  border-color: var(--portal-gold);
+}
+
+.portal-theme-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+html[data-theme="light"] .portal-theme-toggle {
+  color: #805c3b;
+  background: #fff;
+}
+
+@media (max-width: 600px) {
+  .portal-topbar {
+    gap: 12px;
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .portal-topbar .portal-return {
+    margin-left: auto;
+  }
+}

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f17">
   <title>Aurelia Grand Palace | Khách Sạn Nghỉ Dưỡng 5★ Quốc Tế</title>
   <meta name="description" content="Khám phá Aurelia Grand Palace - Tuyệt tác nghỉ dưỡng 5 sao quốc tế bên bờ Vịnh Ngọc. Dịch vụ quản gia 24/7, ẩm thực thượng hạng và hồ bơi vô cực chân mây.">
 
@@ -37,6 +38,7 @@
 
   <!-- Custom Native CSS3 Luxury Design Tokens -->
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/theme-overrides.css">
 
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -90,6 +92,9 @@
 
       <!-- Right Actions: Language, Currency, Sticky Book Now CTA -->
       <div class="flex items-center gap-3">
+        <button type="button" class="theme-toggle" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
+          <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
+        </button>
         <a href="portal.html" class="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200 hover:text-white transition-colors" aria-label="Đăng nhập cổng khách hàng và nhân viên"><i data-lucide="user-round" class="w-4 h-4"></i>Đăng nhập</a>
         
         <!-- Language Switcher -->
