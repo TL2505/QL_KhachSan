@@ -3,6 +3,7 @@ package quanlykhachsan.backend.utils;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 
 import io.jsonwebtoken.Jwts;
 import java.io.IOException;
@@ -22,7 +23,8 @@ public class JwtFilter extends Filter {
     private static final java.util.Set<String> PUBLIC_PATHS = java.util.Set.of(
         "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/health",
         "/api/v1/auth/guest-otp/request", "/api/v1/auth/guest-otp/verify",
-        "/api/v1/rooms/availability", "/api/v1/pricing/quote", "/api/v1/promotions/validate", "/api/v1/bookings/public");
+        "/api/v1/rooms", "/api/rooms", "/api/v1/rooms/availability",
+        "/api/v1/pricing/quote", "/api/v1/promotions/validate", "/api/v1/bookings/public");
 
 
     private final SecretKey key = JwtTokenUtil.signingKey();
@@ -35,39 +37,25 @@ public class JwtFilter extends Filter {
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
-
-<<<<<<< HEAD
         String rawPath = exchange.getRequestURI().getPath();
         String path = (rawPath == null || rawPath.isEmpty()) ? "/" : rawPath;
         if (path.length() > 1 && path.endsWith("/")) {
             path = path.substring(0, path.length() - 1); // Normalize trailing slash
         }
 
-        // 1. Skip authentication checks for CORS preflight (OPTIONS)
+        // CORS preflight does not carry application credentials.
         if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
-
-=======
-        // Skip auth for OPTIONS preflight, health, auth endpoints, public room browsing or guest calls with X-User-Role
-        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())
-                || path.equals("/api/v1/auth/login")
-                || path.equals("/api/v1/health")
-                || path.equals("/api/v1/auth/register")
-                || path.startsWith("/api/v1/rooms")
-                || path.startsWith("/api/rooms")
-                || exchange.getRequestHeaders().containsKey("X-User-Role")) {
->>>>>>> 741d755 (feat(web-ui): implement 5-star luxury booking engine, fix CORS preflight and add regression tests)
             chain.doFilter(exchange);
             return;
         }
 
-
-        // 2. Public path whitelist (Login, Register, Deep Healthcheck)
+        // Public routes are explicit; caller-supplied role headers never grant access.
         if (isWhitelisted(path)) {
             chain.doFilter(exchange);
             return;
         }
 
-        // 3. Inspect Authorization header
+        // Inspect Authorization header for protected routes.
         String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -92,48 +80,48 @@ public class JwtFilter extends Filter {
             return;
         }
 
-        // 4. Validate token and extract claims
+        // Validate credentials separately from downstream handling so handler
+        // exceptions are not mistaken for invalid JWTs and the chain runs once.
+        final Claims claims;
+        final int userId;
+        final String username;
+        final String role;
         try {
-            Claims claims = SecurityUtil.validateAndExtractClaims(token);
+            claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
 
             // Safely extract claims avoiding ClassCastException on numeric deserialization
             Object rawUserId = claims.get("userId");
-            int userId = (rawUserId instanceof Number number)
+            int parsedUserId = (rawUserId instanceof Number number)
                     ? number.intValue()
                     : (rawUserId != null ? Integer.parseInt(rawUserId.toString().trim()) : 0);
 
-            if (userId == 0 && claims.getSubject() != null) {
+            if (parsedUserId == 0 && claims.getSubject() != null) {
                 try {
-                    userId = Integer.parseInt(claims.getSubject().trim());
+                    parsedUserId = Integer.parseInt(claims.getSubject().trim());
                 } catch (NumberFormatException ignored) {}
             }
 
-            String username = claims.get("username", String.class);
-            if (username == null) {
-                username = claims.getSubject();
-            }
-
-            String role = claims.get("role", String.class);
-
-            // Attach user claims to the request context for downstream controllers & RBAC
-            exchange.setAttribute("userId", userId);
-            exchange.setAttribute("user_id", String.valueOf(userId));
-            exchange.setAttribute("username", username);
-            exchange.setAttribute("role", role);
-
-            chain.doFilter(exchange);
+            userId = parsedUserId;
+            String claimUsername = claims.get("username", String.class);
+            username = claimUsername == null ? claims.getSubject() : claimUsername;
+            role = claims.get("role", String.class);
 
         } catch (JwtException | IllegalArgumentException e) {
-            logger.warn("JWT authentication failed for path [{}]: {}", path, e.getMessage());
+            System.err.printf("JWT authentication failed for path [%s]: %s%n", path, e.getMessage());
             ApiResponseUtil.sendError(
                     exchange,
                     401,
                     "ERR_401_TOKEN_INVALID",
                     "Authentication token is invalid or expired"
             );
-
+            return;
         }
-        // Downstream errors must not be misreported as JWT validation failures.
+
+        // Attach verified claims and continue exactly once.
+        exchange.setAttribute("userId", userId);
+        exchange.setAttribute("user_id", String.valueOf(userId));
+        exchange.setAttribute("username", username);
+        exchange.setAttribute("role", role);
         chain.doFilter(exchange);
     }
 
@@ -141,9 +129,6 @@ public class JwtFilter extends Filter {
      * Checks if a request path is exempted from authentication.
      */
     private boolean isWhitelisted(String path) {
-        return path.equals("/api/v1/auth/login")
-                || path.equals("/api/v1/auth/register")
-                || path.equals("/api/v1/health")
-                || path.equals("/health");
+        return PUBLIC_PATHS.contains(path) || path.equals("/health");
     }
 }

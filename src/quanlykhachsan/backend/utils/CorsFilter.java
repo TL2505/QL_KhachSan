@@ -11,7 +11,7 @@ public class CorsFilter extends Filter {
 
     public static final String ALLOWED_ORIGIN = "*";
     public static final String ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
-    public static final String ALLOWED_HEADERS = "Content-Type, Authorization, X-User-Role, Idempotency-Key, X-Signature, ngrok-skip-browser-warning";
+    public static final String ALLOWED_HEADERS = "Content-Type, Authorization, X-User-Role, Idempotency-Key, X-Signature, Accept, ngrok-skip-browser-warning";
     public static final String MAX_AGE = "86400"; // 24 hours caching
 
     @Override
@@ -22,14 +22,6 @@ public class CorsFilter extends Filter {
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
         // Set standard CORS response headers
-<<<<<<< HEAD
-=======
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, X-User-Role, Idempotency-Key, Authorization, Accept, ngrok-skip-browser-warning");
-        exchange.getResponseHeaders().set("Access-Control-Max-Age", "86400"); // 24 hours caching
->>>>>>> 741d755 (feat(web-ui): implement 5-star luxury booking engine, fix CORS preflight and add regression tests)
-
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", ALLOWED_METHODS);
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", ALLOWED_HEADERS);
