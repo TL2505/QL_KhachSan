@@ -311,6 +311,11 @@ body {
   max-width: 90vw;
 }
 
+.lightbox-img.is-zoomed {
+  transform: scale(1.6);
+  cursor: zoom-out;
+}
+
 /* QR Code Container Glass Card */
 .vietqr-card {
   background: linear-gradient(145deg, rgba(25, 36, 61, 0.9), rgba(11, 15, 23, 0.95));

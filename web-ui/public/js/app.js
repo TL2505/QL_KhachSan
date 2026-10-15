@@ -13,6 +13,7 @@ import {
   generateVietQRUrl,
   LUXURY_ROOMS_CATALOG
 } from './api.js';
+import './shared/theme.js';
 
 // Cross-environment safe global reference (Browser Window vs Node.js test environment)
 const _global = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
@@ -22,6 +23,8 @@ const state = {
   language: (typeof localStorage !== 'undefined' ? localStorage.getItem('aurelia_lang') : null) || 'vi',
   currency: (typeof localStorage !== 'undefined' ? localStorage.getItem('aurelia_currency') : null) || 'VND',
   rooms: [],
+  roomsAreLive: false,
+  roomsSearchedFor: null,
   filteredRooms: [],
   selectedCategory: 'all',
   activeGalleryTab: 'all',
@@ -47,6 +50,8 @@ const state = {
     serviceChargeAmount: 0,
     totalAmount: 0,
     bookingId: null,
+    bookingReference: null,
+    isSimulated: false,
     guest: {
       fullName: '',
       phone: '',
@@ -332,12 +337,26 @@ async function loadRooms(filterParams = {}) {
   }
 
   try {
-    state.rooms = await getRooms(filterParams);
+    const result = await getRooms(filterParams);
+    state.rooms = result.rooms;
+    state.roomsAreLive = result.source === 'api';
+    state.roomsSearchedFor = filterParams.checkIn && filterParams.checkOut
+      ? { checkIn: filterParams.checkIn, checkOut: filterParams.checkOut }
+      : null;
     filterAndRenderRooms();
   } catch (err) {
-    showToast('Không thể kết nối máy chủ, kích hoạt danh mục Luxury dự phòng.', 'warning');
-    state.rooms = LUXURY_ROOMS_CATALOG;
+    state.rooms = err.statusCode ? [] : LUXURY_ROOMS_CATALOG.map(room => ({ ...room, isDemoCatalog: true }));
+    state.roomsAreLive = false;
+    state.roomsSearchedFor = null;
+    if (err.statusCode) showToast(`Không thể tải danh sách phòng (HTTP ${err.statusCode}). Vui lòng thử lại.`, 'error', 7000);
+    else showToast('Không thể kết nối máy chủ. Đang hiển thị danh mục Luxury mẫu; đặt phòng sẽ chạy ở chế độ demo.', 'warning', 7000);
     filterAndRenderRooms();
+  }
+  if (filterParams.checkIn && filterParams.checkOut) {
+    const checkInInput = document.getElementById('search-checkin');
+    const checkOutInput = document.getElementById('search-checkout');
+    if (checkInInput) checkInInput.value = filterParams.checkIn;
+    if (checkOutInput) checkOutInput.value = filterParams.checkOut;
   }
 }
 
@@ -401,7 +420,7 @@ function filterAndRenderRooms() {
           <div>
             <!-- Category & Title -->
             <div class="flex items-center justify-between text-xs tracking-widest uppercase font-semibold text-amber-400 mb-1">
-              <span>${room.category} Class</span>
+              <span>${room.category} Class${room.isDemoCatalog ? ' · Demo' : ''}</span>
               <span class="text-slate-400">#${room.roomNumber}</span>
             </div>
             <h3 class="font-serif text-xl text-white font-medium group-hover:text-amber-200 transition-colors line-clamp-1 mb-3">
@@ -618,12 +637,28 @@ export function openBookingModal(roomId = null) {
     state.search.checkOut = searchCheckOut;
   }
 
+  if (!targetRoom.isDemoCatalog && (!state.roomsAreLive || !state.roomsSearchedFor ||
+      state.roomsSearchedFor.checkIn !== state.search.checkIn || state.roomsSearchedFor.checkOut !== state.search.checkOut)) {
+    state.roomsSearchedFor = null;
+    showToast('Ngày lưu trú đã thay đổi. Hãy kiểm tra lại phòng trống trước khi đặt.', 'warning', 7000);
+    return;
+  }
+
+  if (state.roomsSearchedFor && (state.roomsSearchedFor.checkIn !== state.search.checkIn || state.roomsSearchedFor.checkOut !== state.search.checkOut)) {
+    state.roomsSearchedFor = null;
+    showToast('Ngày lưu trú đã thay đổi. Hãy kiểm tra lại phòng trống trước khi tiếp tục.', 'warning', 7000);
+    return;
+  }
+
   calculateBookingPricing();
 
   const modal = document.getElementById('booking-modal');
   if (modal) {
     renderBookingModalContent();
     modal.classList.add('active');
+    if (!targetRoom.isDemoCatalog && !state.roomsSearchedFor) {
+      showToast('Bạn đang xem phòng chưa được kiểm tra cho ngày lưu trú. Hãy tìm tình trạng phòng trước khi xác nhận.', 'warning', 7000);
+    }
   }
 }
 
@@ -639,6 +674,10 @@ _global.closeBookingModal = function() {
 function calculateBookingPricing() {
   const b = state.booking;
   if (!b.room) return;
+
+  if (b.room.isDemoCatalog) {
+    showToast('Giá và tình trạng phòng đang dùng dữ liệu mẫu; sẽ không tạo đặt phòng thật.', 'warning', 5000);
+  }
 
   const checkIn = parseLocalDate(state.search.checkIn);
   const checkOut = parseLocalDate(state.search.checkOut);
@@ -743,11 +782,11 @@ function renderBookingModalContent() {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Ngày nhận phòng</label>
-          <input type="date" id="booking-checkin" value="${state.search.checkIn}" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+          <input type="date" id="booking-checkin" min="${formatLocalDate(new Date())}" value="${state.search.checkIn}" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Ngày trả phòng</label>
-          <input type="date" id="booking-checkout" value="${state.search.checkOut}" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+          <input type="date" id="booking-checkout" min="${state.search.checkIn}" value="${state.search.checkOut}" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
         </div>
         <div class="sm:col-span-2">
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Mã ưu đãi (Promo Code)</label>
@@ -803,12 +842,25 @@ function renderBookingModalContent() {
     const dateOut = document.getElementById('booking-checkout');
     if (dateIn && dateOut) {
       dateIn.addEventListener('change', () => {
+        if (!dateIn.value || dateIn.value < formatLocalDate(new Date()) || dateIn.value >= dateOut.value) {
+          showToast('Vui lòng chọn ngày nhận phòng hợp lệ trước ngày trả phòng.', 'warning');
+          dateIn.value = state.search.checkIn;
+          return;
+        }
         state.search.checkIn = dateIn.value;
+        dateOut.min = dateIn.value;
+        state.roomsSearchedFor = null;
         calculateBookingPricing();
         renderBookingModalContent();
       });
       dateOut.addEventListener('change', () => {
+        if (!dateOut.value || dateOut.value <= dateIn.value) {
+          showToast('Ngày trả phòng phải sau ngày nhận phòng.', 'warning');
+          dateOut.value = state.search.checkOut;
+          return;
+        }
         state.search.checkOut = dateOut.value;
+        state.roomsSearchedFor = null;
         calculateBookingPricing();
         renderBookingModalContent();
       });
@@ -832,6 +884,17 @@ function renderBookingModalContent() {
     const nextBtn = document.getElementById('btn-step1-next');
     if (nextBtn) {
       nextBtn.addEventListener('click', () => {
+        const checkIn = document.getElementById('booking-checkin')?.value;
+        const checkOut = document.getElementById('booking-checkout')?.value;
+        if (!checkIn || !checkOut || checkIn < formatLocalDate(new Date()) || checkOut <= checkIn) {
+          showToast('Vui lòng chọn ngày nhận phòng từ hôm nay và ngày trả phòng sau ngày nhận phòng.', 'warning');
+          return;
+        }
+        if (!b.room.isDemoCatalog && (!state.roomsAreLive || !state.roomsSearchedFor ||
+            state.roomsSearchedFor.checkIn !== checkIn || state.roomsSearchedFor.checkOut !== checkOut)) {
+          showToast('Ngày lưu trú đã thay đổi. Hãy quay lại kiểm tra phòng trống trước khi tiếp tục.', 'warning', 7000);
+          return;
+        }
         state.booking.step = 2;
         renderBookingModalContent();
       });
@@ -931,8 +994,8 @@ function renderBookingModalContent() {
 
         try {
           const res = await submitBooking({
-            customerId: 1,
             roomId: b.room.id,
+            roomVersion: b.room.version ?? 0,
             checkInDate: state.search.checkIn,
             checkOutDate: state.search.checkOut,
             fullName: b.guest.fullName,
@@ -943,8 +1006,13 @@ function renderBookingModalContent() {
           });
 
           b.bookingId = res.bookingId;
+          b.isSimulated = Boolean(res.isSimulated);
+          b.bookingReference = res.bookingReference || `${b.isSimulated ? 'DEMO-' : 'BKG-'}${res.bookingId}`;
+          if (!b.isSimulated && res.totalAmount > 0) b.totalAmount = Math.round(res.totalAmount);
           b.step = 3;
-          showToast(`Đã tạo mã đặt phòng #${b.bookingId} thành công!`, 'success');
+          showToast(b.isSimulated
+            ? 'Chế độ demo ngoại tuyến: đặt phòng mô phỏng, chưa được gửi đến khách sạn.'
+            : `Đã tạo mã đặt phòng #${b.bookingId} thành công!`, b.isSimulated ? 'warning' : 'success', 7000);
           startBookingCountdown();
           renderBookingModalContent();
 
@@ -969,15 +1037,17 @@ function renderBookingModalContent() {
     body.innerHTML = `
       ${stepHeader}
 
+      ${b.isSimulated ? `<div role="status" class="rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 mb-5 text-sm text-amber-100"><strong>DEMO NGOẠI TUYẾN</strong><br>Đây là mã đặt phòng mô phỏng để xem giao diện. Khách sạn chưa nhận được đặt phòng và không cần chuyển khoản theo mã VietQR này.</div>` : ''}
+
       <!-- Success Congratulatory Banner -->
       <div class="text-center mb-6">
         <div class="w-14 h-14 rounded-full bg-emerald-500/20 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-400 mx-auto mb-3 shadow-lg">
           <i data-lucide="check-check" class="w-7 h-7"></i>
         </div>
-        <span class="text-xs font-semibold uppercase tracking-widest text-amber-400">Xác nhận giữ chỗ thành công</span>
-        <h3 class="font-serif text-2xl text-white font-medium mt-1">Đơn Đặt Phòng #${b.bookingId}</h3>
+        <span class="text-xs font-semibold uppercase tracking-widest text-amber-400">${b.isSimulated ? 'Mô phỏng ngoại tuyến' : 'Xác nhận giữ chỗ thành công'}</span>
+        <h3 class="font-serif text-2xl text-white font-medium mt-1">Đơn Đặt Phòng ${b.bookingReference || `#${b.bookingId}`}</h3>
         <p class="text-xs text-slate-300 mt-1">
-          Kính chào Quý khách <strong class="text-amber-200">${b.guest.fullName}</strong>, vé phòng đã được giữ tạm thời.
+          ${b.isSimulated ? 'Đây chỉ là bản xem trước ngoại tuyến, khách sạn chưa nhận được yêu cầu.' : `Kính chào Quý khách <strong class="text-amber-200">${b.guest.fullName}</strong>, vé phòng đã được giữ tạm thời.`}
         </p>
       </div>
 
@@ -1107,7 +1177,7 @@ function renderGallery() {
   }
 
   container.innerHTML = items.map((item, index) => `
-    <div class="gallery-card relative group rounded-2xl overflow-hidden cursor-pointer h-72 shadow-lg border border-amber-500/10" data-index="${index}">
+    <div class="gallery-card relative group rounded-2xl overflow-hidden cursor-pointer h-72 shadow-lg border border-amber-500/10" role="button" tabindex="0" aria-label="Mở ảnh: ${item.title}" data-index="${index}">
       <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110">
       <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
       
@@ -1129,9 +1199,16 @@ function renderGallery() {
 
   // Attach Lightbox click triggers
   container.querySelectorAll('.gallery-card').forEach(card => {
-    card.addEventListener('click', () => {
+    const showImage = () => {
       const idx = Number(card.dataset.index);
       openLightbox(items, idx);
+    };
+    card.addEventListener('click', showImage);
+    card.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        showImage();
+      }
     });
   });
 }
@@ -1146,6 +1223,7 @@ function openLightbox(itemsList, startIndex) {
 
   if (!modal || !imgEl) return;
 
+  modal.hidden = false;
   const current = itemsList[startIndex];
   imgEl.src = current.image;
   if (captionEl) {
@@ -1153,12 +1231,20 @@ function openLightbox(itemsList, startIndex) {
   }
 
   modal.classList.add('active');
+  modal.focus();
+  const zoomButton = document.getElementById('lightbox-zoom');
+  if (zoomButton) zoomButton.setAttribute('aria-pressed', 'false');
+  imgEl.classList.remove('is-zoomed');
   refreshLucideIcons();
 }
 
 _global.closeLightbox = function() {
   const modal = document.getElementById('lightbox-modal');
-  if (modal) modal.classList.remove('active');
+  if (!modal) return;
+  modal.classList.remove('active');
+  window.setTimeout(() => {
+    if (!modal.classList.contains('active')) modal.hidden = true;
+  }, 300);
 };
 
 _global.prevLightboxImage = function() {
@@ -1173,6 +1259,16 @@ _global.nextLightboxImage = function() {
   if (lb.images.length === 0) return;
   lb.currentIndex = (lb.currentIndex + 1) % lb.images.length;
   updateLightboxContent();
+};
+
+_global.toggleLightboxZoom = function() {
+  const img = document.getElementById('lightbox-image');
+  const button = document.getElementById('lightbox-zoom');
+  if (!img || !button) return;
+  const zoomed = img.classList.toggle('is-zoomed');
+  button.setAttribute('aria-pressed', String(zoomed));
+  button.setAttribute('aria-label', zoomed ? 'Thu nhỏ ảnh' : 'Phóng to ảnh');
+  button.textContent = zoomed ? 'Thu nhỏ' : 'Phóng to';
 };
 
 function updateLightboxContent() {
@@ -1281,12 +1377,25 @@ function initEventListeners() {
       const checkOut = document.getElementById('search-checkout')?.value;
       const promo = document.getElementById('search-promo')?.value;
 
+      const today = formatLocalDate(new Date());
+      if (!checkIn || !checkOut || checkIn < today || checkOut <= checkIn) {
+        showToast('Vui lòng chọn ngày nhận phòng từ hôm nay và ngày trả phòng sau ngày nhận phòng.', 'warning');
+        return;
+      }
+
       state.search.checkIn = checkIn;
       state.search.checkOut = checkOut;
       state.search.promoCode = promo;
+      state.roomsAreLive = false;
+      state.roomsSearchedFor = null;
 
       showToast('Đang tìm kiếm phòng trống theo tiêu chuẩn của bạn...', 'info');
       await loadRooms({ checkIn, checkOut });
+
+      if (state.roomsAreLive) {
+        state.roomsSearchedFor = { checkIn, checkOut };
+        showToast(state.rooms.length ? `Tìm thấy ${state.rooms.length} phòng phù hợp.` : 'Không có phòng trống trong ngày đã chọn.', state.rooms.length ? 'success' : 'warning');
+      }
 
       const roomsSection = document.getElementById('rooms');
       if (roomsSection) {

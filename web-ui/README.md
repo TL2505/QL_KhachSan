@@ -14,6 +14,12 @@ Giao diện web quản lý khách sạn Aurelia, viết bằng HTML, CSS và Jav
 
 *Lưu ý: Backend Java phải đang chạy tại `http://localhost:8081`.*
 
+### Đăng nhập và cổng theo vai trò
+
+- Trang khách sạn: `http://localhost:3000/`
+- Đăng nhập / đăng ký khách hàng: `http://localhost:3000/portal.html`
+- Sau khi đăng nhập, quyền trong phản hồi backend sẽ đưa khách hàng, nhân viên hoặc quản trị viên tới đúng cổng và menu tương ứng. Cổng dùng cùng API Java trên cổng 8081.
+
 ---
 
 ## 🐳 Triển khai Docker (Ubuntu Server)

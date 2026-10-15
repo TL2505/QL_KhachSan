@@ -8,8 +8,10 @@ public class CorsFilter extends Filter {
 
     public static final String ALLOWED_ORIGIN = "*";
     public static final String ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
+
     public static final String ALLOWED_HEADERS = "Content-Type, Authorization, X-User-Role, Idempotency-Key, X-Signature, ngrok-skip-browser-warning";
     public static final String MAX_AGE = "86400";
+
 
     @Override
     public String description() {
@@ -18,6 +20,8 @@ public class CorsFilter extends Filter {
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+
+        // Set standard CORS response headers
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", ALLOWED_METHODS);
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", ALLOWED_HEADERS);

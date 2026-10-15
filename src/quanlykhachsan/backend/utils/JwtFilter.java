@@ -4,6 +4,8 @@ import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+
+
 import java.io.IOException;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -11,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 public class JwtFilter extends Filter {
     private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
+
 
     private static final Set<String> PUBLIC_PATHS = Set.of(
         "/api/v1/auth/login",
@@ -25,6 +28,7 @@ public class JwtFilter extends Filter {
         "/api/v1/auth/guest-otp/verify"
     );
 
+
     @Override
     public String description() {
         return "Production JWT Authentication Filter validating Bearer tokens with Guest Web bypass";
@@ -32,6 +36,7 @@ public class JwtFilter extends Filter {
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+
         exchange = new RequestIdentityExchange(exchange);
 
         if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
@@ -39,11 +44,13 @@ public class JwtFilter extends Filter {
             return;
         }
 
+
         String rawPath = exchange.getRequestURI().getPath();
         String path = (rawPath == null || rawPath.isEmpty()) ? "/" : rawPath;
         if (path.length() > 1 && path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
         }
+
 
         boolean isPublic = PUBLIC_PATHS.contains(path)
                 || path.startsWith("/booking")
@@ -52,6 +59,7 @@ public class JwtFilter extends Filter {
 
         boolean isGuestRoleHeader = exchange.getRequestHeaders().containsKey("X-User-Role")
                 && "guest".equalsIgnoreCase(exchange.getRequestHeaders().getFirst("X-User-Role"));
+
 
         String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
 
@@ -84,26 +92,33 @@ public class JwtFilter extends Filter {
             return;
         }
 
+
+        // Validate credentials separately from downstream handling so handler
+        // exceptions are not mistaken for invalid JWTs and the chain runs once.
+        final Claims claims;
+        final int userId;
+        final String username;
+        final String role;
+
         try {
-            Claims claims = SecurityUtil.validateAndExtractClaims(token);
+            claims = SecurityUtil.validateAndExtractClaims(token);
 
             Object rawUserId = claims.get("userId");
-            int userId = (rawUserId instanceof Number number)
+            int parsedUserId = (rawUserId instanceof Number number)
                     ? number.intValue()
                     : (rawUserId != null ? Integer.parseInt(rawUserId.toString().trim()) : 0);
 
-            if (userId == 0 && claims.getSubject() != null) {
+            if (parsedUserId == 0 && claims.getSubject() != null) {
                 try {
-                    userId = Integer.parseInt(claims.getSubject().trim());
+                    parsedUserId = Integer.parseInt(claims.getSubject().trim());
                 } catch (NumberFormatException ignored) {}
             }
+            userId = parsedUserId;
 
-            String username = claims.get("username", String.class);
-            if (username == null) {
-                username = claims.getSubject();
-            }
+            String claimUsername = claims.get("username", String.class);
+            username = (claimUsername == null) ? claims.getSubject() : claimUsername;
 
-            String role = claims.get("role", String.class);
+            role = claims.get("role", String.class);
 
             if (role == null || !Set.of(
                     "admin", "staff", "customer", "guest", "front_desk", "housekeeping", "maintenance", "f&b",
@@ -111,15 +126,6 @@ public class JwtFilter extends Filter {
                 ApiResponseUtil.sendError(exchange, 403, "ERR_403_FORBIDDEN", "Role is not authorized");
                 return;
             }
-
-            exchange.setAttribute("userId", userId);
-            exchange.setAttribute("user_id", String.valueOf(userId));
-            exchange.setAttribute("username", username);
-            exchange.setAttribute("role", role);
-
-            // Only call chain.doFilter once inside the try block
-            chain.doFilter(exchange);
-
         } catch (JwtException | IllegalArgumentException e) {
             logger.warn("JWT authentication failed for path [{}]: {}", path, e.getMessage());
             ApiResponseUtil.sendError(
@@ -128,6 +134,28 @@ public class JwtFilter extends Filter {
                     "ERR_401_TOKEN_INVALID",
                     "Authentication token is invalid or expired"
             );
+            return;
         }
+
+        // Attach verified claims and continue exactly once.
+        exchange.setAttribute("userId", userId);
+        exchange.setAttribute("user_id", String.valueOf(userId));
+        exchange.setAttribute("username", username);
+        exchange.setAttribute("role", role);
+        if (claims.get("customer_id") != null) {
+            exchange.setAttribute("customer_id", claims.get("customer_id"));
+        }
+        if (claims.get("phone") != null) {
+            exchange.setAttribute("phone", claims.get("phone"));
+        }
+        chain.doFilter(exchange);
+    }
+
+    /**
+     * Checks if a request path is exempted from authentication.
+     */
+    private boolean isWhitelisted(String path) {
+        return PUBLIC_PATHS.contains(path) || path.equals("/health");
+
     }
 }

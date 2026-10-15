@@ -198,7 +198,7 @@ export function generateVietQRUrl(totalAmount, bookingId) {
  * Generate a random UUIDv4 for Idempotency-Key
  */
 export function generateUUID() {
-  if (crypto && crypto.randomUUID) {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -213,14 +213,13 @@ export function generateUUID() {
  */
 export async function getRooms(filterParams = {}) {
   const baseUrl = getApiBaseUrl();
-  const queryParts = [];
-
-  if (filterParams.checkIn) queryParts.push(`check_in=${encodeURIComponent(filterParams.checkIn)}`);
-  if (filterParams.checkOut) queryParts.push(`check_out=${encodeURIComponent(filterParams.checkOut)}`);
-  if (filterParams.guests) queryParts.push(`guests=${encodeURIComponent(filterParams.guests)}`);
-
-  const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
-  const url = `${baseUrl}/api/v1/rooms${queryString}`;
+  const searching = Boolean(filterParams.checkIn && filterParams.checkOut);
+  const query = searching
+    ? `?check_in=${encodeURIComponent(filterParams.checkIn)}&check_out=${encodeURIComponent(filterParams.checkOut)}`
+    : '';
+  const url = searching
+    ? `${baseUrl}/api/v1/rooms/availability${query}`
+    : `${baseUrl}/api/v1/rooms`;
 
   try {
     const controller = new AbortController();
@@ -245,16 +244,25 @@ export async function getRooms(filterParams = {}) {
         rawRooms = json;
       }
 
+      if (!searching) {
+        rawRooms = rawRooms.filter(room => !room.status || String(room.status).toLowerCase() === 'vacant_clean');
+      }
+
       // Merge backend rooms with luxury frontend catalog attributes
       if (rawRooms.length > 0) {
-        return rawRooms.map((r, index) => {
-          const fallback = LUXURY_ROOMS_CATALOG[index % LUXURY_ROOMS_CATALOG.length];
+        const rooms = rawRooms.map((r, index) => {
+          const typeName = r.room_type_name || r.roomTypeName || r.name || '';
+          const normalizedType = typeName.toLowerCase();
+          const fallback = LUXURY_ROOMS_CATALOG.find(room => normalizedType.includes(room.name.toLowerCase()) || normalizedType.includes(room.category.toLowerCase()))
+            || LUXURY_ROOMS_CATALOG[index % LUXURY_ROOMS_CATALOG.length];
           return {
+            ...fallback,
             id: r.id || fallback.id,
+            roomId: r.id || fallback.id,
             roomNumber: r.roomNumber || r.room_number || fallback.roomNumber,
-            name: r.roomTypeName || r.name || fallback.name,
+            name: typeName || fallback.name,
             category: r.category || fallback.category,
-            price: r.price ? Number(r.price) : fallback.price,
+            price: r.price != null ? Number(r.price) : fallback.price,
             area: r.area || fallback.area,
             capacity: r.capacity || fallback.capacity,
             childrenCapacity: fallback.childrenCapacity,
@@ -263,33 +271,40 @@ export async function getRooms(filterParams = {}) {
             rating: fallback.rating,
             reviewsCount: fallback.reviewsCount,
             badge: fallback.badge,
-            image: r.imageUrl || fallback.image,
+            image: r.image_url || r.imageUrl || fallback.image,
             gallery: fallback.gallery,
-            amenities: r.amenities ? (Array.isArray(r.amenities) ? r.amenities : r.amenities.split(',')) : fallback.amenities,
+            amenities: r.amenities ? (Array.isArray(r.amenities) ? r.amenities : String(r.amenities).split(',').map(value => value.trim()).filter(Boolean)) : fallback.amenities,
             description: r.description || fallback.description,
+            isDemoCatalog: false,
             status: r.status || 'vacant_clean',
-            version: r.version || 0
+            version: r.version ?? 0
           };
         });
+        return { rooms, source: 'api' };
       }
+      return { rooms: [], source: 'api' };
     }
+    const apiError = new Error(`Room request failed (HTTP ${response.status})`);
+    apiError.statusCode = response.status;
+    throw apiError;
   } catch (err) {
+    if (err.statusCode) throw err;
     console.info(`[Aurelia PMS] Backend at ${baseUrl} is offline or unreachable. Engaging 5★ Luxury Resilient Catalog Mode.`);
   }
 
   // Resilient Luxury Catalog fallback
-  return LUXURY_ROOMS_CATALOG;
+  return { rooms: LUXURY_ROOMS_CATALOG.map(room => ({ ...room, isDemoCatalog: true })), source: 'demo' };
 }
 
 /**
  * Submit Booking Request to Backend
- * Sends POST /api/v1/bookings with Idempotency-Key and Role headers
+ * Sends POST /api/v1/bookings/public using the public booking contract.
  */
 export async function submitBooking(bookingPayload) {
   const baseUrl = getApiBaseUrl();
   const idempotencyKey = generateUUID();
 
-  const url = `${baseUrl}/api/v1/bookings`;
+  const url = `${baseUrl}/api/v1/bookings/public`;
 
   try {
     const controller = new AbortController();
@@ -304,15 +319,15 @@ export async function submitBooking(bookingPayload) {
         'Idempotency-Key': idempotencyKey
       },
       body: JSON.stringify({
-        customerId: bookingPayload.customerId || 1,
-        roomId: bookingPayload.roomId,
-        checkInDate: bookingPayload.checkInDate,
-        checkOutDate: bookingPayload.checkOutDate,
-        fullName: bookingPayload.fullName,
+        room_id: bookingPayload.roomId,
+        room_version: bookingPayload.roomVersion ?? 0,
+        check_in_date: `${bookingPayload.checkInDate} 14:00:00`,
+        check_out_date: `${bookingPayload.checkOutDate} 12:00:00`,
+        customer_name: bookingPayload.fullName,
         phone: bookingPayload.phone,
         email: bookingPayload.email,
-        identityCard: bookingPayload.identityCard,
-        promoCode: bookingPayload.promoCode || ''
+        identity_card: bookingPayload.identityCard,
+        voucher_code: bookingPayload.promoCode || ''
       }),
       signal: controller.signal
     });
@@ -321,20 +336,19 @@ export async function submitBooking(bookingPayload) {
     // Status code specific inspection
     if (response.status === 400) {
       const errJson = await response.json().catch(() => ({}));
-      const message = errJson.message || 'Dữ liệu đặt phòng không hợp lệ. Vui lòng kiểm tra lại thông tin ngày nhận/trả hoặc định danh cá nhân.';
-      const err = new Error(message);
+      const err = new Error('Thông tin đặt phòng không hợp lệ. Vui lòng kiểm tra lại ngày lưu trú hoặc thông tin cá nhân.');
       err.statusCode = 400;
       throw err;
     }
 
     if (response.status === 409) {
-      const err = new Error('Phòng bạn chọn hiện không còn khả dụng hoặc vừa có khách đặt trong khoảng thời gian này. Vui lòng chọn hạng phòng khác.');
+      const err = new Error('Phòng bạn vừa chọn đã có khách đặt trong khoảng thời gian này hoặc trạng thái phòng đã thay đổi. Vui lòng chọn hạng phòng khác!');
       err.statusCode = 409;
       throw err;
     }
 
     if (response.status === 503) {
-      const err = new Error('Hệ thống đang thực hiện quy trình kiểm toán đêm (Night Audit Frozen). Tất cả giao dịch ghi sổ tạm thời bị khóa. Vui lòng thử lại sau 5 phút.');
+      const err = new Error('Hệ thống khách sạn đang trong chu kỳ kiểm toán đêm (00:00 - 00:05). Giao dịch tạm thời bị khóa nhằm đảm bảo an toàn sổ cái. Vui lòng quay lại sau ít phút!');
       err.statusCode = 503;
       throw err;
     }
@@ -342,7 +356,13 @@ export async function submitBooking(bookingPayload) {
     if (response.status === 201 || response.status === 200) {
       const json = await response.json();
       let bookingId = Math.floor(100000 + Math.random() * 900000);
-      if (json && json.data && json.data.bookingId) {
+      let bookingReference = null;
+      if (json?.data?.booking_id) {
+        bookingId = json.data.booking_id;
+        bookingReference = json.data.booking_code || `BKG-${bookingId}`;
+      } else if (json?.data?.booking_code) {
+        bookingId = json.data.booking_code;
+      } else if (json && json.data && json.data.bookingId) {
         bookingId = json.data.bookingId;
       } else if (json && json.bookingId) {
         bookingId = json.bookingId;
@@ -350,12 +370,16 @@ export async function submitBooking(bookingPayload) {
       return {
         success: true,
         bookingId: bookingId,
+        bookingReference,
+        totalAmount: Number(json?.data?.folio?.balance) || null,
         message: 'Đặt phòng thành công!'
       };
     }
 
     const errJson = await response.json().catch(() => ({}));
-    throw new Error(errJson.message || `Lỗi máy chủ HTTP ${response.status}`);
+    const requestError = new Error(errJson.message || `Lỗi máy chủ HTTP ${response.status}`);
+    requestError.statusCode = response.status;
+    throw requestError;
 
   } catch (err) {
     if (err.statusCode) {
@@ -363,7 +387,7 @@ export async function submitBooking(bookingPayload) {
     }
 
     // Backend Offline Simulation for Seamless Verification & Demonstration
-    console.warn(`[Aurelia PMS] Server connection note: ${err.message}. Generating verified booking confirmation ticket.`);
+    console.warn(`[Aurelia demo] Backend unreachable; simulating an offline booking. ${err.message}`);
     
     // Simulate slight luxury processing delay (600ms)
     await new Promise(res => setTimeout(res, 600));
@@ -372,7 +396,8 @@ export async function submitBooking(bookingPayload) {
     return {
       success: true,
       bookingId: simulatedBookingId,
-      message: 'Đặt phòng thành công! (Xác thực trực tiếp từ hệ thống PMS)',
+      bookingReference: `DEMO-${simulatedBookingId}`,
+      message: 'Mô phỏng ngoại tuyến: chưa tạo đặt phòng thật.',
       isSimulated: true
     };
   }
