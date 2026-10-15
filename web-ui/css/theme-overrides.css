@@ -1,0 +1,263 @@
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg-obsidian: #f6f3ed;
+  --bg-slate-night: #fff;
+  --bg-surface: #f0ebe2;
+  --bg-card: rgba(255, 255, 255, .94);
+  --bg-glass: rgba(255, 255, 255, .9);
+  --bg-glass-card: rgba(255, 255, 255, .84);
+  --gold-champagne: #986b3f;
+  --gold-soft: #6f4a2b;
+  --gold-dark: #805c3b;
+  --border-metallic: rgba(128, 92, 59, .2);
+  --border-metallic-hover: rgba(128, 92, 59, .45);
+  --border-subtle: rgba(67, 49, 29, .12);
+  --text-primary: #29251f;
+  --text-muted: #777168;
+  --text-gold: #6f4a2b;
+}
+
+html[data-theme="light"] body.bg-obsidian {
+  color: var(--text-primary);
+  background: var(--bg-obsidian);
+}
+
+html[data-theme="light"] .bg-obsidian,
+html[data-theme="light"] [class~="bg-slate-950"],
+html[data-theme="light"] [class~="bg-slate-900"],
+html[data-theme="light"] [class~="bg-slate-800"],
+html[data-theme="light"] [class~="bg-slate-900/80"],
+html[data-theme="light"] [class~="bg-slate-900/90"],
+html[data-theme="light"] [class~="bg-slate-900/50"],
+html[data-theme="light"] [class~="bg-slate-800/80"] {
+  background-color: #fff !important;
+}
+
+html[data-theme="light"] body.bg-obsidian {
+  background-color: var(--bg-obsidian) !important;
+}
+
+html[data-theme="light"] [class~="text-white"],
+html[data-theme="light"] [class~="text-slate-50"],
+html[data-theme="light"] [class~="text-slate-100"],
+html[data-theme="light"] [class~="text-slate-200"],
+html[data-theme="light"] [class~="text-slate-300"] {
+  color: #29251f !important;
+}
+
+html[data-theme="light"] [class~="text-slate-400"] {
+  color: #625d55 !important;
+}
+
+html[data-theme="light"] .text-gold-gradient {
+  color: #79552f !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html[data-theme="light"] [class~="text-amber-200"],
+html[data-theme="light"] [class~="text-amber-300"],
+html[data-theme="light"] [class~="text-amber-400"] {
+  color: #805c3b !important;
+}
+
+html[data-theme="light"] [class~="border-amber-500/30"],
+html[data-theme="light"] [class~="border-amber-400/40"],
+html[data-theme="light"] [class~="border-amber-500/20"] {
+  border-color: rgba(128, 92, 59, .28) !important;
+}
+
+html[data-theme="light"] #main-header {
+  color: #29251f;
+}
+
+html[data-theme="light"] #main-header.header-scrolled {
+  background: rgba(255, 255, 255, .96) !important;
+  border-color: rgba(128, 92, 59, .2) !important;
+  box-shadow: 0 10px 30px rgba(67, 49, 29, .12) !important;
+}
+
+html[data-theme="light"] .glass-panel,
+html[data-theme="light"] .glass-card {
+  color: #29251f;
+  border-color: rgba(128, 92, 59, .2);
+  background: rgba(255, 255, 255, .9);
+}
+
+html[data-theme="light"] .glass-card:hover {
+  box-shadow: 0 10px 30px rgba(67, 49, 29, .12), 0 0 25px rgba(128, 92, 59, .08);
+}
+
+html[data-theme="light"] .theme-toggle {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid rgba(212, 175, 55, .4);
+  border-radius: 999px;
+  color: #805c3b;
+  background: rgba(255, 255, 255, .9);
+  cursor: pointer;
+}
+
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid rgba(212, 175, 55, .35);
+  border-radius: 999px;
+  color: #f3e5ab;
+  background: rgba(15, 23, 42, .8);
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: #d4af37;
+}
+
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 640px) {
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+  }
+
+  a.radar-pulse,
+  #quick-chat-btn {
+    width: 48px;
+    height: 48px;
+    min-height: 48px;
+    flex: 0 0 48px;
+  }
+
+  a.radar-pulse svg,
+  #quick-chat-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Keep the overlay header and hero copy readable over the darkened photo in light mode. */
+html[data-theme="light"] #main-header:not(.header-scrolled) {
+  color: #f8fafc;
+  background: rgba(11, 15, 23, .76) !important;
+  border-bottom: 1px solid rgba(243, 229, 171, .2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+html[data-theme="light"] #main-header:not(.header-scrolled) [class~="text-white"] {
+  color: #fff !important;
+}
+
+html[data-theme="light"] #main-header:not(.header-scrolled) [class~="text-slate-300"] {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="light"] #main-header:not(.header-scrolled) [class~="text-amber-200"]:not(select),
+html[data-theme="light"] #main-header:not(.header-scrolled) [class~="text-amber-300"]:not(select),
+html[data-theme="light"] #main-header:not(.header-scrolled) [class~="text-amber-400"]:not(select) {
+  color: #f3e5ab !important;
+}
+
+html[data-theme="light"] #main-header:not(.header-scrolled) .text-gold-gradient {
+  color: #f3e5ab !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html[data-theme="light"] #hero [class~="text-white"] {
+  color: #fff !important;
+}
+
+html[data-theme="light"] #hero [class~="text-slate-300"] {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="light"] #search-checkin,
+html[data-theme="light"] #search-checkout,
+html[data-theme="light"] #search-guests,
+html[data-theme="light"] #search-promo {
+  color: #29251f !important;
+  -webkit-text-fill-color: #29251f !important;
+  color-scheme: light;
+  background-color: #fff !important;
+  border-color: #8b8174 !important;
+}
+
+html[data-theme="light"] #search-checkin::-webkit-datetime-edit,
+html[data-theme="light"] #search-checkout::-webkit-datetime-edit,
+html[data-theme="light"] #search-guests option {
+  color: #29251f !important;
+  -webkit-text-fill-color: #29251f !important;
+}
+
+/* Breathe by scaling only, so the hero photo never fades through its overlay. */
+.hero-image-breathe {
+  transform: scale(1.05);
+  animation: hero-image-breathe 30s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes hero-image-breathe {
+  0%, 100% { transform: scale(1.05); }
+  50% { transform: scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-image-breathe {
+    animation: none;
+    transform: scale(1.05);
+  }
+}
+
+/* The contact footer intentionally stays dark in both themes. */
+html[data-theme="light"] footer#contact {
+  color: #e2e8f0;
+  background-color: #131b2e !important;
+  border-color: rgba(212, 175, 55, .2) !important;
+}
+
+html[data-theme="light"] footer#contact [class~="text-white"]:not(input):not(textarea):not(select),
+html[data-theme="light"] footer#contact [class~="text-slate-50"],
+html[data-theme="light"] footer#contact [class~="text-slate-100"],
+html[data-theme="light"] footer#contact [class~="text-slate-200"],
+html[data-theme="light"] footer#contact [class~="text-slate-300"] {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="light"] footer#contact [class~="text-amber-200"],
+html[data-theme="light"] footer#contact [class~="text-amber-300"],
+html[data-theme="light"] footer#contact [class~="text-amber-400"] {
+  color: #f3e5ab !important;
+}
+
+html[data-theme="light"] footer#contact a[class~="bg-slate-800"] {
+  color: #f3e5ab !important;
+  background-color: #252f42 !important;
+}
+
+html[data-theme="light"] footer#contact a[class~="bg-slate-800"]:hover {
+  background-color: #344258 !important;
+}
+
+html[data-theme="light"] footer#contact .btn-outline-gold {
+  color: #f3e5ab !important;
+  border-color: #d4af37;
+  background-color: rgba(212, 175, 55, .08);
+}

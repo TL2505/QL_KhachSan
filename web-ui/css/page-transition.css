@@ -1,0 +1,22 @@
+@keyframes page-enter-from-right {
+  from { opacity: .82; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes page-enter-from-left {
+  from { opacity: .82; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Tailwind's flex utility overrides the browser's default hidden display rule. */
+#lightbox-modal[hidden] { display: none !important; }
+
+html.page-transition-enter-right body > :not(script) { animation: page-enter-from-right 280ms cubic-bezier(.16,1,.3,1) both; }
+html.page-transition-enter-left body > :not(script) { animation: page-enter-from-left 280ms cubic-bezier(.16,1,.3,1) both; }
+
+html[class*="page-transition-"] body > :not(script) { will-change: transform, opacity; }
+
+@media (prefers-reduced-motion: reduce) {
+  html.page-transition-enter-right body > :not(script),
+  html.page-transition-enter-left body > :not(script) { animation: none; }
+}
