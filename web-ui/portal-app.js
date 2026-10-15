@@ -47,7 +47,9 @@ function showAuth(tab = 'login') {
   byId('login-form').hidden = !login;
   byId('register-form').hidden = login;
   byId('show-login').classList.toggle('active', login);
+  byId('show-login').classList.toggle('tab-active', login);
   byId('show-register').classList.toggle('active', !login);
+  byId('show-register').classList.toggle('tab-active', !login);
   byId('show-login').setAttribute('aria-selected', String(login));
   byId('show-register').setAttribute('aria-selected', String(!login));
 }
@@ -59,7 +61,7 @@ function renderNav(session, activeTab) {
   byId('user-display-name').textContent = session.fullName || session.username || 'Aurelia';
   byId('account-role').textContent = roleNames[role];
   byId('account-avatar').textContent = String(session.fullName || session.username || 'A').trim().charAt(0).toUpperCase();
-  byId('portal-nav').innerHTML = items.map(([key, label, icon]) => `<button type="button" data-view="${key}" class="${key === activeTab ? 'active' : ''}" aria-current="${key === activeTab ? 'page' : 'false'}"><i data-lucide="${icon}"></i><span>${label}</span></button>`).join('');
+  byId('portal-nav').innerHTML = items.map(([key, label, icon]) => `<button type="button" data-view="${key}" class="btn btn-ghost ${key === activeTab ? 'active' : ''}" aria-current="${key === activeTab ? 'page' : 'false'}"><i data-lucide="${icon}"></i><span>${label}</span></button>`).join('');
   byId('portal-nav').querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => openView(session, role, button.dataset.view)));
   if (window.lucide?.createIcons) window.lucide.createIcons();
 }
@@ -74,6 +76,12 @@ function openView(session, role, tab) {
     else if (role === 'ADMIN') loadAdminView(tab);
     else if (role === 'CUSTOMER') loadCustomerView(tab);
     else loadStaffView(tab);
+    const view = byId('view-container');
+    view.querySelectorAll('table').forEach(table => table.classList.add('table', 'table-zebra'));
+    view.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea').forEach(field => {
+      field.classList.add(field.tagName === 'SELECT' ? 'select' : field.tagName === 'TEXTAREA' ? 'textarea' : 'input');
+    });
+    view.querySelectorAll('.btn-primary, .btn-secondary').forEach(button => button.classList.add('btn'));
   } catch (error) {
     byId('portal-message').textContent = error.message || 'Không thể mở mục này.';
     byId('portal-message').hidden = false;

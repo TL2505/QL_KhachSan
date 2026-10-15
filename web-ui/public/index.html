@@ -39,6 +39,8 @@
   <!-- Custom Native CSS3 Luxury Design Tokens -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/theme-overrides.css">
+  <link rel="stylesheet" href="css/page-transition.css">
+  <script src="js/shared/page-transition.js"></script>
 
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -62,10 +64,10 @@
        1. HEADER & NAVIGATION (Thanh điều hướng sang trọng & Sticky CTA)
        ========================================================================= -->
   <header id="main-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4 px-4 sm:px-8">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <div class="max-w-screen-2xl mx-auto flex items-center justify-between gap-4 xl:gap-5">
       
       <!-- Brand Logo & 5-Star Luxury Badge -->
-      <a href="#hero" class="flex items-center gap-3 group">
+      <a href="#hero" class="flex shrink-0 items-center gap-3 group">
         <div class="w-10 h-10 rounded-full border border-amber-400/40 bg-slate-900/80 flex items-center justify-center text-amber-300 shadow-md group-hover:border-amber-400 group-hover:scale-105 transition-all">
           <i data-lucide="crown" class="w-5 h-5 fill-amber-400 text-amber-400"></i>
         </div>
@@ -80,40 +82,39 @@
       </a>
 
       <!-- Desktop Navigation Links -->
-      <nav class="hidden lg:flex items-center gap-7 text-xs font-semibold uppercase tracking-wider text-slate-300">
-        <a href="#hero" class="hover:text-amber-300 transition-colors py-1" data-i18n="navHome">Trang Chủ</a>
-        <a href="#rooms" class="hover:text-amber-300 transition-colors py-1" data-i18n="navRooms">Hạng Phòng</a>
-        <a href="#services" class="hover:text-amber-300 transition-colors py-1" data-i18n="navServices">Dịch Vụ</a>
-        <a href="#about" class="hover:text-amber-300 transition-colors py-1" data-i18n="navAbout">Giới Thiệu</a>
-        <a href="#reviews" class="hover:text-amber-300 transition-colors py-1" data-i18n="navReviews">Đánh Giá</a>
-        <a href="#gallery" class="hover:text-amber-300 transition-colors py-1" data-i18n="navGallery">Bộ Sưu Tập</a>
-        <a href="#contact" class="hover:text-amber-300 transition-colors py-1" data-i18n="navContact">Liên Hệ</a>
+      <nav class="hidden xl:flex min-w-0 flex-1 items-center justify-center gap-3 2xl:gap-5 text-[11px] 2xl:text-xs font-semibold uppercase tracking-wider text-slate-300">
+        <a href="#hero" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navHome">Trang Chủ</a>
+        <a href="#rooms" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navRooms">Hạng Phòng</a>
+        <a href="#services" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navServices">Dịch Vụ</a>
+        <a href="#about" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navAbout">Giới Thiệu</a>
+        <a href="#reviews" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navReviews">Đánh Giá</a>
+        <a href="#gallery" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navGallery">Bộ Sưu Tập</a>
+        <a href="#contact" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navContact">Liên Hệ</a>
       </nav>
 
-      <!-- Right Actions: Language, Currency, Sticky Book Now CTA -->
-      <div class="flex items-center gap-3">
+      <!-- Right Actions: Locale, Theme, Account, Primary Booking CTA -->
+      <div class="flex shrink-0 items-center gap-2 xl:gap-2 2xl:gap-3">
+        <div class="hidden sm:flex items-center gap-2 border-r border-amber-500/20 pr-3" role="group" aria-label="Tùy chọn ngôn ngữ và tiền tệ">
+          <div class="relative">
+            <select id="lang-selector" class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
+              <option value="vi">VI 🇻🇳</option>
+              <option value="en">EN 🇬🇧</option>
+            </select>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          </div>
+          <div class="relative">
+            <select id="currency-selector" class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
+              <option value="VND">VND (₫)</option>
+              <option value="USD">USD ($)</option>
+            </select>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          </div>
+        </div>
+
         <button type="button" class="theme-toggle" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
           <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
         </button>
         <a href="portal.html" class="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200 hover:text-white transition-colors" aria-label="Đăng nhập cổng khách hàng và nhân viên"><i data-lucide="user-round" class="w-4 h-4"></i>Đăng nhập</a>
-        
-        <!-- Language Switcher -->
-        <div class="relative hidden sm:block">
-          <select id="lang-selector" class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
-            <option value="vi">VI 🇻🇳</option>
-            <option value="en">EN 🇬🇧</option>
-          </select>
-          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-        </div>
-
-        <!-- Currency Switcher -->
-        <div class="relative hidden sm:block">
-          <select id="currency-selector" class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
-            <option value="VND">VND (₫)</option>
-            <option value="USD">USD ($)</option>
-          </select>
-          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-        </div>
 
         <!-- Book Now Button (Metallic Gold CTA) -->
         <button type="button" id="header-book-now" class="btn-gold px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -122,7 +123,7 @@
         </button>
 
         <!-- Mobile Menu Trigger -->
-        <button type="button" id="mobile-menu-btn" class="lg:hidden w-10 h-10 rounded-xl bg-slate-900/80 border border-amber-500/30 flex items-center justify-center text-amber-400">
+        <button type="button" id="mobile-menu-btn" class="xl:hidden w-10 h-10 rounded-xl bg-slate-900/80 border border-amber-500/30 flex items-center justify-center text-amber-400">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
       </div>
@@ -167,9 +168,9 @@
     
     <!-- Hero Background Image with Multi-layer Gradient -->
     <div class="absolute inset-0 z-0">
-      <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=2000&q=85" alt="Aurelia Grand Palace" class="w-full h-full object-cover scale-105 animate-[pulse_10s_ease-in-out_infinite]">
-      <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/75 to-obsidian/40"></div>
-      <div class="absolute inset-0 bg-radial-at-c from-transparent via-obsidian/50 to-obsidian"></div>
+      <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=2000&q=85" alt="Aurelia Grand Palace" class="hero-image-breathe w-full h-full object-cover">
+      <div id="hero-image-overlay" class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/75 to-obsidian/40"></div>
+      <div id="hero-radial-overlay" class="absolute inset-0 bg-radial-at-c from-transparent via-obsidian/50 to-obsidian"></div>
     </div>
 
     <!-- Hero Content -->
@@ -888,7 +889,7 @@
   </div>
 
   <!-- Vanilla JS Lightbox Modal -->
-  <div id="lightbox-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Thư viện ảnh" tabindex="-1">
+  <div id="lightbox-modal" hidden class="modal-overlay fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Thư viện ảnh" tabindex="-1">
     <button type="button" aria-label="Đóng ảnh" class="absolute top-6 right-6 w-11 h-11 rounded-full bg-slate-800/90 text-white flex items-center justify-center border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition-colors z-20" onclick="closeLightbox()">
       <i data-lucide="x" class="w-6 h-6"></i>
     </button>

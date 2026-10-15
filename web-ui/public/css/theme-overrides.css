@@ -45,6 +45,16 @@ html[data-theme="light"] [class~="text-slate-300"] {
   color: #29251f !important;
 }
 
+html[data-theme="light"] [class~="text-slate-400"] {
+  color: #625d55 !important;
+}
+
+html[data-theme="light"] .text-gold-gradient {
+  color: #79552f !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
 html[data-theme="light"] [class~="text-amber-200"],
 html[data-theme="light"] [class~="text-amber-300"],
 html[data-theme="light"] [class~="text-amber-400"] {
@@ -125,4 +135,129 @@ html[data-theme="light"] .theme-toggle {
     height: 36px;
     min-height: 36px;
   }
+
+  a.radar-pulse,
+  #quick-chat-btn {
+    width: 48px;
+    height: 48px;
+    min-height: 48px;
+    flex: 0 0 48px;
+  }
+
+  a.radar-pulse svg,
+  #quick-chat-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Keep the overlay header and hero copy readable over the darkened photo in light mode. */
+html[data-theme="light"] #main-header:not(.header-scrolled) {
+  color: #f8fafc;
+  background: rgba(11, 15, 23, .76) !important;
+  border-bottom: 1px solid rgba(243, 229, 171, .2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+html[data-theme="light"] #main-header:not(.header-scrolled) [class~="text-white"] {
+  color: #fff !important;
+}
+
+html[data-theme="light"] #main-header:not(.header-scrolled) [class~="text-slate-300"] {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="light"] #main-header:not(.header-scrolled) [class~="text-amber-200"]:not(select),
+html[data-theme="light"] #main-header:not(.header-scrolled) [class~="text-amber-300"]:not(select),
+html[data-theme="light"] #main-header:not(.header-scrolled) [class~="text-amber-400"]:not(select) {
+  color: #f3e5ab !important;
+}
+
+html[data-theme="light"] #main-header:not(.header-scrolled) .text-gold-gradient {
+  color: #f3e5ab !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html[data-theme="light"] #hero [class~="text-white"] {
+  color: #fff !important;
+}
+
+html[data-theme="light"] #hero [class~="text-slate-300"] {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="light"] #search-checkin,
+html[data-theme="light"] #search-checkout,
+html[data-theme="light"] #search-guests,
+html[data-theme="light"] #search-promo {
+  color: #29251f !important;
+  -webkit-text-fill-color: #29251f !important;
+  color-scheme: light;
+  background-color: #fff !important;
+  border-color: #8b8174 !important;
+}
+
+html[data-theme="light"] #search-checkin::-webkit-datetime-edit,
+html[data-theme="light"] #search-checkout::-webkit-datetime-edit,
+html[data-theme="light"] #search-guests option {
+  color: #29251f !important;
+  -webkit-text-fill-color: #29251f !important;
+}
+
+/* Breathe by scaling only, so the hero photo never fades through its overlay. */
+.hero-image-breathe {
+  transform: scale(1.05);
+  animation: hero-image-breathe 30s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes hero-image-breathe {
+  0%, 100% { transform: scale(1.05); }
+  50% { transform: scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-image-breathe {
+    animation: none;
+    transform: scale(1.05);
+  }
+}
+
+/* The contact footer intentionally stays dark in both themes. */
+html[data-theme="light"] footer#contact {
+  color: #e2e8f0;
+  background-color: #131b2e !important;
+  border-color: rgba(212, 175, 55, .2) !important;
+}
+
+html[data-theme="light"] footer#contact [class~="text-white"]:not(input):not(textarea):not(select),
+html[data-theme="light"] footer#contact [class~="text-slate-50"],
+html[data-theme="light"] footer#contact [class~="text-slate-100"],
+html[data-theme="light"] footer#contact [class~="text-slate-200"],
+html[data-theme="light"] footer#contact [class~="text-slate-300"] {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="light"] footer#contact [class~="text-amber-200"],
+html[data-theme="light"] footer#contact [class~="text-amber-300"],
+html[data-theme="light"] footer#contact [class~="text-amber-400"] {
+  color: #f3e5ab !important;
+}
+
+html[data-theme="light"] footer#contact a[class~="bg-slate-800"] {
+  color: #f3e5ab !important;
+  background-color: #252f42 !important;
+}
+
+html[data-theme="light"] footer#contact a[class~="bg-slate-800"]:hover {
+  background-color: #344258 !important;
+}
+
+html[data-theme="light"] footer#contact .btn-outline-gold {
+  color: #f3e5ab !important;
+  border-color: #d4af37;
+  background-color: rgba(212, 175, 55, .08);
 }

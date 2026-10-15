@@ -107,6 +107,11 @@
 - Phiên có vai trò chung `STAFF` nay bị từ chối nếu backend không cung cấp bộ phận cụ thể được hỗ trợ; chuẩn hóa nhãn nhận cả `Front Desk` và `FRONT_DESK` mà không gộp menu các bộ phận.
 - Thay lời hứa giảm giá loyalty không có căn cứ bằng thông báo trạng thái chung. Dashboard/booking Customer, đặt phòng bằng tài khoản và loyalty cá nhân hiện hiển thị lý do chặn thay vì gửi request dựa trên customerId hoặc tự tính giá. Luồng OTP Guest vẫn tách biệt; khuyến mãi/chat Customer không liên quan vẫn giữ riêng.
 
+## [2026-10-15] — @codex — web-ui/public/css/theme-overrides.css — Tăng độ dễ đọc giao diện sáng và chỉnh nút nổi trên mobile
+- Tăng độ tương phản cho nhãn chữ phụ và chữ màu vàng trong giao diện sáng; khôi phục màu vàng nhạt cho logo trên header tối khi ở đầu trang.
+- Chuẩn hóa nút gọi và chat nổi trên mobile thành vùng chạm 48px với biểu tượng 20px.
+- Gỡ các gradient thử nghiệm ở hero và footer sau khi rà soát; không ghi nhận chạy kiểm thử cho các cập nhật CSS này.
+
 ## [2026-10-15] — @codex — các giao diện theme web-ui, docs/WEB_UI_ISSUES.md, docs/CHANGELOG.md, docs/vi/CHANGELOG.md — Theme toàn cục và theo dõi lỗi UI
 - Bổ sung một nút theme Tự động/Sáng/Tối dùng chung cho trang khách sạn và portal; hỗ trợ theo dõi cài đặt trình duyệt, lưu lựa chọn dùng xuyên các trang, nhãn truy cập rõ ràng và bảng màu sáng tương ứng; giữ nguyên bố cục riêng của khách hàng và giao diện quản lý.
 - Bổ sung kiểm thử hành vi theme và cập nhật màu trình duyệt theo theme. Bộ Node tập trung đạt 6/6; kiểm tra cú pháp JavaScript và `git diff --check` đạt.

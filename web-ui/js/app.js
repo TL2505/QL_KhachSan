@@ -1223,6 +1223,7 @@ function openLightbox(itemsList, startIndex) {
 
   if (!modal || !imgEl) return;
 
+  modal.hidden = false;
   const current = itemsList[startIndex];
   imgEl.src = current.image;
   if (captionEl) {
@@ -1239,7 +1240,11 @@ function openLightbox(itemsList, startIndex) {
 
 _global.closeLightbox = function() {
   const modal = document.getElementById('lightbox-modal');
-  if (modal) modal.classList.remove('active');
+  if (!modal) return;
+  modal.classList.remove('active');
+  window.setTimeout(() => {
+    if (!modal.classList.contains('active')) modal.hidden = true;
+  }, 300);
 };
 
 _global.prevLightboxImage = function() {

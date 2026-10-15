@@ -8,19 +8,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
   <link rel="stylesheet" href="public/css/style.css">
   <link rel="stylesheet" href="portal.css">
   <link rel="stylesheet" href="portal-customer.css">
   <link rel="stylesheet" href="portal-theme.css">
+  <link rel="stylesheet" href="public/css/page-transition.css">
+  <script src="public/js/shared/page-transition.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="portal-body">
   <header class="portal-topbar">
-    <a class="portal-brand" href="index.html" aria-label="Aurelia Grand Palace - Trang chủ">
+    <a class="portal-brand" href="index.html" aria-label="Về trang khách sạn Aurelia Grand Palace">
+      <i class="portal-brand-back" data-lucide="arrow-left" aria-hidden="true"></i>
       <span class="portal-brand-mark"><i data-lucide="crown"></i></span>
       <span><strong>Aurelia <em>Palace</em></strong><small>5★ LUXURY HOTEL & RESORT</small></span>
     </a>
-    <a class="portal-return" href="index.html"><i data-lucide="arrow-left"></i> Về trang khách sạn</a>
     <button type="button" class="portal-theme-toggle" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
       <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
     </button>
@@ -34,26 +37,26 @@
         <p>Đăng nhập an toàn để quản lý kỳ nghỉ, vận hành khách sạn hoặc theo dõi hoạt động kinh doanh.</p>
         <div class="auth-benefits"><span><i data-lucide="shield-check"></i> Bảo mật tài khoản</span><span><i data-lucide="sparkles"></i> Trải nghiệm cá nhân hóa</span></div>
       </div>
-      <div class="auth-card">
-        <div class="auth-tabs" role="tablist" aria-label="Tài khoản">
-          <button type="button" id="show-login" class="auth-tab active" role="tab" aria-selected="true">Đăng nhập</button>
-          <button type="button" id="show-register" class="auth-tab" role="tab" aria-selected="false">Tạo tài khoản</button>
+      <div class="auth-card card">
+        <div class="auth-tabs tabs tabs-border" role="tablist" aria-label="Tài khoản">
+          <button type="button" id="show-login" class="auth-tab tab tab-active active" role="tab" aria-selected="true">Đăng nhập</button>
+          <button type="button" id="show-register" class="auth-tab tab" role="tab" aria-selected="false">Tạo tài khoản</button>
         </div>
         <p id="auth-status" class="auth-status" role="status" aria-live="polite"></p>
         <form id="login-form" class="auth-form">
           <label for="login-username">Tên đăng nhập</label>
-          <input id="login-username" name="username" autocomplete="username" required maxlength="100" placeholder="Nhập tên đăng nhập">
+          <input class="input input-md" id="login-username" name="username" autocomplete="username" required maxlength="100" placeholder="Nhập tên đăng nhập">
           <label for="login-password">Mật khẩu</label>
-          <input id="login-password" name="password" type="password" autocomplete="current-password" required maxlength="200" placeholder="Nhập mật khẩu">
-          <button class="portal-primary" type="submit"><span>Đăng nhập an toàn</span><i data-lucide="arrow-right"></i></button>
+          <input class="input input-md" id="login-password" name="password" type="password" autocomplete="current-password" required maxlength="200" placeholder="Nhập mật khẩu">
+          <button class="btn portal-primary" type="submit"><span>Đăng nhập an toàn</span><i data-lucide="arrow-right"></i></button>
         </form>
         <form id="register-form" class="auth-form" hidden>
-          <label for="register-name">Họ và tên</label><input id="register-name" required maxlength="100" autocomplete="name">
-          <label for="register-username">Tên đăng nhập</label><input id="register-username" required maxlength="100" autocomplete="username">
-          <label for="register-password">Mật khẩu</label><input id="register-password" type="password" required minlength="8" maxlength="200" autocomplete="new-password">
-          <label for="register-identity">CCCD / Hộ chiếu</label><input id="register-identity" required maxlength="20">
-          <div class="auth-fields-row"><div><label for="register-phone">Điện thoại</label><input id="register-phone" type="tel" maxlength="20" autocomplete="tel"></div><div><label for="register-email">Email</label><input id="register-email" type="email" maxlength="100" autocomplete="email"></div></div>
-          <button class="portal-primary" type="submit"><span>Tạo tài khoản khách hàng</span><i data-lucide="user-round-plus"></i></button>
+          <label for="register-name">Họ và tên</label><input class="input input-md" id="register-name" required maxlength="100" autocomplete="name">
+          <label for="register-username">Tên đăng nhập</label><input class="input input-md" id="register-username" required maxlength="100" autocomplete="username">
+          <label for="register-password">Mật khẩu</label><input class="input input-md" id="register-password" type="password" required minlength="8" maxlength="200" autocomplete="new-password">
+          <label for="register-identity">CCCD / Hộ chiếu</label><input class="input input-md" id="register-identity" required maxlength="20">
+          <div class="auth-fields-row"><div><label for="register-phone">Điện thoại</label><input class="input input-md" id="register-phone" type="tel" maxlength="20" autocomplete="tel"></div><div><label for="register-email">Email</label><input class="input input-md" id="register-email" type="email" maxlength="100" autocomplete="email"></div></div>
+          <button class="btn portal-primary" type="submit"><span>Tạo tài khoản khách hàng</span><i data-lucide="user-round-plus"></i></button>
         </form>
         <div class="auth-footer"><i data-lucide="lock-keyhole"></i><span>Thông tin đăng nhập được gửi trực tiếp đến máy chủ khách sạn.</span></div>
       </div>
@@ -71,7 +74,7 @@
           <div><p class="portal-eyebrow">AURELIA GRAND PALACE</p><h1 id="portal-heading">Tổng quan</h1></div>
           <a class="portal-return" href="index.html"><i data-lucide="external-link"></i> Trang khách sạn</a>
         </div>
-        <div id="portal-message" class="portal-message" role="status" aria-live="polite" hidden></div>
+        <div id="portal-message" class="portal-message alert alert-error" role="status" aria-live="polite" hidden></div>
         <main id="view-container" class="portal-view"></main>
       </section>
     </section>

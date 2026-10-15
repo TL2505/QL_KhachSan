@@ -110,6 +110,11 @@
 - Generic `STAFF` sessions now fail closed unless the backend supplies a distinct supported department role; label normalization accepts `Front Desk` and `FRONT_DESK` without merging departmental menus.
 - Replaced unsupported Staff loyalty discount promises with a shared status notice. Customer dashboard/bookings, account booking discovery, and personal loyalty views now show explicit blockers instead of sending customer-ID-dependent requests or calculating account booking prices locally. The distinct OTP Guest flow and unrelated Customer promotions/chat remain separate.
 
+## [2026-10-15] — @codex — web-ui/public/css/theme-overrides.css — Light-mode readability and mobile floating controls
+- Improved light-mode text contrast for muted labels and gold-gradient text, and restored a pale gold logo treatment over the unscrolled dark header.
+- Set mobile hotline and chat controls to consistent 48px touch targets with 20px icons.
+- Removed the experimental hero and footer gradients after review; no test run recorded for these CSS-only updates.
+
 ## [2026-10-15] — @codex — web-ui theme surfaces, docs/WEB_UI_ISSUES.md, docs/CHANGELOG.md, docs/vi/CHANGELOG.md — Global theme and UI issue tracking
 - Added one shared Auto/Light/Dark theme control across the hotel landing pages and portal, with browser-preference tracking, persistent cross-page selection, accessible control labels, and matching light palettes; preserved customer and management layouts.
 - Added theme behavior tests and recorded browser theme-color updates. Focused Node tests passed (6/6); JavaScript syntax and `git diff --check` passed.
