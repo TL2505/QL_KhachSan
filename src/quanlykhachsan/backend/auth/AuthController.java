@@ -53,7 +53,7 @@ public class AuthController implements HttpHandler {
                     else {
                         roleStr = null;
                         for(var role:userDAO.selectAllRoles())if(role.getId()==user.getRoleId())roleStr=role.getName();
-                        if(roleStr==null || !java.util.Set.of("staff","front_desk","housekeeping","maintenance","f&b").contains(roleStr.toLowerCase(java.util.Locale.ROOT))) {
+                        if(roleStr==null || !java.util.Set.of("staff","front_desk","housekeeping","maintenance","f&b","manager","gm","it","devops","compliance", "revenue_manager").contains(roleStr.toLowerCase(java.util.Locale.ROOT))) {
                             ApiResponseUtil.write(exchange,403,ApiResponseUtil.error("Role is not authorized"));return;
                         }
                     }

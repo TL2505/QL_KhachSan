@@ -12,6 +12,7 @@ public class CustomerMapper {
         response.setPhone(customer.getPhone());
         response.setEmail(customer.getEmail());
         response.setAddress(customer.getAddress());
+        response.setDateOfBirth(customer.getDateOfBirth());
         response.setVip(customer.isVip());
         response.setLoyaltyPoints(customer.getLoyaltyPoints());
         response.setTotalLoyaltyPoints(customer.getTotalLoyaltyPoints());

@@ -865,3 +865,15 @@ These routes support Phase 1 folio routing and the OOO-room manager override:
       "meta": { "timestamp": "2026-10-14T04:20:00Z" }
     }
     ```
+
+## Phase 3 compatibility addendum — 2026-10-16
+
+Approved by the user during implementation; the frozen canonical examples above remain the default contract.
+
+- OCR accepts canonical `image_base64` (`document_type=VIETNAMESE_CCCD`) or WBS `image`. Conflicting aliases return400. Response includes canonical `id_number`, `residence_address` and WBS `id_card`, `address`, with shared `full_name`/`dob`. Unavailable gender/nationality/origin/expiry/confidence fields are null; no invented values. Face accepts `id_photo_base64`/`live_face_base64` or `id_photo`/`live_face`, and returns both `is_match`/`similarity_score`/`adaptive_threshold`/`decision` and `match`/`confidence`/`recommendation`. Manual gateway failures use504 `ERR_504_GATEWAY_TIMEOUT`.
+- Concierge returns `reply`/`confidence_score` plus `answer`/`confidence` aliases, `suggested_actions`, and citations containing `doc`, nullable `section`, and `source`. Explicit escalation requires `session_id` and `reason`; stores the reason in scoped encrypted human chat. Room and ETA are null until authoritative information exists, rather than an unverified three-minute promise. Ticket messages are accessible only to the authenticated ticket owner or authorized staff. Management/operations state and staff tickets are additional protected routes under `/api/v1/ai/concierge`.
+- Forecast defaults to an object containing `model`, cached `generated_at` and `forecast`; `?format=array` opts into the WBS array. Rows expose both confidence bounds and `confidence_interval`; unavailable values and category-specific BAR are null. Fallback source/model `RULE_BASED_ON_BOOKS` is explicitly distinguished from Prophet. `revenue_manager` can read; only management can apply.
+- Apply-rates accepts `approved_multiplier` or `multiplier` (conflicting values rejected). Optional `version` defaults0, which only creates a new rule; updating an existing rule requires the current version or returns409. Actor is verified JWT identity, never body `approved_by_user_id`. Response includes `updated_count` and `applied`. Recommendations stay>=0.80; authorized management override in[0.70,0.80) requires a reason and audit; values outside[0.70,2.50] fail. `preview=true` currently returns `available=false` because hotel-wide occupancy including existing bookings cannot safely support a category/sellable-inventory revenue illustration.
+- `POST /api/v1/auth/logout` revokes the verified bearer token until its signed expiry in the current backend process. Customer identity search now uses an exact normalized HMAC index after the approved encrypted-vault cutover; partial ID matching is not supported. Plain identity decryption remains Admin/Front Desk only.
+
+See `../phase3-implementation-report.md` for route behavior, limitations and test evidence; these additions do not imply release acceptance.

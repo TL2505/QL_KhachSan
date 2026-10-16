@@ -23,6 +23,8 @@ COPY web-ui/public/ ./web-ui/public/
 
 # Install curl cho healthcheck
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN groupadd --gid 10000 pms && useradd --uid 10000 --gid 10000 --create-home pms && mkdir -p /app/invoices && chown 10000:10000 /app/invoices
+USER 10000:10000
 
 # Mở cửa cho cổng 8080 (Cổng mà Backend của bạn đang lắng nghe)
 EXPOSE 8081

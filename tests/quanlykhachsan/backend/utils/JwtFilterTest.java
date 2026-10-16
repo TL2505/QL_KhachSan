@@ -1,6 +1,7 @@
 package quanlykhachsan.backend.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.sun.net.httpserver.HttpServer;
@@ -78,7 +79,7 @@ class JwtFilterTest {
     }
 
     @Test
-    void publicRoomsEndpointBypassesAuthentication() throws Exception {
+    void roomInventoryRequiresAuthentication() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/rooms"))
@@ -86,12 +87,12 @@ class JwtFilterTest {
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode());
-        assertTrue(handlerInvoked.get(), "Public room endpoint should bypass authentication");
+        assertEquals(401, response.statusCode());
+        assertFalse(handlerInvoked.get(), "Only availability is public under ADR-05; inventory requires a token");
     }
 
     @Test
-    void guestXUserRoleHeaderBypassesAuthentication() throws Exception {
+    void guestXUserRoleHeaderCannotBypassAuthentication() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/bookings"))
@@ -101,8 +102,8 @@ class JwtFilterTest {
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode());
-        assertTrue(handlerInvoked.get(), "Requests with X-User-Role should bypass authentication");
+        assertEquals(401, response.statusCode());
+        assertFalse(handlerInvoked.get(), "An untrusted role header must not authenticate a protected route");
     }
 
     @Test

@@ -20,10 +20,11 @@ public final class GuestIngestionService {
                 int id = ingest(c,name,phone,email);
                 if(identity!=null) {
                     if(!identity.matches("[A-Za-z0-9]{5,20}"))throw new IllegalArgumentException("Invalid identity");
-                    try(PreparedStatement q=c.prepareStatement("SELECT identity_card FROM customers WHERE id=? FOR UPDATE")) {
-                        q.setInt(1,id);try(ResultSet r=q.executeQuery()){r.next();String existing=r.getString(1);if(existing!=null && !existing.equals(identity))throw new IllegalStateException("Guest identity requires Front Desk review");}
+                    var vault=GuestIdentityVaultDao.configured();
+                    try(PreparedStatement q=c.prepareStatement("SELECT identity_hash FROM customers WHERE id=? FOR UPDATE")) {
+                        q.setInt(1,id);try(ResultSet r=q.executeQuery()){r.next();byte[] existing=r.getBytes(1);if(existing!=null && !java.security.MessageDigest.isEqual(existing,vault.blindIndex(identity)))throw new IllegalStateException("Guest identity requires Front Desk review");}
                     }
-                    try(PreparedStatement q=c.prepareStatement("UPDATE customers SET identity_card=? WHERE id=? AND identity_card IS NULL")){q.setString(1,identity);q.setInt(2,id);q.executeUpdate();}
+                    vault.save(c,id,identity,null,null);
                 }
                 c.commit(); return id;
             } catch (SQLException | RuntimeException ex) { c.rollback(); throw ex; }

@@ -56,7 +56,29 @@
         </plugins>
     </build>
     
+    <profiles>
+        <profile>
+            <id>desktop-dist</id>
+            <build><plugins><plugin>
+                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-shade-plugin</artifactId><version>3.5.1</version>
+                <executions><execution><phase>package</phase><goals><goal>shade</goal></goals><configuration>
+                    <shadedArtifactAttached>true</shadedArtifactAttached><shadedClassifierName>desktop</shadedClassifierName><createDependencyReducedPom>false</createDependencyReducedPom>
+                    <filters><filter><artifact>*:*</artifact><excludes><exclude>META-INF/*.SF</exclude><exclude>META-INF/*.RSA</exclude><exclude>META-INF/*.DSA</exclude><exclude>module-info.class</exclude><exclude>META-INF/versions/*/module-info.class</exclude></excludes></filter></filters>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"><mainClass>quanlykhachsan.Quanlykhachsan</mainClass></transformer>
+                    </transformers>
+                </configuration></execution></executions>
+            </plugin></plugins></build>
+        </profile>
+    </profiles>
+
     <dependencies>
+        <dependency>
+            <groupId>com.github.sarxos</groupId>
+            <artifactId>webcam-capture</artifactId>
+            <version>0.3.12</version>
+        </dependency>
         <!-- Phase 2 WBS B8.3: keep iText 5 for legacy callers and the existing QR encoder. -->
         <dependency>
             <groupId>com.itextpdf</groupId>

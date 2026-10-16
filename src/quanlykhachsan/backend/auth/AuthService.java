@@ -31,7 +31,6 @@ public class AuthService {
     public boolean registerCustomer(User user, quanlykhachsan.backend.customer.Customer customer) throws Exception {
         System.out.println("DEBUG: Đang đăng ký khách hàng mới [Service]...");
         System.out.println("  - Username: " + user.getUsername());
-        System.out.println("  - IdentityCard: " + customer.getIdentityCard());
 
         if (userDAO.findByUsername(user.getUsername()) != null) {
             System.out.println("  - [FAIL] Username đã tồn tại!");

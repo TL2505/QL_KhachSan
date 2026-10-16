@@ -36,6 +36,7 @@ public class CustomerController implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
         String rawPath = exchange.getRequestURI().getPath();
         String path = (rawPath == null || rawPath.isEmpty()) ? "/" : rawPath;
         if (path.length() > 1 && path.endsWith("/")) {
@@ -102,6 +103,7 @@ public class CustomerController implements HttpHandler {
      * POST /api/v1/customers - Creates customer profile enforcing uniqueness on identity & phone.
      */
     public void handleCreate(HttpExchange exchange) throws IOException {
+        if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
         try {
             String requestBody;
             try (InputStream is = exchange.getRequestBody()) {
@@ -137,7 +139,14 @@ public class CustomerController implements HttpHandler {
                     ? obj.get("loyalty_level").getAsString()
                     : (obj.has("loyaltyLevel") && !obj.get("loyaltyLevel").isJsonNull() ? obj.get("loyaltyLevel").getAsString() : "Member");
 
-            int id = customerDao.createCustomer(fullName, phone, identityCard, email, loyaltyLevel);
+            if(fullName==null&&obj.has("name"))fullName=obj.get("name").getAsString();
+            if(identityCard==null&&obj.has("cccd"))identityCard=obj.get("cccd").getAsString();
+            if(identityCard==null&&obj.has("id_card"))identityCard=obj.get("id_card").getAsString();
+            Customer profile=new Customer();profile.setFullName(fullName==null?"":fullName.trim());profile.setPhone(phone==null?"":phone.trim());
+            profile.setIdentityCard(identityCard);profile.setEmail(email);profile.setLoyaltyLevel(loyaltyLevel);
+            if(obj.has("address")&&!obj.get("address").isJsonNull())profile.setAddress(obj.get("address").getAsString());
+            if(obj.has("date_of_birth")&&!obj.get("date_of_birth").isJsonNull())profile.setDateOfBirth(obj.get("date_of_birth").getAsString());
+            int id = customerDao.addAndReturnId(profile);
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("id", id);
             data.put("full_name", fullName != null ? fullName.trim() : "");
@@ -154,6 +163,7 @@ public class CustomerController implements HttpHandler {
      * GET /api/v1/customers - Fast indexed search for customer profiles by keyword.
      */
     public void handleSearch(HttpExchange exchange) throws IOException {
+        if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
         try {
             String query = exchange.getRequestURI().getQuery();
             String keyword = null;
@@ -191,6 +201,8 @@ public class CustomerController implements HttpHandler {
         if (req.getName() != null && !req.getName().isEmpty()) c.setFullName(req.getName());
         if (req.getPhone() != null && !req.getPhone().isEmpty()) c.setPhone(req.getPhone());
         if (req.getCccd() != null && !req.getCccd().isEmpty()) c.setIdentityCard(req.getCccd());
+        if(req.getAddress()!=null)c.setAddress(req.getAddress());
+        if(req.getDateOfBirth()!=null)c.setDateOfBirth(req.getDateOfBirth());
 
         if (customerService.updateCustomer(c)) {
             ApiResponseUtil.sendSuccess(exchange, 200, Map.of("message", "Cập nhật khách hàng thành công!"));

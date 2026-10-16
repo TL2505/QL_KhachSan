@@ -143,7 +143,23 @@ public class UpdateDbUtility {
             migrateHousekeeping(conn);
             migratePromotionalWallet(conn);
             ensureColumn(conn,"daily_business_reports","snapshot_json","LONGTEXT NULL");
+            migratePhase3(conn);
             System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.");
+    }
+
+    private static void migratePhase3(Connection conn) throws SQLException {
+        for(String table:java.util.List.of("customers","room_types","bookings","daily_business_reports")){
+            try(ResultSet rows=conn.getMetaData().getTables(conn.getCatalog(),null,table,new String[]{"TABLE"})){
+                if(!rows.next()){
+                    System.out.println("[UpdateDbUtility] Phase 3 schema requires the complete PMS baseline; absent table: "+table);
+                    return;
+                }
+            }
+        }
+        runMigrationScript(conn, java.nio.file.Path.of("database", "migrations", "v3_1_biometric_vault.sql"));
+        runMigrationScript(conn, java.nio.file.Path.of("database", "migrations", "v3_4_audit_compliance.sql"));
+        runMigrationScript(conn, java.nio.file.Path.of("database", "migrations", "v3_3_revenue_views.sql"));
+        runMigrationScript(conn, java.nio.file.Path.of("database", "migrations", "v3_2_ai_interactions.sql"));
     }
 
     /** Refuses lossy ENUM conversion and executes the versioned portal script. */
