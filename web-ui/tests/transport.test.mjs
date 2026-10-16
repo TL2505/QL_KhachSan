@@ -1,11 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {apiFetch,fetchAuthenticatedFile,setAuthSession,getAuthSession,getApiBaseUrl,setApiBaseUrl,normalizeApiBase} from '../public/api.js';
+import {apiFetch,fetchAuthenticatedFile,setAuthSession,clearAuthSession,getAuthSession,getApiBaseUrl,setApiBaseUrl,normalizeApiBase} from '../public/api.js';
 const store=new Map();
 globalThis.localStorage={getItem:key=>store.get(key)??null,setItem:(key,value)=>store.set(key,value),removeItem:key=>store.delete(key)};
 const events=new EventTarget();
 globalThis.window={location:{origin:'https://hotel.example.test'},dispatchEvent:event=>events.dispatchEvent(event)};
 test.beforeEach(()=>store.clear());
+test('port 3000 uses the same-origin proxy and portal logout export clears the session',()=>{
+ const previous=window.location;
+ try {
+  window.location={origin:'http://hotel.example.test:3000',hostname:'hotel.example.test',port:'3000'};
+  assert.equal(getApiBaseUrl(),'http://hotel.example.test:3000/api/v1');
+  setAuthSession({token:'test'});clearAuthSession();assert.equal(getAuthSession(),null);
+ } finally {window.location=previous;}
+});
 test('same-origin versioned base preserves HTTPS and upgrades legacy configuration',()=>{
  assert.equal(getApiBaseUrl(),'https://hotel.example.test/api/v1');
  setApiBaseUrl('https://hotel.example.test/api/');assert.equal(getApiBaseUrl(),'https://hotel.example.test/api/v1');

@@ -73,6 +73,12 @@ services:
       - "3000:80"
     volumes:
       - ./web-ui/public:/usr/share/nginx/html:ro
+      - ./web-ui/public:/usr/share/nginx/html/public:ro
+      - ./web-ui/portal.html:/usr/share/nginx/html/portal.html:ro
+      - ./web-ui/portal-app.js:/usr/share/nginx/html/portal-app.js:ro
+      - ./web-ui/portal.css:/usr/share/nginx/html/portal.css:ro
+      - ./web-ui/portal-customer.css:/usr/share/nginx/html/portal-customer.css:ro
+      - ./web-ui/portal-theme.css:/usr/share/nginx/html/portal-theme.css:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       backend:

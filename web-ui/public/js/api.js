@@ -61,10 +61,6 @@ export function getApiBaseUrl() {
     try { return normalizeApiBase(saved); } catch {}
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
-    const host = window.location.hostname || 'localhost';
-    if (window.location.port === '3000') {
-      return `http://${host}:8081/api/v1`;
-    }
     return window.location.origin + '/api/v1';
   }
   return 'http://localhost:8081/api/v1';
@@ -88,6 +84,10 @@ export function getAuthSession() {
 
 export function setAuthSession(session) {
   write('hotel_auth_session', session ? JSON.stringify(session) : null);
+}
+
+export function clearAuthSession() {
+  setAuthSession(null);
 }
 
 function messageFor(status) {

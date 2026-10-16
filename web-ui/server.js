@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const PORTAL_FILES = new Set(['portal.html', 'portal-app.js', 'portal.css', 'portal-customer.css', 'portal-theme.css']);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -81,10 +82,15 @@ export function createWebServer({ publicDir = PUBLIC_DIR, backendOrigin = proces
     }
 
     if (pathname.startsWith('/booking/')) pathname = pathname.slice('/booking'.length);
-    const candidate = path.resolve(publicDir, '.' + (pathname === '/' ? '/index.html' : pathname));
+    // The portal lives beside public/. Its old public/ placeholder redirects
+    // to itself when public/ is mounted at the web origin.
+    const portalFile = PORTAL_FILES.has(pathname.slice(1));
+    const resourceDir = portalFile ? __dirname : publicDir;
+    if (!portalFile && pathname.startsWith('/public/')) pathname = pathname.slice('/public'.length);
+    const candidate = path.resolve(resourceDir, '.' + (pathname === '/' ? '/index.html' : pathname));
 
     try {
-      const base = await fs.realpath(publicDir);
+      const base = await fs.realpath(resourceDir);
       const resolved = await fs.realpath(candidate);
       const relative = path.relative(base, resolved);
       if (relative.startsWith('..') || path.isAbsolute(relative)) {

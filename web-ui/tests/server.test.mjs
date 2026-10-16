@@ -10,6 +10,13 @@ test('development origin serves both entries and forwards actual bearer headers'
  try {
   const base='http://127.0.0.1:'+server.address().port;
   for(const page of ['/','/portal.html','/booking/']){const response=await fetch(base+page);assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/text\/html/);}
+  const portal = await (await fetch(base+'/portal.html')).text();
+  assert.match(portal, /id="login-form"/);
+  assert.doesNotMatch(portal, /http-equiv="refresh"/);
+  for (const asset of ['/portal-app.js','/portal.css','/portal-customer.css','/portal-theme.css','/public/api.js','/public/js/view-admin.js','/public/css/style.css']) {
+   assert.equal((await fetch(base+asset)).status,200,asset);
+  }
+  assert.equal((await fetch(base+'/server.js')).status,404);
   const response=await fetch(base+'/api/v1/rooms?filter=all',{headers:{Authorization:'Bearer synthetic-fixture'}});assert.deepEqual(await response.json(),{path:'/api/v1/rooms?filter=all',authorization:'Bearer synthetic-fixture'});
   assert.equal((await fetch(base+'/missing.js')).status,404);
   assert.equal((await fetch(base+'/%2e%2e%2fsecret.txt')).status,400);
