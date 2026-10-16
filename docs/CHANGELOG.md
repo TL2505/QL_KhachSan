@@ -7,11 +7,6 @@
 - If an API endpoint is added/removed → reference the phase (P1/P2/P3).
 - Retention: permanent (do not delete old entries).
 
-## [2026-10-16] — @codex — docker-compose.yml, web-ui portal/API serving and tests — Local portal integration
-- Mounted the portal entry point and its assets in the web container, and served portal/public assets safely from the development server.
-- Routed browser API requests through the same origin and added an explicit auth-session clearing helper for portal logout.
-- Added regression coverage for portal assets, same-origin API routing, and session clearing.
-
 ## [2026-10-09] — @toan — All 17 files — Initial documentation set
 - Created `/docs/ai-context/` (6 files): constraints, data-access, escalation-rules, edge-cases, monitoring, incident-response
 - Created `/docs/system-prompts/` (2 files): chatbot-guest, staff-assistant
@@ -125,3 +120,8 @@
 - Added theme behavior tests and recorded browser theme-color updates. Focused Node tests passed (6/6); JavaScript syntax and `git diff --check` passed.
 - Created GitHub issues for outstanding UI/integration findings: #36 unsupported social icons, #37 lightbox close control, #38 room identity/pricing, #39 incomplete English localization, #40 missing party/room selectors, #41 admin statistics endpoint, #42 customer dashboard/loyalty loading, and #43 offers loading state.
 - Documented the issue references in `docs/WEB_UI_ISSUES.md`. No issues already marked resolved were re-opened; `.phase2-runtime/` remains excluded from version control.
+
+## [2026-10-16] — @codex — docker-compose.yml, web-ui portal/API serving and tests — Local portal integration
+- Mounted the portal entry point and its assets in the web container, and served portal/public assets safely from the development server.
+- Routed browser API requests through the same origin and added an explicit auth-session clearing helper for portal logout.
+- Added regression coverage for portal assets, same-origin API routing, and session clearing.
