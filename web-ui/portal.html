@@ -12,7 +12,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     window.tailwind = window.tailwind || {};
-    tailwind.config = {
+    window.tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
@@ -31,6 +31,9 @@
         }
       }
     };
+    if (typeof tailwind !== 'undefined') {
+      tailwind.config = window.tailwind.config;
+    }
   </script>
   <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
   <link rel="stylesheet" href="public/css/style.css">
@@ -90,16 +93,16 @@
       <aside class="portal-sidebar">
         <a href="index.html" class="sidebar-logo"><span class="portal-brand-mark"><i data-lucide="crown"></i></span><span>AURELIA <em>PALACE</em></span></a>
         <p id="sidebar-role" class="sidebar-caption">CỔNG THÀNH VIÊN</p>
-        <nav id="portal-nav" class="portal-nav" aria-label="Điều hướng cổng"></nav>
+        <nav id="portal-nav" class="portal-nav" role="tablist" aria-label="Điều hướng cổng"></nav>
         <div class="sidebar-account"><div class="account-avatar" id="account-avatar">A</div><div class="account-meta"><strong id="user-display-name">Aurelia</strong><small id="account-role">Thành viên</small></div><button id="logout-button" type="button" aria-label="Đăng xuất"><i data-lucide="log-out"></i></button></div>
       </aside>
       <section class="portal-content">
         <div class="portal-content-bar">
-          <div><p class="portal-eyebrow">AURELIA GRAND PALACE</p><h1 id="portal-heading">Tổng quan</h1></div>
+          <div><p class="portal-eyebrow">AURELIA GRAND PALACE</p><h1 id="portal-heading">Tổng quan & Hạng thẻ</h1></div>
           <a class="portal-return" href="index.html"><i data-lucide="external-link"></i> Trang khách sạn</a>
         </div>
         <div id="portal-message" class="portal-message alert alert-error" role="status" aria-live="polite" hidden></div>
-        <main id="view-container" class="portal-view"></main>
+        <main id="view-container" class="portal-view" role="tabpanel" tabindex="0"></main>
       </section>
     </section>
   </main>

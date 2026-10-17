@@ -1,217 +1,275 @@
 import { api } from "../../api.js";
-
-const statusMap = {
-    pending: { text: "Chờ xác nhận", cls: "badge-pending", dot: "var(--color-pending, #f59e0b)" },
-    confirmed: { text: "Đã xác nhận", cls: "badge-confirmed", dot: "var(--color-confirmed, #10b981)" },
-    reserved: { text: "Đã giữ phòng", cls: "badge-confirmed", dot: "var(--color-confirmed, #10b981)" },
-    checked_in: { text: "Đang lưu trú", cls: "badge-occupied", dot: "var(--color-occupied, #3b82f6)" },
-    checked_out: { text: "Đã trả phòng", cls: "badge-available", dot: "var(--color-available, #6b7280)" },
-    cancelled: { text: "Đã hủy", cls: "badge-cancelled", dot: "var(--color-cancelled, #ef4444)" }
-};
+import { getLegacyTierInfo } from "./tier-helper.js";
 
 function refreshIcons() {
-    if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
-    }
+  if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 export async function renderDashboard(container, session) {
-    if (!container) return;
-    session = session || {};
-    const displayName = session.fullName || session.username || 'Quý Khách';
-    const initials = (() => {
-        const parts = String(displayName).trim().split(' ');
-        return parts.length >= 2
-            ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-            : (displayName[0] || 'Q').toUpperCase();
-    })();
+  if (!container) return;
+  session = session || {};
+  const displayName = session.fullName || session.username || 'Quý Khách';
+  const customerId = session.customerId || session.userId || session.id || 1;
+  const memberIdFormatted = `AURELIA-${String(customerId).padStart(6, '0')}`;
 
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+  const initials = (() => {
+    const parts = String(displayName).trim().split(' ');
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : (displayName[0] || 'A').toUpperCase();
+  })();
 
-    container.innerHTML = `
-        <!-- Greeting Banner -->
-        <div class="greeting-banner">
-            <div class="greeting-avatar">${initials}</div>
-            <div class="greeting-text">
-                <h2>${greeting}, ${displayName}! 👋</h2>
-                <p>Chào mừng bạn quay lại hệ thống đặt phòng Aurelia. Dưới đây là thông tin tổng quan tài khoản của bạn.</p>
-            </div>
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+
+  // Render initial skeleton / layout immediately to avoid hanging
+  container.innerHTML = `
+    <!-- Top Greeting Banner -->
+    <div class="greeting-banner mb-6 p-6 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-950/90 border border-amber-500/20 flex items-center justify-between shadow-xl backdrop-blur-md">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 text-slate-950 font-bold flex items-center justify-center text-xl shadow-lg shrink-0">
+          ${initials}
         </div>
-
-        <!-- Stats Grid (populated after fetch) -->
-        <div class="grid grid-cols-3" id="cust-stats-grid" style="margin-bottom:24px;">
-            <!-- skeleton -->
-            ${[1,2,3].map(i => `
-                <div class="stat-card-enhanced">
-                    <div class="skeleton-block" style="width:44px;height:44px;border-radius:var(--radius-sm);margin-bottom:4px;"></div>
-                    <div class="skeleton-block" style="width:60%;height:12px;border-radius:4px;"></div>
-                    <div class="skeleton-block" style="width:40%;height:28px;border-radius:4px;margin-top:4px;"></div>
-                </div>
-            `).join('')}
+        <div>
+          <h2 class="text-xl md:text-2xl font-bold font-serif text-white tracking-wide">${greeting}, ${displayName}! 👋</h2>
+          <p class="text-xs md:text-sm text-slate-400 mt-1">Cổng thành viên đặc quyền Aurelia Grand Palace. Chúc bạn có kỳ nghỉ trọn vẹn.</p>
         </div>
+      </div>
+      <div class="hidden sm:flex items-center gap-2">
+        <a href="index.html#rooms" class="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 hover:brightness-110 transition-all flex items-center gap-1.5 shadow-md">
+          <i data-lucide="calendar" class="w-4 h-4"></i>
+          <span>Đặt phòng mới</span>
+        </a>
+      </div>
+    </div>
 
-        <!-- Booking History -->
-        <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-                <div>
-                    <h3 style="font-size:16px;font-weight:700;margin-bottom:2px;">Lịch Sử Đặt Phòng</h3>
-                    <p style="font-size:13px;color:var(--text-muted);">Tất cả các lần đặt phòng của bạn tại Aurelia</p>
-                </div>
-                <i data-lucide="calendar-days" style="width:20px;height:20px;color:var(--text-muted);"></i>
-            </div>
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Phòng</th>
-                            <th>Ngày Check-in</th>
-                            <th>Ngày Check-out</th>
-                            <th style="text-align:right;">Tổng thanh toán</th>
-                            <th>Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cust-bookings-body">
-                        <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">
-                            <i data-lucide="loader" style="width:16px;height:16px;"></i> Đang tải lịch sử đặt phòng...
-                        </td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <div id="pagination-cust-bookings"></div>
+    <!-- Main Dashboard Grid: Digital Member Card + Progress & Summary -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+      <!-- Digital Member Card Container (5 cols) -->
+      <div class="lg:col-span-5" id="member-card-wrapper">
+        <div class="card p-6 h-full flex flex-col justify-between rounded-3xl relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-amber-500/30 shadow-2xl">
+          <div class="animate-pulse flex flex-col gap-4">
+            <div class="h-6 w-1/3 bg-slate-800 rounded"></div>
+            <div class="h-10 w-2/3 bg-slate-800 rounded"></div>
+            <div class="h-20 w-full bg-slate-800 rounded-xl"></div>
+          </div>
         </div>
-    `;
-    refreshIcons();
+      </div>
 
-    try {
-        const customerId = session.customerId || session.userId || session.id || 0;
-        const [bookings, loyaltyHistory, activePromos] = await Promise.all([
-            api.get(`/bookings/customer/${customerId}`).catch(() => []),
-            api.get(`/loyalty/history/${customerId}`).catch(() => []),
-            api.get("/promotions/active").catch(() => [])
-        ]);
+      <!-- Tier Progress & Stats (7 cols) -->
+      <div class="lg:col-span-7 flex flex-col gap-6" id="member-stats-wrapper">
+        <div class="card p-6 rounded-3xl bg-slate-900/80 border border-amber-500/20 shadow-xl animate-pulse">
+          <div class="h-6 w-1/2 bg-slate-800 rounded mb-4"></div>
+          <div class="h-4 w-full bg-slate-800 rounded mb-2"></div>
+          <div class="h-4 w-2/3 bg-slate-800 rounded"></div>
+        </div>
+      </div>
+    </div>
 
-        // Tính điểm & tier
-        let totalPoints = 0;
-        if (Array.isArray(loyaltyHistory) && loyaltyHistory.length > 0) {
-            loyaltyHistory.forEach(log => {
-                if (log.changeType === 'earn') totalPoints += Number(log.pointsChanged || 0);
-                else totalPoints -= Number(log.pointsChanged || 0);
-            });
-        }
-        totalPoints = Math.max(0, totalPoints);
+    <!-- Quick Actions / Highlights -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="member-summary-stats">
+      <!-- Skeleton Stats -->
+      ${[1, 2, 3].map(() => `
+        <div class="card p-5 rounded-2xl bg-slate-900/60 border border-slate-800 animate-pulse">
+          <div class="h-4 w-1/2 bg-slate-800 rounded mb-3"></div>
+          <div class="h-8 w-1/3 bg-slate-800 rounded"></div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  refreshIcons();
 
-        let tier = 'Silver', tierColor = 'var(--text-muted)', tierIcon = '🥈', tierAccent = '#9ca3af';
-        if (totalPoints >= 1000) { tier = 'VIP';   tierColor = '#22d3ee'; tierIcon = '👑'; tierAccent = '#06b6d4'; }
-        else if (totalPoints >= 300) { tier = 'Gold'; tierColor = '#fbbf24'; tierIcon = '⭐'; tierAccent = '#f59e0b'; }
+  try {
+    const [bookings, loyaltyHistory] = await Promise.all([
+      api.get(`/bookings/customer/${customerId}`).catch(() => []),
+      api.get(`/loyalty/history/${customerId}`).catch(() => [])
+    ]);
 
-        // Stat cards
-        const statsGrid = document.getElementById("cust-stats-grid");
-        if (statsGrid) {
-            statsGrid.innerHTML = `
-                <div class="stat-card-enhanced" style="--accent-color:${tierAccent};animation-delay:0s;">
-                    <div class="stat-card-icon" style="background:rgba(6,182,212,0.12);">
-                        <i data-lucide="award" style="width:22px;height:22px;color:${tierColor};"></i>
-                    </div>
-                    <div class="stat-card-title">Hạng thành viên</div>
-                    <div class="stat-card-value" style="color:${tierColor};">${tierIcon} ${tier}</div>
-                </div>
-                <div class="stat-card-enhanced" style="--accent-color:var(--primary);animation-delay:0.08s;">
-                    <div class="stat-card-icon" style="background:var(--primary-light);">
-                        <i data-lucide="coins" style="width:22px;height:22px;color:var(--primary);"></i>
-                    </div>
-                    <div class="stat-card-title">Điểm tích lũy</div>
-                    <div class="stat-card-value">${totalPoints.toLocaleString('vi-VN')}</div>
-                </div>
-                <div class="stat-card-enhanced" style="--accent-color:var(--success);animation-delay:0.16s;">
-                    <div class="stat-card-icon" style="background:rgba(16,185,129,0.12);">
-                        <i data-lucide="tag" style="width:22px;height:22px;color:var(--success);"></i>
-                    </div>
-                    <div class="stat-card-title">Ưu đãi đang chạy</div>
-                    <div class="stat-card-value">${Array.isArray(activePromos) ? activePromos.length : 0} <span style="font-size:16px;font-weight:400;color:var(--text-muted);">Voucher</span></div>
-                </div>
-            `;
-            refreshIcons();
-        }
+    const allBookings = Array.isArray(bookings) ? bookings : [];
 
-        // Booking table
-        let allBookings = Array.isArray(bookings) ? bookings : [];
-        let currentPage = 1;
-        let itemsPerPage = 10;
-
-        const renderTable = () => {
-            const body = document.getElementById("cust-bookings-body");
-            if (!body) return;
-            body.innerHTML = "";
-
-            if (!allBookings || allBookings.length === 0) {
-                body.innerHTML = `
-                    <tr><td colspan="5">
-                        <div class="empty-state">
-                            <div class="empty-state-icon"><i data-lucide="calendar-x" style="width:28px;height:28px;"></i></div>
-                            <p>Chưa có đơn đặt phòng nào</p>
-                            <small>Khám phá phòng và đặt ngay để tích lũy điểm thưởng!</small>
-                        </div>
-                    </td></tr>`;
-                refreshIcons();
-                const paginationContainer = document.getElementById("pagination-cust-bookings");
-                if (paginationContainer) paginationContainer.innerHTML = '';
-                return;
-            }
-
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const paginatedList = allBookings.slice(start, end);
-
-            paginatedList.forEach((b, i) => {
-                const stat = statusMap[b.status] || { text: b.status || "Chờ xử lý", cls: "badge-maintenance", dot: "var(--color-maintenance, #94a3b8)" };
-                const tr = document.createElement("tr");
-                tr.className = "table-row-animate";
-                tr.style.animationDelay = `${i * 0.05}s`;
-                tr.innerHTML = `
-                    <td>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <div style="width:32px;height:32px;border-radius:var(--radius-sm);background:var(--primary-light);display:flex;align-items:center;justify-content:center;">
-                                <i data-lucide="door-open" style="width:14px;height:14px;color:var(--primary);"></i>
-                            </div>
-                            <strong>Phòng #${b.roomId || b.roomNumber || '---'}</strong>
-                        </div>
-                    </td>
-                    <td style="font-size:14px;">${b.checkInDate || '---'}</td>
-                    <td style="font-size:14px;">${b.checkOutDate || '---'}</td>
-                    <td style="text-align:right;font-weight:700;font-family:var(--font-heading);">${Number(b.totalPrice || 0).toLocaleString('vi-VN')} đ</td>
-                    <td>
-                        <span class="room-badge ${stat.cls}">
-                            <span class="status-dot" style="background:${stat.dot};"></span>${stat.text}
-                        </span>
-                    </td>
-                `;
-                body.appendChild(tr);
-            });
-            refreshIcons();
-
-            if (window.renderPaginationComponent) {
-                window.renderPaginationComponent(
-                    "pagination-cust-bookings",
-                    allBookings.length,
-                    itemsPerPage,
-                    currentPage,
-                    (newPage) => {
-                        currentPage = newPage;
-                        renderTable();
-                    },
-                    (newItemsPerPage) => {
-                        itemsPerPage = newItemsPerPage;
-                        currentPage = 1;
-                        renderTable();
-                    }
-                );
-            }
-        };
-
-        renderTable();
-
-    } catch (e) {
-        console.error("Lỗi nạp bảng điều khiển khách hàng:", e);
+    // Calculate total net points
+    let currentPoints = 0;
+    if (Array.isArray(loyaltyHistory) && loyaltyHistory.length > 0) {
+      loyaltyHistory.forEach(log => {
+        if (log.changeType === 'earn' || log.type === 'earn') currentPoints += Number(log.pointsChanged || log.points || 0);
+        else currentPoints -= Number(log.pointsChanged || log.points || 0);
+      });
     }
+    currentPoints = Math.max(0, currentPoints);
+
+    // Calculate total cumulative spending from completed/checked_in bookings
+    let totalSpent = 0;
+    let totalNights = 0;
+    allBookings.forEach(b => {
+      const price = Number(b.totalPrice || b.priceAtBooking || 0);
+      if (b.status !== 'cancelled') {
+        totalSpent += price;
+      }
+      if (b.checkInDate && b.checkOutDate) {
+        try {
+          const inD = new Date(b.checkInDate);
+          const outD = new Date(b.checkOutDate);
+          const diffTime = outD.getTime() - inD.getTime();
+          const nights = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
+          if (!isNaN(nights) && b.status !== 'cancelled') totalNights += nights;
+        } catch {}
+      }
+    });
+
+    // If totalSpent is 0, estimate from points * 1000 according to legacy formula
+    if (totalSpent === 0 && currentPoints > 0) {
+      totalSpent = currentPoints * 1000;
+    }
+
+    const tier = getLegacyTierInfo(currentPoints, totalSpent);
+
+    // Render Digital Member Card (VIP luxury design)
+    const cardWrapper = document.getElementById('member-card-wrapper');
+    if (cardWrapper) {
+      cardWrapper.innerHTML = `
+        <div class="relative rounded-3xl p-6 text-white shadow-2xl overflow-hidden border transition-all duration-300 hover:shadow-amber-500/10 hover:border-amber-400/50 flex flex-col justify-between min-h-[260px]"
+             style="background: ${tier.bgGradient}; border-color: ${tier.cardBorder};">
+          <!-- Background Decorative Shimmer / Watermark -->
+          <div class="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-amber-400/5 blur-2xl pointer-events-none"></div>
+          <div class="absolute right-4 top-4 opacity-10 text-white pointer-events-none">
+            <i data-lucide="crown" class="w-32 h-32"></i>
+          </div>
+
+          <!-- Top Row: Brand & Tier Badge -->
+          <div class="flex items-center justify-between z-10">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-full border border-amber-400/40 bg-slate-900/80 flex items-center justify-center text-amber-300 shadow">
+                <i data-lucide="crown" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <strong class="font-serif tracking-wider text-sm block">AURELIA PALACE</strong>
+                <span class="text-[9px] uppercase tracking-widest text-amber-400/80 font-semibold block">VIP MEMBER CLUB</span>
+              </div>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 shadow-sm"
+                  style="background: rgba(15, 23, 42, 0.7); border-color: ${tier.accent}; color: ${tier.color};">
+              ${tier.badge}
+            </span>
+          </div>
+
+          <!-- Middle: Chip & Card ID -->
+          <div class="my-5 z-10 flex items-center justify-between">
+            <!-- Metallic Smart Chip -->
+            <div class="w-11 h-8 rounded-md bg-gradient-to-tr from-amber-200 via-amber-400 to-amber-600 border border-amber-300/60 shadow-inner flex items-center justify-center">
+              <div class="w-8 h-5 border border-amber-700/40 rounded-sm grid grid-cols-2 gap-0.5 opacity-60">
+                <div class="border-b border-amber-800/40"></div>
+                <div class="border-b border-amber-800/40"></div>
+                <div></div><div></div>
+              </div>
+            </div>
+            <span class="font-mono text-sm tracking-widest text-slate-300 font-bold">${memberIdFormatted}</span>
+          </div>
+
+          <!-- Bottom: Member Name, Points & Spending -->
+          <div class="z-10 pt-3 border-t border-white/10 grid grid-cols-3 gap-2">
+            <div>
+              <p class="text-[9px] uppercase tracking-wider text-slate-400">Chủ thẻ</p>
+              <p class="text-xs font-bold text-white truncate mt-0.5">${displayName}</p>
+            </div>
+            <div>
+              <p class="text-[9px] uppercase tracking-wider text-slate-400">Điểm thưởng</p>
+              <p class="text-xs font-bold text-amber-300 mt-0.5">${currentPoints.toLocaleString('vi-VN')} <span class="text-[10px] font-normal">pts</span></p>
+            </div>
+            <div class="text-right">
+              <p class="text-[9px] uppercase tracking-wider text-slate-400">Tổng chi tiêu</p>
+              <p class="text-xs font-bold text-emerald-300 mt-0.5">${totalSpent.toLocaleString('vi-VN')} <span class="text-[10px] font-normal">đ</span></p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render Tier Progress Card
+    const statsWrapper = document.getElementById('member-stats-wrapper');
+    if (statsWrapper) {
+      statsWrapper.innerHTML = `
+        <div class="card p-6 rounded-3xl bg-slate-900/85 border border-amber-500/25 shadow-xl flex flex-col justify-between h-full">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
+                <h3 class="text-base font-bold text-white">Tiến Độ Nâng Hạng Thẻ</h3>
+              </div>
+              <span class="text-xs font-bold text-amber-300 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30">
+                ${tier.nextTier ? `${currentPoints.toLocaleString('vi-VN')} / ${tier.nextMinPts.toLocaleString('vi-VN')} Điểm` : 'Hạng tối cao'}
+              </span>
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+              ${tier.description}
+            </p>
+
+            <!-- Custom Progress Bar -->
+            <div class="w-full bg-slate-950/80 rounded-full h-3.5 p-0.5 border border-slate-800 overflow-hidden mb-3">
+              <div class="h-full rounded-full transition-all duration-1000 ease-out"
+                   style="width: ${tier.progressPct}%; background: linear-gradient(90deg, #d97706, #f59e0b, #fde68a);"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-400">
+              <span>Hạng hiện tại: <strong style="color:${tier.color};">${tier.name}</strong></span>
+              <span>${tier.nextTier ? `Hạng tiếp theo: <strong class="text-amber-400">${tier.nextTier}</strong>` : 'Đã đạt đỉnh VIP'}</span>
+            </div>
+          </div>
+
+          <div class="mt-5 p-3.5 rounded-xl bg-slate-950/60 border border-amber-500/15 text-xs text-slate-300 flex items-start gap-3">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+            <div>
+              ${tier.nextTier ? `
+                Tích lũy thêm <strong class="text-amber-300">${tier.remainingPts.toLocaleString('vi-VN')} điểm</strong> (tương đương <strong class="text-white">${tier.remainingSpend.toLocaleString('vi-VN')} đ</strong> chi tiêu) để tự động thăng hạng <strong class="text-amber-400">${tier.nextTier}</strong> và nhận đặc quyền giảm ${tier.nextTier === 'VIP' ? '15%' : '10%'} toàn hệ thống.
+              ` : `
+                Chúc mừng bạn đã là <strong class="text-cyan-300">Hội viên VIP</strong>. Mọi đặc quyền cao cấp nhất bao gồm ưu tiên nhận phòng, miễn phí bữa sáng và giảm 15% đều đã được kích hoạt.
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render Summary Statistics (3 cards)
+    const summaryStats = document.getElementById('member-summary-stats');
+    if (summaryStats) {
+      summaryStats.innerHTML = `
+        <div class="card p-5 rounded-2xl bg-slate-900/70 border border-amber-500/20 hover:border-amber-400/40 transition-all flex items-center gap-4 shadow-lg">
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+            <i data-lucide="moon" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Số đêm lưu trú</p>
+            <h4 class="text-2xl font-bold font-serif text-white mt-0.5">${totalNights} <span class="text-xs font-normal text-slate-400">đêm</span></h4>
+          </div>
+        </div>
+
+        <div class="card p-5 rounded-2xl bg-slate-900/70 border border-amber-500/20 hover:border-amber-400/40 transition-all flex items-center gap-4 shadow-lg">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+            <i data-lucide="calendar-check" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Lượt đặt phòng</p>
+            <h4 class="text-2xl font-bold font-serif text-white mt-0.5">${allBookings.length} <span class="text-xs font-normal text-slate-400">lượt</span></h4>
+          </div>
+        </div>
+
+        <div class="card p-5 rounded-2xl bg-slate-900/70 border border-amber-500/20 hover:border-amber-400/40 transition-all flex items-center gap-4 shadow-lg">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <i data-lucide="percent" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Ưu đãi hạng thẻ</p>
+            <h4 class="text-2xl font-bold font-serif text-emerald-400 mt-0.5">Giảm ${tier.discountPct}% <span class="text-xs font-normal text-slate-400">giá phòng</span></h4>
+          </div>
+        </div>
+      `;
+    }
+
+    refreshIcons();
+  } catch (err) {
+    console.error('Lỗi khi tải bảng điều khiển thành viên:', err);
+  }
 }
