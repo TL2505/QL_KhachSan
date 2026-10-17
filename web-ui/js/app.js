@@ -1360,6 +1360,22 @@ function initEventListeners() {
     loginForm.addEventListener('submit', handleLoginSubmit);
   }
 
+  // Register Form Submission
+  const registerForm = document.getElementById('register-form');
+  if (registerForm) {
+    registerForm.addEventListener('submit', handleRegisterSubmit);
+  }
+
+  // Auth Tab Switchers
+  const tabLoginBtn = document.getElementById('tab-login-btn');
+  if (tabLoginBtn) {
+    tabLoginBtn.addEventListener('click', () => switchAuthTab('login'));
+  }
+  const tabRegisterBtn = document.getElementById('tab-register-btn');
+  if (tabRegisterBtn) {
+    tabRegisterBtn.addEventListener('click', () => switchAuthTab('register'));
+  }
+
   // Header and Mobile Login Triggers
   const headerLoginBtn = document.getElementById('header-login-btn') || document.getElementById('login-btn');
   if (headerLoginBtn) {
@@ -1389,6 +1405,25 @@ function initEventListeners() {
     });
   }
 
+  // Header and Mobile Register Triggers
+  const headerRegisterBtn = document.getElementById('header-register-btn') || document.getElementById('register-btn');
+  if (headerRegisterBtn) {
+    headerRegisterBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openRegisterModal(e);
+    });
+  }
+
+  const mobileRegisterBtn = document.getElementById('mobile-register-btn');
+  if (mobileRegisterBtn) {
+    mobileRegisterBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const mobileDrawer = document.getElementById('mobile-menu-drawer');
+      if (mobileDrawer) mobileDrawer.classList.add('hidden');
+      openRegisterModal(e);
+    });
+  }
+
   // Close Login Modal Trigger
   const closeLoginBtn = document.getElementById('close-login-modal');
   if (closeLoginBtn) {
@@ -1408,11 +1443,18 @@ function initEventListeners() {
     });
   }
 
-  // Generic data-open-login triggers
+  // Generic data-open-login and data-open-register triggers
   document.querySelectorAll('[data-open-login], .btn-open-login').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       openLoginModal(e);
+    });
+  });
+
+  document.querySelectorAll('[data-open-register], .btn-open-register').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openRegisterModal(e);
     });
   });
 
@@ -1725,17 +1767,31 @@ export function ensureLoginModal() {
     modal.tabIndex = -1;
     modal.innerHTML = `
       <div class="modal-content glass-panel rounded-3xl w-full max-w-md p-6 sm:p-8 relative max-h-[92vh] overflow-y-auto my-auto shadow-2xl border border-amber-500/30">
-        <button type="button" id="close-login-modal" aria-label="Đóng đăng nhập"
+        <button type="button" id="close-login-modal" aria-label="Đóng cửa sổ"
           class="absolute top-5 right-5 z-10 w-9 h-9 rounded-full bg-slate-900/80 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700 transition-colors cursor-pointer"
           onclick="closeLoginModal(event)">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
-        <div class="text-center mb-6">
+        <div class="text-center mb-5">
           <div class="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 mx-auto mb-3 shadow-md">
-            <i data-lucide="lock" class="w-6 h-6"></i>
+            <i data-lucide="shield-check" class="w-6 h-6"></i>
           </div>
-          <h3 class="font-serif text-2xl text-white font-bold">Đăng Nhập</h3>
-          <p class="text-xs text-slate-400 mt-1">Cổng thành viên & nhân viên Aurelia Grand Palace</p>
+          <h3 id="auth-modal-title" class="font-serif text-2xl text-white font-bold">Cổng Thành Viên</h3>
+          <p id="auth-modal-subtitle" class="text-xs text-slate-400 mt-1">Aurelia Grand Palace Luxury Resort</p>
+        </div>
+        <div class="flex items-center rounded-xl bg-slate-900/90 p-1 border border-slate-800 mb-5" role="tablist">
+          <button type="button" id="tab-login-btn" role="tab" aria-selected="true"
+            class="flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all bg-amber-400 text-slate-950 shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+            onclick="switchAuthTab('login')">
+            <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+            <span>Đăng Nhập</span>
+          </button>
+          <button type="button" id="tab-register-btn" role="tab" aria-selected="false"
+            class="flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all text-slate-400 hover:text-white bg-transparent flex items-center justify-center gap-1.5 cursor-pointer"
+            onclick="switchAuthTab('register')">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+            <span>Đăng Ký</span>
+          </button>
         </div>
         <div id="login-status-box" class="hidden mb-4 p-3 rounded-xl text-xs text-center border" role="status" aria-live="polite"></div>
         <form id="login-form" class="space-y-4 mb-4">
@@ -1767,17 +1823,60 @@ export function ensureLoginModal() {
             <span>Đăng Nhập An Toàn</span>
           </button>
         </form>
-        <div class="pt-4 border-t border-slate-800/80 flex flex-col gap-2 text-center text-xs text-slate-400">
+        <form id="register-form" class="space-y-4 mb-4 hidden">
+          <div id="register-status-box" class="hidden mb-4 p-3 rounded-xl text-xs text-center border" role="status" aria-live="polite"></div>
           <div>
-            <span>Chưa có tài khoản? </span>
-            <a href="portal.html" class="text-amber-300 hover:text-white font-semibold transition-colors">Đăng ký tại Cổng thành viên ↗</a>
+            <label for="register-fullname" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              Họ và tên <span class="text-rose-400">*</span>
+            </label>
+            <div class="relative">
+              <input type="text" id="register-fullname" name="fullName" required maxlength="100"
+                placeholder="Nguyễn Văn A"
+                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+              <i data-lucide="user-check" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            </div>
+          </div>
+          <div>
+            <label for="register-username" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              Số điện thoại / Tên tài khoản <span class="text-rose-400">*</span>
+            </label>
+            <div class="relative">
+              <input type="text" id="register-username" name="username" required autocomplete="username" maxlength="50"
+                placeholder="0912345678 hoặc ten_dang_nhap"
+                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+              <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            </div>
+          </div>
+          <div>
+            <label for="register-password" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              Mật khẩu <span class="text-rose-400">*</span>
+            </label>
+            <div class="relative">
+              <input type="password" id="register-password" name="password" required autocomplete="new-password" maxlength="200"
+                placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
+                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+              <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            </div>
+          </div>
+          <button type="submit" id="btn-register-submit"
+            class="btn-gold w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>Đăng Ký Tài Khoản</span>
+          </button>
+        </form>
+        <div class="pt-4 border-t border-slate-800/80 flex flex-col gap-2 text-center text-xs text-slate-400">
+          <div id="auth-footer-prompt">
+            <span id="auth-footer-text">Chưa có tài khoản? </span>
+            <button type="button" id="auth-footer-btn" onclick="switchAuthTab('register')" class="text-amber-300 hover:text-white font-semibold transition-colors cursor-pointer">Đăng ký thành viên ngay ↗</button>
           </div>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
-    const form = modal.querySelector('#login-form');
-    if (form) form.addEventListener('submit', handleLoginSubmit);
+    const loginFm = modal.querySelector('#login-form');
+    if (loginFm) loginFm.addEventListener('submit', handleLoginSubmit);
+    const registerFm = modal.querySelector('#register-form');
+    if (registerFm) registerFm.addEventListener('submit', handleRegisterSubmit);
     const closeBtn = modal.querySelector('#close-login-modal');
     if (closeBtn) {
       closeBtn.addEventListener('click', (e) => {
@@ -1785,12 +1884,104 @@ export function ensureLoginModal() {
         closeLoginModal(e);
       });
     }
+    const tLogin = modal.querySelector('#tab-login-btn');
+    if (tLogin) tLogin.addEventListener('click', () => switchAuthTab('login'));
+    const tReg = modal.querySelector('#tab-register-btn');
+    if (tReg) tReg.addEventListener('click', () => switchAuthTab('register'));
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeLoginModal(e);
     });
     refreshLucideIcons();
   }
   return modal;
+}
+
+export function switchAuthTab(tab = 'login') {
+  if (typeof document === 'undefined') return;
+
+  const isRegister = tab === 'register';
+  const tabLoginBtn = document.getElementById('tab-login-btn');
+  const tabRegisterBtn = document.getElementById('tab-register-btn');
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const loginStatusBox = document.getElementById('login-status-box');
+  const registerStatusBox = document.getElementById('register-status-box');
+  const modalTitle = document.getElementById('auth-modal-title');
+  const modalSubtitle = document.getElementById('auth-modal-subtitle');
+  const footerText = document.getElementById('auth-footer-text');
+  const footerBtn = document.getElementById('auth-footer-btn');
+
+  if (loginForm) {
+    if (isRegister) loginForm.classList.add('hidden');
+    else loginForm.classList.remove('hidden');
+  }
+  if (registerForm) {
+    if (isRegister) registerForm.classList.remove('hidden');
+    else registerForm.classList.add('hidden');
+  }
+
+  if (loginStatusBox) {
+    loginStatusBox.classList.add('hidden');
+    loginStatusBox.textContent = '';
+  }
+  if (registerStatusBox) {
+    registerStatusBox.classList.add('hidden');
+    registerStatusBox.textContent = '';
+  }
+
+  const activeClasses = ['bg-amber-400', 'text-slate-950', 'shadow-md'];
+  const inactiveClasses = ['text-slate-400', 'hover:text-white', 'bg-transparent', 'shadow-none'];
+
+  if (tabLoginBtn) {
+    tabLoginBtn.setAttribute('aria-selected', (!isRegister).toString());
+    if (isRegister) {
+      activeClasses.forEach(c => tabLoginBtn.classList.remove(c));
+      inactiveClasses.forEach(c => tabLoginBtn.classList.add(c));
+    } else {
+      inactiveClasses.forEach(c => tabLoginBtn.classList.remove(c));
+      activeClasses.forEach(c => tabLoginBtn.classList.add(c));
+    }
+  }
+
+  if (tabRegisterBtn) {
+    tabRegisterBtn.setAttribute('aria-selected', isRegister.toString());
+    if (isRegister) {
+      inactiveClasses.forEach(c => tabRegisterBtn.classList.remove(c));
+      activeClasses.forEach(c => tabRegisterBtn.classList.add(c));
+    } else {
+      activeClasses.forEach(c => tabRegisterBtn.classList.remove(c));
+      inactiveClasses.forEach(c => tabRegisterBtn.classList.add(c));
+    }
+  }
+
+  if (modalTitle) {
+    modalTitle.textContent = isRegister ? 'Đăng Ký Thành Viên' : 'Đăng Nhập';
+  }
+  if (modalSubtitle) {
+    modalSubtitle.textContent = isRegister
+      ? 'Gia nhập đặc quyền hội viên Aurelia Grand Palace'
+      : 'Cổng thành viên & nhân viên Aurelia Grand Palace';
+  }
+
+  if (footerText) {
+    footerText.textContent = isRegister ? 'Đã có tài khoản? ' : 'Chưa có tài khoản? ';
+  }
+  if (footerBtn) {
+    footerBtn.textContent = isRegister ? 'Đăng nhập ngay ↗' : 'Đăng ký thành viên ngay ↗';
+    footerBtn.onclick = () => switchAuthTab(isRegister ? 'login' : 'register');
+  }
+
+  setTimeout(() => {
+    if (isRegister) {
+      const fnInput = document.getElementById('register-fullname');
+      if (fnInput) fnInput.focus();
+    } else {
+      const uInput = document.getElementById('login-username');
+      if (uInput) uInput.focus();
+    }
+  }, 50);
+
+  refreshLucideIcons();
 }
 
 export function openLoginModal(e) {
@@ -1801,10 +1992,20 @@ export function openLoginModal(e) {
   if (modal) {
     modal.classList.remove('hidden');
     modal.classList.add('active');
-    const usernameInput = document.getElementById('login-username');
-    if (usernameInput) {
-      setTimeout(() => usernameInput.focus(), 50);
-    }
+    switchAuthTab('login');
+    refreshLucideIcons();
+  }
+}
+
+export function openRegisterModal(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+  const modal = ensureLoginModal();
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('active');
+    switchAuthTab('register');
     refreshLucideIcons();
   }
 }
@@ -1817,10 +2018,15 @@ export function closeLoginModal(e) {
   if (modal) {
     modal.classList.add('hidden');
     modal.classList.remove('active');
-    const statusBox = document.getElementById('login-status-box');
-    if (statusBox) {
-      statusBox.classList.add('hidden');
-      statusBox.textContent = '';
+    const loginStatusBox = document.getElementById('login-status-box');
+    if (loginStatusBox) {
+      loginStatusBox.classList.add('hidden');
+      loginStatusBox.textContent = '';
+    }
+    const registerStatusBox = document.getElementById('register-status-box');
+    if (registerStatusBox) {
+      registerStatusBox.classList.add('hidden');
+      registerStatusBox.textContent = '';
     }
   }
 }
@@ -1927,6 +2133,109 @@ export async function handleLoginSubmit(e) {
   }
 }
 
+export async function handleRegisterSubmit(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+
+  const form = document.getElementById('register-form');
+  const btn = form?.querySelector('button[type="submit"]') || document.getElementById('btn-register-submit');
+  const fullNameInput = document.getElementById('register-fullname');
+  const usernameInput = document.getElementById('register-username');
+  const passwordInput = document.getElementById('register-password');
+  const statusBox = document.getElementById('register-status-box');
+
+  const fullName = fullNameInput ? fullNameInput.value.trim() : '';
+  const username = usernameInput ? usernameInput.value.trim() : '';
+  const password = passwordInput ? passwordInput.value : '';
+
+  if (!fullName || !username || !password) {
+    if (statusBox) {
+      statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-rose-500/10 border-rose-500/30 text-rose-300';
+      statusBox.textContent = 'Vui lòng điền đầy đủ họ tên, tên đăng nhập/SĐT và mật khẩu.';
+      statusBox.classList.remove('hidden');
+    }
+    showToast('Vui lòng điền đầy đủ thông tin đăng ký', 'warning');
+    return;
+  }
+
+  if (password.length < 6) {
+    if (statusBox) {
+      statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-rose-500/10 border-rose-500/30 text-rose-300';
+      statusBox.textContent = 'Mật khẩu phải có độ dài tối thiểu 6 ký tự.';
+      statusBox.classList.remove('hidden');
+    }
+    showToast('Mật khẩu tối thiểu 6 ký tự', 'warning');
+    return;
+  }
+
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.innerHTML = `
+      <div class="w-4 h-4 border-2 border-slate-950 border-t-amber-400 rounded-full animate-spin shrink-0"></div>
+      <span>Đang đăng ký tài khoản...</span>
+    `;
+  }
+
+  if (statusBox) {
+    statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-amber-500/10 border-amber-500/30 text-amber-200';
+    statusBox.textContent = 'Đang khởi tạo tài khoản thành viên...';
+    statusBox.classList.remove('hidden');
+  }
+
+  try {
+    const payload = {
+      username,
+      password,
+      fullName,
+      phone: username
+    };
+
+    await api.post('/auth/register', payload);
+
+    if (statusBox) {
+      statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
+      statusBox.textContent = 'Đăng ký thành công! Đang chuyển sang màn hình đăng nhập...';
+      statusBox.classList.remove('hidden');
+    }
+
+    showToast('Đăng ký tài khoản thành công! Vui lòng đăng nhập.', 'success');
+
+    // Pre-fill login username
+    const loginUserEl = document.getElementById('login-username');
+    if (loginUserEl) loginUserEl.value = username;
+
+    setTimeout(() => {
+      switchAuthTab('login');
+      const loginPassEl = document.getElementById('login-password');
+      if (loginPassEl) {
+        loginPassEl.value = '';
+        loginPassEl.focus();
+      }
+    }, 1000);
+
+  } catch (err) {
+    const errorMsg = err?.message || 'Không thể đăng ký tài khoản. Vui lòng thử lại sau.';
+    if (statusBox) {
+      statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-rose-500/10 border-rose-500/30 text-rose-300';
+      statusBox.textContent = errorMsg;
+      statusBox.classList.remove('hidden');
+    }
+    showToast(errorMsg, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      if (originalHtml) {
+        btn.innerHTML = originalHtml;
+      }
+      refreshLucideIcons();
+    }
+  }
+}
+
 export function updateHeaderAuthStatus() {
   if (typeof document === 'undefined') return;
   const session = getAuthSession();
@@ -1955,7 +2264,10 @@ export function updateHeaderAuthStatus() {
 _global.ensureLoginModal = ensureLoginModal;
 _global.openLoginModal = openLoginModal;
 _global.closeLoginModal = closeLoginModal;
+_global.openRegisterModal = openRegisterModal;
+_global.switchAuthTab = switchAuthTab;
 _global.handleLoginSubmit = handleLoginSubmit;
+_global.handleRegisterSubmit = handleRegisterSubmit;
 _global.updateHeaderAuthStatus = updateHeaderAuthStatus;
 
 // ==========================================================================

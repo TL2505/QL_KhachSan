@@ -19,18 +19,25 @@ const stop = server => new Promise(resolve => {
 // =============================================================================
 // CATEGORY 1: AUDIT GIT DIFF & SOURCE CODE INTEGRITY (STATIC CHECK)
 // =============================================================================
-test('index.html contains #login-modal and proper login buttons', () => {
+test('index.html contains #login-modal, tab switcher, login & register forms, and proper triggers', () => {
   for (const file of ['index.html', 'public/index.html']) {
     const html = fs.readFileSync(path.join(webUiDir, file), 'utf-8');
     
-    // 1. Header login button with click handler
+    // 1. Header login and register buttons with click handlers
     assert.match(html, /id="header-login-btn"/, `${file} must contain #header-login-btn`);
     assert.match(html, /onclick="openLoginModal\(event\)"/, `${file} must call openLoginModal`);
+    assert.match(html, /id="header-register-btn"/, `${file} must contain #header-register-btn`);
+    assert.match(html, /onclick="openRegisterModal\(event\)"/, `${file} must call openRegisterModal`);
     
-    // 2. Mobile drawer login button with click handler
+    // 2. Mobile drawer login and register buttons with click handlers
     assert.match(html, /id="mobile-login-btn"/, `${file} must contain #mobile-login-btn`);
+    assert.match(html, /id="mobile-register-btn"/, `${file} must contain #mobile-register-btn`);
     
-    // 3. Full #login-modal and form controls to prevent "Cannot read properties of null"
+    // 3. Tab Switcher
+    assert.match(html, /id="tab-login-btn"/, `${file} must contain #tab-login-btn`);
+    assert.match(html, /id="tab-register-btn"/, `${file} must contain #tab-register-btn`);
+
+    // 4. Full #login-modal and form controls
     assert.match(html, /id="login-modal"/, `${file} must contain #login-modal`);
     assert.match(html, /id="login-form"/, `${file} must contain #login-form`);
     assert.match(html, /id="login-username"/, `${file} must contain #login-username`);
@@ -38,6 +45,14 @@ test('index.html contains #login-modal and proper login buttons', () => {
     assert.match(html, /id="btn-login-submit"/, `${file} must contain #btn-login-submit`);
     assert.match(html, /id="close-login-modal"/, `${file} must contain #close-login-modal`);
     assert.match(html, /id="login-status-box"/, `${file} must contain #login-status-box`);
+
+    // 5. Full #register-form controls
+    assert.match(html, /id="register-form"/, `${file} must contain #register-form`);
+    assert.match(html, /id="register-fullname"/, `${file} must contain #register-fullname`);
+    assert.match(html, /id="register-username"/, `${file} must contain #register-username`);
+    assert.match(html, /id="register-password"/, `${file} must contain #register-password`);
+    assert.match(html, /id="register-status-box"/, `${file} must contain #register-status-box`);
+    assert.match(html, /id="btn-register-submit"/, `${file} must contain #btn-register-submit`);
   }
 });
 
@@ -74,7 +89,9 @@ function createMockElement(id, tagName = 'div') {
     removeAttribute: k => attrs.delete(k),
     focus: () => {},
     querySelector: sel => {
-      if (sel === 'button[type="submit"]') return createMockElement('btn-login-submit', 'button');
+      if (sel === 'button[type="submit"]') {
+        return id === 'register-form' ? createMockElement('btn-register-submit', 'button') : createMockElement('btn-login-submit', 'button');
+      }
       return null;
     },
     addEventListener: () => {},
@@ -384,6 +401,204 @@ test('Scenario 3 (Integration): Network error/timeout is cleanly caught, button 
       /Không thể kết nối|Không thể đăng nhập|fetch failed|socket hang up/i,
       'Friendly connection error message must be shown'
     );
+  } finally {
+    await stop(server);
+  }
+});
+
+// Test 7: Functional verification of switchAuthTab and openRegisterModal
+test('openRegisterModal and switchAuthTab toggle active tab and forms cleanly', async () => {
+  const domElements = new Map();
+  const modalEl = createMockElement('login-modal');
+  modalEl.classList.add('hidden');
+  const tabLoginBtn = createMockElement('tab-login-btn', 'button');
+  const tabRegisterBtn = createMockElement('tab-register-btn', 'button');
+  const loginForm = createMockElement('login-form', 'form');
+  const registerForm = createMockElement('register-form', 'form');
+  registerForm.classList.add('hidden');
+  const loginStatusBox = createMockElement('login-status-box');
+  const registerStatusBox = createMockElement('register-status-box');
+  const registerFullname = createMockElement('register-fullname', 'input');
+  const loginUsername = createMockElement('login-username', 'input');
+
+  domElements.set('login-modal', modalEl);
+  domElements.set('tab-login-btn', tabLoginBtn);
+  domElements.set('tab-register-btn', tabRegisterBtn);
+  domElements.set('login-form', loginForm);
+  domElements.set('register-form', registerForm);
+  domElements.set('login-status-box', loginStatusBox);
+  domElements.set('register-status-box', registerStatusBox);
+  domElements.set('register-fullname', registerFullname);
+  domElements.set('login-username', loginUsername);
+
+  setupMockDocument(domElements);
+  globalThis.window = {
+    location: { origin: 'http://localhost:3000', href: '' },
+    lucide: { createIcons: () => {} },
+    addEventListener: () => {},
+    removeEventListener: () => {}
+  };
+
+  const { openRegisterModal, switchAuthTab } = await import(`../public/js/app.js?t=${Date.now() + 5}`);
+
+  let prevented = false;
+  openRegisterModal({ preventDefault: () => { prevented = true; } });
+
+  assert.equal(prevented, true, 'openRegisterModal must call e.preventDefault()');
+  assert.equal(modalEl.classList.contains('hidden'), false, '#login-modal must NOT have hidden');
+  assert.equal(modalEl.classList.contains('active'), true, '#login-modal must have active class');
+  assert.equal(registerForm.classList.contains('hidden'), false, '#register-form must NOT have hidden on register tab');
+  assert.equal(loginForm.classList.contains('hidden'), true, '#login-form must be hidden on register tab');
+  assert.equal(tabRegisterBtn.getAttribute('aria-selected'), 'true');
+  assert.equal(tabLoginBtn.getAttribute('aria-selected'), 'false');
+
+  // Switching back to login tab
+  switchAuthTab('login');
+  assert.equal(loginForm.classList.contains('hidden'), false, '#login-form must NOT have hidden on login tab');
+  assert.equal(registerForm.classList.contains('hidden'), true, '#register-form must be hidden on login tab');
+  assert.equal(tabLoginBtn.getAttribute('aria-selected'), 'true');
+  assert.equal(tabRegisterBtn.getAttribute('aria-selected'), 'false');
+});
+
+// Scenario 4: Successful Registration -> HTTP 200 -> Unlocks button, displays success, pre-fills username
+test('Scenario 4 (Integration): Successful customer registration calls /api/v1/auth/register and unlocks button', async () => {
+  let receivedBody = null;
+  const server = http.createServer(async (req, res) => {
+    assert.equal(req.method, 'POST');
+    assert.equal(req.url, '/api/v1/auth/register');
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    receivedBody = JSON.parse(Buffer.concat(chunks).toString());
+
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(JSON.stringify({
+      status: 'success',
+      message: 'Đăng ký thành công! Chào mừng bạn đến với hệ thống.'
+    }));
+  });
+
+  const port = await listen(server);
+  const serverOrigin = `http://127.0.0.1:${port}`;
+
+  const domElements = new Map();
+  const registerForm = createMockElement('register-form', 'form');
+  const btnEl = createMockElement('btn-register-submit', 'button');
+  btnEl.innerHTML = '<span>Đăng Ký Tài Khoản</span>';
+  const fullnameInput = createMockElement('register-fullname', 'input');
+  fullnameInput.value = 'Nguyễn Văn Test';
+  const usernameInput = createMockElement('register-username', 'input');
+  usernameInput.value = '0988776655';
+  const passwordInput = createMockElement('register-password', 'input');
+  passwordInput.value = 'password123';
+  const statusBox = createMockElement('register-status-box');
+  const loginUsername = createMockElement('login-username', 'input');
+
+  domElements.set('register-form', registerForm);
+  domElements.set('btn-register-submit', btnEl);
+  domElements.set('register-fullname', fullnameInput);
+  domElements.set('register-username', usernameInput);
+  domElements.set('register-password', passwordInput);
+  domElements.set('register-status-box', statusBox);
+  domElements.set('login-username', loginUsername);
+
+  setupMockDocument(domElements);
+  globalThis.window = {
+    location: { origin: serverOrigin, href: '' },
+    lucide: { createIcons: () => {} },
+    addEventListener: () => {},
+    removeEventListener: () => {}
+  };
+  globalThis.fetch = nativeFetch;
+
+  try {
+    const { handleRegisterSubmit } = await import(`../public/js/app.js?t=${Date.now() + 6}`);
+
+    let prevented = false;
+    const mockEvent = {
+      preventDefault: () => { prevented = true; },
+      currentTarget: registerForm
+    };
+
+    await handleRegisterSubmit(mockEvent);
+
+    assert.equal(prevented, true, 'handleRegisterSubmit must call e.preventDefault()');
+    assert.notEqual(receivedBody, null, 'Registration payload must be sent to server');
+    assert.equal(receivedBody.username, '0988776655');
+    assert.equal(receivedBody.fullName, 'Nguyễn Văn Test');
+    assert.equal(receivedBody.password, 'password123');
+
+    // Button unlocked in finally
+    assert.equal(btnEl.disabled, false, 'Submit button must be unlocked after registration completes');
+    assert.equal(statusBox.classList.contains('hidden'), false, 'Status box must display success message');
+    assert.match(statusBox.textContent, /Đăng ký thành công/i, 'Success message must be displayed');
+    assert.equal(loginUsername.value, '0988776655', 'Registered username must be pre-filled into login input');
+  } finally {
+    await stop(server);
+  }
+});
+
+// Scenario 5: Duplicate registration returns HTTP 400 -> Unlocks button, displays error in #register-status-box
+test('Scenario 5 (Integration): Duplicate registration returns HTTP 400 and unlocks button', async () => {
+  const server = http.createServer(async (req, res) => {
+    assert.equal(req.method, 'POST');
+    assert.equal(req.url, '/api/v1/auth/register');
+    res.writeHead(400, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(JSON.stringify({
+      status: 'error',
+      message: 'Tên đăng nhập đã tồn tại trong hệ thống'
+    }));
+  });
+
+  const port = await listen(server);
+  const serverOrigin = `http://127.0.0.1:${port}`;
+
+  const domElements = new Map();
+  const registerForm = createMockElement('register-form', 'form');
+  const btnEl = createMockElement('btn-register-submit', 'button');
+  btnEl.innerHTML = '<span>Đăng Ký Tài Khoản</span>';
+  const fullnameInput = createMockElement('register-fullname', 'input');
+  fullnameInput.value = 'Trùng Lặp';
+  const usernameInput = createMockElement('register-username', 'input');
+  usernameInput.value = 'existing_user';
+  const passwordInput = createMockElement('register-password', 'input');
+  passwordInput.value = 'password123';
+  const statusBox = createMockElement('register-status-box');
+
+  domElements.set('register-form', registerForm);
+  domElements.set('btn-register-submit', btnEl);
+  domElements.set('register-fullname', fullnameInput);
+  domElements.set('register-username', usernameInput);
+  domElements.set('register-password', passwordInput);
+  domElements.set('register-status-box', statusBox);
+
+  setupMockDocument(domElements);
+  globalThis.window = {
+    location: { origin: serverOrigin, href: '' },
+    lucide: { createIcons: () => {} },
+    addEventListener: () => {},
+    removeEventListener: () => {}
+  };
+  globalThis.fetch = nativeFetch;
+
+  try {
+    const { handleRegisterSubmit } = await import(`../public/js/app.js?t=${Date.now() + 7}`);
+
+    const mockEvent = {
+      preventDefault: () => {},
+      currentTarget: registerForm
+    };
+
+    await handleRegisterSubmit(mockEvent);
+
+    assert.equal(btnEl.disabled, false, 'Submit button must be unlocked after registration error');
+    assert.equal(statusBox.classList.contains('hidden'), false, 'Status box must display the error message');
+    assert.match(statusBox.textContent, /Tên đăng nhập đã tồn tại|Thông tin chưa hợp lệ|Yêu cầu chưa được hoàn tất/i);
   } finally {
     await stop(server);
   }
