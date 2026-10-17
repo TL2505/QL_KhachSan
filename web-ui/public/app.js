@@ -10,6 +10,7 @@ import {
   api,
   setAuthSession,
   getAuthSession,
+  clearAuthSession,
   getRooms,
   submitBooking,
   lookupBooking,
@@ -2098,7 +2099,7 @@ export async function handleLoginSubmit(e) {
 
     if (statusBox) {
       statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
-      statusBox.textContent = 'Đăng nhập thành công! Đang chuyển hướng...';
+      statusBox.textContent = 'Đăng nhập thành công!';
       statusBox.classList.remove('hidden');
     }
 
@@ -2107,10 +2108,6 @@ export async function handleLoginSubmit(e) {
 
     setTimeout(() => {
       closeLoginModal();
-      const destination = isStaff ? 'room-map' : (session.role === 'ADMIN' ? 'dashboard' : 'dashboard');
-      if (typeof window !== 'undefined' && window.location) {
-        window.location.href = `portal.html?view=${encodeURIComponent(destination)}`;
-      }
     }, 600);
 
   } catch (err) {
@@ -2236,25 +2233,179 @@ export async function handleRegisterSubmit(e) {
   }
 }
 
+export function handleLogout(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+  clearAuthSession();
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('hotel_auth_session');
+    }
+  } catch {}
+  updateHeaderAuthStatus();
+  showToast('Đã đăng xuất thành công', 'info');
+  if (typeof window !== 'undefined' && window.location && typeof window.location.reload === 'function') {
+    window.location.reload();
+  }
+}
+
 export function updateHeaderAuthStatus() {
   if (typeof document === 'undefined') return;
   const session = getAuthSession();
+  const headerContainer = document.getElementById('header-auth-container');
+  const mobileContainer = document.getElementById('mobile-auth-container');
   const headerLoginBtn = document.getElementById('header-login-btn');
   const mobileLoginBtn = document.getElementById('mobile-login-btn');
+
   if (session && session.token) {
     const rawName = session.fullName || session.username || 'Thành viên';
     const safeName = String(rawName).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-    if (headerLoginBtn) {
+    const rawRole = session.role === 'ADMIN' ? 'Quản trị viên' : (session.role === 'STAFF' ? 'Nhân viên' : 'Thành viên Aurelia');
+    const safeRole = String(rawRole).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    const initial = (safeName.trim()[0] || 'A').toUpperCase();
+
+    // Desktop Header: User Dropdown Menu
+    if (headerContainer) {
+      headerContainer.innerHTML = `
+        <div class="relative" id="user-menu-dropdown-wrapper">
+          <button type="button" id="header-user-menu-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-amber-500/30 text-amber-200 hover:text-white hover:border-amber-400 transition-all text-xs font-medium cursor-pointer" aria-expanded="false" aria-haspopup="true">
+            <span class="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-[11px] shadow-sm">${initial}</span>
+            <span class="max-w-[120px] truncate font-semibold">${safeName}</span>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-400 transition-transform duration-200" id="user-menu-chevron"></i>
+          </button>
+          <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-slate-900/95 border border-amber-500/20 shadow-2xl backdrop-blur-xl py-2 z-50 divide-y divide-slate-800/60">
+            <div class="px-4 py-2.5">
+              <p class="text-[10px] tracking-wider uppercase text-amber-400 font-bold">Aurelia Palace</p>
+              <p class="text-xs font-semibold text-white truncate">${safeName}</p>
+              <p class="text-[11px] text-slate-400 truncate">${safeRole}</p>
+            </div>
+            <div class="py-1">
+              <a href="portal.html" class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-200 hover:text-amber-300 hover:bg-amber-500/10 transition-colors">
+                <i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-400"></i>
+                <span>Cổng thành viên</span>
+              </a>
+              <a href="portal.html?view=dashboard" class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-200 hover:text-amber-300 hover:bg-amber-500/10 transition-colors">
+                <i data-lucide="calendar-check" class="w-4 h-4 text-amber-400"></i>
+                <span>Lịch sử đặt phòng</span>
+              </a>
+            </div>
+            <div class="py-1">
+              <button type="button" id="btn-logout" class="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-rose-300 hover:text-rose-100 hover:bg-rose-500/10 transition-colors text-left cursor-pointer">
+                <i data-lucide="log-out" class="w-4 h-4 text-rose-400"></i>
+                <span>Đăng xuất</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      const menuBtn = document.getElementById('header-user-menu-btn');
+      const dropdown = document.getElementById('user-menu-dropdown');
+      const chevron = document.getElementById('user-menu-chevron');
+      if (menuBtn && dropdown) {
+        menuBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isHidden = dropdown.classList.contains('hidden');
+          dropdown.classList.toggle('hidden', !isHidden);
+          menuBtn.setAttribute('aria-expanded', String(isHidden));
+          if (chevron) {
+            chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+          }
+        });
+        document.addEventListener('click', (e) => {
+          if (dropdown && !dropdown.contains(e.target) && !menuBtn.contains(e.target)) {
+            dropdown.classList.add('hidden');
+            menuBtn.setAttribute('aria-expanded', 'false');
+            if (chevron) chevron.style.transform = '';
+          }
+        });
+      }
+      const logoutBtn = document.getElementById('btn-logout');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+      }
+    } else if (headerLoginBtn) {
       headerLoginBtn.innerHTML = `<i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i><span>${safeName}</span>`;
       headerLoginBtn.title = 'Mở Cổng Quản Lý / Thành Viên';
       headerLoginBtn.setAttribute('aria-label', `Đã đăng nhập: ${safeName}`);
     }
-    if (mobileLoginBtn) {
+
+    // Mobile Navigation: User Profile + Member Gateway + Booking History + Logout
+    if (mobileContainer) {
+      mobileContainer.innerHTML = `
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-amber-500/20 mb-1">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-xs shadow-sm">${initial}</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-semibold text-white truncate">${safeName}</p>
+              <p class="text-[11px] text-amber-400 truncate">${safeRole}</p>
+            </div>
+          </div>
+        </div>
+        <a href="portal.html" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider">
+          <span class="flex items-center gap-3">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-400"></i> Cổng thành viên
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+        </a>
+        <a href="portal.html?view=dashboard" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider">
+          <span class="flex items-center gap-3">
+            <i data-lucide="calendar-check" class="w-4 h-4 text-amber-400"></i> Lịch sử đặt phòng
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+        </a>
+        <button type="button" id="mobile-btn-logout" class="w-full mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:text-rose-100 transition-all text-sm uppercase tracking-wider text-left cursor-pointer">
+          <span class="flex items-center gap-3">
+            <i data-lucide="log-out" class="w-4 h-4 text-rose-400"></i> Đăng xuất
+          </span>
+        </button>
+      `;
+      const mobileLogoutBtn = document.getElementById('mobile-btn-logout');
+      if (mobileLogoutBtn) {
+        mobileLogoutBtn.addEventListener('click', handleLogout);
+      }
+    } else if (mobileLoginBtn) {
       mobileLoginBtn.innerHTML = `
         <span class="flex items-center gap-3">
           <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i> ${safeName} (Cổng thành viên)
         </span>
         <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+      `;
+    }
+    refreshLucideIcons();
+  } else {
+    // Unauthenticated guest state
+    if (headerContainer) {
+      headerContainer.innerHTML = `
+        <a href="#login" id="header-login-btn" role="button"
+          class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200 hover:text-white transition-colors cursor-pointer"
+          aria-label="Đăng nhập cổng khách hàng và nhân viên"
+          onclick="openLoginModal(event)"><i data-lucide="user-round" class="w-4 h-4"></i><span>Đăng nhập</span></a>
+        <a href="#register" id="header-register-btn" role="button"
+          class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200 hover:text-white transition-colors cursor-pointer"
+          aria-label="Đăng ký tài khoản khách hàng"
+          onclick="openRegisterModal(event)"><i data-lucide="user-plus" class="w-4 h-4"></i><span>Đăng ký</span></a>
+      `;
+    }
+    if (mobileContainer) {
+      mobileContainer.innerHTML = `
+        <a href="#login" id="mobile-login-btn" role="button"
+          onclick="document.getElementById('mobile-menu-drawer')?.classList.add('hidden'); openLoginModal(event);"
+          class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider cursor-pointer">
+          <span class="flex items-center gap-3">
+            <i data-lucide="user-round" class="w-4 h-4 text-amber-400"></i> Đăng nhập
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+        </a>
+        <a href="#register" id="mobile-register-btn" role="button"
+          onclick="document.getElementById('mobile-menu-drawer')?.classList.add('hidden'); openRegisterModal(event);"
+          class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider cursor-pointer">
+          <span class="flex items-center gap-3">
+            <i data-lucide="user-plus" class="w-4 h-4 text-amber-400"></i> Đăng ký
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+        </a>
       `;
     }
     refreshLucideIcons();
@@ -2269,6 +2420,7 @@ _global.switchAuthTab = switchAuthTab;
 _global.handleLoginSubmit = handleLoginSubmit;
 _global.handleRegisterSubmit = handleRegisterSubmit;
 _global.updateHeaderAuthStatus = updateHeaderAuthStatus;
+_global.handleLogout = handleLogout;
 
 // ==========================================================================
 // TASK C5.1: W3C NAVIGATION TIMING API AUTOMATED PERFORMANCE MEASUREMENT

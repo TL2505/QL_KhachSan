@@ -107,6 +107,28 @@ function enterPortal(session) {
   const requested = new URLSearchParams(location.search).get('view');
   const defaultTab = role === 'STAFF' ? 'room-map' : 'dashboard';
   openView(session, role, requested || defaultTab);
+
+  if (session?.isGuestPreview) {
+    const msg = byId('portal-message');
+    if (msg) {
+      msg.className = 'portal-message alert mb-4 bg-amber-500/10 border-amber-500/30 text-amber-200 text-xs flex items-center justify-between';
+      msg.innerHTML = `
+        <div class="flex items-center gap-2">
+          <i data-lucide="info" class="w-4 h-4 text-amber-400"></i>
+          <span>Bạn đang xem Cổng thành viên dưới chế độ Khách. Đăng nhập để đồng bộ lịch sử đặt phòng thực tế của bạn.</span>
+        </div>
+        <button type="button" id="btn-guest-login-now" class="btn btn-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold border-0 ml-3">Đăng nhập</button>
+      `;
+      msg.hidden = false;
+      byId('btn-guest-login-now')?.addEventListener('click', () => {
+        clearAuthSession();
+        history.replaceState(null, '', 'portal.html');
+        byId('view-container').replaceChildren();
+        showAuth('login');
+      });
+      if (window.lucide?.createIcons) window.lucide.createIcons();
+    }
+  }
 }
 
 byId('show-login').addEventListener('click', () => { status(''); showAuth('login'); });
@@ -172,6 +194,20 @@ byId('logout-button').addEventListener('click', () => {
 });
 
 if (window.lucide?.createIcons) window.lucide.createIcons();
+const requestedView = new URLSearchParams(location.search).get('view');
 const currentSession = getAuthSession();
-if (currentSession?.token) enterPortal(currentSession);
-else showAuth();
+if (currentSession?.token) {
+  enterPortal(currentSession);
+} else if (requestedView === 'dashboard') {
+  const guestSession = {
+    token: 'guest-preview',
+    role: 'CUSTOMER',
+    userId: 0,
+    username: 'guest',
+    fullName: 'Quý Khách (Guest)',
+    isGuestPreview: true
+  };
+  enterPortal(guestSession);
+} else {
+  showAuth();
+}

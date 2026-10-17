@@ -1,0 +1,276 @@
+.auth-layout[hidden] {
+  display: none;
+}
+
+html[data-theme="light"] body.customer-portal {
+  --portal-bg: #f6f3ed;
+  --portal-panel: #fff;
+  --portal-surface: #f0ebe2;
+  --portal-gold: #986b3f;
+  --portal-soft: #6f4a2b;
+  --portal-text: #29251f;
+  --portal-muted: #777168;
+  --portal-border: #e6dfd3;
+  --customer-surface: #fff;
+  --customer-brand-mark-bg: #fbf8f2;
+  --customer-background-glow: rgba(183, 143, 95, .12);
+  --customer-sidebar-shadow: 0 8px 24px rgba(67, 49, 29, .05);
+  --customer-nav-text: #625d54;
+  --customer-nav-active-text: #5e4027;
+  --customer-nav-active-bg: #f4ede2;
+  --customer-nav-active-border: #e8dac7;
+  --customer-avatar-bg: #eadcc8;
+  --customer-card-shadow: 0 12px 32px rgba(67, 49, 29, .06);
+  --customer-input-border: #ded6c9;
+  --customer-primary-bg: #805c3b;
+  --customer-secondary-bg: #f5f1e9;
+}
+
+body.customer-portal {
+  background:
+    radial-gradient(ellipse at 85% 0, var(--customer-background-glow), transparent 35%),
+    var(--portal-bg);
+  color: var(--portal-text);
+}
+
+.customer-portal .portal-topbar {
+  background: var(--customer-surface);
+  border-color: var(--portal-border);
+}
+
+.customer-portal .portal-brand,
+.customer-portal .portal-return {
+  color: var(--portal-text);
+}
+
+.customer-portal .portal-brand-mark {
+  color: var(--portal-gold);
+  border-color: var(--portal-border);
+  background: var(--customer-brand-mark-bg);
+}
+
+.customer-portal .portal-brand em,
+.customer-portal .portal-brand small {
+  color: var(--portal-gold);
+}
+
+.customer-portal .portal-shell {
+  display: block;
+  min-height: calc(100vh - 82px);
+}
+
+.customer-portal .portal-sidebar {
+  z-index: 5;
+  top: 0;
+  height: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 12px clamp(18px, 4vw, 54px);
+  border-right: 0;
+  border-bottom: 1px solid var(--portal-border);
+  background: var(--customer-surface);
+  box-shadow: var(--customer-sidebar-shadow);
+  backdrop-filter: blur(16px);
+}
+
+.customer-portal .sidebar-logo {
+  padding: 0;
+  color: var(--portal-text);
+  white-space: nowrap;
+}
+
+.customer-portal .sidebar-logo em {
+  color: var(--portal-gold);
+}
+
+.customer-portal .sidebar-logo .portal-brand-mark {
+  width: 36px;
+  height: 36px;
+}
+
+.customer-portal .sidebar-caption {
+  display: none;
+}
+
+.customer-portal .portal-nav {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+}
+
+.customer-portal .portal-nav button {
+  width: auto;
+  min-height: 40px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: var(--customer-nav-text);
+  white-space: nowrap;
+}
+
+.customer-portal .portal-nav button svg {
+  color: var(--portal-gold);
+}
+
+.customer-portal .portal-nav button:hover,
+.customer-portal .portal-nav button.active {
+  color: var(--customer-nav-active-text);
+  background: var(--customer-nav-active-bg);
+  border-color: var(--customer-nav-active-border);
+}
+
+.customer-portal .sidebar-account {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.customer-portal .account-avatar {
+  background: var(--customer-avatar-bg);
+  color: var(--customer-nav-active-text);
+}
+
+.customer-portal .account-meta strong {
+  color: var(--portal-text);
+}
+
+.customer-portal .account-meta small {
+  color: var(--portal-muted);
+}
+
+.customer-portal .sidebar-account button {
+  color: var(--portal-muted);
+}
+
+.customer-portal .portal-content {
+  width: min(1480px, 100%);
+  margin: 0 auto;
+  padding: 34px clamp(18px, 5vw, 72px) 64px;
+}
+
+.customer-portal .portal-content-bar {
+  border-color: var(--portal-border);
+}
+
+.customer-portal .portal-content-bar h1,
+.customer-portal .portal-view .page-header h1 {
+  color: var(--portal-text);
+}
+
+.customer-portal .portal-view .page-header p,
+.customer-portal .portal-view .text-muted {
+  color: var(--portal-muted);
+}
+
+.customer-portal .portal-view .card {
+  color: var(--portal-text);
+  background: var(--customer-surface);
+  border-color: var(--portal-border);
+  box-shadow: var(--customer-card-shadow);
+}
+
+.customer-portal .portal-view input,
+.customer-portal .portal-view select,
+.customer-portal .portal-view textarea,
+.customer-portal .portal-view .form-input {
+  color: var(--portal-text);
+  background: var(--customer-surface);
+  border-color: var(--customer-input-border);
+}
+
+.customer-portal .portal-view .btn-primary {
+  color: #fff;
+  background: var(--customer-primary-bg);
+}
+
+.customer-portal .portal-view .btn-secondary {
+  color: var(--portal-text);
+  background: var(--customer-secondary-bg);
+  border-color: var(--portal-border);
+}
+
+html[data-theme="dark"] body.customer-portal {
+  --portal-bg: #171817;
+  --portal-panel: #252720;
+  --portal-surface: #302f29;
+  --portal-gold: #d6b585;
+  --portal-soft: #ead6b5;
+  --portal-text: #f2eee7;
+  --portal-muted: #b6afa3;
+  --portal-border: #49463f;
+  --customer-surface: #252720;
+  --customer-brand-mark-bg: #302d27;
+  --customer-background-glow: rgba(183, 143, 95, .08);
+  --customer-sidebar-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+  --customer-nav-text: #d1c9bb;
+  --customer-nav-active-text: #f2dfc2;
+  --customer-nav-active-bg: #40382e;
+  --customer-nav-active-border: #645440;
+  --customer-avatar-bg: #514536;
+  --customer-card-shadow: 0 12px 32px rgba(0, 0, 0, .2);
+  --customer-input-border: #565047;
+  --customer-primary-bg: #906b47;
+  --customer-secondary-bg: #302d27;
+}
+
+@media (max-width: 1080px) {
+  .customer-portal .portal-sidebar {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px 18px;
+  }
+
+  .customer-portal .portal-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .customer-portal .sidebar-account {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 600px) {
+  .customer-portal .portal-sidebar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 10px 16px;
+  }
+
+  .customer-portal .sidebar-logo {
+    font-size: 12px;
+  }
+
+  .customer-portal .account-meta {
+    display: none;
+  }
+
+  .customer-portal .portal-nav {
+    gap: 2px;
+  }
+
+  .customer-portal .portal-nav button {
+    min-height: 38px;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .customer-portal .portal-nav button svg {
+    width: 14px;
+  }
+
+  .customer-portal .portal-content {
+    padding-top: 24px;
+  }
+
+  .customer-portal .portal-content-bar {
+    align-items: flex-start;
+  }
+}

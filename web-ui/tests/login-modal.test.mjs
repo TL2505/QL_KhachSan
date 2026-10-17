@@ -603,3 +603,101 @@ test('Scenario 5 (Integration): Duplicate registration returns HTTP 400 and unlo
     await stop(server);
   }
 });
+
+// Scenario 6: Post-login flow retains user on homepage (no redirect), renders User Dropdown Menu, and handleLogout works
+test('Scenario 6 (Integration): Post-login flow retains user on index.html, renders User Dropdown in header, and handleLogout clears session', async () => {
+  const jwtSample = 'eyJhbGciOiJIUzI1NiJ9.sig_guest_token_888';
+  const server = http.createServer(async (req, res) => {
+    assert.equal(req.method, 'POST');
+    assert.equal(req.url, '/api/v1/auth/login');
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(JSON.stringify({
+      status: 'success',
+      data: {
+        token: jwtSample,
+        role: 'CUSTOMER',
+        userId: 42,
+        username: 'guest_luxury',
+        fullName: 'Nguyễn Văn Aurelia'
+      }
+    }));
+  });
+
+  const port = await listen(server);
+  const serverOrigin = `http://127.0.0.1:${port}`;
+
+  const storageMap = new Map();
+  globalThis.localStorage = {
+    getItem: key => storageMap.get(key) ?? null,
+    setItem: (key, val) => storageMap.set(key, String(val)),
+    removeItem: key => storageMap.delete(key),
+    clear: () => storageMap.clear()
+  };
+
+  const domElements = new Map();
+  const formEl = createMockElement('login-form', 'form');
+  const btnEl = createMockElement('btn-login-submit', 'button');
+  const usernameInput = createMockElement('login-username', 'input');
+  usernameInput.value = 'guest_luxury';
+  const passwordInput = createMockElement('login-password', 'input');
+  passwordInput.value = 'Pass@12345';
+  const statusBox = createMockElement('login-status-box');
+  const modalEl = createMockElement('login-modal');
+  modalEl.classList.add('active');
+
+  const headerContainer = createMockElement('header-auth-container');
+  const mobileContainer = createMockElement('mobile-auth-container');
+
+  domElements.set('login-modal', modalEl);
+  domElements.set('login-form', formEl);
+  domElements.set('btn-login-submit', btnEl);
+  domElements.set('login-username', usernameInput);
+  domElements.set('login-password', passwordInput);
+  domElements.set('login-status-box', statusBox);
+  domElements.set('header-auth-container', headerContainer);
+  domElements.set('mobile-auth-container', mobileContainer);
+
+  setupMockDocument(domElements);
+  globalThis.window = {
+    location: { origin: serverOrigin, href: 'http://localhost:3000/index.html', reload: () => {} },
+    lucide: { createIcons: () => {} },
+    addEventListener: () => {},
+    removeEventListener: () => {}
+  };
+  globalThis.fetch = nativeFetch;
+
+  try {
+    const { handleLoginSubmit, handleLogout } = await import(`../public/js/app.js?t=${Date.now() + 8}`);
+
+    await handleLoginSubmit({ preventDefault: () => {}, currentTarget: formEl });
+
+    // Assert that location.href was NOT redirected to portal.html
+    assert.equal(globalThis.window.location.href, 'http://localhost:3000/index.html', 'Must not redirect away from index.html');
+
+    // Wait for the modal closure timeout (600ms)
+    await new Promise(r => setTimeout(r, 650));
+    assert.equal(modalEl.classList.contains('hidden'), true, '#login-modal must be closed');
+
+    // Assert Header contains User Dropdown Menu with required items
+    assert.match(headerContainer.innerHTML, /Nguyễn Văn Aurelia/, 'Header must display guest name');
+    assert.match(headerContainer.innerHTML, /portal\.html/, 'Header must link to Member Gateway');
+    assert.match(headerContainer.innerHTML, /portal\.html\?view=dashboard/, 'Header must link to Booking History');
+    assert.match(headerContainer.innerHTML, /id="btn-logout"/, 'Header must contain #btn-logout button');
+
+    // Assert Mobile drawer contains user navigation
+    assert.match(mobileContainer.innerHTML, /Nguyễn Văn Aurelia/);
+    assert.match(mobileContainer.innerHTML, /id="mobile-btn-logout"/);
+
+    // Assert handleLogout clears session and localStorage
+    assert.equal(globalThis.localStorage.getItem('auth_token'), jwtSample);
+    handleLogout();
+    assert.equal(globalThis.localStorage.getItem('auth_token'), null, 'handleLogout must clear auth_token');
+    assert.equal(globalThis.localStorage.getItem('hotel_auth_session'), null, 'handleLogout must clear hotel_auth_session');
+  } finally {
+    await stop(server);
+  }
+});
+
