@@ -53,7 +53,7 @@ public class Main {
 
     /** Configures the same production routes used by main, without starting jobs or migrating data. */
     public static HttpServer createServer(int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(port),0);
+        HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
             // Khởi tạo các Filter
             Filter corsFilter = new CorsFilter();
             Filter jwtFilter = new JwtFilter();

@@ -11,9 +11,15 @@ public class WebSocketService {
     private static WebSocket currentWebSocket;
     
     public static void connect() {
-        // Địa chỉ Websocket mặc định (Backend Spring Boot / Node.js)
-        // Nếu dùng ngrok, thay bằng wss://....
-        String wsUrl = "ws://localhost:8081/ws"; 
+        String base = quanlykhachsan.frontend.api.ApiConfig.getBaseUrl();
+        String host = quanlykhachsan.frontend.api.ApiConfig.DEFAULT_VM_IP;
+        int port = quanlykhachsan.frontend.api.ApiConfig.DEFAULT_BACKEND_PORT;
+        try {
+            URI uri = URI.create(base);
+            if (uri.getHost() != null && !uri.getHost().isBlank()) host = uri.getHost();
+            if (uri.getPort() > 0) port = uri.getPort();
+        } catch (Exception ignored) {}
+        String wsUrl = (base != null && base.startsWith("https") ? "wss://" : "ws://") + host + ":" + port + "/ws"; 
         
         try {
             System.out.println("[WebSocket] Đang thử kết nối tới " + wsUrl + "...");

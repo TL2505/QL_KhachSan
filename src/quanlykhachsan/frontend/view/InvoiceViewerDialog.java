@@ -22,14 +22,25 @@ public final class InvoiceViewerDialog extends JDialog {
         JLabel status = new JLabel("Đang tải hóa đơn đã hoàn tất…", SwingConstants.CENTER);
         add(status);
         String token = SessionManagerUtil.getAccessToken();
+        if (token == null || token.isBlank()) {
+            SessionManagerUtil.ensureAccessToken();
+            token = SessionManagerUtil.getAccessToken();
+        }
 
+        final String authToken = token;
         new SwingWorker<Path, Void>() {
             @Override
             protected Path doInBackground() throws Exception {
-                var request = HttpRequest.newBuilder(URI.create(HttpUtil.getBaseUrl() + "/v1/invoices/" + invoiceId + "/pdf"))
+                String base = HttpUtil.getBaseUrl();
+                if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
+                String path = base.endsWith("/v1") ? ("/invoices/" + invoiceId + "/pdf") : ("/v1/invoices/" + invoiceId + "/pdf");
+                var reqBuilder = HttpRequest.newBuilder(URI.create(base + path))
                     .timeout(Duration.ofSeconds(15))
-                    .header("Authorization", "Bearer " + token)
-                    .GET().build();
+                    .GET();
+                if (authToken != null && !authToken.isBlank()) {
+                    reqBuilder.header("Authorization", "Bearer " + authToken);
+                }
+                var request = reqBuilder.build();
                 var response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build().send(request, HttpResponse.BodyHandlers.ofByteArray());
                 if (response.statusCode() != 200 || !response.headers().firstValue("Content-Type").orElse("").startsWith("application/pdf")) {
                     throw new java.io.IOException("Chưa thể xuất hóa đơn. Cần dữ liệu đã đối soát và cấu hình khách sạn.");

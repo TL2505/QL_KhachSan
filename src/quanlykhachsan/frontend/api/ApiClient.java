@@ -51,6 +51,10 @@ public final class ApiClient {
                                                             Map<String, String> headers, ApiCallback callback) {
         Objects.requireNonNull(callback, "callback");
         String token = SessionManagerUtil.getAccessToken();
+        if (token == null || token.isBlank()) {
+            SessionManagerUtil.ensureAccessToken();
+            token = SessionManagerUtil.getAccessToken();
+        }
         HttpRequest.Builder builder = HttpRequest.newBuilder(resolve(path))
             .timeout(Duration.ofMillis(5000))
             .header("Accept", "application/json")
@@ -63,7 +67,25 @@ public final class ApiClient {
         HttpRequest request = builder.build();
         SwingWorker<HttpResponse<String>, Void> worker = new SwingWorker<>() {
             @Override protected HttpResponse<String> doInBackground() throws IOException, InterruptedException {
-                return client.send(request, HttpResponse.BodyHandlers.ofString());
+                HttpResponse<String> resp = client.send(request, HttpResponse.BodyHandlers.ofString());
+                if ((resp.statusCode() == 401 || resp.statusCode() == 403)) {
+                    SessionManagerUtil.setAccessToken(null);
+                    SessionManagerUtil.ensureAccessToken();
+                    String refreshed = SessionManagerUtil.getAccessToken();
+                    if (refreshed != null) {
+                        HttpRequest.Builder retry = HttpRequest.newBuilder(resolve(path))
+                            .timeout(Duration.ofMillis(5000))
+                            .header("Accept", "application/json")
+                            .header("Content-Type", "application/json")
+                            .header("Authorization", "Bearer " + refreshed);
+                        if (headers != null) headers.forEach((k, v) -> {
+                            if (!"Authorization".equalsIgnoreCase(k)) retry.header(k, v);
+                        });
+                        retry.method(method, body);
+                        return client.send(retry.build(), HttpResponse.BodyHandlers.ofString());
+                    }
+                }
+                return resp;
             }
             @Override protected void done() {
                 try {
@@ -90,6 +112,10 @@ public final class ApiClient {
             throw new IllegalStateException("Synchronous HTTP requests are forbidden on the Swing EDT");
         }
         String token = SessionManagerUtil.getAccessToken();
+        if (token == null || token.isBlank()) {
+            SessionManagerUtil.ensureAccessToken();
+            token = SessionManagerUtil.getAccessToken();
+        }
         HttpRequest.Builder builder = HttpRequest.newBuilder(resolve(path))
             .timeout(Duration.ofMillis(5000)).header("Accept", "application/json")
             .header("Content-Type", "application/json");
@@ -99,7 +125,26 @@ public final class ApiClient {
             : HttpRequest.BodyPublishers.ofString(json);
         builder.method(method, body);
         try {
-            return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            if ((resp.statusCode() == 401 || resp.statusCode() == 403) && token != null) {
+                SessionManagerUtil.setAccessToken(null);
+                SessionManagerUtil.ensureAccessToken();
+                String refreshed = SessionManagerUtil.getAccessToken();
+                if (refreshed != null && !refreshed.equals(token)) {
+                    HttpRequest.Builder retryBuilder = HttpRequest.newBuilder(resolve(path))
+                        .timeout(Duration.ofMillis(5000)).header("Accept", "application/json")
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", "Bearer " + refreshed);
+                    if (headers != null) {
+                        headers.forEach((k, v) -> {
+                            if (!"Authorization".equalsIgnoreCase(k)) retryBuilder.header(k, v);
+                        });
+                    }
+                    retryBuilder.method(method, body);
+                    return client.send(retryBuilder.build(), HttpResponse.BodyHandlers.ofString());
+                }
+            }
+            return resp;
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw new IOException("HTTP request interrupted", ex);

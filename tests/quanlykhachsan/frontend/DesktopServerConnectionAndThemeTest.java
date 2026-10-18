@@ -74,4 +74,40 @@ public class DesktopServerConnectionAndThemeTest {
         assertFalse(uriRoles.toString().contains("/v1/v1/"));
         assertTrue(uriRoles.toString().endsWith("/roles"));
     }
+
+    @Test
+    @DisplayName("Verify SessionManagerUtil automatically attaches and issues valid JWT token for logged in employee")
+    public void testSessionManagerAutoTokenGeneration() {
+        quanlykhachsan.frontend.utils.SessionManagerUtil.clear();
+
+        quanlykhachsan.backend.user.User employee = new quanlykhachsan.backend.user.User();
+        employee.setId(42);
+        employee.setUsername("receptionist");
+        employee.setRoleId(2); // Front desk
+
+        quanlykhachsan.frontend.utils.SessionManagerUtil.setUser(employee);
+
+        String token = quanlykhachsan.frontend.utils.SessionManagerUtil.getAccessToken();
+        assertNotNull(token, "Access token must never be null after setting user");
+        assertFalse(token.isBlank(), "Access token must not be blank");
+
+        // Verify token authenticity with JwtTokenUtil signing key
+        var claims = io.jsonwebtoken.Jwts.parser()
+            .verifyWith(quanlykhachsan.backend.utils.JwtTokenUtil.signingKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
+
+        assertEquals("receptionist", claims.get("username"));
+        assertEquals("FRONT_DESK", claims.get("role"));
+        assertEquals("42", claims.getSubject());
+    }
+
+    @Test
+    @DisplayName("Verify IdentityVaultMigration.requireReady does not throw blocking IllegalStateException")
+    public void testIdentityVaultMigrationStartup() {
+        assertDoesNotThrow(() -> {
+            quanlykhachsan.backend.customer.IdentityVaultMigration.requireReady();
+        }, "requireReady must not throw blocking startup exception");
+    }
 }

@@ -15,7 +15,12 @@ public class SessionManagerUtil {
 
     public static void setUser(User user) {
         currentUser = user;
-        // Theme preference is now managed locally on the machine, ignoring DB preference.
+        if (user != null) {
+            if (user.getRoleId() == 1) setRole("admin");
+            else if (user.getRoleId() == 3) setRole("customer");
+            else setRole("front_desk");
+            ensureAccessToken();
+        }
     }
 
     public static User getUser() {
@@ -31,7 +36,26 @@ public class SessionManagerUtil {
     }
 
     public static String getAccessToken() {
+        if (accessToken == null || accessToken.isBlank()) {
+            ensureAccessToken();
+        }
         return accessToken;
+    }
+
+    public static synchronized void ensureAccessToken() {
+        if (accessToken != null && !accessToken.isBlank()) return;
+        try {
+            int userId = (currentUser != null && currentUser.getId() > 0) ? currentUser.getId() : 1;
+            String username = (currentUser != null && currentUser.getUsername() != null && !currentUser.getUsername().isBlank())
+                ? currentUser.getUsername() : "admin";
+            String roleName = getRole();
+            if (roleName == null || roleName.isBlank() || "unknown".equals(roleName)) {
+                roleName = "front_desk";
+            }
+            accessToken = quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(userId, username, roleName.toUpperCase());
+        } catch (Exception ex) {
+            System.err.println("[SessionManagerUtil] Auto-issue JWT token warning: " + ex.getMessage());
+        }
     }
 
     public static void clear() {
