@@ -44,6 +44,20 @@ public final class JwtTokenUtil {
         return KEY;
     }
 
+    public static io.jsonwebtoken.JwtParser createParser() {
+        return Jwts.parser()
+            .setSigningKey(KEY)
+            .setAllowedClockSkewSeconds(180)
+            .build();
+    }
+
+    public static io.jsonwebtoken.Claims parseClaims(String token) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("Token cannot be null or blank");
+        }
+        return createParser().parseSignedClaims(token.trim()).getPayload();
+    }
+
     public static String issueToken(int userId, String username, String role) {
         Instant now = Instant.now();
         return Jwts.builder()

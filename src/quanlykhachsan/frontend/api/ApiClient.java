@@ -47,20 +47,56 @@ public final class ApiClient {
         return request("DELETE", path, null, Map.of(), callback);
     }
 
+    public static boolean isPublicEndpoint(String path) {
+        if (path == null || path.isBlank()) return false;
+        String normalized = path.trim().toLowerCase(java.util.Locale.ROOT);
+        while (normalized.startsWith("/")) normalized = normalized.substring(1);
+        if (normalized.startsWith("api/")) normalized = normalized.substring(4);
+        if (normalized.startsWith("v1/")) normalized = normalized.substring(3);
+        if (!normalized.startsWith("/")) normalized = "/" + normalized;
+        return normalized.startsWith("/auth/login")
+            || normalized.startsWith("/auth/register")
+            || normalized.startsWith("/health")
+            || normalized.startsWith("/auth/guest-otp");
+    }
+
+    /**
+     * Creates a JwtParser configured with 120 seconds of allowed clock skew
+     * to tolerate time drift between Windows host and Linux VM / Docker containers.
+     */
+    public static io.jsonwebtoken.JwtParser createJwtParser(javax.crypto.SecretKey key) {
+        return io.jsonwebtoken.Jwts.parser()
+            .setSigningKey(key)
+            .setAllowedClockSkewSeconds(120)
+            .build();
+    }
+
+    public static io.jsonwebtoken.Claims parseAndValidateToken(String token, javax.crypto.SecretKey key) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("JWT token cannot be null or blank");
+        }
+        return createJwtParser(key).parseSignedClaims(token.trim()).getPayload();
+    }
+
     public SwingWorker<HttpResponse<String>, Void> request(String method, String path, String json,
                                                             Map<String, String> headers, ApiCallback callback) {
         Objects.requireNonNull(callback, "callback");
-        String token = SessionManagerUtil.getAccessToken();
-        if (token == null || token.isBlank()) {
-            SessionManagerUtil.ensureAccessToken();
-            token = SessionManagerUtil.getAccessToken();
-        }
+        final boolean isPublic = isPublicEndpoint(path);
+        final String token = isPublic ? null : SessionManagerUtil.getAccessToken();
         HttpRequest.Builder builder = HttpRequest.newBuilder(resolve(path))
             .timeout(Duration.ofMillis(5000))
             .header("Accept", "application/json")
             .header("Content-Type", "application/json");
-        if (token != null && !token.isBlank()) builder.header("Authorization", "Bearer " + token);
-        if (headers != null) headers.forEach(builder::header);
+        if (!isPublic && token != null && !token.isBlank()) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        if (headers != null) {
+            headers.forEach((k, v) -> {
+                if (!isPublic || !"Authorization".equalsIgnoreCase(k)) {
+                    builder.header(k, v);
+                }
+            });
+        }
         HttpRequest.BodyPublisher body = json == null ? HttpRequest.BodyPublishers.noBody()
             : HttpRequest.BodyPublishers.ofString(json);
         builder.method(method, body);
@@ -68,11 +104,11 @@ public final class ApiClient {
         SwingWorker<HttpResponse<String>, Void> worker = new SwingWorker<>() {
             @Override protected HttpResponse<String> doInBackground() throws IOException, InterruptedException {
                 HttpResponse<String> resp = client.send(request, HttpResponse.BodyHandlers.ofString());
-                if ((resp.statusCode() == 401 || resp.statusCode() == 403)) {
+                if (!isPublic && (resp.statusCode() == 401 || resp.statusCode() == 403) && token != null) {
                     SessionManagerUtil.setAccessToken(null);
                     SessionManagerUtil.ensureAccessToken();
                     String refreshed = SessionManagerUtil.getAccessToken();
-                    if (refreshed != null) {
+                    if (refreshed != null && !refreshed.equals(token)) {
                         HttpRequest.Builder retry = HttpRequest.newBuilder(resolve(path))
                             .timeout(Duration.ofMillis(5000))
                             .header("Accept", "application/json")
@@ -111,22 +147,27 @@ public final class ApiClient {
         if (SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("Synchronous HTTP requests are forbidden on the Swing EDT");
         }
-        String token = SessionManagerUtil.getAccessToken();
-        if (token == null || token.isBlank()) {
-            SessionManagerUtil.ensureAccessToken();
-            token = SessionManagerUtil.getAccessToken();
-        }
+        final boolean isPublic = isPublicEndpoint(path);
+        final String token = isPublic ? null : SessionManagerUtil.getAccessToken();
         HttpRequest.Builder builder = HttpRequest.newBuilder(resolve(path))
             .timeout(Duration.ofMillis(5000)).header("Accept", "application/json")
             .header("Content-Type", "application/json");
-        if (token != null && !token.isBlank()) builder.header("Authorization", "Bearer " + token);
-        if (headers != null) headers.forEach(builder::header);
+        if (!isPublic && token != null && !token.isBlank()) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        if (headers != null) {
+            headers.forEach((k, v) -> {
+                if (!isPublic || !"Authorization".equalsIgnoreCase(k)) {
+                    builder.header(k, v);
+                }
+            });
+        }
         HttpRequest.BodyPublisher body = json == null ? HttpRequest.BodyPublishers.noBody()
             : HttpRequest.BodyPublishers.ofString(json);
         builder.method(method, body);
         try {
             HttpResponse<String> resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            if ((resp.statusCode() == 401 || resp.statusCode() == 403) && token != null) {
+            if (!isPublic && (resp.statusCode() == 401 || resp.statusCode() == 403) && token != null) {
                 SessionManagerUtil.setAccessToken(null);
                 SessionManagerUtil.ensureAccessToken();
                 String refreshed = SessionManagerUtil.getAccessToken();

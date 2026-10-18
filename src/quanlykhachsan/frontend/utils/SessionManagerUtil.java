@@ -36,7 +36,7 @@ public class SessionManagerUtil {
     }
 
     public static String getAccessToken() {
-        if (accessToken == null || accessToken.isBlank()) {
+        if (currentUser != null && (accessToken == null || accessToken.isBlank())) {
             ensureAccessToken();
         }
         return accessToken;
@@ -44,9 +44,10 @@ public class SessionManagerUtil {
 
     public static synchronized void ensureAccessToken() {
         if (accessToken != null && !accessToken.isBlank()) return;
+        if (currentUser == null) return;
         try {
-            int userId = (currentUser != null && currentUser.getId() > 0) ? currentUser.getId() : 1;
-            String username = (currentUser != null && currentUser.getUsername() != null && !currentUser.getUsername().isBlank())
+            int userId = (currentUser.getId() > 0) ? currentUser.getId() : 1;
+            String username = (currentUser.getUsername() != null && !currentUser.getUsername().isBlank())
                 ? currentUser.getUsername() : "admin";
             String roleName = getRole();
             if (roleName == null || roleName.isBlank() || "unknown".equals(roleName)) {

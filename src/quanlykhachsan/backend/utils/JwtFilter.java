@@ -17,7 +17,9 @@ public class JwtFilter extends Filter {
 
     private static final Set<String> PUBLIC_PATHS = Set.of(
         "/api/v1/auth/login",
+        "/auth/login",
         "/api/v1/auth/register",
+        "/auth/register",
         "/api/v1/health",
         "/health",
         "/api/v1/rooms/availability",
@@ -53,15 +55,18 @@ public class JwtFilter extends Filter {
 
 
         boolean isPublic = PUBLIC_PATHS.contains(path)
-                || path.equals("/booking") || path.startsWith("/booking/");
+                || path.equals("/booking") || path.startsWith("/booking/")
+                || path.endsWith("/auth/login")
+                || path.endsWith("/auth/register")
+                || path.endsWith("/health");
 
-
-        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
-
-        if (isPublic && (authHeader == null || authHeader.isBlank())) {
+        if (isPublic) {
             chain.doFilter(exchange);
             return;
         }
+
+
+        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             ApiResponseUtil.sendError(

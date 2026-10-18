@@ -84,7 +84,8 @@ public class SecurityUtil {
             throw new io.jsonwebtoken.JwtException("Token revoked");
         }
         var claims = io.jsonwebtoken.Jwts.parser()
-                .verifyWith(JwtTokenUtil.signingKey())
+                .setSigningKey(JwtTokenUtil.signingKey())
+                .setAllowedClockSkewSeconds(180)
                 .build()
                 .parseSignedClaims(token.trim())
                 .getPayload();

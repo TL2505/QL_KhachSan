@@ -354,7 +354,24 @@ public class LoginForm extends JFrame {
                         txtPassword.requestFocus();
                     }
                 } catch (Exception ex) {
-                    showError(ex.getMessage() != null ? ex.getMessage() : "Lỗi hệ thống!");
+                    Throwable cause = (ex instanceof java.util.concurrent.ExecutionException && ex.getCause() != null)
+                        ? ex.getCause() : ex;
+                    String msg = cause.getMessage();
+                    if (msg == null || msg.isBlank()) {
+                        msg = "Tên đăng nhập hoặc mật khẩu không chính xác!";
+                    } else if (msg.contains("401") || msg.contains("403")
+                            || msg.contains("Sai tên đăng nhập")
+                            || msg.contains("Authentication token")
+                            || msg.contains("token is invalid")
+                            || msg.contains("expired")
+                            || msg.contains("Unauthorized")
+                            || msg.contains("Incorrect")
+                            || msg.contains("JwtException")) {
+                        msg = "Tên đăng nhập hoặc mật khẩu không chính xác!";
+                    }
+                    showError(msg);
+                    txtPassword.setText("");
+                    txtPassword.requestFocus();
                 }
             }
         };
