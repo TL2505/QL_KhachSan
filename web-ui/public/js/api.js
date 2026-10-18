@@ -84,10 +84,12 @@ export function getAuthSession() {
 
 export function setAuthSession(session) {
   write('hotel_auth_session', session ? JSON.stringify(session) : null);
+  write('auth_token', session?.token || null);
 }
 
 export function clearAuthSession() {
   setAuthSession(null);
+  write('auth_token', null);
 }
 
 function messageFor(status) {

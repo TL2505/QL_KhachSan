@@ -104,11 +104,26 @@
             <version>5.10.2</version>
             <scope>test</scope>
         </dependency>
-        <!-- 1. Giao diện FlatLaf -->
+        <!-- 1. Giao diện FlatLaf & MigLayout -->
         <dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf</artifactId>
             <version>3.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-extras</artifactId>
+            <version>3.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-intellij-themes</artifactId>
+            <version>3.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.miglayout</groupId>
+            <artifactId>miglayout-swing</artifactId>
+            <version>11.3</version>
         </dependency>
         
         <!-- 2. Xử lý chuỗi JSON (Gson) -->

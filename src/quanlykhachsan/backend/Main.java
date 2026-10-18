@@ -70,6 +70,7 @@ public class Main {
             registerContext(server, ipRateLimiter, "/api/v1/auth/login", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
             registerContext(server, ipRateLimiter, "/api/v1/auth/register", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
             registerContext(server, ipRateLimiter, "/api/v1/auth/logout", new quanlykhachsan.backend.auth.LogoutController(), exceptionFilter, corsFilter, jwtFilter);
+            registerContext(server, ipRateLimiter, "/api/v1/auth/change-password", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
             var aiCheckin = new quanlykhachsan.backend.ai.AiCheckinController();
             registerContext(server, ipRateLimiter, "/api/v1/ai/id-ocr", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
             registerContext(server, ipRateLimiter, "/api/v1/ai/face-verify", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
@@ -119,6 +120,9 @@ public class Main {
             registerContext(server, ipRateLimiter, "/api/v1/pos/sync", new quanlykhachsan.backend.booking.PosSyncController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
             // Route Quản lý Hóa đơn
             registerContext(server, ipRateLimiter, "/api/v1/invoices", new quanlykhachsan.backend.booking.InvoiceController(), exceptionFilter, corsFilter, jwtFilter);
+            // Route Dịch vụ khách sạn
+            registerContext(server, ipRateLimiter, "/api/v1/services", new quanlykhachsan.backend.hotelservice.ServiceController(), exceptionFilter, corsFilter, jwtFilter);
+            registerContext(server, ipRateLimiter, "/api/v1/service-usage", new quanlykhachsan.backend.hotelservice.ServiceUsageController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Đánh giá (Review)
             registerContext(server, ipRateLimiter, "/api/v1/reviews", new quanlykhachsan.backend.interaction.ReviewController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Chat

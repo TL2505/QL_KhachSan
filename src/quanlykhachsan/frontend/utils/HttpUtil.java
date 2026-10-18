@@ -4,30 +4,14 @@ public class HttpUtil {
 
     private static volatile java.util.function.IntConsumer serviceUnavailableHandler;
 
-    private static final String LOCAL_URL  = "http://localhost:8081/api";
+    private static final String DEFAULT_URL = quanlykhachsan.frontend.api.ApiConfig.DEFAULT_API_BASE_URL;
     private static final String BASE_URL;
 
     static {
-        String configuredUrl = LOCAL_URL; // fallback mặc định
-
-        // 1. Đọc URL từ config.properties
-        try {
-            java.util.Properties props = new java.util.Properties();
-            java.io.File configFile = new java.io.File(System.getProperty("hotel.config.file","config.properties"));
-            if (configFile.exists()) {
-                try (java.io.FileInputStream fis = new java.io.FileInputStream(configFile)) {
-                    props.load(fis);
-                    String loaded = props.getProperty("server.url");
-                    if (loaded != null && !loaded.trim().isEmpty()) {
-                        configuredUrl = loaded.trim();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("[HttpUtil] Không đọc được config.properties: " + e.getMessage());
+        String configuredUrl = quanlykhachsan.frontend.api.ApiConfig.getBaseUrl();
+        if (configuredUrl == null || configuredUrl.trim().isEmpty()) {
+            configuredUrl = DEFAULT_URL;
         }
-
-        // Resolve configuration without a connectivity probe: class loading can happen on the EDT.
         BASE_URL = configuredUrl;
     }
 

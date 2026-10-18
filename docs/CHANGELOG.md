@@ -1,5 +1,12 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [3.0.0] - 2026-10-17 — @architect — Phase 3 Final Audit, Customer Portal Enhancements, FlatLaf Theme & Go Decision
+- **Added:** Web Concierge & Voucher Wallet module (`concierge.js`), Express Check-in QR Pass modal, E-Folio electronic invoice modal, auto-fill for customer bookings, `/api/v1/auth/change-password`, `/api/v1/services`, `/api/v1/service-usage` route registrations, Netplan static IP `192.168.56.102/24` configuration (`deploy/01-netplan-static-ip.yaml`), `DBConnection.java` compatibility wrappers.
+- **Fixed:** Complete prevention of UI button freezing across all forms (`#profile-form`, `#password-form`, `#concierge-form`, cancel booking) via `try...catch...finally`; 100% binary synchronization between `web-ui/` and `web-ui/public/` verified with `fc /b`; MariaDB container port `3306:3306` exposure; flexible database configuration in `DatabaseConnection.java` and `config.properties`.
+- **Changed:** Full RFC 7807 Problem Details compliance in `GlobalExceptionHandler.java` and `ApiResponseUtil.java` while preserving backward compatibility; FlatLaf Dark Luxury 5★ desktop theme standardization (`Table.rowHeight = 36`, `Button.arc = 12`, `Component.arc = 10`, `TextComponent.arc = 10`, `ProgressBar.arc = 10`, Slate Dark `#0F172A`, Panels `#1E293B`, Gold `#F59E0B`, Light `#F8FAFC`); static asset version parameter `?v=3.5.0` and Nginx `Cache-Control: no-cache, must-revalidate`.
+- **Security:** Strict BCrypt + JWT Bearer protection, verified cancellation state guard, physical database isolation.
+- **Verification:** 37/37 automated tests passing (**100% Pass Rate, 0 failures**). Official **GO** decision formalized in `docs/PHASE_3_GO_NOGO_ACCEPTANCE.md`.
+
 ## [2026-10-16] — @codex — Phase 3 implementation and acceptance evidence
 - Synchronized the Phase 3 implementation, final verification evidence and explicit PARTIAL/unreleased status into `vi/CHANGELOG.md`; existing historical entries are preserved.
 - Added `phase3-implementation-report.md` with per-task status, approved conflict resolutions, exact test/build evidence and unmeasured gates; Phase 3 is not accepted for release.

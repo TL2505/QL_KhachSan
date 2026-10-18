@@ -1,0 +1,29 @@
+# ==============================================================================
+# Aurelia Grand Palace 5★ PMS - Virtual Machine Static IP Lock Configuration
+# Target: /etc/netplan/01-netplan-static-ip.yaml
+# IP: 192.168.56.102/24 (Host-Only Network Interface)
+# Purpose: Locks VM network address against host Wi-Fi/DHCP re-leases, ensuring
+#          uninterrupted MariaDB (3306) and Web UI (3000) desktop-host synchronization.
+# ==============================================================================
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    # Interface 1: NAT Adapter (Outbound Internet, Package updates & Docker registries)
+    enp0s3:
+      dhcp4: true
+      dhcp-identifier: mac
+      optional: true
+
+    # Interface 2: Host-Only Adapter (Direct Host-to-Guest Private PMS Network)
+    enp0s8:
+      dhcp4: false
+      addresses:
+        - 192.168.56.102/24
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 1.1.1.1
+      routes:
+        - to: 192.168.56.0/24
+          via: 192.168.56.1

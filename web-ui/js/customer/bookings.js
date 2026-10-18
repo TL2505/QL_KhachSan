@@ -56,11 +56,12 @@ export async function renderBookings(container, session) {
               <th class="py-3 px-4">Ngày Check-out</th>
               <th class="py-3 px-4 text-right">Tổng Thanh Toán</th>
               <th class="py-3 px-4 text-center">Trạng Thái</th>
+              <th class="py-3 px-4 text-center">Hành Động</th>
             </tr>
           </thead>
           <tbody id="bookings-table-body">
             <tr>
-              <td colspan="6" class="text-center py-12 text-slate-400 text-xs">
+              <td colspan="7" class="text-center py-12 text-slate-400 text-xs">
                 <div class="inline-block w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mb-2"></div>
                 <p>Đang đồng bộ dữ liệu đặt phòng từ máy chủ...</p>
               </td>
@@ -71,8 +72,73 @@ export async function renderBookings(container, session) {
 
       <div id="bookings-pagination" class="mt-6 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-4"></div>
     </div>
+
+    <!-- Express Check-in QR Pass Modal -->
+    <div id="qr-pass-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+      <div class="bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center relative shadow-2xl">
+        <button type="button" class="close-modal-btn absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+        <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="qr-code" class="w-6 h-6"></i>
+        </div>
+        <h3 class="font-serif text-lg font-bold text-white mb-1">Express Check-in Pass</h3>
+        <p class="text-xs text-slate-400 mb-4">Aurelia Grand Palace 5★ Priority Access</p>
+        
+        <!-- QR Visual Box -->
+        <div class="p-4 bg-white rounded-2xl mx-auto w-52 h-52 flex flex-col items-center justify-center mb-4 shadow-inner">
+          <img id="qr-pass-img" src="" alt="Express Check-in QR" class="w-44 h-44 object-contain">
+        </div>
+
+        <div class="text-xs text-slate-300 space-y-1 mb-4 text-left bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+          <div>Mã đặt phòng: <strong id="qr-pass-code" class="text-amber-400 font-mono">---</strong></div>
+          <div>Khách hàng: <span id="qr-pass-guest" class="text-white font-medium">---</span></div>
+          <div>Ngày nhận phòng: <span id="qr-pass-date" class="text-slate-300">---</span></div>
+        </div>
+        <p class="text-[11px] text-amber-300/80">Xuất trình mã này tại quầy lễ tân để nhận phòng ưu tiên không cần chờ đợi.</p>
+      </div>
+    </div>
+
+    <!-- E-Folio Electronic Invoice Modal -->
+    <div id="e-folio-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+      <div class="bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 max-w-lg w-full relative shadow-2xl max-h-[90vh] overflow-y-auto">
+        <button type="button" class="close-modal-btn absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+        <div class="text-center mb-6 border-b border-slate-800 pb-4">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-2">
+            <i data-lucide="receipt" class="w-6 h-6"></i>
+          </div>
+          <h3 class="font-serif text-xl font-bold text-white">Hóa Đơn Điện Tử E-Folio</h3>
+          <p class="text-xs text-amber-400 mt-0.5">AURELIA GRAND PALACE LUXURY RESORT</p>
+          <p id="folio-booking-ref" class="text-xs font-mono text-slate-400 mt-1">#BK-00000</p>
+        </div>
+
+        <div class="space-y-4 text-xs text-slate-300 mb-6" id="folio-details-body">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-slate-800 gap-3">
+          <button type="button" class="close-modal-btn px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium">
+            Đóng
+          </button>
+          <button type="button" onclick="window.print()" class="btn portal-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+            <span>In Hóa Đơn</span>
+          </button>
+        </div>
+      </div>
+    </div>
   `;
   refreshIcons();
+
+  // Close modals handling
+  container.querySelectorAll('.close-modal-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('qr-pass-modal')?.classList.add('hidden');
+      document.getElementById('e-folio-modal')?.classList.add('hidden');
+    });
+  });
 
   try {
     const rawList = await api.get(`/bookings/customer/${customerId}`).catch(() => []);
@@ -91,7 +157,7 @@ export async function renderBookings(container, session) {
       if (!list || list.length === 0) {
         tableBody.innerHTML = `
           <tr>
-            <td colspan="6" class="text-center py-16">
+            <td colspan="7" class="text-center py-16">
               <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-3 shadow-inner">
                 <i data-lucide="calendar-x" class="w-8 h-8"></i>
               </div>
@@ -134,11 +200,150 @@ export async function renderBookings(container, session) {
                 <span>${st.text}</span>
               </span>
             </td>
+            <td class="py-4 px-4 text-center">
+              <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                ${b.status === 'pending' ? `
+                  <button type="button" class="btn-cancel-booking px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1" data-id="${b.id}" title="Hủy đặt phòng này">
+                    <i data-lucide="x-circle" class="w-3 h-3"></i>
+                    <span>Hủy phòng</span>
+                  </button>
+                ` : ''}
+                ${['confirmed', 'reserved', 'checked_in'].includes(b.status) ? `
+                  <button type="button" class="btn-qr-pass px-2 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1" data-id="${b.id}" title="Xem mã nhận phòng nhanh">
+                    <i data-lucide="qr-code" class="w-3 h-3"></i>
+                    <span>QR Pass</span>
+                  </button>
+                ` : ''}
+                <button type="button" class="btn-view-folio px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1" data-id="${b.id}" title="Xem chi tiết hóa đơn điện tử">
+                  <i data-lucide="receipt" class="w-3 h-3"></i>
+                  <span>E-Folio</span>
+                </button>
+              </div>
+            </td>
           </tr>
         `;
       }).join('');
 
       refreshIcons();
+
+      // Attach row action handlers
+      // 1. Cancel Booking Handler with try...finally to prevent button freeze
+      tableBody.querySelectorAll('.btn-cancel-booking').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          if (!id) return;
+          if (!confirm(`Quý khách có chắc chắn muốn hủy đơn đặt phòng #${id} không?`)) return;
+
+          btn.disabled = true;
+          const origHtml = btn.innerHTML;
+          btn.innerHTML = `<span class="inline-block w-3 h-3 border border-rose-400 border-t-transparent rounded-full animate-spin"></span>`;
+
+          try {
+            // Attempt cancel endpoint
+            await api.post(`/bookings/${id}/cancel`, {}).catch(() => api.delete(`/bookings/${id}`));
+            // Update local item
+            const found = bookings.find(x => String(x.id) === String(id));
+            if (found) found.status = 'cancelled';
+            renderRows(bookings);
+            alert(`Đã hủy đặt phòng #${id} thành công.`);
+          } catch (err) {
+            console.error('Lỗi khi hủy đặt phòng:', err);
+            alert('Không thể hủy đặt phòng. Vui lòng liên hệ quầy lễ tân để được hỗ trợ.');
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+            refreshIcons();
+          }
+        });
+      });
+
+      // 2. Express QR Pass Handler
+      tableBody.querySelectorAll('.btn-qr-pass').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const booking = bookings.find(x => String(x.id) === String(id));
+          if (!booking) return;
+
+          const modal = document.getElementById('qr-pass-modal');
+          const qrImg = document.getElementById('qr-pass-img');
+          const qrCode = document.getElementById('qr-pass-code');
+          const qrGuest = document.getElementById('qr-pass-guest');
+          const qrDate = document.getElementById('qr-pass-date');
+
+          const codeStr = `BK-${String(booking.id || '').padStart(5, '0')}`;
+          if (qrCode) qrCode.textContent = `#${codeStr}`;
+          if (qrGuest) qrGuest.textContent = session.fullName || session.username || 'Quý Hội Viên';
+          if (qrDate) qrDate.textContent = `${booking.checkInDate || 'Hôm nay'} (Check-in: 14:00)`;
+
+          // Render QR image via quick QR service or data SVG
+          const qrData = encodeURIComponent(`AURELIA-PMS-CHECKIN:${booking.id}:${booking.roomId || 101}:${booking.checkInDate || ''}`);
+          if (qrImg) {
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
+          }
+
+          if (modal) modal.classList.remove('hidden');
+        });
+      });
+
+      // 3. E-Folio Electronic Invoice Handler
+      tableBody.querySelectorAll('.btn-view-folio').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const booking = bookings.find(x => String(x.id) === String(id));
+          if (!booking) return;
+
+          const modal = document.getElementById('e-folio-modal');
+          const bookingRef = document.getElementById('folio-booking-ref');
+          const body = document.getElementById('folio-details-body');
+
+          const codeStr = `BK-${String(booking.id || '').padStart(5, '0')}`;
+          if (bookingRef) bookingRef.textContent = `Mã đặt phòng: #${codeStr}`;
+
+          const total = Number(booking.totalPrice || 0);
+          const roomCharge = Math.round(total * 0.87); // Approximate pre-tax
+          const vat = Math.round(roomCharge * 0.08);
+          const serviceFee = Math.round(roomCharge * 0.05);
+
+          if (body) {
+            body.innerHTML = `
+              <div class="flex justify-between py-2 border-b border-slate-800">
+                <span class="text-slate-400">Khách lưu trú:</span>
+                <span class="font-bold text-white">${session.fullName || session.username || 'Quý khách'}</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-slate-800">
+                <span class="text-slate-400">Hạng phòng:</span>
+                <span class="font-medium text-amber-300">${booking.roomTypeName || booking.roomName || 'Phòng #' + booking.roomId}</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-slate-800">
+                <span class="text-slate-400">Thời gian lưu trú:</span>
+                <span>${booking.checkInDate || '---'} đến ${booking.checkOutDate || '---'}</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-slate-800">
+                <span class="text-slate-400">Tiền phòng (Room Subtotal):</span>
+                <span>${roomCharge.toLocaleString('vi-VN')} đ</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-slate-800">
+                <span class="text-slate-400">Thuế GTGT (VAT 8%):</span>
+                <span>${vat.toLocaleString('vi-VN')} đ</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-slate-800">
+                <span class="text-slate-400">Phí phục vụ 5★ (Service Charge 5%):</span>
+                <span>${serviceFee.toLocaleString('vi-VN')} đ</span>
+              </div>
+              <div class="flex justify-between py-3 text-sm font-bold border-t border-amber-500/30">
+                <span class="text-amber-300">Tổng cộng (Total Due):</span>
+                <span class="text-amber-400 font-serif text-base">${total.toLocaleString('vi-VN')} đ</span>
+              </div>
+              <div class="flex justify-between py-2 bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+                <span class="text-slate-400">Trạng thái thanh toán:</span>
+                <span class="font-bold uppercase tracking-wider text-emerald-400">ĐÃ XÁC NHẬN</span>
+              </div>
+            `;
+          }
+
+          if (modal) modal.classList.remove('hidden');
+        });
+      });
     };
 
     renderRows(bookings);

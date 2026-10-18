@@ -162,11 +162,22 @@ public class BookingController implements HttpHandler {
                     ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy Booking ID"));
                 }
             }
-            // 4. DELETE /api/bookings/{id}
-            else if ("DELETE".equalsIgnoreCase(method) && path.matches("/api/(v1/)?bookings/\\d+")) {
-                int bookingId = Integer.parseInt(path.substring(path.lastIndexOf('/') + 1));
+            // 4. Cancellation: DELETE /api/bookings/{id} or PUT/POST /api/bookings/{id}/cancel
+            else if (("DELETE".equalsIgnoreCase(method) && path.matches("/api/(v1/)?bookings/\\d+"))
+                  || (("PUT".equalsIgnoreCase(method) || "POST".equalsIgnoreCase(method)) && path.matches("/api/(v1/)?bookings/\\d+/cancel"))) {
+                int bookingId;
+                if (path.endsWith("/cancel")) {
+                    String cleanPath = path.substring(0, path.length() - "/cancel".length());
+                    bookingId = Integer.parseInt(cleanPath.substring(cleanPath.lastIndexOf('/') + 1));
+                } else {
+                    bookingId = Integer.parseInt(path.substring(path.lastIndexOf('/') + 1));
+                }
                 Booking b = bookingService.getBookingById(bookingId);
                 if (b != null) {
+                    if ("checked_in".equalsIgnoreCase(b.getStatus()) || "checked_out".equalsIgnoreCase(b.getStatus())) {
+                        ApiResponseUtil.sendError(exchange, 400, "ERR_400_INVALID_STATE", "Không thể hủy phòng đang ở hoặc đã thanh toán.");
+                        return;
+                    }
                     bookingService.cancelBooking(bookingId);
                     ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Hủy đặt phòng thành công"));
                 } else {

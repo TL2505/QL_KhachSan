@@ -19,7 +19,7 @@ public class ThemeManager {
     }
 
     static {
-        isDarkMode = prefs.getBoolean(PREF_DARK_MODE, false);
+        isDarkMode = prefs.getBoolean(PREF_DARK_MODE, true);
         applyGlobalUI();
     }
 
@@ -43,7 +43,11 @@ public class ThemeManager {
     public static void applyGlobalUI() {
         try {
             if (isDarkMode) {
-                FlatDarkLaf.setup();
+                try {
+                    com.formdev.flatlaf.themes.FlatMacDarkLaf.setup();
+                } catch (Throwable t) {
+                    FlatDarkLaf.setup();
+                }
             } else {
                 FlatLightLaf.setup();
             }
@@ -62,6 +66,9 @@ public class ThemeManager {
         javax.swing.UIManager.put("Table.background", getCardBg());
         javax.swing.UIManager.put("Table.rowHeight", UIThemeTokens.TABLE_ROW_HEIGHT);
         javax.swing.UIManager.put("Component.arc", UIThemeTokens.COMPONENT_ARC);
+        javax.swing.UIManager.put("Button.arc", UIThemeTokens.BUTTON_ARC);
+        javax.swing.UIManager.put("TextComponent.arc", UIThemeTokens.TEXT_ARC);
+        javax.swing.UIManager.put("ProgressBar.arc", UIThemeTokens.PROGRESS_ARC);
         javax.swing.UIManager.put("Table.foreground", getTextMain());
         javax.swing.UIManager.put("Button.background", getCardBg());
         javax.swing.UIManager.put("Button.foreground", getTextMain());
@@ -136,30 +143,27 @@ public class ThemeManager {
 
     // Dynamic Colors
     public static Color getBgPanel() {
-        // Slightly darker off-white for light mode to make cards pop
-        return isDarkMode ? new Color(15, 23, 42) : new Color(241, 245, 249);
+        return isDarkMode ? UIThemeTokens.SLATE_DARK_BG : new Color(241, 245, 249);
     }
 
     public static Color getCardBg() {
-        return isDarkMode ? new Color(30, 41, 59) : Color.WHITE;
+        return isDarkMode ? UIThemeTokens.PANEL_DARK : Color.WHITE;
     }
 
     public static Color getSidebarBg() {
-        // Subtle blue-grey tint for sidebar in light mode
-        return isDarkMode ? new Color(15, 23, 42) : new Color(248, 250, 252);
+        return isDarkMode ? UIThemeTokens.SLATE_DARK_BG : new Color(248, 250, 252);
     }
 
     public static Color getTextMain() {
-        return isDarkMode ? new Color(241, 245, 249) : new Color(15, 23, 42);
+        return isDarkMode ? UIThemeTokens.LIGHT_TEXT : new Color(15, 23, 42);
     }
 
     public static Color getTextMuted() {
-        return isDarkMode ? new Color(148, 163, 184) : new Color(107, 114, 128);
+        return isDarkMode ? UIThemeTokens.MUTED_TEXT : new Color(107, 114, 128);
     }
 
     public static Color getBorderColor() {
-        // Slightly more defined border in light mode
-        return isDarkMode ? new Color(51, 65, 85) : new Color(211, 218, 227);
+        return isDarkMode ? UIThemeTokens.BORDER_DARK : new Color(211, 218, 227);
     }
 
     // Fixed branding colors that stay the same in Light/Dark

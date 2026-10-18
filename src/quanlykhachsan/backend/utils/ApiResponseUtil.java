@@ -85,7 +85,16 @@ public class ApiResponseUtil {
      */
     public static void sendError(HttpExchange exchange, int statusCode, String errorCode, String message) throws IOException {
         Map<String, Object> errorEnvelope = new LinkedHashMap<>();
-        errorEnvelope.put("error_code", errorCode != null ? errorCode : "ERR_" + statusCode);
+        String normalizedCode = errorCode != null ? errorCode : "ERR_" + statusCode;
+        // RFC-7807 Standard Fields
+        errorEnvelope.put("type", "https://api.aurelia.com/errors/" + normalizedCode.toLowerCase());
+        errorEnvelope.put("title", normalizedCode);
+        errorEnvelope.put("status", statusCode);
+        errorEnvelope.put("detail", message != null ? message : "An error occurred");
+        errorEnvelope.put("instance", exchange != null && exchange.getRequestURI() != null ? exchange.getRequestURI().getPath() : "/");
+
+        // Backward-compatible envelope fields
+        errorEnvelope.put("error_code", normalizedCode);
         errorEnvelope.put("message", message != null ? message : "An error occurred");
         String now = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
         errorEnvelope.put("timestamp", now);

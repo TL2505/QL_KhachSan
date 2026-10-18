@@ -7,6 +7,7 @@ import { renderDiscovery } from "./customer/discovery.js";
 import { renderLoyalty } from "./customer/loyalty.js";
 import { renderPromotions } from "./customer/promotions.js";
 import { renderChat } from "./customer/chat.js";
+import { renderConcierge } from "./customer/concierge.js";
 
 export async function loadCustomerView(tab = "dashboard") {
   const container = document.getElementById("view-container");
@@ -32,6 +33,8 @@ export async function loadCustomerView(tab = "dashboard") {
       await renderDashboard(container, session);
     } else if (tab === "bookings") {
       await renderBookings(container, session);
+    } else if (tab === "concierge") {
+      await renderConcierge(container, session);
     } else if (tab === "profile") {
       await renderProfile(container, session);
     } else if (tab === "security") {

@@ -175,7 +175,7 @@ test('portal.html: Tailwind CSS configuration is safe against ReferenceError and
     assert.match(html, /typeof\s+tailwind\s*!==\s*['"]undefined['"]/, `${file} must safely check typeof tailwind`);
 
     // Logic script is loaded as ES module
-    assert.match(html, /<script\s+type="module"\s+src="portal-app\.js"><\/script>/, `${file} must use script type="module"`);
+    assert.match(html, /<script\s+type="module"\s+src="portal-app\.js(\?v=[^"]*)?"><\/script>/, `${file} must use script type="module"`);
 
     // Accessibility attributes
     assert.match(html, /id="portal-nav"[^>]*role="tablist"/, `${file} #portal-nav must have role="tablist"`);
@@ -440,12 +440,13 @@ test('Security module validates passwords properly and btn-save-password re-enab
 // =============================================================================
 // 7. AUTH GUARD & VIEW ROUTING VERIFICATION
 // =============================================================================
-test('portal-app.js configures 4 customer tabs and handles view routing cleanly', async () => {
+test('portal-app.js configures 5 customer tabs and handles view routing cleanly', async () => {
   const portalAppSource = fs.readFileSync(path.join(webUiDir, 'portal-app.js'), 'utf-8');
 
-  // Verify menus.CUSTOMER contains exactly the 4 required modules
+  // Verify menus.CUSTOMER contains all 5 required modules
   assert.match(portalAppSource, /\['dashboard',\s*'Tổng quan & Hạng thẻ'/);
   assert.match(portalAppSource, /\['bookings',\s*'Lịch sử đặt phòng'/);
+  assert.match(portalAppSource, /\['concierge',\s*'Dịch vụ & Ví ưu đãi'/);
   assert.match(portalAppSource, /\['profile',\s*'Thông tin cá nhân'/);
   assert.match(portalAppSource, /\['security',\s*'Bảo mật & Mật khẩu'/);
 
@@ -454,3 +455,45 @@ test('portal-app.js configures 4 customer tabs and handles view routing cleanly'
   assert.match(portalAppSource, /index\.html#login/, 'Auth Guard must redirect unauthenticated users to index.html#login');
   assert.match(portalAppSource, /appView\.classList\.remove\(['"]hidden['"],\s*['"]opacity-0['"]\)/, 'Must immediately unhide appView on token presence');
 });
+
+// =============================================================================
+// 8. TAB 5: CONCIERGE & VOUCHER WALLET MODULE (FORM & BUTTON LIFECYCLE)
+// =============================================================================
+test('Concierge module renders Voucher Wallet and form with reliable button lifecycle', async () => {
+  const env = setupMockEnvironment();
+  try {
+    const { renderConcierge } = await loadModule('public/js/customer/concierge.js');
+    const container = env.getOrCreate('view-container');
+
+    await renderConcierge(container, { fullName: 'Trần Văn VIP', userId: 99 });
+
+    const html = container.innerHTML;
+    assert.match(html, /Ví Voucher & Mã Giảm Giá/, 'Must render Voucher Wallet');
+    assert.match(html, /LUXURY2026/, 'Must include LUXURY2026 voucher');
+    assert.match(html, /VIP5STAR/, 'Must include VIP5STAR voucher');
+    assert.match(html, /Yêu Cầu Dịch Vụ Trực Tuyến/, 'Must render Concierge request header');
+
+    const form = env.getOrCreate('concierge-form');
+    const room = env.getOrCreate('concierge-room');
+    const category = env.getOrCreate('concierge-category');
+    const notes = env.getOrCreate('concierge-notes');
+    const btn = env.getOrCreate('btn-submit-concierge');
+
+    assert.ok(form, '#concierge-form must exist');
+    assert.ok(room, '#concierge-room must exist');
+    assert.ok(category, '#concierge-category must exist');
+    assert.ok(notes, '#concierge-notes must exist');
+    assert.ok(btn, '#btn-submit-concierge must exist');
+
+    room.value = '501';
+    notes.value = 'Bổ sung thêm 2 khăn tắm';
+    await form.dispatchEvent({ type: 'submit', preventDefault: () => {} });
+
+    await new Promise(r => setTimeout(r, 60));
+    assert.equal(btn.disabled, false, '#btn-submit-concierge must be re-enabled after submission');
+    assert.equal(btn.getAttribute('aria-busy'), null, 'aria-busy must be cleared');
+  } finally {
+    env.teardown();
+  }
+});
+

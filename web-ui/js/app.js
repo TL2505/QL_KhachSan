@@ -651,6 +651,20 @@ export function openBookingModal(roomId = null) {
     state.search.checkOut = formatLocalDate(tmr);
   }
 
+  // Auto-fill customer info if logged in
+  try {
+    const sessionStr = typeof localStorage !== 'undefined' ? localStorage.getItem("hotel_auth_session") : null;
+    if (sessionStr) {
+      const sess = JSON.parse(sessionStr);
+      if (sess) {
+        state.booking.guest.fullName = state.booking.guest.fullName || sess.fullName || sess.username || '';
+        state.booking.guest.phone = state.booking.guest.phone || sess.phone || '';
+        state.booking.guest.email = state.booking.guest.email || sess.email || '';
+        state.booking.guest.identityCard = state.booking.guest.identityCard || sess.identityCard || sess.idCard || '';
+      }
+    }
+  } catch (e) {}
+
   calculateBookingPricing();
 
   const modal = document.getElementById('booking-modal');

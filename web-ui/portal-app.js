@@ -29,6 +29,7 @@ const menus = {
   CUSTOMER: [
     ['dashboard', 'Tổng quan & Hạng thẻ', 'layout-dashboard'],
     ['bookings', 'Lịch sử đặt phòng', 'calendar-check'],
+    ['concierge', 'Dịch vụ & Ví ưu đãi', 'sparkles'],
     ['profile', 'Thông tin cá nhân', 'user-cog'],
     ['security', 'Bảo mật & Mật khẩu', 'shield-check']
   ]
@@ -37,6 +38,7 @@ const menus = {
 const titles = Object.fromEntries(Object.values(menus).flat().map(([key, title]) => [key, title]));
 titles['dashboard'] = 'Tổng quan & Hạng thẻ';
 titles['bookings'] = 'Lịch sử đặt phòng';
+titles['concierge'] = 'Dịch vụ & Ví ưu đãi';
 titles['profile'] = 'Thông tin cá nhân';
 titles['security'] = 'Bảo mật & Mật khẩu';
 

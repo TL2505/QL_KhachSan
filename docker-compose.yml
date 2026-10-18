@@ -15,7 +15,9 @@ services:
       - mariadb_data:/var/lib/mysql
     networks:
       - pms-internal-net
-    # Ports strictly isolated to internal bridge network
+    # Exposed to host for Desktop Swing App synchronization and VM access
+    ports:
+      - "3306:3306"
     expose:
       - "3306"
     healthcheck:

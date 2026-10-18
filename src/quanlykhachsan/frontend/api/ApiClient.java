@@ -109,6 +109,14 @@ public final class ApiClient {
     private URI resolve(String path) {
         Objects.requireNonNull(path, "path");
         String relative = path.startsWith("/") ? path.substring(1) : path;
+        String basePath = baseUri.getPath();
+        if (basePath != null && (basePath.endsWith("/v1/") || basePath.endsWith("/v1"))) {
+            if (relative.startsWith("v1/")) {
+                relative = relative.substring(3);
+            } else if (relative.startsWith("api/v1/")) {
+                relative = relative.substring(7);
+            }
+        }
         return baseUri.resolve(relative);
     }
 

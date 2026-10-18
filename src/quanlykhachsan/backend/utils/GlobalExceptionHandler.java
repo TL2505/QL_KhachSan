@@ -41,6 +41,14 @@ public class GlobalExceptionHandler extends Filter {
                                             .format(Instant.now());
         
         com.google.gson.JsonObject error = new com.google.gson.JsonObject();
+        // RFC 7807 Standard Fields
+        error.addProperty("type", "https://api.aurelia.com/errors/" + (errorCode != null ? errorCode.toLowerCase() : "unknown"));
+        error.addProperty("title", getRfcTitle(statusCode, errorCode));
+        error.addProperty("status", statusCode);
+        error.addProperty("detail", message == null ? "Unknown error occurred" : message);
+        error.addProperty("instance", exchange != null && exchange.getRequestURI() != null ? exchange.getRequestURI().getPath() : "/");
+
+        // Backward compatibility fields
         error.addProperty("error_code", errorCode);
         error.addProperty("message", message == null ? "Unknown Error" : message);
         error.addProperty("timestamp", timestamp);
@@ -53,5 +61,18 @@ public class GlobalExceptionHandler extends Filter {
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(bytes);
         }
+    }
+
+    private static String getRfcTitle(int status, String errorCode) {
+        if (errorCode != null && !errorCode.isBlank()) return errorCode;
+        return switch (status) {
+            case 400 -> "Bad Request";
+            case 401 -> "Unauthorized";
+            case 403 -> "Forbidden";
+            case 404 -> "Not Found";
+            case 409 -> "Conflict";
+            case 429 -> "Too Many Requests";
+            default -> "Internal Server Error";
+        };
     }
 }
