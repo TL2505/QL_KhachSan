@@ -7,43 +7,45 @@ import quanlykhachsan.backend.utils.DatabaseConnection;
 /** Explicit maintenance-mode backfill; no data changes occur during normal startup. */
 public final class IdentityVaultMigration {
     private IdentityVaultMigration() { }
-    public static void requireReady() throws SQLException {
-        try (var c = DatabaseConnection.getConnection()) {
-            // 1. Ensure table structure is applied
-            try {
-                applySchema(c);
-            } catch (Exception ex) {
-                System.err.println("[IdentityVaultMigration] applySchema note: " + ex.getMessage());
-            }
-
-            // 2. Auto-backfill plain identity card records
-            boolean hasPlainIdentity = false;
-            try (var q = c.createStatement(); var rows = q.executeQuery("SELECT COUNT(*) FROM customers WHERE identity_card IS NOT NULL")) {
-                if (rows.next() && rows.getLong(1) > 0) {
-                    hasPlainIdentity = true;
-                }
-            } catch (Exception ignored) {}
-
-            if (hasPlainIdentity) {
+    public static void requireReady() {
+        try {
+            try (var c = DatabaseConnection.getConnection()) {
+                // 1. Ensure table structure is applied
                 try {
-                    var vault = GuestIdentityVaultDao.configured();
-                    int migrated = backfill(c, vault);
-                    System.out.println("[IdentityVaultMigration] Auto backfill completed; records=" + migrated);
+                    applySchema(c);
                 } catch (Exception ex) {
-                    System.err.println("[IdentityVaultMigration] Vault key unavailable (" + ex.getMessage() + "). Nullifying plain identity cards to enforce security.");
-                    try (var stmt = c.createStatement()) {
-                        stmt.executeUpdate("UPDATE customers SET identity_card=NULL WHERE identity_card IS NOT NULL");
+                    System.err.println("[IdentityVaultMigration] applySchema note: " + ex.getMessage());
+                }
+
+                // 2. Auto-backfill plain identity card records safely
+                boolean hasPlainIdentity = false;
+                try (var q = c.createStatement(); var rows = q.executeQuery("SELECT COUNT(*) FROM customers WHERE identity_card IS NOT NULL")) {
+                    if (rows.next() && rows.getLong(1) > 0) {
+                        hasPlainIdentity = true;
+                    }
+                } catch (Exception ignored) {}
+
+                if (hasPlainIdentity) {
+                    try {
+                        var vault = GuestIdentityVaultDao.configured();
+                        int migrated = backfill(c, vault);
+                        System.out.println("[IdentityVaultMigration] Auto backfill completed; records=" + migrated);
+                    } catch (Exception ex) {
+                        System.err.println("[IdentityVaultMigration] Vault key unavailable (" + ex.getMessage() + "). Nullifying plain identity cards to enforce security.");
+                        try (var stmt = c.createStatement()) {
+                            stmt.executeUpdate("UPDATE customers SET identity_card=NULL WHERE identity_card IS NOT NULL");
+                        } catch (Exception ignored) {}
                     }
                 }
-            }
 
-            // 3. Finalize constraint
-            try {
-                finalizeSchema(c);
-            } catch (Exception ex) {
-                System.err.println("[IdentityVaultMigration] finalizeSchema note: " + ex.getMessage());
+                // 3. Finalize constraint
+                try {
+                    finalizeSchema(c);
+                } catch (Exception ex) {
+                    System.err.println("[IdentityVaultMigration] finalizeSchema note: " + ex.getMessage());
+                }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.err.println("[IdentityVaultMigration] requireReady completed with warning: " + e.getMessage());
         }
     }

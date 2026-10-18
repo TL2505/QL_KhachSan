@@ -82,7 +82,15 @@ public final class ApiClient {
                                                             Map<String, String> headers, ApiCallback callback) {
         Objects.requireNonNull(callback, "callback");
         final boolean isPublic = isPublicEndpoint(path);
-        final String token = isPublic ? null : SessionManagerUtil.getAccessToken();
+        String activeToken = null;
+        if (!isPublic) {
+            activeToken = SessionManagerUtil.getAccessToken();
+            if (activeToken == null || activeToken.isBlank()) {
+                SessionManagerUtil.ensureAccessToken();
+                activeToken = SessionManagerUtil.getAccessToken();
+            }
+        }
+        final String token = activeToken;
         HttpRequest.Builder builder = HttpRequest.newBuilder(resolve(path))
             .timeout(Duration.ofMillis(5000))
             .header("Accept", "application/json")
@@ -103,25 +111,44 @@ public final class ApiClient {
         HttpRequest request = builder.build();
         SwingWorker<HttpResponse<String>, Void> worker = new SwingWorker<>() {
             @Override protected HttpResponse<String> doInBackground() throws IOException, InterruptedException {
-                HttpResponse<String> resp = client.send(request, HttpResponse.BodyHandlers.ofString());
-                if (!isPublic && (resp.statusCode() == 401 || resp.statusCode() == 403) && token != null) {
-                    SessionManagerUtil.setAccessToken(null);
-                    SessionManagerUtil.ensureAccessToken();
-                    String refreshed = SessionManagerUtil.getAccessToken();
-                    if (refreshed != null && !refreshed.equals(token)) {
+                try {
+                    HttpResponse<String> resp = client.send(request, HttpResponse.BodyHandlers.ofString());
+                    if (!isPublic && (resp.statusCode() == 401 || resp.statusCode() == 403) && token != null) {
+                        SessionManagerUtil.setAccessToken(null);
+                        SessionManagerUtil.ensureAccessToken();
+                        String refreshed = SessionManagerUtil.getAccessToken();
+                        if (refreshed != null && !refreshed.equals(token)) {
+                            HttpRequest.Builder retry = HttpRequest.newBuilder(resolve(path))
+                                .timeout(Duration.ofMillis(5000))
+                                .header("Accept", "application/json")
+                                .header("Content-Type", "application/json")
+                                .header("Authorization", "Bearer " + refreshed);
+                            if (headers != null) headers.forEach((k, v) -> {
+                                if (!"Authorization".equalsIgnoreCase(k)) retry.header(k, v);
+                            });
+                            retry.method(method, body);
+                            return client.send(retry.build(), HttpResponse.BodyHandlers.ofString());
+                        }
+                    }
+                    return resp;
+                } catch (java.net.ConnectException | java.net.http.HttpConnectTimeoutException ex) {
+                    String fallback = ApiConfig.trySmartFallback();
+                    if (fallback != null) {
                         HttpRequest.Builder retry = HttpRequest.newBuilder(resolve(path))
                             .timeout(Duration.ofMillis(5000))
                             .header("Accept", "application/json")
-                            .header("Content-Type", "application/json")
-                            .header("Authorization", "Bearer " + refreshed);
+                            .header("Content-Type", "application/json");
+                        if (!isPublic && token != null && !token.isBlank()) {
+                            retry.header("Authorization", "Bearer " + token);
+                        }
                         if (headers != null) headers.forEach((k, v) -> {
-                            if (!"Authorization".equalsIgnoreCase(k)) retry.header(k, v);
+                            if (!isPublic || !"Authorization".equalsIgnoreCase(k)) retry.header(k, v);
                         });
                         retry.method(method, body);
                         return client.send(retry.build(), HttpResponse.BodyHandlers.ofString());
                     }
+                    throw new java.net.ConnectException("Không thể kết nối đến máy chủ Backend (" + ApiConfig.getBaseUrl() + "). Vui lòng kiểm tra trạng thái Backend hoặc cổng 8081!");
                 }
-                return resp;
             }
             @Override protected void done() {
                 try {
@@ -148,7 +175,15 @@ public final class ApiClient {
             throw new IllegalStateException("Synchronous HTTP requests are forbidden on the Swing EDT");
         }
         final boolean isPublic = isPublicEndpoint(path);
-        final String token = isPublic ? null : SessionManagerUtil.getAccessToken();
+        String activeToken = null;
+        if (!isPublic) {
+            activeToken = SessionManagerUtil.getAccessToken();
+            if (activeToken == null || activeToken.isBlank()) {
+                SessionManagerUtil.ensureAccessToken();
+                activeToken = SessionManagerUtil.getAccessToken();
+            }
+        }
+        final String token = activeToken;
         HttpRequest.Builder builder = HttpRequest.newBuilder(resolve(path))
             .timeout(Duration.ofMillis(5000)).header("Accept", "application/json")
             .header("Content-Type", "application/json");
@@ -186,6 +221,32 @@ public final class ApiClient {
                 }
             }
             return resp;
+        } catch (java.net.ConnectException | java.net.http.HttpConnectTimeoutException ex) {
+            String fallback = ApiConfig.trySmartFallback();
+            if (fallback != null) {
+                try {
+                    HttpRequest.Builder retryBuilder = HttpRequest.newBuilder(resolve(path))
+                        .timeout(Duration.ofMillis(5000)).header("Accept", "application/json")
+                        .header("Content-Type", "application/json");
+                    if (!isPublic && token != null && !token.isBlank()) {
+                        retryBuilder.header("Authorization", "Bearer " + token);
+                    }
+                    if (headers != null) {
+                        headers.forEach((k, v) -> {
+                            if (!isPublic || !"Authorization".equalsIgnoreCase(k)) {
+                                retryBuilder.header(k, v);
+                            }
+                        });
+                    }
+                    retryBuilder.method(method, body);
+                    return client.send(retryBuilder.build(), HttpResponse.BodyHandlers.ofString());
+                } catch (Exception retryEx) {
+                    System.err.println("[ApiClient] Fallback attempt error: " + retryEx.getMessage());
+                }
+            }
+            throw new java.net.ConnectException("Không thể kết nối đến máy chủ Backend (" + ApiConfig.getBaseUrl() + "). Vui lòng kiểm tra trạng thái Backend hoặc cổng 8081!");
+        } catch (java.net.SocketTimeoutException ex) {
+            throw new IOException("Hết thời gian chờ phản hồi từ máy chủ (" + ApiConfig.getBaseUrl() + "). Vui lòng thử lại!", ex);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw new IOException("HTTP request interrupted", ex);
@@ -195,7 +256,11 @@ public final class ApiClient {
     private URI resolve(String path) {
         Objects.requireNonNull(path, "path");
         String relative = path.startsWith("/") ? path.substring(1) : path;
-        String basePath = baseUri.getPath();
+        String configuredBase = ApiConfig.getBaseUrl();
+        URI currentBaseUri = (configuredBase != null && !configuredBase.isBlank())
+            ? URI.create(configuredBase.endsWith("/") ? configuredBase : configuredBase + "/")
+            : baseUri;
+        String basePath = currentBaseUri.getPath();
         if (basePath != null && (basePath.endsWith("/v1/") || basePath.endsWith("/v1"))) {
             if (relative.startsWith("v1/")) {
                 relative = relative.substring(3);
@@ -203,7 +268,7 @@ public final class ApiClient {
                 relative = relative.substring(7);
             }
         }
-        return baseUri.resolve(relative);
+        return currentBaseUri.resolve(relative);
     }
 
     public static final class ApiException extends IOException {

@@ -17,12 +17,15 @@ public final class ApiConfig {
     public static final int DEFAULT_DB_PORT = 3306;
 
     public static final String DEFAULT_API_BASE_URL = "http://192.168.56.102:8081/api/v1";
+    public static final String LOCALHOST_IP = "127.0.0.1";
+    public static final String LOCALHOST_API_BASE_URL = "http://localhost:8081/api/v1";
     public static final String DEFAULT_JDBC_URL = "jdbc:mysql://192.168.56.102:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
+    public static final String LOCALHOST_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
 
     private static final Properties PROPS = loadProperties();
 
-    private static final String BASE_URL = resolveBaseUrl();
-    private static final String JDBC_URL = resolveJdbcUrl();
+    private static volatile String activeBaseUrl = resolveBaseUrl();
+    private static volatile String activeJdbcUrl = resolveJdbcUrl();
 
     private ApiConfig() {}
 
@@ -38,11 +41,69 @@ public final class ApiConfig {
     }
 
     public static String getBaseUrl() {
-        return BASE_URL;
+        return activeBaseUrl;
+    }
+
+    public static synchronized void setBaseUrl(String url) {
+        if (url != null && !url.isBlank()) {
+            activeBaseUrl = normalizeApiUrl(url);
+        }
     }
 
     public static String getJdbcUrl() {
-        return JDBC_URL;
+        return activeJdbcUrl;
+    }
+
+    public static synchronized void setJdbcUrl(String url) {
+        if (url != null && !url.isBlank()) {
+            activeJdbcUrl = url.trim();
+        }
+    }
+
+    /**
+     * Returns the alternate fallback URL between VM (192.168.56.102) and Localhost.
+     */
+    public static String getFallbackUrl() {
+        String current = activeBaseUrl;
+        if (current == null) return LOCALHOST_API_BASE_URL;
+        if (current.contains("localhost") || current.contains("127.0.0.1")) {
+            return DEFAULT_API_BASE_URL;
+        } else {
+            return LOCALHOST_API_BASE_URL;
+        }
+    }
+
+    /**
+     * Probes an API host & port via fast TCP connect.
+     */
+    public static boolean probeHealth(String baseUrl, int timeoutMs) {
+        if (baseUrl == null || baseUrl.isBlank()) return false;
+        try {
+            java.net.URI uri = java.net.URI.create(baseUrl.endsWith("/") ? baseUrl : baseUrl + "/");
+            String host = uri.getHost();
+            int port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_BACKEND_PORT;
+            return isTcpReachable(host, port, timeoutMs);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Attempts to switch to fallback URL if reachable.
+     */
+    public static synchronized String trySmartFallback() {
+        String fallback = getFallbackUrl();
+        if (probeHealth(fallback, 800)) {
+            System.out.println("[ApiConfig] Smart URL resolution switched base URL to: " + fallback);
+            setBaseUrl(fallback);
+            if (fallback.contains("localhost") || fallback.contains("127.0.0.1")) {
+                setJdbcUrl(LOCALHOST_JDBC_URL);
+            } else {
+                setJdbcUrl(DEFAULT_JDBC_URL);
+            }
+            return fallback;
+        }
+        return null;
     }
 
     public static String getDbHost() {

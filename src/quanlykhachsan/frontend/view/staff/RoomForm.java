@@ -69,6 +69,9 @@ public class RoomForm extends JPanel {
 
     public RoomForm(User user, quanlykhachsan.frontend.view.SystemStatusBanner banner) {
         this.currentUser = user;
+        if (user != null) {
+            quanlykhachsan.frontend.utils.SessionManagerUtil.setUser(user);
+        }
         this.systemStatusBanner = banner;
         setLayout(new BorderLayout(0, 0));
         setBackground(BG);

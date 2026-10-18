@@ -357,7 +357,14 @@ public class LoginForm extends JFrame {
                     Throwable cause = (ex instanceof java.util.concurrent.ExecutionException && ex.getCause() != null)
                         ? ex.getCause() : ex;
                     String msg = cause.getMessage();
-                    if (msg == null || msg.isBlank()) {
+                    if (cause instanceof java.net.ConnectException
+                            || (msg != null && (msg.contains("ConnectException")
+                                || msg.contains("Connection refused")
+                                || msg.contains("Server chưa up")
+                                || msg.contains("Không thể kết nối")
+                                || msg.contains("Failed to connect")))) {
+                        msg = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra trạng thái Backend hoặc cổng 8081!";
+                    } else if (msg == null || msg.isBlank()) {
                         msg = "Tên đăng nhập hoặc mật khẩu không chính xác!";
                     } else if (msg.contains("401") || msg.contains("403")
                             || msg.contains("Sai tên đăng nhập")

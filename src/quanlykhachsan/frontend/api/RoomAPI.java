@@ -19,7 +19,16 @@ public class RoomAPI {
     public static List<Room> getAllRooms() {
         List<Room> rooms = new ArrayList<>();
         try {
-            String json = HttpUtil.sendGet("/v1/rooms");
+            String token = quanlykhachsan.frontend.utils.SessionManagerUtil.getAccessToken();
+            if (token == null || token.isBlank()) {
+                quanlykhachsan.frontend.utils.SessionManagerUtil.ensureAccessToken();
+                token = quanlykhachsan.frontend.utils.SessionManagerUtil.getAccessToken();
+            }
+            java.util.Map<String, String> headers = new java.util.HashMap<>();
+            if (token != null && !token.isBlank()) {
+                headers.put("Authorization", "Bearer " + token);
+            }
+            String json = HttpUtil.sendGetWithHeaders("/v1/rooms", headers);
             JsonObject res = gson.fromJson(json, JsonObject.class);
             if (res == null || !res.has("status") || !"success".equals(res.get("status").getAsString()))
                 throw new IllegalStateException("Room API returned an unsuccessful response");

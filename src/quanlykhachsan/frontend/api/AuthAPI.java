@@ -18,9 +18,15 @@ public class AuthAPI {
             java.util.Map<String, String> headers = new java.util.HashMap<>();
             headers.put("Content-Type", "application/json");
             resp = ApiClient.getInstance().sendSync("POST", "/api/v1/auth/login", JsonUtil.getGson().toJson(req), headers);
-        } catch (java.net.ConnectException ex) {
-            throw new Exception("Server chưa up");
+        } catch (java.net.ConnectException | java.net.http.HttpConnectTimeoutException ex) {
+            throw new Exception("Không thể kết nối đến máy chủ. Vui lòng kiểm tra trạng thái Backend hoặc cổng 8081!");
+        } catch (java.net.SocketTimeoutException ex) {
+            throw new Exception("Hết thời gian chờ phản hồi từ máy chủ. Vui lòng kiểm tra trạng thái Backend hoặc cổng 8081!");
         } catch (java.io.IOException ex) {
+            String msg = ex.getMessage();
+            if (msg != null && (msg.contains("ConnectException") || msg.contains("Connection refused") || msg.contains("Không thể kết nối"))) {
+                throw new Exception("Không thể kết nối đến máy chủ. Vui lòng kiểm tra trạng thái Backend hoặc cổng 8081!");
+            }
             throw new Exception("Không thể kết nối đến máy chủ: " + ex.getMessage());
         }
 
@@ -104,7 +110,7 @@ public class AuthAPI {
                 throw new Exception(errMsg);
             }
         }
-        throw new Exception("Server chưa up");
+        throw new Exception("Không thể kết nối đến máy chủ. Vui lòng kiểm tra trạng thái Backend hoặc cổng 8081!");
     }
 
     public static String register(User user) throws Exception {
@@ -118,8 +124,14 @@ public class AuthAPI {
         String jsonResponse;
         try {
             jsonResponse = HttpUtil.sendPost("/auth/register", JsonUtil.getGson().toJson(req));
-        } catch (java.net.ConnectException ex) {
-            throw new Exception("Server chưa up");
+        } catch (java.net.ConnectException | java.net.http.HttpConnectTimeoutException ex) {
+            throw new Exception("Không thể kết nối đến máy chủ. Vui lòng kiểm tra trạng thái Backend hoặc cổng 8081!");
+        } catch (java.io.IOException ex) {
+            String msg = ex.getMessage();
+            if (msg != null && (msg.contains("ConnectException") || msg.contains("Connection refused") || msg.contains("Không thể kết nối"))) {
+                throw new Exception("Không thể kết nối đến máy chủ. Vui lòng kiểm tra trạng thái Backend hoặc cổng 8081!");
+            }
+            throw new Exception("Không thể kết nối đến máy chủ: " + ex.getMessage());
         }
         
         if (jsonResponse == null || jsonResponse.trim().isEmpty() || jsonResponse.trim().startsWith("<")) {
@@ -140,6 +152,6 @@ public class AuthAPI {
                 throw new Exception(resObj.get("message").getAsString());
             }
         }
-        throw new Exception("Server chưa up");
+        throw new Exception("Không thể kết nối đến máy chủ. Vui lòng kiểm tra trạng thái Backend hoặc cổng 8081!");
     }
 }

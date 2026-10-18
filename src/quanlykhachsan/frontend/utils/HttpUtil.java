@@ -19,7 +19,11 @@ public class HttpUtil {
     public static String getBaseUrl() { return BASE_URL; }
 
     public static String sendGet(String endpoint) throws Exception {
-        java.net.http.HttpResponse<String> response = send("GET", endpoint, null, null);
+        return sendGetWithHeaders(endpoint, null);
+    }
+
+    public static String sendGetWithHeaders(String endpoint, java.util.Map<String, String> headers) throws Exception {
+        java.net.http.HttpResponse<String> response = send("GET", endpoint, null, headers);
         notifyServiceUnavailable(response);
         if (response.statusCode() != 200) throw new java.io.IOException("Failed : HTTP error code : " + response.statusCode());
         return response.body();
@@ -58,6 +62,10 @@ public class HttpUtil {
             java.util.Map<String, String> additionalHeaders) throws Exception {
         java.util.Map<String, String> headers = new java.util.HashMap<>();
         headers.put("ngrok-skip-browser-warning", "true");
+        String token = SessionManagerUtil.getAccessToken();
+        if (token != null && !token.isBlank() && !quanlykhachsan.frontend.api.ApiClient.isPublicEndpoint(endpoint)) {
+            headers.put("Authorization", "Bearer " + token);
+        }
         if (additionalHeaders != null) headers.putAll(additionalHeaders);
         return quanlykhachsan.frontend.api.ApiClient.getInstance().sendSync(method, endpoint, body, headers);
     }

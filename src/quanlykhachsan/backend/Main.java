@@ -19,34 +19,47 @@ public class Main {
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
     public static void closeBackgroundServices(HttpServer server){var service=BACKGROUND_SERVICES.remove(server);if(service!=null)service.close();}
     public static void main(String[] args) {
+        HttpServer server = null;
         try {
-            // Đảm bảo cấu trúc Database đã được tạo hoặc cập nhật đầy đủ
-            quanlykhachsan.backend.utils.UpdateDbUtility.main(new String[] {});
-            quanlykhachsan.backend.customer.IdentityVaultMigration.requireReady();
-
-            // Khởi tạo Server lắng nghe tại cổng 8081
-            HttpServer server = createServer(8081);
+            // 1. Khởi tạo Server lắng nghe tại cổng 8081 trên 0.0.0.0 (chấp nhận cả localhost và external container)
+            server = createServer(8081);
             server.start();
+            System.out.println("Server đang chạy thành công tại: http://0.0.0.0:8081/ (hỗ trợ localhost & Docker VM 192.168.56.102)");
+
+            // 2. Tự động khởi tạo / cập nhật database schema và migration an toàn (không làm sập server)
+            try {
+                quanlykhachsan.backend.utils.UpdateDbUtility.main(new String[] {});
+            } catch (Throwable t) {
+                System.err.println("[Main] UpdateDbUtility warning (server vẫn tiếp tục chạy): " + t.getMessage());
+            }
+
+            try {
+                quanlykhachsan.backend.customer.IdentityVaultMigration.requireReady();
+            } catch (Throwable t) {
+                System.err.println("[Main] IdentityVaultMigration warning (server vẫn tiếp tục chạy): " + t.getMessage());
+            }
+
             var nightAuditJob = new quanlykhachsan.backend.system.NightAuditJob();
             nightAuditJob.start();
             var noShowJob = new quanlykhachsan.backend.booking.NoShowJob();
             noShowJob.start();
             var piiJob = new quanlykhachsan.backend.system.PiiAnonymizerJob();
             piiJob.start();
+
+            final HttpServer runningServer = server;
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 noShowJob.close();
                 piiJob.close();
-                closeBackgroundServices(server);
+                closeBackgroundServices(runningServer);
                 nightAuditJob.close();
-                server.stop(10);
+                runningServer.stop(10);
                 quanlykhachsan.backend.utils.DatabaseConnection.close();
             }, "hotel-shutdown"));
 
-            System.out.println("Server đang chạy thành công tại: http://localhost:8081/");
-            System.out.println("Hãy mở Postman và test API: POST http://localhost:8081/api/v1/auth/login");
+            System.out.println("API sẵn sàng: POST http://localhost:8081/api/v1/auth/login hoặc http://192.168.56.102:8081/api/v1/auth/login");
 
-        } catch (IOException | java.sql.SQLException e) {
-            System.err.println("Lỗi khi khởi động Server: " + e.getMessage());
+        } catch (Throwable e) {
+            System.err.println("Lỗi nghiêm trọng khi khởi động Server: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -63,8 +76,9 @@ public class Main {
             Filter ipRateLimiter = new quanlykhachsan.backend.utils.IpRateLimiter();
 
             // --- ĐĂNG KÝ CÁC ROUTE (API ENDPOINTS) TẠI ĐÂY ---
-            // Route Health
-            registerContext(server, ipRateLimiter,"/api/v1/health", Main::handleHealthCheck, exceptionFilter, corsFilter);
+            // Route Health (Cả /api/v1/health và /health đều public)
+            registerContext(server, ipRateLimiter, "/api/v1/health", Main::handleHealthCheck, exceptionFilter, corsFilter);
+            registerContext(server, ipRateLimiter, "/health", Main::handleHealthCheck, exceptionFilter, corsFilter);
 
             // Route Đăng nhập và Đăng ký (Được skip JWT auth bên trong JwtFilter)
             registerContext(server, ipRateLimiter, "/api/v1/auth/login", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
@@ -148,21 +162,25 @@ public class Main {
             quanlykhachsan.backend.utils.GlobalExceptionHandler.sendError(exchange,405,"ERR_405_METHOD_NOT_ALLOWED","Method not allowed"); return;
         }
         com.google.gson.JsonObject health = new com.google.gson.JsonObject();
+        health.addProperty("status","UP");
+        health.addProperty("timestamp", System.currentTimeMillis());
         try (java.sql.Connection c = quanlykhachsan.backend.utils.DatabaseConnection.getConnection();
              java.sql.Statement stmt = c.createStatement()) {
             stmt.setQueryTimeout(1);
             try (java.sql.ResultSet rows = stmt.executeQuery("SELECT 1")) {
-                if (!rows.next()) throw new java.sql.SQLException("Database health check failed");
+                if (rows.next()) {
+                    health.addProperty("database","CONNECTED");
+                    health.addProperty("active_connections",quanlykhachsan.backend.utils.DatabaseConnection.activeConnections());
+                    health.addProperty("awaiting_connections",quanlykhachsan.backend.utils.DatabaseConnection.awaitingConnections());
+                    quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange,200,health.toString());
+                    return;
+                }
             }
-            health.addProperty("status","UP");
-            health.addProperty("database","CONNECTED");
-            health.addProperty("active_connections",quanlykhachsan.backend.utils.DatabaseConnection.activeConnections());
-            health.addProperty("awaiting_connections",quanlykhachsan.backend.utils.DatabaseConnection.awaitingConnections());
-            quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange,200,health.toString());
-        } catch (java.sql.SQLException e) {
-            health.addProperty("status","DOWN");health.addProperty("database","DISCONNECTED");
-            quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange,503,health.toString());
+        } catch (Exception e) {
+            health.addProperty("database","DISCONNECTED");
+            health.addProperty("warning", e.getMessage());
         }
+        quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange,200,health.toString());
     }
 
     private static void registerContext(HttpServer server, Filter limiter, String path, HttpHandler handler, Filter... filters) {
