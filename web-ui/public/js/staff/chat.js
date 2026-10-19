@@ -34,7 +34,9 @@ export async function renderChat(container, session) {
 
     const loadInboxes = async () => {
         try {
-            const inboxList = await api.get("/chat/inbox");
+            // Inbox is scoped to the authenticated receptionist.  The backend
+            // requires this identifier for the legacy chat query.
+            const inboxList = await api.get(`/chat/inbox?staffId=${encodeURIComponent(session.userId)}`);
             inboxesDiv.innerHTML = "";
             if (!inboxList || inboxList.length === 0) {
                 inboxesDiv.innerHTML = "<div style='padding: 15px; color: var(--text-muted); font-size: 13px;'>Không có tin nhắn nào.</div>";

@@ -5,10 +5,77 @@ import { loadCustomerView } from './public/js/view-customer.js';
 import { loadProfileView } from './public/js/view-shared.js';
 import './public/js/shared/theme.js';
 
+const closeGlobalModal = (modalId = 'global-modal') => {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal.classList.remove('active');
+  modal.setAttribute('aria-hidden', 'true');
+  const content = modal.querySelector('.modal-content');
+  if (content) content.replaceChildren();
+};
+
+window.closeModal = closeGlobalModal;
+
+window.showCustomConfirm = (message, options = {}) => new Promise(resolve => {
+  const modal = document.getElementById('global-modal');
+  const content = document.getElementById('global-modal-content');
+  if (!modal || !content) { resolve(window.confirm(message)); return; }
+  content.replaceChildren();
+  const heading = document.createElement('div');
+  heading.className = 'modal-header';
+  const title = document.createElement('h2');
+  title.textContent = options.title || 'Xác nhận thao tác';
+  const close = document.createElement('button');
+  close.type = 'button'; close.className = 'modal-close'; close.setAttribute('aria-label', 'Đóng'); close.textContent = '×';
+  heading.append(title, close);
+  const text = document.createElement('p');
+  text.textContent = message;
+  text.style.cssText = 'margin:0;color:var(--portal-muted);line-height:1.65';
+  const actions = document.createElement('div');
+  actions.className = 'flex-row'; actions.style.justifyContent = 'flex-end'; actions.style.marginTop = '22px';
+  const cancel = document.createElement('button');
+  cancel.type = 'button'; cancel.className = 'btn btn-secondary'; cancel.textContent = 'Hủy';
+  const accept = document.createElement('button');
+  accept.type = 'button'; accept.className = `btn ${options.kind === 'primary' ? 'btn-primary' : 'btn-danger'}`; accept.textContent = options.confirmLabel || 'Xác nhận';
+  actions.append(cancel, accept); content.append(heading, text, actions);
+  const finish = value => { closeGlobalModal(); resolve(value); };
+  close.addEventListener('click', () => finish(false));
+  cancel.addEventListener('click', () => finish(false));
+  accept.addEventListener('click', () => finish(true));
+  modal.classList.add('active'); modal.setAttribute('aria-hidden', 'false'); accept.focus();
+});
+
+// Shared feedback dialog: modules can show API errors instead of failing silently.
+window.showCustomAlert = (message, options = {}) => new Promise(resolve => {
+  const modal = document.getElementById('global-modal');
+  const content = document.getElementById('global-modal-content');
+  if (!modal || !content) { window.alert(message); resolve(); return; }
+  content.replaceChildren();
+  const heading = document.createElement('div');
+  heading.className = 'modal-header';
+  const title = document.createElement('h2');
+  title.textContent = options.title || (options.kind === 'success' ? 'Thành công' : 'Không thể thực hiện');
+  const close = document.createElement('button');
+  close.type = 'button'; close.className = 'modal-close'; close.setAttribute('aria-label', 'Đóng'); close.textContent = '×';
+  heading.append(title, close);
+  const text = document.createElement('p');
+  text.textContent = message || 'Đã xảy ra lỗi không xác định.';
+  text.style.cssText = 'margin:0;color:var(--portal-muted);line-height:1.65';
+  const actions = document.createElement('div');
+  actions.className = 'flex-row'; actions.style.justifyContent = 'flex-end'; actions.style.marginTop = '22px';
+  const acknowledge = document.createElement('button');
+  acknowledge.type = 'button'; acknowledge.className = `btn ${options.kind === 'success' ? 'btn-primary' : 'btn-secondary'}`; acknowledge.textContent = 'Đã hiểu';
+  actions.append(acknowledge); content.append(heading, text, actions);
+  const finish = () => { closeGlobalModal(); resolve(); };
+  close.addEventListener('click', finish);
+  acknowledge.addEventListener('click', finish);
+  modal.classList.add('active'); modal.setAttribute('aria-hidden', 'false'); acknowledge.focus();
+});
+
 const menus = {
   ADMIN: [
     ['dashboard', 'Tổng quan', 'chart-no-axes-combined'], ['rooms', 'Quản lý phòng', 'bed-double'],
-    ['users', 'Tài khoản nhân viên', 'users'], ['customers', 'Khách hàng', 'contact-round'],
+    ['bookings', 'Đặt phòng', 'calendar-check'], ['users', 'Tài khoản nhân viên', 'users'], ['customers', 'Khách hàng', 'contact-round'],
     ['promotions', 'Khuyến mãi', 'ticket-percent'], ['reviews', 'Đánh giá', 'star'], ['invoices', 'Hóa đơn', 'receipt-text'], ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   STAFF: [
@@ -55,6 +122,7 @@ function status(message, kind = 'error') {
 function showAuth(tab = 'login') {
   document.body.classList.remove('customer-portal');
   document.body.classList.remove('admin-portal');
+  document.body.classList.remove('staff-portal');
   byId('auth-view').hidden = false;
   byId('app-view').hidden = true;
   const login = tab === 'login';
@@ -117,6 +185,7 @@ function enterPortal(session) {
   const isCustomer = role === 'CUSTOMER';
   document.body.classList.toggle('customer-portal', isCustomer);
   document.body.classList.toggle('admin-portal', role === 'ADMIN');
+  document.body.classList.toggle('staff-portal', role === 'STAFF');
   byId('app-view').setAttribute('aria-label', role === 'CUSTOMER' ? 'Cổng khách hàng Aurelia' : 'Cổng quản lý Aurelia');
   byId('auth-view').hidden = true;
   byId('app-view').hidden = false;

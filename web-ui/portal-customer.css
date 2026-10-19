@@ -2314,3 +2314,47 @@ html[data-theme="dark"] body.customer-portal {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Consistent card alignment for the customer portal. */
+.customer-portal .portal-view #cust-stats-grid > .stat-card-enhanced {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 13px;
+  row-gap: 5px;
+  min-height: 142px;
+}
+
+.customer-portal .portal-view #cust-stats-grid .stat-card-icon {
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+.customer-portal .portal-view #cust-stats-grid .stat-card-title,
+.customer-portal .portal-view #cust-stats-grid .stat-card-value {
+  min-width: 0;
+  margin: 0;
+}
+
+.customer-portal .portal-view #cust-stats-grid .stat-card-title {
+  align-self: end;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customer-portal .portal-view #cust-stats-grid .stat-card-value {
+  align-self: start;
+  font-size: clamp(22px, 2.2vw, 27px);
+  font-variant-numeric: tabular-nums;
+}
+
+.customer-portal .portal-view .customer-room-grid { align-items: stretch; }
+.customer-portal .portal-view .customer-room-card { display: grid; height: 100%; grid-template-rows: 168px minmax(0, 1fr); }
+.customer-portal .portal-view .customer-room-content { align-content: start; min-height: 0; }
+.customer-portal .portal-view .customer-room-actions { margin-top: auto; }
+
+@media (max-width: 640px) {
+  .customer-portal .portal-view #cust-stats-grid > .stat-card-enhanced { min-height: 118px; }
+}

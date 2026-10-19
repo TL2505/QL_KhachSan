@@ -21,7 +21,7 @@ public final class InvoicePdfController implements HttpHandler {
                 q.setLong(1,id);try(ResultSet r=q.executeQuery()) {
                     if(!r.next()){ApiResponseUtil.write(e,404,ApiResponseUtil.error("Invoice not found"));return;}
                     String role=String.valueOf(e.getAttribute("role")).toLowerCase(java.util.Locale.ROOT);
-                    if(!Set.of("admin","front_desk").contains(role) && (!(e.getAttribute("customer_id") instanceof Number n) || n.intValue()!=r.getInt(6)))throw new SecurityException();
+                    if(!Set.of("admin","staff","front_desk").contains(role) && (!(e.getAttribute("customer_id") instanceof Number n) || n.intValue()!=r.getInt(6)))throw new SecurityException();
                     if(!"paid".equals(r.getString(3)))throw new IllegalArgumentException("Invoice must be finalized and paid");
                     booking=r.getInt(1);issued=r.getString(2);total=r.getBigDecimal(4);vat=r.getBigDecimal(5);guest=r.getString(7);company=r.getString(8);tax=r.getString(9);
                 }
