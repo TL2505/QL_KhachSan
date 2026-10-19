@@ -52,15 +52,16 @@ export function normalizeApiBase(url) {
   return normalized.origin + path;
 }
 
-// Dynamic Host Normalization: Retrieve the actual hostname being accessed in the browser
+// Dynamic Host Normalization: Retrieve the actual hostname & protocol being accessed in the browser
 export const getDynamicApiBaseUrl = () => {
   // Safe for Node.js testing environments (where 'window' is undefined)
   if (typeof window === 'undefined' || !window.location || !window.location.hostname) {
     return 'http://localhost:8081/api/v1'; 
   }
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
   const hostname = window.location.hostname; 
   // Automatic resolution: If accessed via a virtual machine's IP, target port 8081 on that IP; if via localhost, target localhost:8081
-  return `http://${hostname}:8081/api/v1`; 
+  return `${protocol}//${hostname}:8081/api/v1`; 
 }; 
 
 export const API_BASE_URL = getDynamicApiBaseUrl();

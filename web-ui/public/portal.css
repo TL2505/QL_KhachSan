@@ -208,14 +208,60 @@ button, input, select, textarea {
   text-align: center;
 }
 
-.auth-pill-tab:hover {
+.auth-pill-tab:hover, .tab-pill:hover {
   color: #ffffff;
 }
 
-.auth-pill-tab.active, .auth-pill-tab.tab-active {
-  background: linear-gradient(120deg, #aa820a, #d4af37, #f3e5ab);
+.auth-pill-tab.active, .auth-pill-tab.tab-active,
+.tab-pill.active, .tab-pill.tab-active {
+  background: linear-gradient(120deg, #aa820a, #d4af37, #f3e5ab) !important;
   color: #0b0f17 !important;
+  font-weight: 800;
+  border-color: #f3e5ab !important;
   box-shadow: 0 4px 15px rgba(212, 175, 55, 0.35);
+}
+
+.tab-pill {
+  flex: 1;
+  padding: 9px 16px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--portal-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Social Authentication Styling */
+.social-auth-section {
+  position: relative;
+}
+
+.btn-social-google {
+  transition: all 0.2s ease;
+}
+
+.btn-social-google:hover {
+  border-color: var(--portal-gold);
+  background: rgba(26, 35, 58, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-social-facebook {
+  transition: all 0.2s ease;
+}
+
+.btn-social-facebook:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 14px rgba(24, 119, 242, 0.35);
 }
 
 .auth-form {

@@ -1,4 +1,4 @@
-import { api, API_BASE_URL, clearAuthSession, getAuthSession, setAuthSession } from './api.js';
+import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js';
 import { loadAdminView } from './js/view-admin.js';
 import { loadStaffView } from './js/view-staff.js';
 import { loadCustomerView } from './js/view-customer.js';
@@ -86,35 +86,92 @@ function status(message, kind = 'error') {
   } catch { }
 }
 
-export function setupAuthTabs() {
-  const showLoginBtn = byId('show-login');
-  const showRegisterBtn = byId('show-register');
+// Dynamic Host Parity: Resolve API base URL dynamically with protocol detection (HTTP / HTTPS / Ngrok)
+export const getDynamicApiBaseUrl = () => {
+  if (typeof window === 'undefined' || !window.location || !window.location.hostname) {
+    return 'http://localhost:8081/api/v1';
+  }
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  const hostname = window.location.hostname;
+  return `${protocol}//${hostname}:8081/api/v1`;
+};
+
+export const API_BASE_URL = getDynamicApiBaseUrl();
+
+export function setupAuthSwitching() {
+  const tabLogin = byId('tab-login');
+  const tabRegister = byId('tab-register');
+  const showLogin = byId('show-login');
+  const showRegister = byId('show-register');
   const loginForm = byId('login-form');
   const registerForm = byId('register-form');
 
-  if (!showLoginBtn || !showRegisterBtn) return;
+  const refreshIcons = () => {
+    if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
+      try { window.lucide.createIcons(); } catch {}
+    }
+  };
 
-  showLoginBtn.addEventListener('click', (e) => {
+  const switchToLogin = (e) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
-    showLoginBtn.classList.add('tab-active', 'active');
-    showRegisterBtn.classList.remove('tab-active', 'active');
-    showLoginBtn.setAttribute('aria-selected', 'true');
-    showRegisterBtn.setAttribute('aria-selected', 'false');
-    if (loginForm) loginForm.hidden = false;
-    if (registerForm) registerForm.hidden = true;
+    [tabLogin, showLogin].forEach(el => {
+      if (el) {
+        el.classList.add('active', 'tab-active');
+        el.setAttribute('aria-selected', 'true');
+      }
+    });
+    [tabRegister, showRegister].forEach(el => {
+      if (el) {
+        el.classList.remove('active', 'tab-active');
+        el.setAttribute('aria-selected', 'false');
+      }
+    });
+    if (loginForm) {
+      loginForm.hidden = false;
+      loginForm.style.display = '';
+    }
+    if (registerForm) {
+      registerForm.hidden = true;
+      registerForm.style.display = 'none';
+    }
     status('');
-  });
+    refreshIcons();
+  };
 
-  showRegisterBtn.addEventListener('click', (e) => {
+  const switchToRegister = (e) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
-    showRegisterBtn.classList.add('tab-active', 'active');
-    showLoginBtn.classList.remove('tab-active', 'active');
-    showRegisterBtn.setAttribute('aria-selected', 'true');
-    showLoginBtn.setAttribute('aria-selected', 'false');
-    if (registerForm) registerForm.hidden = false;
-    if (loginForm) loginForm.hidden = true;
+    [tabRegister, showRegister].forEach(el => {
+      if (el) {
+        el.classList.add('active', 'tab-active');
+        el.setAttribute('aria-selected', 'true');
+      }
+    });
+    [tabLogin, showLogin].forEach(el => {
+      if (el) {
+        el.classList.remove('active', 'tab-active');
+        el.setAttribute('aria-selected', 'false');
+      }
+    });
+    if (registerForm) {
+      registerForm.hidden = false;
+      registerForm.style.display = '';
+    }
+    if (loginForm) {
+      loginForm.hidden = true;
+      loginForm.style.display = 'none';
+    }
     status('');
-  });
+    refreshIcons();
+  };
+
+  if (tabLogin) tabLogin.addEventListener('click', switchToLogin);
+  if (showLogin) showLogin.addEventListener('click', switchToLogin);
+  if (tabRegister) tabRegister.addEventListener('click', switchToRegister);
+  if (showRegister) showRegister.addEventListener('click', switchToRegister);
+}
+
+export function setupAuthTabs() {
+  setupAuthSwitching();
 }
 
 function showAuth(tab = 'login') {
@@ -503,79 +560,228 @@ function enterPortal(session) {
   }
 }
 
+export async function handleLoginSubmit(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+
+  const usernameInput = byId('login-username');
+  const passwordInput = byId('login-password');
+  const username = usernameInput ? usernameInput.value.trim() : '';
+  const password = passwordInput ? passwordInput.value : '';
+
+  if (!username || !password) {
+    status('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.');
+    return;
+  }
+
+  const loginForm = byId('login-form');
+  const submitBtn = loginForm ? loginForm.querySelector('button[type="submit"]') : null;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.setAttribute('aria-busy', 'true');
+  }
+
+  status('Đang xác thực bảo mật...', 'success');
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
+      const errorMsg = data?.message || (res.status === 401 ? 'Sai tên đăng nhập hoặc mật khẩu.' : 'Đăng nhập không thành công.');
+      status(errorMsg);
+      return;
+    }
+
+    const authData = (data && data.data) ? data.data : data;
+    const token = authData?.token;
+    if (!token) {
+      status('Máy chủ không trả về quyền truy cập hợp lệ cho tài khoản này.');
+      return;
+    }
+
+    // Session Harmonization: store across 3 keys
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('customer_token', token);
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('token', token);
+      const user = {
+        token: token,
+        userId: authData.userId || authData.id,
+        username: authData.username || username,
+        fullName: authData.fullName || authData.username || 'Quý Hội Viên',
+        role: authData.role || 'CUSTOMER'
+      };
+      localStorage.setItem('hotel_auth_session', JSON.stringify(user));
+      setAuthSession(user);
+    }
+
+    status('Đăng nhập thành công! Đang vào cổng thành viên...', 'success');
+
+    const role = String(authData.role || 'CUSTOMER').toUpperCase();
+    const destination = (role === 'STAFF' || role === 'ADMIN') ? 'room-map' : 'dashboard';
+
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && window.location) {
+        window.location.href = `portal.html?view=${encodeURIComponent(destination)}`;
+      }
+    }, 350);
+
+  } catch (error) {
+    console.error('Lỗi khi đăng nhập:', error);
+    status('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng hoặc thử lại sau.');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.removeAttribute('aria-busy');
+    }
+  }
+}
+
+export async function handleRegisterSubmit(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+
+  const fullNameInput = byId('reg-fullname') || byId('register-name');
+  const emailInput = byId('reg-email') || byId('register-email');
+  const phoneInput = byId('reg-phone') || byId('register-phone');
+  const passwordInput = byId('reg-password') || byId('register-password');
+  const confirmPasswordInput = byId('reg-confirm-password');
+
+  const fullName = fullNameInput ? fullNameInput.value.trim() : '';
+  const email = emailInput ? emailInput.value.trim() : '';
+  const phone = phoneInput ? phoneInput.value.trim() : '';
+  const password = passwordInput ? passwordInput.value : '';
+  const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
+
+  if (!email || !password) {
+    status('Vui lòng nhập đầy đủ email/tên đăng nhập và mật khẩu.');
+    return;
+  }
+
+  if (confirmPasswordInput && password !== confirmPassword) {
+    status('Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại.');
+    return;
+  }
+
+  if (password.length < 8) {
+    status('Mật khẩu phải chứa ít nhất 8 ký tự.');
+    return;
+  }
+
+  const registerForm = byId('register-form');
+  const submitBtn = registerForm ? registerForm.querySelector('button[type="submit"]') : null;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.setAttribute('aria-busy', 'true');
+  }
+
+  status('Đang khởi tạo tài khoản...', 'success');
+
+  try {
+    const payload = {
+      username: email,
+      full_name: fullName || email,
+      fullName: fullName || email,
+      email: email,
+      phone: phone || '',
+      password: password,
+      identityCard: 'TEMP-' + Date.now(),
+      identity_card: 'TEMP-' + Date.now()
+    };
+
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
+      const errorMsg = data?.message || 'Đăng ký không thành công. Vui lòng thử lại.';
+      status(errorMsg);
+      return;
+    }
+
+    status('Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.', 'success');
+
+    // Automatically switch back to the Login tab and pre-fill the email/username field
+    const tabLogin = byId('tab-login') || byId('show-login');
+    if (tabLogin) tabLogin.click();
+
+    const loginUser = byId('login-username');
+    if (loginUser) loginUser.value = email;
+
+    const loginPass = byId('login-password');
+    if (loginPass) loginPass.focus();
+
+  } catch (error) {
+    console.error('Lỗi khi đăng ký:', error);
+    status('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.removeAttribute('aria-busy');
+    }
+  }
+}
+
+export function initAuthEvents() {
+  setupAuthSwitching();
+
+  const loginForm = byId('login-form');
+  if (loginForm) {
+    loginForm.removeEventListener('submit', handleLoginSubmit);
+    loginForm.addEventListener('submit', handleLoginSubmit);
+  }
+
+  const registerForm = byId('register-form');
+  if (registerForm) {
+    registerForm.removeEventListener('submit', handleRegisterSubmit);
+    registerForm.addEventListener('submit', handleRegisterSubmit);
+  }
+
+  // Social Auth Scaffolding handlers
+  const googleBtn = byId('google-signin-btn');
+  if (googleBtn) {
+    googleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      status('Google GIS SDK: Sẵn sàng kết nối Google Client ID.', 'success');
+    });
+  }
+
+  const facebookBtn = byId('facebook-signin-btn');
+  if (facebookBtn) {
+    facebookBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      status('Facebook Login SDK: Sẵn sàng kết nối Facebook App ID.', 'success');
+    });
+  }
+}
+
 // Initial DOM events setup wrapped in try...catch
 try {
-  setupAuthTabs();
-
-  byId('show-login')?.addEventListener('click', () => { status(''); showAuth('login'); });
-  byId('show-register')?.addEventListener('click', () => { status(''); showAuth('register'); });
-
-  byId('login-form')?.addEventListener('submit', async event => {
-    event.preventDefault();
-    const button = event.currentTarget.querySelector('button[type="submit"]');
-    if (button) button.disabled = true;
-    status('Đang xác thực tài khoản…', 'success');
-    try {
-      const usernameInput = byId('login-username');
-      const passwordInput = byId('login-password');
-      const result = await api.post('/auth/login', {
-        username: usernameInput ? usernameInput.value.trim() : '',
-        password: passwordInput ? passwordInput.value : ''
-      });
-      if (!result || !result.token || !roleOf(result.role)) {
-        throw new Error('Máy chủ không trả về quyền truy cập hợp lệ cho tài khoản này.');
-      }
-      const session = {
-        ...result,
-        userId: result.userId ?? result.id,
-        role: roleOf(result.role) === 'STAFF' ? String(result.role).toUpperCase() : roleOf(result.role)
-      };
-      setAuthSession(session);
-      localStorage.setItem('auth_token', result.token);
-      localStorage.setItem('customer_token', result.token);
-      localStorage.setItem('token', result.token);
-      const destination = roleOf(result.role) === 'STAFF' ? 'room-map' : 'dashboard';
-      if (typeof window !== 'undefined' && window.location?.replace) {
-        window.location.replace(`portal.html?view=${encodeURIComponent(destination)}`);
-      }
-    } catch (error) {
-      status(error.message || 'Không thể đăng nhập. Vui lòng kiểm tra kết nối và thử lại.');
-    } finally {
-      if (button) button.disabled = false;
-    }
-  });
-
-  byId('register-form')?.addEventListener('submit', async event => {
-    event.preventDefault();
-    const button = event.currentTarget.querySelector('button[type="submit"]');
-    if (button) button.disabled = true;
-    try {
-      await api.post('/auth/register', {
-        username: byId('register-username')?.value.trim(),
-        password: byId('register-password')?.value,
-        fullName: byId('register-name')?.value.trim(),
-        identityCard: byId('register-identity')?.value.trim(),
-        phone: byId('register-phone')?.value.trim(),
-        email: byId('register-email')?.value.trim()
-      });
-      status('Tạo tài khoản thành công. Bạn có thể đăng nhập ngay.', 'success');
-      showAuth('login');
-      const loginUser = byId('login-username');
-      if (loginUser) loginUser.value = byId('register-username')?.value.trim() || '';
-      byId('login-password')?.focus();
-    } catch (error) {
-      status(error.message || 'Không thể tạo tài khoản. Vui lòng kiểm tra thông tin.');
-    } finally {
-      if (button) button.disabled = false;
-    }
-  });
+  initAuthEvents();
 
   byId('logout-button')?.addEventListener('click', () => {
     clearAuthSession();
     localStorage.removeItem('auth_token');
     localStorage.removeItem('customer_token');
     localStorage.removeItem('token');
-    alert('Bạn đã đăng xuất thành công.');
     if (typeof window !== 'undefined' && window.location) {
       window.location.href = 'index.html#login';
     }
@@ -594,15 +800,12 @@ try {
   const token = getStoredCustomerToken() || (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null) || getAuthSession()?.token;
 
   if (!token) {
-    // If no token is present: Display a user-friendly notification and redirect to index.html#login
-    if (typeof alert !== 'undefined') {
-      const authCard = document.getElementById('auth-card') || document.querySelector('.auth-container');
-      if (authCard) authCard.style.display = 'block';
-      return;
-    }
-    if (typeof window !== 'undefined' && window.location) {
-      window.location.href = 'index.html#login';
-    }
+    // If no token is present: display auth-card on portal.html without blocking alert()
+    const authView = byId('auth-view');
+    const appView = byId('app-view');
+    if (authView) authView.hidden = false;
+    if (appView) appView.hidden = true;
+    // Fallback: unauthenticated navigation targets index.html#login
   } else {
     // If a token is present: IMMEDIATELY remove hidden or opacity-0 from main container to trigger paint
     const appView = byId('app-view');
@@ -647,4 +850,11 @@ try {
     appView.hidden = false;
     appView.classList.remove('hidden', 'opacity-0');
   }
+}
+
+if (typeof window !== 'undefined') {
+  window.handleLoginSubmit = handleLoginSubmit;
+  window.handleRegisterSubmit = handleRegisterSubmit;
+  window.setupAuthSwitching = setupAuthSwitching;
+  window.setupAuthTabs = setupAuthTabs;
 }
