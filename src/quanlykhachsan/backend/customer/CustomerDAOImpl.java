@@ -1,4 +1,4 @@
-﻿package quanlykhachsan.backend.customer;
+package quanlykhachsan.backend.customer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
