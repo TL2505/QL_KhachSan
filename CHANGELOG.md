@@ -6,6 +6,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Phase 4 implementation — 2026-10-20
+
+Phase 4 implementation is available for review; release acceptance remains incomplete.
+See [implementation report](docs/PHASE_4_REPORT.md) and
+[verification evidence and next actions](docs/PHASE_4_VERIFICATION.md).
+
+### Added
+
+- Reproducible database bootstrap and ten-migration manifest, transactional service orders and voucher validation, signed local express check-in passes, historical revenue recommendations with approval controls, and collection reconciliation.
+- Isolated MariaDB integration coverage for order replay, ownership, rollback, settlement, reconciliation, identity protection, and booking lifecycle behavior.
+
+### Fixed
+
+- Removed fabricated booking/payment success and inventory fallbacks; portal receipts and prices now require authoritative backend responses.
+- Hardened authentication, configuration, identity-vault startup, payment idempotency, unpaid checkout, pending-booking expiry, and no-show handling.
+
+### Verification
+
+- Maven test and package: 187 tests, 0 failures, 0 errors, **38 skipped** pending explicit disposable integration configuration.
+- Web UI: 51 tests passed, 0 failures or skips.
+- Fresh local MariaDB schema: all ten migrations applied; 2 integration tests passed without skips. This verifies the SQL sequence, not the Docker entrypoint.
+- GATE-01 and GATE-03 passed; GATE-02 passed on a reproducible empty-schema equivalent. **GATE-04 remains blocked.**
+
+### Known issues / acceptance blockers
+
+- Localhost and configured Linux VM HTTP endpoints timed out; the configured VM database was also unreachable. Deployed portal, authenticated API, webhook, and database acceptance must be rerun against reachable deployments.
+- Docker was unavailable, so Compose/image/entrypoint startup remains unverified.
+- Camera/OCR models, approved datasets, and reception trials are unavailable; accuracy and check-in time targets remain unverified. Python AI tests could not run because `pytest` was missing.
+- Invoice PDFs are unsigned internal records; regulatory signing/issuer verification remains outstanding.
+- Supervised guest pilot and configured load benchmark remain outstanding; no production capacity or satisfaction targets are certified.
+- Initial legacy test fixtures may have written synthetic rows to the application schema before disposable-schema guards were added. Without a prior snapshot, affected rows cannot be identified safely; no speculative data cleanup was performed.
+
+---
+
 ## [3.0.0] - 2026-10-17
 
 ### Added

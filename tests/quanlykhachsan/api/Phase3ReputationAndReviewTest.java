@@ -42,6 +42,7 @@ public class Phase3ReputationAndReviewTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
+        quanlykhachsan.support.Phase2TestDatabase.require();
         client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
 
         try (Connection conn = DatabaseConnection.getConnection()) {
@@ -73,8 +74,6 @@ public class Phase3ReputationAndReviewTest {
                 // Clear any existing reviews for test bookings
                 s.executeUpdate("DELETE FROM reviews WHERE booking_id IN (" + testCheckedOutBookingId + ", " + testCheckedInBookingId + ", " + testExpiredBookingId + ")");
             }
-        } catch (Exception e) {
-            System.err.println("Database not available for integration test: " + e.getMessage());
         }
 
         testServer = Main.createServer(port);
@@ -91,7 +90,7 @@ public class Phase3ReputationAndReviewTest {
     @Test
     @DisplayName("TASK-7: POST /api/v1/reviews enforces Verified Stay - rejects non-checked-out booking with HTTP 403")
     public void testVerifiedStayRejectsNonCheckedOut() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         String token = JwtTokenUtil.issueToken(testCustomerId, "testguest910", "customer");
 
@@ -118,7 +117,7 @@ public class Phase3ReputationAndReviewTest {
     @Test
     @DisplayName("TASK-7: POST /api/v1/reviews enforces IDOR - customer A cannot review booking of customer B")
     public void testIdorProtectionOnReviews() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         // Token belongs to testOtherCustomerId (911), but booking belongs to testCustomerId (910)
         String token = JwtTokenUtil.issueToken(testOtherCustomerId, "testguest911", "customer");
@@ -146,7 +145,7 @@ public class Phase3ReputationAndReviewTest {
     @Test
     @DisplayName("TASK-7: POST /api/v1/reviews enforces 14-day checkout window")
     public void testExpiredReviewWindow() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         String token = JwtTokenUtil.issueToken(testCustomerId, "testguest910", "customer");
 
@@ -173,7 +172,7 @@ public class Phase3ReputationAndReviewTest {
     @Test
     @DisplayName("TASK-7: POST /api/v1/reviews atomically inserts review, awards 200 points, logs history, and prevents double reviews")
     public void testReviewToRewardAtomicAndUniqueness() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         String token = JwtTokenUtil.issueToken(testCustomerId, "testguest910", "customer");
 
@@ -230,7 +229,7 @@ public class Phase3ReputationAndReviewTest {
     @Test
     @DisplayName("TASK-8: GET /api/v1/reviews/public bypasses JWT filter and returns aggregates and review list")
     public void testPublicReputationBypassesJwt() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         HttpRequest publicReq = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/reviews/public?page=1&limit=6"))
@@ -247,7 +246,7 @@ public class Phase3ReputationAndReviewTest {
     @Test
     @DisplayName("TASK-8: PUT /api/v1/reviews/{id}/reply requires STAFF/ADMIN and publishes management response")
     public void testManagementReplyEndpoint() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         // 1. Locate review id for testCheckedOutBookingId
         int reviewId = 0;

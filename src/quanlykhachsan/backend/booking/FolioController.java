@@ -165,7 +165,7 @@ public final class FolioController implements HttpHandler {
         }
         JsonObject request = JsonParser.parseString(requestBody).getAsJsonObject();
         BigDecimal amount = request.has("amount") && !request.get("amount").isJsonNull()
-            ? request.get("amount").getAsBigDecimal().setScale(2, RoundingMode.HALF_UP) : null;
+            ? request.get("amount").getAsBigDecimal().setScale(2, RoundingMode.UNNECESSARY) : null;
         String paymentMethod = request.has("payment_method") ? request.get("payment_method").getAsString() : "";
         boolean checkout = request.has("checkout") && request.get("checkout").getAsBoolean();
         if (amount == null || amount.signum() < 0 || (!checkout && amount.signum() == 0)
@@ -175,7 +175,7 @@ public final class FolioController implements HttpHandler {
         }
         String requestHash = sha256("POST|" + exchange.getRequestURI().getPath() + "|" + requestBody);
         FolioDao.PaymentRequest payment = new FolioDao.PaymentRequest(folioId, key, requestHash, amount,
-            paymentMethod, checkout, BUSINESS_ZONE);
+            paymentMethod, checkout, BUSINESS_ZONE, Integer.parseInt(String.valueOf(exchange.getAttribute("userId"))));
         try (Connection connection = DatabaseConnection.getConnection()) {
             FolioService.PaymentResult result = new FolioService().pay(connection, payment);
             writeRaw(exchange, result.statusCode(), result.body());

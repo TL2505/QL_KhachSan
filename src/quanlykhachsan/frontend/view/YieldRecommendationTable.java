@@ -15,7 +15,7 @@ public final class YieldRecommendationTable extends JTable {
     public void showForecast(JsonArray forecast,int type){
         roomType=type;rows.setRowCount(0);
         for(var item:forecast){var day=item.getAsJsonObject();var versions=day.getAsJsonObject("approval_versions");int version=versions!=null&&versions.has(Integer.toString(type))?versions.get(Integer.toString(type)).getAsInt():0;
-            rows.addRow(new Object[]{day.get("date").getAsString(),day.get("predicted_occupancy").getAsDouble(),day.get("recommended_multiplier").getAsBigDecimal(),version,""});}
+            rows.addRow(new Object[]{day.get("date").getAsString(),!day.has("predicted_occupancy")||day.get("predicted_occupancy").isJsonNull()?null:day.get("predicted_occupancy").getAsDouble(),!day.has("recommended_multiplier")||day.get("recommended_multiplier").isJsonNull()?null:day.get("recommended_multiplier").getAsBigDecimal(),version,""});}
     }
     public JsonObject approval(boolean preview){
         if(isEditing()&&!getCellEditor().stopCellEditing())throw new IllegalArgumentException("Hoàn tất chỉnh sửa ô trước khi duyệt.");

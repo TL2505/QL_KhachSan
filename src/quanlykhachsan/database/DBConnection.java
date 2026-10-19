@@ -8,8 +8,8 @@ import quanlykhachsan.backend.utils.DatabaseConnection;
  * Compatibility wrapper for DBConnection in quanlykhachsan.database package.
  */
 public final class DBConnection {
-    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://192.168.56.102:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
-    public static final String DEFAULT_API_BASE_URL = "http://192.168.56.102:8081/api/v1";
+    public static final String DEFAULT_JDBC_URL = quanlykhachsan.frontend.api.ApiConfig.DEFAULT_JDBC_URL;
+    public static final String DEFAULT_API_BASE_URL = quanlykhachsan.frontend.api.ApiConfig.DEFAULT_API_BASE_URL;
 
     private DBConnection() {}
 

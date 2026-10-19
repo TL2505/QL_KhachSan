@@ -11,9 +11,10 @@ import quanlykhachsan.backend.utils.*;
 
 public final class BankWebhookController implements HttpHandler {
     @FunctionalInterface public interface Settlement { String settle(FolioPaymentService.Payment payment)throws Exception; }
-    private final String secret;private final Settlement settlement;
-    public BankWebhookController(){this(System.getenv("BANK_WEBHOOK_SECRET"),new FolioPaymentService()::settle);}
-    public BankWebhookController(String secret,Settlement settlement){this.secret=secret;this.settlement=settlement;}
+    private final String secret,account;private final Settlement settlement;
+    public BankWebhookController(){this(System.getenv("BANK_WEBHOOK_SECRET"),System.getenv("BANK_ACCOUNT_NUMBER"),new FolioPaymentService()::settle);}
+    public BankWebhookController(String secret,Settlement settlement){this(secret,System.getenv("BANK_ACCOUNT_NUMBER"),settlement);}
+    public BankWebhookController(String secret,String account,Settlement settlement){this.secret=secret;this.account=account;this.settlement=settlement;}
     @Override public void handle(HttpExchange e)throws IOException {
         if(!e.getRequestURI().getPath().equals("/api/v1/webhooks/vietqr")){ApiResponseUtil.write(e,404,ApiResponseUtil.error("Not found"));return;}
         if(!e.getRequestMethod().equals("POST")){ApiResponseUtil.write(e,405,ApiResponseUtil.error("Method not allowed"));return;}
@@ -23,14 +24,17 @@ public final class BankWebhookController implements HttpHandler {
             String signature=e.getRequestHeaders().getFirst("X-Signature");
             if(secret==null || secret.getBytes(StandardCharsets.UTF_8).length<32){ApiResponseUtil.write(e,503,ApiResponseUtil.error("Webhook verification is not configured"));return;}
             if(!HmacSignatureUtil.verify(secret,raw,signature)){ApiResponseUtil.write(e,401,ApiResponseUtil.error("Invalid webhook signature"));return;}
+            if(account==null||!account.matches("[0-9]{6,19}")){ApiResponseUtil.write(e,503,ApiResponseUtil.error("Beneficiary verification is not configured"));return;}
             JsonObject body;
             try{body=JsonParser.parseString(new String(raw,StandardCharsets.UTF_8)).getAsJsonObject();}catch(RuntimeException ex){throw new IllegalArgumentException();}
+            if(!account.equals(PortalValidation.text(body,"account_number",19,true)))throw new IllegalArgumentException("Unexpected beneficiary account");
             String id=PortalValidation.text(body,"bank_trans_id",100,true),reference=PortalValidation.text(body,"reference_code",64,true);
             String time=PortalValidation.text(body,"trans_time",40,true);
             try{OffsetDateTime.parse(time);}catch(DateTimeParseException ex){LocalDateTime.parse(time,DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT));}
             JsonElement amountValue=body.get("amount");
             if(amountValue==null || !amountValue.isJsonPrimitive() || !amountValue.getAsJsonPrimitive().isNumber())throw new IllegalArgumentException();
             BigDecimal amount=amountValue.getAsBigDecimal();
+            if(amount.signum()<=0||amount.scale()>2||amount.compareTo(new BigDecimal("9999999999.99"))>0)throw new IllegalArgumentException();
             String response=settlement.settle(new FolioPaymentService.Payment(id,amount,reference,signature,new String(raw,StandardCharsets.UTF_8)));
             ApiResponseUtil.write(e,200,response);
         }catch(IllegalArgumentException | DateTimeException ex){ApiResponseUtil.write(e,400,ApiResponseUtil.error("Invalid webhook payload"));}

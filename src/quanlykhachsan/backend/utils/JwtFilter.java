@@ -69,7 +69,7 @@ public class JwtFilter extends Filter {
         String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
 
         // Public endpoint or guest role header bypass ONLY applies when no Authorization header is present
-        if ((isPublic || isGuestRoleHeader) && (authHeader == null || authHeader.isBlank())) {
+        if (isPublic && (authHeader == null || authHeader.isBlank())) {
             if (isGuestRoleHeader) {
                 exchange.setAttribute("role", "guest");
             }
@@ -130,7 +130,7 @@ public class JwtFilter extends Filter {
 
             if (role == null || !Set.of(
                     "admin", "staff", "customer", "guest", "front_desk", "housekeeping", "maintenance", "f&b",
-                    "ADMIN", "STAFF", "CUSTOMER", "1", "2", "3", "manager").contains(role)) {
+                    "ADMIN", "STAFF", "CUSTOMER", "1", "2", "3", "manager", "gm", "revenue_manager").contains(role)) {
                 ApiResponseUtil.sendError(exchange, 403, "ERR_403_FORBIDDEN", "Role is not authorized");
                 return;
             }

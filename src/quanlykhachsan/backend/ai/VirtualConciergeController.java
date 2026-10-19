@@ -12,6 +12,12 @@ import java.util.regex.Pattern;
 import quanlykhachsan.backend.utils.*;
 
 public final class VirtualConciergeController implements HttpHandler,AutoCloseable {
+    @FunctionalInterface interface TicketCreator { int create(String session,String category,String correlation,Integer owner,String role) throws SQLException; }
+    private final TicketCreator ticketCreator;
+    private final java.util.function.Consumer<AiInteractionDao.Event> eventSink;
+    public VirtualConciergeController(){this(new EscalationTicketDao()::create);}
+    VirtualConciergeController(TicketCreator ticketCreator){this(ticketCreator,null);}
+    VirtualConciergeController(TicketCreator ticketCreator,java.util.function.Consumer<AiInteractionDao.Event> eventSink){this.ticketCreator=Objects.requireNonNull(ticketCreator);this.eventSink=eventSink;}
     private final AiInteractionDao audit=new AiInteractionDao();
     private final EscalationTicketDao tickets=new EscalationTicketDao();
     private final EscalationPolicy policy=new EscalationPolicy();
@@ -23,7 +29,8 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
     public boolean checkChatBudget(HttpExchange e) throws IOException {
         if(!Set.of("admin","manager","gm","staff","front_desk","guest","customer").contains(String.valueOf(e.getAttribute("role")).toLowerCase(Locale.ROOT))){error(e,403,"ERR_403_FORBIDDEN","Concierge access denied");return false;}
         String token=e.getRequestHeaders().getFirst("Authorization");
-        if(token==null||!limiter.acquire(AiInteractionDao.hash(token))){e.getResponseHeaders().set("Retry-After","60");error(e,429,"ERR_429_RATE_LIMITED","Concierge request limit exceeded");return false;}
+        if(token==null||e.getAttribute("userId")==null){error(e,401,"ERR_401_UNAUTHORIZED","Authenticated concierge identity required");return false;}
+        if(!limiter.acquire(AiInteractionDao.hash(e.getAttribute("role")+"|"+e.getAttribute("userId")))){e.getResponseHeaders().set("Retry-After","60");error(e,429,"ERR_429_RATE_LIMITED","Concierge request limit exceeded");return false;}
         e.setAttribute("concierge_rate_checked",Boolean.TRUE);return true;
     }
     public synchronized void recordRejectedPrompt(HttpExchange e,JsonObject body) throws IOException {
@@ -135,8 +142,8 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
         record(session,staff,message,"ESCALATED",0,correlation);
         ApiResponseUtil.sendSuccess(e,200,Map.of("answer",EscalationPolicy.fallback(language),"reply",EscalationPolicy.fallback(language),"confidence_score",0,"citations",List.of(),"suggested_actions",List.of(),"escalate",true,"ticket_id",ticket),Map.of("correlation_id",correlation));
     }
-    private void record(String session,boolean staff,String message,String action,double confidence,String correlation){audit.record(new AiInteractionDao.Event(session,staff?"STAFF":"GUEST",message,action,confidence,correlation));}
-    private int ticket(HttpExchange e,String session,String category,String correlation)throws SQLException{return tickets.create(session,category,correlation,Integer.parseInt(String.valueOf(e.getAttribute("userId"))),String.valueOf(e.getAttribute("role")).toLowerCase(Locale.ROOT));}
+    private void record(String session,boolean staff,String message,String action,double confidence,String correlation){var event=new AiInteractionDao.Event(session,staff?"STAFF":"GUEST",message,action,confidence,correlation);if(eventSink==null)audit.record(event);else eventSink.accept(event);}
+    private int ticket(HttpExchange e,String session,String category,String correlation)throws SQLException{return ticketCreator.create(session,category,correlation,Integer.parseInt(String.valueOf(e.getAttribute("userId"))),String.valueOf(e.getAttribute("role")).toLowerCase(Locale.ROOT));}
     private static JsonObject body(HttpExchange e) throws IOException {
         byte[] bytes=e.getRequestBody().readNBytes(16_385);if(bytes.length>16_384)throw new BodyTooLarge();
         return JsonParser.parseString(new String(bytes,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();

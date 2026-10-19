@@ -11,7 +11,10 @@ import quanlykhachsan.backend.pricing.*;
 import quanlykhachsan.backend.utils.*;
 
 public final class YieldRecommendationController implements HttpHandler {
-    private final RevenueMlClient ml=new RevenueMlClient();
+    @FunctionalInterface public interface ConnectionSource { Connection open()throws SQLException; }
+    private final ConnectionSource connections;
+    public YieldRecommendationController(){this(DatabaseConnection::getConnection);}
+    public YieldRecommendationController(ConnectionSource connections){this.connections=Objects.requireNonNull(connections);}
     private final ForecastCache<String> cache=new ForecastCache<>(Clock.systemUTC());
     @Override public void handle(HttpExchange e) throws IOException {
         String role=String.valueOf(e.getAttribute("role")).toLowerCase(Locale.ROOT);
@@ -26,7 +29,7 @@ public final class YieldRecommendationController implements HttpHandler {
                 JsonArray rows=JsonParser.parseString(data).getAsJsonArray();
                 for(var item:rows){var row=item.getAsJsonObject();var interval=row.get("confidence_interval");row.add("confidence_lower",interval.isJsonArray()?interval.getAsJsonArray().get(0):JsonNull.INSTANCE);row.add("confidence_upper",interval.isJsonArray()?interval.getAsJsonArray().get(1):JsonNull.INSTANCE);row.add("recommended_bar",JsonNull.INSTANCE);}
                 if("array".equals(PortalValidation.query(e).get("format")))ApiResponseUtil.sendSuccess(e,200,rows);
-                else{var result=new JsonObject();boolean model=rows.get(0).getAsJsonObject().get("source").getAsString().equals("ML");result.addProperty("model",model?"Prophet-Additive-VietnamHolidays":"RULE_BASED_ON_BOOKS");result.add("generated_at",rows.get(0).getAsJsonObject().get("generated_at"));result.add("forecast",rows);ApiResponseUtil.sendSuccess(e,200,result);}return;
+                else{var result=new JsonObject();boolean model=rows.get(0).getAsJsonObject().get("source").getAsString().equals("ML");result.addProperty("model",model?"Prophet-Additive-VietnamHolidays":"PERSISTED_HISTORY_ADVISORY");result.add("generated_at",rows.get(0).getAsJsonObject().get("generated_at"));result.add("forecast",rows);ApiResponseUtil.sendSuccess(e,200,result);}return;
             }
             if(path.equals("/api/v1/revenue/apply-rates")&&e.getRequestMethod().equals("POST")){
                 if(role.equals("revenue_manager")){ApiResponseUtil.sendError(e,403,"ERR_403_FORBIDDEN","Management approval required");return;}
@@ -39,8 +42,9 @@ public final class YieldRecommendationController implements HttpHandler {
                     for(var rate:rates)YieldRatePolicy.approve(rate.multiplier(),true,rate.override_reason());
                     ApiResponseUtil.sendSuccess(e,Map.of("available",false,"reason","FORECAST_NOT_CATEGORY_SPECIFIC","message","Chưa có công suất dự báo theo từng hạng phòng để loại trừ booking đã chốt; doanh thu tham khảo chưa khả dụng."));return;
                 }
+                if(rates!=null)for(var rate:rates)YieldRatePolicy.approve(rate.multiplier(),Set.of("admin","gm").contains(role),rate.override_reason());
                 int actor=Integer.parseInt(String.valueOf(e.getAttribute("userId")));
-                try(var c=DatabaseConnection.getConnection()){new RateApprovalService().apply(c,rates==null?null:Arrays.asList(rates),actor,true,today);}
+                try(var c=connections.open()){new RateApprovalService().apply(c,rates==null?null:Arrays.asList(rates),actor,true,today);}
                 cache.clear();ApiResponseUtil.sendSuccess(e,200,Map.of("applied",rates.length,"updated_count",rates.length,"message","Rates approved"));return;
             }
             boolean known=Set.of("/api/v1/revenue/forecast","/api/v1/revenue/apply-rates").contains(path);
@@ -52,42 +56,31 @@ public final class YieldRecommendationController implements HttpHandler {
         catch(RevenueUnavailable ex){ApiResponseUtil.sendError(e,503,"ERR_503_REVENUE_UNAVAILABLE","Revenue data unavailable");}
     }
     private String load(LocalDate start,int days){
-        try{
-            JsonArray result=ml.forecast(start,days);
-            JsonArray clean=new JsonArray();
-            if(result.size()!=days)throw new IllegalArgumentException();
+        try(var c=connections.open()){
+            var history=new ArrayList<RevenueHistoryPolicy.Day>();
+            try(var q=c.prepareStatement("SELECT audit_date,room_revenue,occupied_rooms,available_rooms FROM daily_business_reports WHERE audit_date>=? AND audit_date<? AND JSON_EXTRACT(snapshot_json,'$.collections.reconciled')=true ORDER BY audit_date")){
+                q.setDate(1,java.sql.Date.valueOf(start.minusDays(365)));q.setDate(2,java.sql.Date.valueOf(start));
+                try(var r=q.executeQuery()){while(r.next())history.add(new RevenueHistoryPolicy.Day(r.getDate(1).toLocalDate(),r.getBigDecimal(2),r.getInt(3),r.getInt(4)));}
+            }
+            int inventory;
+            try(var q=c.createStatement();var r=q.executeQuery("SELECT COUNT(*) FROM rooms WHERE status NOT IN ('out_of_order','out_of_service')")){r.next();inventory=r.getInt(1);}
+            if(inventory<1)throw new RevenueUnavailable(new SQLException("No operational inventory"));
+            JsonArray result=new JsonArray();
             for(int i=0;i<days;i++){
-                var row=result.get(i).getAsJsonObject();
-                if(!row.get("date").getAsString().equals(start.plusDays(i).toString()))throw new IllegalArgumentException();
-                double occupancy=row.get("predicted_occupancy").getAsDouble();
-                if(!Double.isFinite(occupancy)||occupancy<0||occupancy>100)throw new IllegalArgumentException();
-                JsonArray interval=row.getAsJsonArray("confidence_interval");
-                if(interval==null||interval.size()!=2)throw new IllegalArgumentException();
-                double lower=interval.get(0).getAsDouble(),upper=interval.get(1).getAsDouble();
-                if(!Double.isFinite(lower)||!Double.isFinite(upper)||lower<0||upper>100||lower>occupancy||upper<occupancy)throw new IllegalArgumentException();
-                JsonObject safe=new JsonObject();safe.addProperty("date",start.plusDays(i).toString());safe.addProperty("predicted_occupancy",occupancy);
-                safe.addProperty("recommended_multiplier",YieldRatePolicy.recommendation(row.get("recommended_multiplier").getAsBigDecimal()));safe.add("confidence_interval",interval);safe.addProperty("source","ML");clean.add(safe);
-            }return clean.toString();
-        }catch(IOException | JsonParseException | IllegalArgumentException | IllegalStateException | NullPointerException ex){
-            try(var c=DatabaseConnection.getConnection()){
-                int total;
-                try(var q=c.createStatement();var r=q.executeQuery("SELECT COUNT(*) FROM rooms WHERE status NOT IN ('out_of_order','out_of_service')")){r.next();total=r.getInt(1);}
-                if(total<1)throw new IllegalStateException("No operational inventory");
-                JsonArray result=new JsonArray();
-                for(int i=0;i<days;i++){
-                    LocalDate day=start.plusDays(i);int occupied;
-                    try(var q=c.prepareStatement("SELECT COUNT(DISTINCT b.room_id) FROM bookings b JOIN rooms r ON r.id=b.room_id WHERE b.status IN ('confirmed','checked_in') AND r.status NOT IN ('out_of_order','out_of_service') AND b.check_in_date<? AND b.check_out_date>?")){
-                        q.setTimestamp(1,Timestamp.valueOf(day.plusDays(1).atStartOfDay()));q.setTimestamp(2,Timestamp.valueOf(day.atStartOfDay()));try(var r=q.executeQuery()){r.next();occupied=r.getInt(1);}
-                    }
-                    JsonObject row=new JsonObject();row.addProperty("date",day.toString());row.addProperty("predicted_occupancy",occupied*100.0/total);
-                    row.addProperty("recommended_multiplier",PricingTier.forOccupancy(occupied,total).multiplier());row.add("confidence_interval",JsonNull.INSTANCE);row.addProperty("source","RULE_BASED_ON_BOOKS");result.add(row);
-                }return result.toString();
-            }catch(SQLException e){throw new RevenueUnavailable(e);}
-        }
+                LocalDate day=start.plusDays(i);int occupied;
+                try(var q=c.prepareStatement("SELECT COUNT(DISTINCT b.room_id) FROM bookings b JOIN rooms r ON r.id=b.room_id WHERE b.status IN ('confirmed','checked_in') AND r.status NOT IN ('out_of_order','out_of_service') AND b.check_in_date<? AND b.check_out_date>?")){
+                    q.setTimestamp(1,Timestamp.valueOf(day.plusDays(1).atStartOfDay()));q.setTimestamp(2,Timestamp.valueOf(day.atStartOfDay()));try(var r=q.executeQuery()){r.next();occupied=r.getInt(1);}
+                }
+                var recommendation=RevenueHistoryPolicy.recommend(history,start,day,occupied,inventory);
+                JsonObject row=JsonUtil.getGson().toJsonTree(recommendation).getAsJsonObject();
+                row.addProperty("date",day.toString());row.add("confidence_interval",JsonNull.INSTANCE);result.add(row);
+            }
+            return result.toString();
+        }catch(SQLException ex){throw new RevenueUnavailable(ex);}
     }
     private String approvalContext(String forecast,LocalDate start,int days){
         JsonArray rows=JsonParser.parseString(forecast).getAsJsonArray();
-        try(var c=DatabaseConnection.getConnection()){
+        try(var c=connections.open()){
             var types=new JsonArray();var versions=new HashMap<String,JsonObject>();
             try(var q=c.createStatement();var r=q.executeQuery("SELECT id,name FROM room_types ORDER BY id")){while(r.next()){var type=new JsonObject();type.addProperty("id",r.getInt(1));type.addProperty("name",r.getString(2));types.add(type);}}
             try(var q=c.prepareStatement("SELECT rate_date,room_type_id,version FROM pricing_rules WHERE rate_date>=? AND rate_date<?")){

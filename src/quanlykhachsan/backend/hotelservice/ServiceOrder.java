@@ -8,26 +8,44 @@ import java.sql.Timestamp;
  */
 public class ServiceOrder {
     private long id;
+    @com.google.gson.annotations.SerializedName(value="booking_id",alternate={"bookingId"})
     private int bookingId;
+    @com.google.gson.annotations.SerializedName(value="customer_id",alternate={"customerId"})
     private int customerId;
+    @com.google.gson.annotations.SerializedName(value="room_id",alternate={"roomId"})
     private int roomId;
+    @com.google.gson.annotations.SerializedName(value="room_number",alternate={"roomNumber"})
     private String roomNumber;
+    @com.google.gson.annotations.SerializedName(value="customer_name",alternate={"customerName"})
     private String customerName;
     private String category; // FNB, SPA, HOUSEKEEPING
+    @com.google.gson.annotations.SerializedName(value="service_id",alternate={"serviceId"})
     private Integer serviceId;
+    @com.google.gson.annotations.SerializedName(value="item_name",alternate={"itemName"})
     private String itemName;
     private int quantity = 1;
+    @com.google.gson.annotations.SerializedName(value="unit_price",alternate={"unitPrice"})
     private BigDecimal unitPrice = BigDecimal.ZERO;
     private BigDecimal subtotal = BigDecimal.ZERO;
+    @com.google.gson.annotations.SerializedName(value="discount_amount",alternate={"discountAmount"})
     private BigDecimal discountAmount = BigDecimal.ZERO;
+    @com.google.gson.annotations.SerializedName(value="final_price",alternate={"finalPrice"})
     private BigDecimal finalPrice = BigDecimal.ZERO;
+    @com.google.gson.annotations.SerializedName(value="voucher_code",alternate={"voucherCode"})
     private String voucherCode;
+    @com.google.gson.annotations.SerializedName(value="special_instructions",alternate={"specialInstructions"})
     private String specialInstructions;
+    @com.google.gson.annotations.SerializedName(value="scheduled_time",alternate={"scheduledTime"})
     private Timestamp scheduledTime;
+    @com.google.gson.annotations.SerializedName(value="order_status",alternate={"orderStatus"})
     private String orderStatus = "PENDING"; // PENDING, ACCEPTED, DELIVERED, COMPLETED, CANCELLED
+    @com.google.gson.annotations.SerializedName(value="folio_id",alternate={"folioId"})
     private Long folioId;
+    @com.google.gson.annotations.SerializedName(value="folio_transaction_id",alternate={"folioTransactionId"})
     private Long folioTransactionId;
+    @com.google.gson.annotations.SerializedName(value="created_at",alternate={"createdAt"})
     private Timestamp createdAt;
+    @com.google.gson.annotations.SerializedName(value="updated_at",alternate={"updatedAt"})
     private Timestamp updatedAt;
 
     public ServiceOrder() {}

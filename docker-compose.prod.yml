@@ -4,8 +4,14 @@ services:
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
-    secrets: [db_root_password]
-    volumes: [pms_database:/var/lib/mysql]
+      MARIADB_DATABASE: ${PMS_DB_NAME:?Supply the PMS schema}
+      MARIADB_USER: ${PMS_DB_USER:?Supply a least-privilege PMS user}
+      MARIADB_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_root_password, db_password]
+    volumes:
+      - pms_database:/var/lib/mysql
+      - ./database:/pms-database:ro
+      - ./database/bootstrap/00-init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
     networks: [pms_internal]
     healthcheck:
       test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
@@ -103,8 +109,7 @@ networks:
         - subnet: ${PMS_NETWORK_SUBNET:?Supply an approved private subnet}
 volumes:
   pms_database:
-    external: true
-    name: ${PMS_DB_VOLUME:?Supply the pre-provisioned database volume; no seed data is imported}
+    name: ${PMS_DB_VOLUME:?Supply the approved persistent database volume name}
   pms_invoices:
 secrets:
   db_root_password: {file: '${PMS_DB_ROOT_PASSWORD_FILE:?Required secret file}'}

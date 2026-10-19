@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,7 +10,7 @@ const webUiDir = path.resolve(__dirname, '..');
 
 // Helper to load ES module
 const loadModule = async (relativePath) => {
-  return await import(`file://${path.resolve(webUiDir, relativePath)}`);
+  return await import(pathToFileURL(path.resolve(webUiDir, relativePath)).href);
 };
 
 function createMockElement(id, tagName = 'div') {
@@ -187,7 +187,15 @@ test('Task 14: Concierge module renders 3 categorized service sections and in-st
     const { renderConcierge } = await loadModule('public/js/customer/concierge.js');
     const container = env.getOrCreate('view-container');
 
-    await renderConcierge(container, { fullName: 'Trần Văn VIP', userId: 99 });
+    const { api } = await loadModule('public/api.js');
+    const savedGet = api.get;
+    api.get = async path => path.includes('/services/catalog') ? [
+      {id:1,category:'FNB',name:'Bít Tết Bò Wagyu A5 Dùng Tại Phòng',price:100},
+      {id:2,category:'SPA',name:'Trị Liệu Massage Thụy Điển Toàn Thân',price:200},
+      {id:3,category:'HOUSEKEEPING',name:'Dịch Vụ Buồng Phòng: Đổi Khăn Tắm',price:0}
+    ] : [];
+    try { await renderConcierge(container, { fullName: 'Trần Văn VIP', userId: 99 }); }
+    finally { api.get = savedGet; }
 
     const html = container.innerHTML;
     assert.match(html, /Thực Đơn & Dịch Vụ Phục Vụ Tại Phòng/, 'Must render Room Services header');

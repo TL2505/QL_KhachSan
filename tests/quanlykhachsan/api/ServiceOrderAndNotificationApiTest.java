@@ -43,6 +43,7 @@ public class ServiceOrderAndNotificationApiTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
+        quanlykhachsan.support.Phase2TestDatabase.require();
         client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
 
         try (Connection conn = DatabaseConnection.getConnection()) {
@@ -69,17 +70,14 @@ public class ServiceOrderAndNotificationApiTest {
                                 "VALUES (901, " + testCheckedInBookingId + ", 'guest', 0.00, 'open', 'FOLIO-GUEST-B901')");
 
                 // Ensure F&B service item
-                s.executeUpdate("INSERT IGNORE INTO services (id, name, description, price, status) VALUES (901, 'Test Wagyu Beef', 'Wagyu Beef for Testing', 500000.00, 'active')");
+                s.executeUpdate("INSERT IGNORE INTO services (id, name, description, price, status, category) VALUES (901, 'Test Wagyu Beef', 'Wagyu Beef for Testing', 500000.00, 'active','FNB'),(902,'Synthetic Spa','Synthetic Spa',350000.00,'active','SPA')");
 
                 // Ensure customer role and user for resolveCustomerId test
                 s.executeUpdate("INSERT IGNORE INTO roles (id, name, description) VALUES (3, 'customer', 'Customer role')");
                 s.executeUpdate("REPLACE INTO users (id, username, password, role_id, customer_id) VALUES (955, 'guest_user_955', 'hashed_pwd', 3, " + testCustomerId + ")");
-                try {
-                    s.executeUpdate("UPDATE customers SET user_id = 955 WHERE id = " + testCustomerId);
-                } catch (Exception ignored) {}
+                s.executeUpdate("INSERT IGNORE INTO users(id,username,password,role_id,customer_id) VALUES(901,'synthetic_901','not-a-password',3,901),(902,'synthetic_902','not-a-password',3,902)");
+                s.executeUpdate("UPDATE customers SET user_id = 955 WHERE id = " + testCustomerId);
             }
-        } catch (Exception e) {
-            System.err.println("Database not available for integration test, will skip DB-dependent tests: " + e.getMessage());
         }
 
         testServer = Main.createServer(port);
@@ -96,7 +94,7 @@ public class ServiceOrderAndNotificationApiTest {
     @Test
     @DisplayName("TASK-4: POST /api/v1/service-orders rejects non-checked-in booking with HTTP 403")
     public void testRejectNonCheckedInBooking() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         String token = JwtTokenUtil.issueToken(testCustomerId, "testguest901", "customer");
 
@@ -110,6 +108,7 @@ public class ServiceOrderAndNotificationApiTest {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/service-orders"))
                 .header("Content-Type", "application/json")
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                 .header("Authorization", "Bearer " + token)
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .build();
@@ -122,7 +121,7 @@ public class ServiceOrderAndNotificationApiTest {
     @Test
     @DisplayName("TASK-4: POST /api/v1/service-orders enforces IDOR protection (customer A cannot order for customer B)")
     public void testIdorProtection() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         // Token belongs to testOtherCustomerId (902), but booking belongs to testCustomerId (901)
         String token = JwtTokenUtil.issueToken(testOtherCustomerId, "testguest902", "customer");
@@ -137,6 +136,7 @@ public class ServiceOrderAndNotificationApiTest {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/service-orders"))
                 .header("Content-Type", "application/json")
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                 .header("Authorization", "Bearer " + token)
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .build();
@@ -149,7 +149,7 @@ public class ServiceOrderAndNotificationApiTest {
     @Test
     @DisplayName("TASK-5: POST /api/v1/service-orders atomically debits room Folio and returns HTTP 201")
     public void testAtomicServiceOrderFolioDebit() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         String token = JwtTokenUtil.issueToken(testCustomerId, "testguest901", "customer");
 
@@ -165,6 +165,7 @@ public class ServiceOrderAndNotificationApiTest {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/service-orders"))
                 .header("Content-Type", "application/json")
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                 .header("Authorization", "Bearer " + token)
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .build();
@@ -200,7 +201,7 @@ public class ServiceOrderAndNotificationApiTest {
     @Test
     @DisplayName("TASK-6: GET /api/v1/service-orders/active returns pending orders for staff")
     public void testActiveServiceOrdersEndpoint() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         String staffToken = JwtTokenUtil.issueToken(1, "admin_user", "admin");
 
@@ -219,7 +220,7 @@ public class ServiceOrderAndNotificationApiTest {
     @Test
     @DisplayName("TASK-6: GET & PUT /api/v1/notifications handles customer notifications lifecycle")
     public void testNotificationsLifecycle() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         // Seed a test notification
         NotificationDAO nDao = new NotificationDAO();
@@ -250,6 +251,7 @@ public class ServiceOrderAndNotificationApiTest {
                 .uri(URI.create(baseUrl + "/api/v1/notifications/" + notifId + "/read"))
                 .header("Authorization", "Bearer " + customerToken)
                 .header("Content-Type", "application/json")
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                 .PUT(HttpRequest.BodyPublishers.ofString("{}"))
                 .build();
 
@@ -284,7 +286,7 @@ public class ServiceOrderAndNotificationApiTest {
     @Test
     @DisplayName("TASK-8: PUT /api/v1/service-orders/{id}/status extracts ID via regex without ArrayIndexOutOfBoundsException")
     public void testSafePathVariableServiceOrderStatus() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         String staffToken = JwtTokenUtil.issueToken(1, "admin_user", "admin");
 
@@ -295,6 +297,7 @@ public class ServiceOrderAndNotificationApiTest {
                 .uri(URI.create(baseUrl + "/api/v1/service-orders/305/status"))
                 .header("Authorization", "Bearer " + staffToken)
                 .header("Content-Type", "application/json")
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                 .PUT(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
 
@@ -307,7 +310,7 @@ public class ServiceOrderAndNotificationApiTest {
     @Test
     @DisplayName("TASK-9: PUT /api/v1/notifications/{id}/read extracts ID via regex safely")
     public void testSafePathVariableNotificationRead() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         String customerToken = JwtTokenUtil.issueToken(testCustomerId, "testguest901", "customer");
 
@@ -315,6 +318,7 @@ public class ServiceOrderAndNotificationApiTest {
                 .uri(URI.create(baseUrl + "/api/v1/notifications/88888/read"))
                 .header("Authorization", "Bearer " + customerToken)
                 .header("Content-Type", "application/json")
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                 .PUT(HttpRequest.BodyPublishers.ofString("{}"))
                 .build();
 
@@ -365,7 +369,7 @@ public class ServiceOrderAndNotificationApiTest {
     @Test
     @DisplayName("BUG-1 FIX: Price tampering is prevented - database price overrides client unit_price")
     public void testPriceTamperingPreventedAuthoritativeDbPrice() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         String token = JwtTokenUtil.issueToken(testCustomerId, "testguest901", "customer");
 
@@ -380,6 +384,7 @@ public class ServiceOrderAndNotificationApiTest {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/service-orders"))
                 .header("Content-Type", "application/json")
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                 .header("Authorization", "Bearer " + token)
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .build();
@@ -394,7 +399,7 @@ public class ServiceOrderAndNotificationApiTest {
     @Test
     @DisplayName("BUG-2 FIX: resolveCustomerId maps user_id to actual customer_id and avoids false 403 IDOR")
     public void testResolveCustomerIdWithUserIdToCustomerIdMapping() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         // JWT contains userId 955 (from users table), while booking has customer_id 901
         String token = JwtTokenUtil.issueToken(955, "guest_user_955", "customer");
@@ -409,6 +414,7 @@ public class ServiceOrderAndNotificationApiTest {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/service-orders"))
                 .header("Content-Type", "application/json")
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                 .header("Authorization", "Bearer " + token)
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .build();
@@ -421,21 +427,23 @@ public class ServiceOrderAndNotificationApiTest {
     @Test
     @DisplayName("BUG-5 FIX: ISO-8601 scheduled_time string parsed properly without Timestamp.valueOf exception")
     public void testScheduledTimeIso8601Parsing() throws Exception {
-        if (!dbAvailable) return;
+        org.junit.jupiter.api.Assumptions.assumeTrue(dbAvailable, "Disposable database fixture required");
 
         String token = JwtTokenUtil.issueToken(testCustomerId, "testguest901", "customer");
 
         JsonObject payload = new JsonObject();
         payload.addProperty("booking_id", testCheckedInBookingId);
         payload.addProperty("category", "SPA");
+        payload.addProperty("service_id",902);
         payload.addProperty("item_name", "Aromatherapy Massage");
         payload.addProperty("quantity", 1);
         payload.addProperty("unit_price", 350000.00);
-        payload.addProperty("scheduled_time", "2026-10-19T14:30:00.000Z"); // ISO-8601 with Z and milliseconds
+        payload.addProperty("scheduled_time", java.time.Instant.now().plusSeconds(3600).toString()); // ISO-8601 with Z and milliseconds
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/service-orders"))
                 .header("Content-Type", "application/json")
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                 .header("Authorization", "Bearer " + token)
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .build();

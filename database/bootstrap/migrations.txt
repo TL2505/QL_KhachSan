@@ -1,0 +1,10 @@
+v2_0_week5_public_portal.sql
+v2_0_week6_vietqr_accounting.sql
+v2_0_week7_housekeeping_minibar.sql
+v2_0_week8_promotions.sql
+v3_1_biometric_vault.sql
+v3_2_ai_interactions.sql
+v3_2_phase2_1_schema.sql
+v3_3_revenue_views.sql
+v3_4_audit_compliance.sql
+v4_0_phase4_integrity.sql

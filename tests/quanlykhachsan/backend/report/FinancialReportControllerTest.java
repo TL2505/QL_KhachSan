@@ -16,7 +16,7 @@ class FinancialReportControllerTest {
         Phase2TestDatabase.require();LocalDate business;
         try(Connection c=DatabaseConnection.getConnection();Statement q=c.createStatement();ResultSet r=q.executeQuery("SELECT business_date FROM hotel_business_state WHERE id=1")){r.next();business=r.getDate(1).toLocalDate();}
         LocalDate date=business.minusDays(123);BigDecimal amount=new BigDecimal("900.00"),zero=new BigDecimal("0.00");
-        var snapshot=new DbrSnapshot(date.toString(),amount,amount,30,200,new BigDecimal("15.00"),new BigDecimal("30.00"),new BigDecimal("4.50"),Map.of("room_rate",amount),amount,amount,zero,zero,zero);
+        var snapshot=new DbrSnapshot(date.toString(),amount,amount,30,200,new BigDecimal("15.00"),new BigDecimal("30.00"),new BigDecimal("4.50"),Map.of("room_rate",amount),amount,amount,zero,zero,zero,quanlykhachsan.backend.report.CollectionReconciliation.calculate(zero,zero,zero,zero,0));
         try(Connection c=DatabaseConnection.getConnection();PreparedStatement q=c.prepareStatement("INSERT INTO daily_business_reports(audit_date,snapshot_json) VALUES (?,?)")){q.setDate(1,java.sql.Date.valueOf(date));q.setString(2,JsonUtil.getGson().toJson(snapshot));q.executeUpdate();}
         var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);var context=server.createContext("/api/v1/reports/financial/dbr",new FinancialReportController());context.getFilters().add(new JwtFilter());server.start();
         try {

@@ -17,7 +17,7 @@ public final class NoShowJob implements AutoCloseable {
 
     public void start() {
         LocalDateTime now = LocalDateTime.now(BUSINESS_ZONE);
-        LocalDateTime next = now.toLocalDate().atTime(LocalTime.of(0, 10));
+        LocalDateTime next = now.toLocalDate().atTime(LocalTime.of(2, 0));
         if (!next.isAfter(now)) next = next.plusDays(1);
         long initialDelay = Duration.between(now, next).toMillis();
         executor.scheduleAtFixedRate(this::runBatch, initialDelay, TimeUnit.DAYS.toMillis(1), TimeUnit.MILLISECONDS);

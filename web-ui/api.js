@@ -399,14 +399,8 @@ export function formatCurrency(amount, currency = "VND") {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 }
 
-export function generateVietQRUrl(totalAmount, bookingId) {
-  let raw = totalAmount;
-  if (typeof raw === 'string') {
-    raw = raw.replace(/[^\d.-]/g, '');
-  }
-  const cleanAmount = Math.max(0, Math.round(Number(raw) || 0));
-  const cleanBookingId = (bookingId || 'PENDING').toString().replace(/[^\w-]/g, '');
-  return `https://img.vietqr.io/image/970422-090123456789-compact2.png?amount=${cleanAmount}&addInfo=BK_${cleanBookingId}&accountName=AURELIA%20GRAND%20PALACE`;
+export function generateVietQRUrl(payment) {
+  return payment?.qr_image_base64 ? 'data:image/png;base64,' + payment.qr_image_base64 : '';
 }
 
 export function generateUUID() {
@@ -458,8 +452,10 @@ export async function getRooms(filterParams = {}) {
         }
       }
 
+      if (rawRooms.length === 0) return { rooms: [], source: 'api' };
       if (rawRooms.length > 0) {
         const rooms = rawRooms.map((r, index) => {
+          if (!Number.isInteger(r.id) || r.id < 1 || r.price == null || !Number.isFinite(Number(r.price)) || Number(r.price) < 0) throw new Error('Invalid room inventory');
           const typeId = r.roomTypeId || r.room_type_id || r.roomType || (index % 5 + 1);
           const typeName = r.room_type_name || r.roomTypeName || r.name || '';
           const category = mapRoomCategory(typeId, r.category, typeName);
@@ -470,12 +466,12 @@ export async function getRooms(filterParams = {}) {
 
           return {
             ...fallback,
-            id: r.id || fallback.id,
-            roomId: r.id || fallback.id,
-            roomNumber: r.roomNumber || r.room_number || fallback.roomNumber,
+            id: r.id,
+            roomId: r.id,
+            roomNumber: r.roomNumber || r.room_number || null,
             name: typeName || `${category} Luxury Suite`,
             category: category,
-            price: r.price != null ? Number(r.price) : fallback.price,
+            price: Number(r.price),
             area: r.area || fallback.area,
             capacity: r.capacity || fallback.capacity,
             childrenCapacity: fallback.childrenCapacity,
@@ -489,126 +485,42 @@ export async function getRooms(filterParams = {}) {
             amenities: r.amenities ? (Array.isArray(r.amenities) ? r.amenities : String(r.amenities).split(',').map(v => v.trim()).filter(Boolean)) : fallback.amenities,
             description: r.description || fallback.description,
             isDemoCatalog: false,
-            status: r.status || 'vacant_clean',
+            status: r.status || 'unknown',
             version: r.version ?? 0
           };
         });
         return { rooms, source: 'api' };
       }
     }
-  } catch (err) {
-    console.info(`[Aurelia PMS] Backend at ${baseUrl} is unreachable (${err.message}). Using luxury catalog.`);
+    throw new ApiError('Không thể xác minh danh sách phòng.', response.status);
+  } catch (error) {
+    throw new ApiError('Không thể tải phòng từ máy chủ. Chưa thể xác nhận giá hoặc tình trạng phòng.', error.status || 503);
   }
-
-  return { 
-    rooms: LUXURY_ROOMS_CATALOG.map(room => ({ ...room, isDemoCatalog: false })), 
-    source: 'catalog' 
-  };
 }
 
-export async function submitBooking(bookingPayload) {
-  const baseUrl = getApiBaseUrl();
-  const base = baseUrl.replace(/\/+$/, '');
-  const root = base.endsWith('/api/v1') ? base : `${base}/api/v1`;
-  const idempotencyKey = generateUUID();
-  const url = `${root}/bookings/public`;
+export const TRANSACTION_UNCONFIRMED = 'Hệ thống máy chủ đang bận xử lý hoặc gián đoạn kết nối. Giao dịch chưa được ghi nhận vào sổ cái PMS, quý khách vui lòng thử lại hoặc liên hệ Lễ tân.';
 
+export async function submitBooking(payload) {
+  // Retain this key on the caller's draft after an ambiguous network failure.
+  payload.idempotencyKey ||= generateUUID();
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Accept': 'application/json',
-        'X-User-Role': 'guest',
-        'Idempotency-Key': idempotencyKey
-      },
-      body: JSON.stringify({
-        room_id: bookingPayload.roomId,
-        room_version: bookingPayload.roomVersion ?? 0,
-        check_in_date: `${bookingPayload.checkInDate} 14:00:00`,
-        check_out_date: `${bookingPayload.checkOutDate} 12:00:00`,
-        customer_name: bookingPayload.fullName,
-        phone: bookingPayload.phone,
-        email: bookingPayload.email,
-        identity_card: bookingPayload.identityCard || '001201009999',
-        voucher_code: bookingPayload.promoCode || ''
-      }),
-      signal: controller.signal
+    const data = await apiFetch('/bookings/public', {
+      method: 'POST', headers: { 'Idempotency-Key': payload.idempotencyKey },
+      signal: AbortSignal.timeout(10000),
+      body: JSON.stringify({ room_id: payload.roomId, room_version: payload.roomVersion ?? 0,
+        check_in_date: payload.checkInDate + ' 14:00:00', check_out_date: payload.checkOutDate + ' 12:00:00',
+        customer_name: payload.fullName, phone: payload.phone, email: payload.email,
+        identity_card: payload.identityCard || null, voucher_code: payload.promoCode || '' })
     });
-    clearTimeout(timeoutId);
-
-    if (response.status === 400) {
-      const err = new Error('Thông tin đặt phòng không hợp lệ. Vui lòng kiểm tra lại ngày nhận/trả hoặc thông tin cá nhân.');
-      err.statusCode = 400;
-      throw err;
+    if (!Number.isSafeInteger(data?.booking_id) || data.booking_id <= 0 || !data.status ||
+        !data.folio || !Number.isFinite(Number(data.folio.balance)) || Number(data.folio.balance) < 0) {
+      throw new Error('Invalid booking receipt');
     }
-
-    if (response.status === 409) {
-      const err = new Error('Phòng đã được đặt hoặc trạng thái phòng đã thay đổi. Vui lòng chọn hạng phòng khác.');
-      err.statusCode = 409;
-      throw err;
-    }
-
-    if (response.status === 503) {
-      const err = new Error('Hệ thống kiểm toán đêm đang hoạt động. Giao dịch tạm khóa. Vui lòng thử lại sau 5 phút.');
-      err.statusCode = 503;
-      throw err;
-    }
-
-    let bookingId = Math.floor(100000 + Math.random() * 900000);
-    let bookingReference = null;
-    let totalAmount = bookingPayload.totalAmount || 1850000;
-
-    if (response.status === 201 || response.status === 200) {
-      const json = await response.json();
-      if (json?.data?.booking_id) {
-        bookingId = json.data.booking_id;
-        bookingReference = json.data.booking_code || `BKG-${bookingId}`;
-      } else if (json?.data?.booking_code) {
-        bookingId = json.data.booking_code;
-        bookingReference = String(json.data.booking_code);
-      } else if (json?.data?.bookingId) {
-        bookingId = json.data.bookingId;
-      }
-      if (json?.data?.folio?.balance) {
-        totalAmount = Number(json.data.folio.balance);
-      }
-    }
-
-    const createdBooking = {
-      bookingId: bookingId,
-      bookingReference: bookingReference || `BKG-${bookingId}`,
-      customerName: bookingPayload.fullName,
-      phone: bookingPayload.phone,
-      email: bookingPayload.email,
-      roomNumber: bookingPayload.roomNumber || `#${bookingPayload.roomId}`,
-      checkInDate: `${bookingPayload.checkInDate} 14:00`,
-      checkOutDate: `${bookingPayload.checkOutDate} 12:00`,
-      totalAmount: totalAmount,
-      status: 'PENDING',
-      paymentStatus: 'PENDING'
-    };
-
-    try {
-      const recents = JSON.parse(localStorage.getItem('aurelia_recent_bookings') || '[]');
-      recents.unshift(createdBooking);
-      localStorage.setItem('aurelia_recent_bookings', JSON.stringify(recents.slice(0, 10)));
-    } catch (e) {}
-
-    return {
-      success: true,
-      bookingId: bookingId,
-      bookingReference: createdBooking.bookingReference,
-      totalAmount: totalAmount,
-      message: 'Đặt phòng thành công! Trạng thái: Chờ xác nhận.'
-    };
-
-  } catch (err) {
-    console.error('[Aurelia PMS] Booking creation failed:', err);
-    throw err;
+    return { success: true, bookingId: data.booking_id, bookingReference: data.booking_code,
+      totalAmount: Number(data.folio.balance), status: data.status, folio: data.folio,
+      payment: data.payment || null };
+  } catch (error) {
+    throw new ApiError(TRANSACTION_UNCONFIRMED, error.status || 503);
   }
 }
 
@@ -617,20 +529,8 @@ export async function lookupBooking(bookingCode, phone) {
   const cleanCode = String(bookingCode || '').trim();
   const cleanPhone = String(phone || '').trim();
 
-  // 1. Check local session storage first
-  try {
-    const recents = JSON.parse(localStorage.getItem('aurelia_recent_bookings') || '[]');
-    const localMatch = recents.find(b => 
-      (String(b.bookingId) === cleanCode || String(b.bookingReference).toLowerCase() === cleanCode.toLowerCase()) &&
-      (!cleanPhone || !b.phone || b.phone.includes(cleanPhone) || cleanPhone.includes(b.phone))
-    );
-    if (localMatch) {
-      return { success: true, booking: localMatch };
-    }
-  } catch (e) {}
-
   // 2. Query backend by numeric ID
-  const numericId = cleanCode.replace(/[^\d]/g, '');
+  const numericId = cleanCode.match(/(?:^|[-#])(\d+)$/)?.[1] || '';
   if (numericId) {
     let timeoutId = null;
     try {
@@ -644,7 +544,7 @@ export async function lookupBooking(bookingCode, phone) {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'X-User-Role': 'guest'
+          'Authorization': 'Bearer ' + (getAuthSession()?.token || getStoredCustomerToken() || '')
         },
         signal: controller.signal
       });
@@ -660,10 +560,10 @@ export async function lookupBooking(bookingCode, phone) {
               bookingReference: data.booking_code || `BKG-${numericId}`,
               customerName: data.customer_name || data.customerName || 'Quý khách Aurelia',
               phone: data.phone || cleanPhone || '---',
-              roomNumber: data.room_number || data.roomNumber || data.room_id || '101',
+              roomNumber: data.room_number || data.roomNumber || data.room_id || null,
               checkInDate: data.check_in_date || data.checkInDate || '---',
               checkOutDate: data.check_out_date || data.checkOutDate || '---',
-              totalAmount: data.total_amount || data.totalAmount || data.price || 1850000,
+              totalAmount: data.total_amount ?? data.totalAmount ?? data.total_price ?? data.totalPrice ?? data.price ?? null,
               status: data.status || 'PENDING',
               paymentStatus: data.payment_status || data.paymentStatus || 'PENDING'
             }
@@ -671,7 +571,7 @@ export async function lookupBooking(bookingCode, phone) {
         }
       }
     } catch (err) {
-      console.warn('[Aurelia PMS] Online booking lookup failed:', err.message);
+      throw new ApiError(TRANSACTION_UNCONFIRMED, 503);
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
     }

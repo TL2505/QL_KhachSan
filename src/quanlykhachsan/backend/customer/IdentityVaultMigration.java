@@ -4,84 +4,39 @@ import java.nio.file.*;
 import java.sql.*;
 import quanlykhachsan.backend.utils.DatabaseConnection;
 
-/** Explicit maintenance-mode backfill; no data changes occur during normal startup. */
+/** Explicit maintenance migration. Startup validates readiness and never erases identities. */
 public final class IdentityVaultMigration {
-    private IdentityVaultMigration() { }
-    public static void requireReady() {
-        try {
-            try (var c = DatabaseConnection.getConnection()) {
-                // 1. Ensure table structure is applied
-                try {
-                    applySchema(c);
-                } catch (Exception ex) {
-                    System.err.println("[IdentityVaultMigration] applySchema note: " + ex.getMessage());
-                }
-
-                // 2. Auto-backfill plain identity card records safely
-                boolean hasPlainIdentity = false;
-                try (var q = c.createStatement(); var rows = q.executeQuery("SELECT COUNT(*) FROM customers WHERE identity_card IS NOT NULL")) {
-                    if (rows.next() && rows.getLong(1) > 0) {
-                        hasPlainIdentity = true;
-                    }
-                } catch (Exception ignored) {}
-
-                if (hasPlainIdentity) {
-                    try {
-                        var vault = GuestIdentityVaultDao.configured();
-                        int migrated = backfill(c, vault);
-                        System.out.println("[IdentityVaultMigration] Auto backfill completed; records=" + migrated);
-                    } catch (Exception ex) {
-                        System.err.println("[IdentityVaultMigration] Vault key unavailable (" + ex.getMessage() + "). Nullifying plain identity cards to enforce security.");
-                        try (var stmt = c.createStatement()) {
-                            stmt.executeUpdate("UPDATE customers SET identity_card=NULL WHERE identity_card IS NOT NULL");
-                        } catch (Exception ignored) {}
-                    }
-                }
-
-                // 3. Finalize constraint
-                try {
-                    finalizeSchema(c);
-                } catch (Exception ex) {
-                    System.err.println("[IdentityVaultMigration] finalizeSchema note: " + ex.getMessage());
-                }
-            }
-        } catch (Throwable e) {
-            System.err.println("[IdentityVaultMigration] requireReady completed with warning: " + e.getMessage());
-        }
+    private IdentityVaultMigration(){}
+    public static void requireReady(){
+        GuestIdentityVaultDao.configured(); // Validate secure key configuration before any database access.
+        try(var c=DatabaseConnection.getConnection()){verifyReady(c);}
+        catch(SQLException ex){throw new IllegalStateException("Identity vault readiness could not be verified",ex);}
     }
-    public static void main(String[] args) throws Exception {
-        if(args.length!=1 || !"--apply".equals(args[0]))
-            throw new IllegalArgumentException("Back up the database, stop writers, supply approved keys, then use --apply");
-        var vault=GuestIdentityVaultDao.configured(); // Fail before DDL if keys are missing.
+    public static void verifyReady(Connection c)throws SQLException {
+        try(var q=c.createStatement();var r=q.executeQuery("SELECT COUNT(*) FROM customers WHERE identity_card IS NOT NULL")){
+            if(!r.next()||r.getLong(1)>0)throw new IllegalStateException("Plain identities require the explicit backed-up IdentityVaultMigration --apply maintenance workflow");
+        }
+        finalizeSchema(c);
+    }
+    public static void main(String[] args)throws Exception {
+        if(args.length!=1||!"--apply".equals(args[0]))throw new IllegalArgumentException("Back up the database, stop writers, supply approved keys, then use --apply");
+        var vault=GuestIdentityVaultDao.configured();
         try(var c=DatabaseConnection.getConnection()){
-            applySchema(c);
-            int migrated=backfill(c,vault);
-            finalizeSchema(c);
+            applySchema(c);int migrated=backfill(c,vault);finalizeSchema(c);
             System.out.println("Identity backfill completed; records="+migrated);
-        } finally {DatabaseConnection.close();}
+        }finally{DatabaseConnection.close();}
     }
-    public static void applySchema(Connection c) throws Exception {
-        Path path = Path.of("database/migrations/v3_1_biometric_vault.sql");
-        if (Files.exists(path)) {
-            String sql = Files.readString(path);
-            try (var statement = c.createStatement()) {
-                for (String command : sql.replaceAll("(?m)^--.*$", "").split(";")) {
-                    if (!command.isBlank()) {
-                        try {
-                            statement.execute(command);
-                        } catch (SQLException ignored) {}
-                    }
-                }
-            }
+    public static void applySchema(Connection c)throws Exception {
+        String sql=Files.readString(Path.of("database/migrations/v3_1_biometric_vault.sql"));
+        try(var statement=c.createStatement()){
+            for(String command:sql.replaceAll("(?m)^--.*$", "").split(";"))if(!command.isBlank())statement.execute(command);
         }
     }
-    public static void finalizeSchema(Connection c) throws SQLException {
-        try (var q = c.prepareStatement("SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME='customers' AND CONSTRAINT_NAME='chk_no_plain_identity'"); var r = q.executeQuery()) {
-            if (r.next()) return;
-        } catch (Exception ignored) {}
-        try (var q = c.createStatement()) {
-            q.execute("ALTER TABLE customers ADD CONSTRAINT chk_no_plain_identity CHECK(identity_card IS NULL)");
-        } catch (SQLException ignored) {}
+    public static void finalizeSchema(Connection c)throws SQLException {
+        try(var q=c.prepareStatement("SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME='customers' AND CONSTRAINT_NAME='chk_no_plain_identity'");var r=q.executeQuery()){
+            if(r.next())return;
+        }
+        try(var q=c.createStatement()){q.execute("ALTER TABLE customers ADD CONSTRAINT chk_no_plain_identity CHECK(identity_card IS NULL)");}
     }
     public static int backfill(Connection c,GuestIdentityVaultDao vault) throws SQLException {
         if(!c.getAutoCommit())throw new SQLException("Migration must own the transaction");

@@ -86,30 +86,7 @@ final class AdminBookingStatusService {
     }
 
     private static Result confirm(Connection connection, BookingRow booking) throws SQLException {
-        if (!"pending".equals(booking.status())) {
-            return new Result(409, "Chỉ đơn chờ xác nhận mới có thể được xác nhận");
-        }
-        if (booking.checkIn().before(Timestamp.from(Instant.now()))) {
-            return new Result(409, "Không thể xác nhận đơn có ngày nhận phòng đã qua");
-        }
-        try (PreparedStatement conflict = connection.prepareStatement(
-                "SELECT id FROM bookings WHERE room_id=? AND id<>? "
-                + "AND status IN ('pending','confirmed','checked_in') "
-                + "AND check_in_date < ? AND check_out_date > ? LIMIT 1 FOR UPDATE")) {
-            conflict.setInt(1, booking.roomId());
-            conflict.setInt(2, booking.id());
-            conflict.setTimestamp(3, booking.checkOut());
-            conflict.setTimestamp(4, booking.checkIn());
-            try (ResultSet rows = conflict.executeQuery()) {
-                if (rows.next()) return new Result(409, "Phòng đã có đơn lưu trú trùng thời gian");
-            }
-        }
-        try (PreparedStatement update = connection.prepareStatement(
-                "UPDATE bookings SET status='confirmed' WHERE id=? AND status='pending'")) {
-            update.setInt(1, booking.id());
-            if (update.executeUpdate() != 1) return new Result(409, "Đơn đặt phòng vừa được cập nhật, vui lòng tải lại");
-        }
-        return new Result(200, "Đã xác nhận đơn đặt phòng");
+        return new Result(409,"Confirmation requires a verified bank payment or an authorized cash/POS folio collection");
     }
 
     private static Result cancel(Connection connection, BookingRow booking) throws SQLException {

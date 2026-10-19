@@ -12,6 +12,7 @@ public class PaymentAPI {
             req.addProperty("bookingId", bookingId);
             req.addProperty("amount", amount);
             req.addProperty("paymentMethod", paymentMethod);
+            req.addProperty("idempotencyKey", java.util.UUID.randomUUID().toString());
             req.addProperty("customerId", customerId);
 
             String jsonResponse = HttpUtil.sendPost("/payments", JsonUtil.getGson().toJson(req));

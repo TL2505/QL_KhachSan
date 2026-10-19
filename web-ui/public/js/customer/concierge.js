@@ -1,4 +1,5 @@
 import { api } from "../../api.js";
+import { resolveServiceSchedule } from "./service-order.js";
 
 function refreshIcons() {
   if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -17,95 +18,7 @@ function escapeHtml(str) {
 }
 
 // 5-Star In-Stay Service Menu Catalog
-const IN_STAY_SERVICES = [
-  // 1. In-Room Dining (F&B)
-  {
-    id: 102,
-    category: 'FNB',
-    categoryName: 'Ẩm Thực Tại Phòng',
-    name: 'Bít Tết Bò Wagyu A5 Dùng Tại Phòng',
-    desc: 'Thăn ngoại bò Wagyu Nhật A5 sốt tiêu đen kèm măng tây áp chảo và khoai tây nghiền nấm Truffle thượng hạng.',
-    price: 1250000,
-    priceStr: '1.250.000 ₫',
-    suggestedVoucher: 'AURELIA_DINE15',
-    icon: 'utensils',
-    tag: 'Đầu bếp gợi ý'
-  },
-  {
-    id: 101,
-    category: 'FNB',
-    categoryName: 'Ẩm Thực Tại Phòng',
-    name: 'Bữa Sáng Kiểu Lục Địa (Continental Breakfast Set)',
-    desc: 'Bánh mì nướng bơ Pháp, trứng trần, mứt quả mọng hữu cơ, cà phê Cappuccino và nước cam ép nguyên chất.',
-    price: 350000,
-    priceStr: '350.000 ₫',
-    suggestedVoucher: 'AURELIA_DINE15',
-    icon: 'coffee',
-    tag: 'Bữa sáng'
-  },
-  {
-    id: 103,
-    category: 'FNB',
-    categoryName: 'Ẩm Thực Tại Phòng',
-    name: 'Cocktail Aurelia Royal Sunset',
-    desc: 'Rượu Gin thượng hạng, nước ép bưởi hồng, mật ong hoa rừng nguyên chất và bụi vàng 24K thực phẩm.',
-    price: 280000,
-    priceStr: '280.000 ₫',
-    suggestedVoucher: 'AURELIA_DINE15',
-    icon: 'wine',
-    tag: 'Đặc quyền Sky Bar'
-  },
-  // 2. Spa & Wellness
-  {
-    id: 104,
-    category: 'SPA',
-    categoryName: 'Spa & Trị Liệu Hoàng Gia',
-    name: 'Trị Liệu Massage Thụy Điển Toàn Thân (60 phút)',
-    desc: 'Liệu trình giải tỏa căng thẳng cơ bắp chuyên sâu với tinh dầu oải hương Provence nguyên chất.',
-    price: 890000,
-    priceStr: '890.000 ₫',
-    suggestedVoucher: 'WELCOME_SPA20',
-    icon: 'sparkles',
-    tag: 'Thư giãn sâu'
-  },
-  {
-    id: 105,
-    category: 'SPA',
-    categoryName: 'Spa & Trị Liệu Hoàng Gia',
-    name: 'Liệu Trình Tắm Thảo Dược Hoàng Cung (45 phút)',
-    desc: 'Ngâm bồn sục Jacuzzi với 12 loại thảo mộc cung đình cổ truyền giúp lưu thông khí huyết.',
-    price: 650000,
-    priceStr: '650.000 ₫',
-    suggestedVoucher: 'WELCOME_SPA20',
-    icon: 'bath',
-    tag: 'Chăm sóc sức khỏe'
-  },
-  // 3. Housekeeping Amenities
-  {
-    id: 106,
-    category: 'HOUSEKEEPING',
-    categoryName: 'Dịch Vụ Buồng Phòng',
-    name: 'Dịch Vụ Buồng Phòng: Đổi Khăn Tắm & Chăn Ga Thêm',
-    desc: 'Cung cấp bộ chăn ga gối lông ngỗng cao cấp và khăn tắm bông Ai Cập sạch tinh tươm tận phòng.',
-    price: 0,
-    priceStr: 'Miễn phí',
-    suggestedVoucher: '',
-    icon: 'bed-double',
-    tag: 'Tiện ích buồng phòng'
-  },
-  {
-    id: 107,
-    category: 'HOUSEKEEPING',
-    categoryName: 'Dịch Vụ Buồng Phòng',
-    name: 'Dịch Vụ Buồng Phòng: Mượn Bàn Ủi & Cầu Là Hơi Nước',
-    desc: 'Giao bàn ủi hơi nước chuyên dụng và cầu là lên tận phòng phục vụ trang phục của Quý khách.',
-    price: 0,
-    priceStr: 'Miễn phí',
-    suggestedVoucher: '',
-    icon: 'shirt',
-    tag: 'Tiện ích buồng phòng'
-  }
-];
+
 
 // Danh sách voucher ưu đãi đặc quyền
 const VOUCHERS = [
@@ -157,9 +70,21 @@ const VOUCHERS = [
 ];
 
 export async function renderConcierge(container, session) {
+  let IN_STAY_SERVICES;
+  try {
+    const catalog = await api.get('/services/catalog');
+    const rows = Array.isArray(catalog) ? catalog : catalog?.data;
+    if (!Array.isArray(rows)) throw new Error('Invalid catalog');
+    IN_STAY_SERVICES = rows.map(item => ({ ...item, desc: item.description || '',
+      categoryName: item.category, priceStr: Number(item.price).toLocaleString('vi-VN') + ' ₫',
+      suggestedVoucher: '', icon: item.category === 'SPA' ? 'sparkles' : 'utensils', tag: '' }));
+  } catch (error) {
+    container.textContent = 'Không tải được danh mục dịch vụ. Đơn dịch vụ chưa được ghi nhận; vui lòng liên hệ Lễ tân.';
+    return;
+  }
   if (!container) return;
   session = session || {};
-  const customerId = session.customerId || session.userId || session.id || 1;
+  const customerId = session.customerId || session.userId || session.id || null;
 
   // 1. Check guest stay status via customer bookings list
   let activeStay = null;
@@ -172,8 +97,8 @@ export async function renderConcierge(container, session) {
   }
 
   const isInStay = Boolean(activeStay);
-  const activeRoom = activeStay?.roomNumber || activeStay?.room_number || activeStay?.roomId || '802';
-  const activeBookingId = activeStay?.id || activeStay?.booking_id || 42;
+  const activeRoom = activeStay?.roomNumber || activeStay?.room_number || activeStay?.roomId || '';
+  const activeBookingId = activeStay?.id || activeStay?.booking_id || null;
 
   container.innerHTML = `
     <div class="page-header mb-6">
@@ -675,20 +600,12 @@ export async function renderConcierge(container, session) {
 
     try {
       // Validate voucher via API
-      const res = await api.post('/promotions/validate', {
+      const res = await api.post('/service-orders/quote', {
         voucher_code: voucherCode,
         booking_id: activeBookingId,
         category: cat,
-        raw_amount: subtotal
-      }).catch(err => {
-        // Fallback local calculation
-        if (voucherCode === 'AURELIA_DINE15' && cat === 'FNB') {
-          return { success: true, data: { discount_amount: Math.round(subtotal * 0.15) } };
-        }
-        if (voucherCode === 'WELCOME_SPA20' && cat === 'SPA') {
-          return { success: true, data: { discount_amount: Math.round(subtotal * 0.20) } };
-        }
-        throw err;
+        service_id: Number(document.getElementById('order-service-id')?.value),
+        quantity: currentQty
       });
 
       const discAmount = res?.data?.discount_amount || (res?.discount_amount) || 0;
@@ -738,17 +655,18 @@ export async function renderConcierge(container, session) {
       `;
 
       try {
+        orderForm.dataset.requestKey ||= crypto.randomUUID();
         await api.post('/service-orders', {
           booking_id: activeBookingId,
           category: cat,
           service_id: serviceId ? Number(serviceId) : null,
           item_name: itemName,
           quantity: currentQty,
-          unit_price: currentUnitPrice,
           voucher_code: voucherCode || null,
           special_instructions: specialNotes || null,
-          scheduled_time: scheduledTime === 'now' ? null : scheduledTime
-        });
+          scheduled_time: resolveServiceSchedule(scheduledTime)
+        }, { headers: { 'Idempotency-Key': orderForm.dataset.requestKey } });
+        delete orderForm.dataset.requestKey;
 
         if (orderStatusMsg) {
           orderStatusMsg.className = 'p-3 rounded-xl text-xs text-center border bg-emerald-500/10 border-emerald-500/30 text-emerald-300';

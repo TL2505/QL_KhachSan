@@ -16,9 +16,7 @@ public final class JwtTokenUtil {
     private static String resolveSecret() {
         String secret = System.getenv("JWT_SECRET");
         if (System.getenv("JWT_SECRET_FILE") != null) {
-            try {
-                secret = SecretConfiguration.required("JWT_SECRET");
-            } catch (Exception ignored) {}
+            secret = SecretConfiguration.required("JWT_SECRET");
         }
         if (secret == null || secret.isBlank()) {
             secret = System.getProperty("hotel.jwt.secret");
@@ -35,7 +33,7 @@ public final class JwtTokenUtil {
             }
         }
         if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
-            secret = "AureliaGrandPalace5StarLuxuryHotelSecretKey2026SecurePmsProductionSigningKey";
+            throw new IllegalStateException("JWT_SECRET must be securely configured with at least 32 bytes");
         }
         return secret;
     }

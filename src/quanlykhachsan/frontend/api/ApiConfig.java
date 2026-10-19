@@ -8,18 +8,18 @@ import java.util.Properties;
 
 /**
  * Centralized Connection and Environment Configuration for Desktop App (Java Swing).
- * Default absolute priority: 192.168.56.102 (PMS VM).
- * Provides flexible fallback mechanism to environment variables or localhost if VM is unreachable.
+ * Explicit environment or reviewed file configuration takes priority.
+ * An unavailable configured host fails clearly; financial requests never switch ledgers.
  */
 public final class ApiConfig {
     public static final String DEFAULT_VM_IP = "192.168.56.102";
     public static final int DEFAULT_BACKEND_PORT = 8081;
     public static final int DEFAULT_DB_PORT = 3306;
 
-    public static final String DEFAULT_API_BASE_URL = "http://192.168.56.102:8081/api/v1";
+    public static final String DEFAULT_API_BASE_URL = "http://localhost:8081/api/v1";
     public static final String LOCALHOST_IP = "127.0.0.1";
     public static final String LOCALHOST_API_BASE_URL = "http://localhost:8081/api/v1";
-    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://192.168.56.102:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
+    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
     public static final String LOCALHOST_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
 
     private static final Properties PROPS = loadProperties();
@@ -61,17 +61,9 @@ public final class ApiConfig {
     }
 
     /**
-     * Returns the alternate fallback URL between VM (192.168.56.102) and Localhost.
+     * Compatibility accessor; returns the configured origin without cross-host fallback.
      */
-    public static String getFallbackUrl() {
-        String current = activeBaseUrl;
-        if (current == null) return LOCALHOST_API_BASE_URL;
-        if (current.contains("localhost") || current.contains("127.0.0.1")) {
-            return DEFAULT_API_BASE_URL;
-        } else {
-            return LOCALHOST_API_BASE_URL;
-        }
-    }
+    public static String getFallbackUrl() { return activeBaseUrl; }
 
     /**
      * Probes an API host & port via fast TCP connect.
@@ -91,23 +83,10 @@ public final class ApiConfig {
     /**
      * Attempts to switch to fallback URL if reachable.
      */
-    public static synchronized String trySmartFallback() {
-        String fallback = getFallbackUrl();
-        if (probeHealth(fallback, 800)) {
-            System.out.println("[ApiConfig] Smart URL resolution switched base URL to: " + fallback);
-            setBaseUrl(fallback);
-            if (fallback.contains("localhost") || fallback.contains("127.0.0.1")) {
-                setJdbcUrl(LOCALHOST_JDBC_URL);
-            } else {
-                setJdbcUrl(DEFAULT_JDBC_URL);
-            }
-            return fallback;
-        }
-        return null;
-    }
+    public static synchronized String trySmartFallback() { return null; }
 
     public static String getDbHost() {
-        return getPropertyOrEnv("db.host", "DB_HOST", DEFAULT_VM_IP);
+        return getPropertyOrEnv("db.host", "DB_HOST", "localhost");
     }
 
     public static int getDbPort() {
@@ -128,38 +107,21 @@ public final class ApiConfig {
     }
 
     public static String getDbPassword() {
+        if(System.getenv("DB_PASSWORD_FILE")!=null)return quanlykhachsan.backend.utils.SecretConfiguration.required("DB_PASSWORD");
         return getPropertyOrEnv("db.password", "DB_PASSWORD", "");
     }
 
     /**
      * Resolves API Base URL with priority:
-     * 1. 192.168.56.102:8081 if reachable or specified in config.properties / default.
+     * 1. Explicit PMS URL or API environment configuration.
      * 2. Environment variables: API_BASE_URL, BACKEND_URL, SERVER_URL.
-     * 3. Fallback to localhost:8081 if 192.168.56.102 is completely unreachable.
+     * 3. Localhost default when no server is configured.
      */
     private static String resolveBaseUrl() {
-        String pmsUrl = System.getProperty("pms.backend.url", System.getenv("PMS_BACKEND_URL"));
-        if (pmsUrl != null && !pmsUrl.trim().isEmpty()) {
-            return normalizeApiUrl(pmsUrl.trim());
-        }
-
-        // 1. Check config.properties first
-        String configured = PROPS.getProperty("server.url");
-        if (configured != null && !configured.trim().isEmpty()) {
-            configured = configured.trim();
-            if (configured.contains(DEFAULT_VM_IP)) {
-                if (isTcpReachable(DEFAULT_VM_IP, DEFAULT_BACKEND_PORT, 600)) {
-                    return normalizeApiUrl(configured);
-                }
-                String envUrl = getEnvUrl();
-                if (envUrl != null) return normalizeApiUrl(envUrl);
-                return ServerConfig.getBaseUrl() + "/api/v1";
-            }
-            return normalizeApiUrl(configured);
-        }
-
-        // 2. Active auto-discovery via ServerConfig
-        return ServerConfig.getBaseUrl() + "/api/v1";
+        String explicit=System.getProperty("pms.backend.url",System.getenv("PMS_BACKEND_URL"));
+        if(explicit!=null&&!explicit.isBlank())return normalizeApiUrl(explicit);
+        String env=getEnvUrl();if(env!=null)return normalizeApiUrl(env);
+        return normalizeApiUrl(PROPS.getProperty("server.url",LOCALHOST_API_BASE_URL));
     }
 
     private static String getEnvUrl() {
@@ -182,32 +144,15 @@ public final class ApiConfig {
 
     /**
      * Resolves JDBC URL with priority:
-     * 1. 192.168.56.102:3306 if reachable or specified in config.properties / default.
+     * 1. Explicit JDBC URL or DB_HOST environment configuration.
      * 2. Environment variables: DB_URL, JDBC_URL.
-     * 3. Fallback to localhost if 192.168.56.102 is unreachable.
+     * 3. Reviewed file configuration or localhost default.
      */
     private static String resolveJdbcUrl() {
-        String configured = PROPS.getProperty("db.url");
-        if (configured != null && !configured.trim().isEmpty()) {
-            if (configured.contains(DEFAULT_VM_IP)) {
-                if (isTcpReachable(DEFAULT_VM_IP, DEFAULT_DB_PORT, 600)) {
-                    return configured.trim();
-                }
-                String envUrl = getEnvJdbc();
-                if (envUrl != null) return envUrl;
-                return "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
-            }
-            return configured.trim();
-        }
-
-        if (isTcpReachable(DEFAULT_VM_IP, DEFAULT_DB_PORT, 600)) {
-            return DEFAULT_JDBC_URL;
-        }
-
-        String envUrl = getEnvJdbc();
-        if (envUrl != null) return envUrl;
-
-        return DEFAULT_JDBC_URL;
+        String env=getEnvJdbc();if(env!=null)return env;
+        String configured=PROPS.getProperty("db.url");
+        if(configured!=null&&!configured.isBlank())return configured.trim();
+        return "jdbc:mysql://"+getDbHost()+":"+getDbPort()+"/"+getDbName()+"?useSSL=false&serverTimezone=UTC";
     }
 
     private static String getEnvJdbc() {
@@ -227,9 +172,9 @@ public final class ApiConfig {
     }
 
     private static String getPropertyOrEnv(String propKey, String envKey, String fallback) {
-        String val = PROPS.getProperty(propKey);
+        String val = System.getenv(envKey);
         if (val != null && !val.trim().isEmpty()) return val.trim();
-        val = System.getenv(envKey);
+        val = PROPS.getProperty(propKey);
         if (val != null && !val.trim().isEmpty()) return val.trim();
         return fallback;
     }

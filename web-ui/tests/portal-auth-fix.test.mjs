@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,7 +10,7 @@ const webUiDir = path.resolve(__dirname, '..');
 
 // Helper to load ES module
 const loadModule = async (relativePath) => {
-  return await import(`file://${path.resolve(webUiDir, relativePath)}`);
+  return await import(pathToFileURL(path.resolve(webUiDir, relativePath)).href);
 };
 
 // Mock DOM factory for headless node testing

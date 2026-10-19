@@ -19,7 +19,7 @@ import quanlykhachsan.frontend.utils.SessionManagerUtil;
 
 /**
  * Background polling worker for PMS staff to receive real-time room service order alerts.
- * Polling interval: 15 seconds.
+ * Polling interval: one second; delivery still depends on server and network availability.
  * Zero-compromise constraints:
  * 1. Background polling via ScheduledExecutorService.
  * 2. UI thread safety ensured with SwingUtilities.invokeLater().
@@ -38,9 +38,15 @@ public class ServiceOrderAlertWorker {
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final java.util.Set<Long> notifiedOrderIds = Collections.synchronizedSet(new java.util.HashSet<>());
     private int lastPendingCount = 0;
+    @FunctionalInterface public interface OrderSource { String fetch() throws Exception; }
+    private final OrderSource source;
 
     public ServiceOrderAlertWorker(OrderAlertListener listener) {
+        this(listener,()->HttpUtil.sendGet(ServerConfig.getBaseUrl()+"/api/v1/service-orders/active"));
+    }
+    public ServiceOrderAlertWorker(OrderAlertListener listener,OrderSource source) {
         this.listener = listener;
+        this.source = java.util.Objects.requireNonNull(source);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "ServiceOrderAlertWorker-Thread");
             t.setDaemon(true);
@@ -51,7 +57,7 @@ public class ServiceOrderAlertWorker {
     public synchronized void start() {
         if (isRunning.compareAndSet(false, true)) {
             // Initial poll after 1s, then every 15s
-            scheduler.scheduleWithFixedDelay(this::pollOrders, 1, 15, TimeUnit.SECONDS);
+            scheduler.scheduleWithFixedDelay(this::pollOrders, 0, 1, TimeUnit.SECONDS);
         }
     }
 
@@ -67,7 +73,7 @@ public class ServiceOrderAlertWorker {
             }
 
             // Call GET /api/v1/service-orders/active
-            String jsonStr = HttpUtil.sendGet(ServerConfig.getBaseUrl() + "/api/v1/service-orders/active");
+            String jsonStr = source.fetch();
             if (jsonStr == null || jsonStr.isBlank()) {
                 return;
             }

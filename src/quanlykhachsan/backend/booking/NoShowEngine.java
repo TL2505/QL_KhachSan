@@ -15,6 +15,10 @@ import quanlykhachsan.backend.utils.DatabaseConnection;
 
 /** Processes one atomic batch of up to 50 overdue confirmed bookings. */
 public final class NoShowEngine {
+    @FunctionalInterface public interface ConnectionSource {Connection open()throws SQLException;}
+    private final ConnectionSource connections;
+    public NoShowEngine(){this(DatabaseConnection::getConnection);}
+    public NoShowEngine(ConnectionSource connections){this.connections=java.util.Objects.requireNonNull(connections);}
     private static final int BATCH_SIZE = 50;
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
@@ -25,7 +29,7 @@ public final class NoShowEngine {
     public int processBatch(LocalDateTime cutoff, LocalDate businessDate) throws SQLException {
         if (cutoff == null) throw new IllegalArgumentException("cutoff is required");
         if (businessDate == null) throw new IllegalArgumentException("businessDate is required");
-        try (Connection connection = DatabaseConnection.getConnection()) {
+        try (Connection connection = connections.open()) {
             connection.setAutoCommit(false);
             try {
                 List<OverdueBooking> bookings = loadOverdue(connection, cutoff);
@@ -43,10 +47,9 @@ public final class NoShowEngine {
                             "UPDATE rooms SET status='vacant_dirty', version=version+1 "
                           + "WHERE id=? AND status='reserved'")) {
                         room.setInt(1, booking.roomId);
-                        if (room.executeUpdate() != 1) {
-                            throw new SQLException("Reserved room changed while processing no-show booking "
-                                + booking.bookingId);
-                        }
+                        // Date-specific reservations need not reserve today's physical room.
+                        // Preserve clean/occupied/maintenance state owned by other operations.
+                        room.executeUpdate();
                     }
 
                     long folioId = findMasterFolio(connection, booking.bookingId);
@@ -85,10 +88,11 @@ public final class NoShowEngine {
             throws SQLException {
         String sql = "SELECT b.id, b.room_id, r.price FROM bookings b "
                    + "JOIN rooms r ON r.id=b.room_id WHERE b.status='confirmed' "
-                   + "AND b.check_in_date<=? ORDER BY b.check_in_date, b.id LIMIT ? FOR UPDATE";
+                   + "AND b.check_in_date<? ORDER BY b.check_in_date, b.id LIMIT ? FOR UPDATE";
         List<OverdueBooking> result = new ArrayList<>();
         try (PreparedStatement query = connection.prepareStatement(sql)) {
-            query.setTimestamp(1, java.sql.Timestamp.valueOf(cutoff));
+            LocalDate eligible=cutoff.toLocalTime().isBefore(java.time.LocalTime.of(2,0))?cutoff.toLocalDate().minusDays(1):cutoff.toLocalDate();
+            query.setTimestamp(1, java.sql.Timestamp.valueOf(eligible.atStartOfDay()));
             query.setInt(2, BATCH_SIZE);
             try (ResultSet rows = query.executeQuery()) {
                 while (rows.next()) {

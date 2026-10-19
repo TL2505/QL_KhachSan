@@ -42,7 +42,7 @@ public final class RateApprovalService {
                 try(var q=c.prepareStatement("INSERT INTO pricing_rule_audit(room_type_id,rate_date,old_multiplier,new_multiplier,actor_id,new_version,override_reason) VALUES (?,?,?,?,?,?,?)")){
                     q.setInt(1,rate.room_type_id());q.setDate(2,java.sql.Date.valueOf(rate.date()));q.setBigDecimal(3,old);q.setBigDecimal(4,rate.multiplier());q.setInt(5,actor);q.setInt(6,version+1);q.setString(7,rate.override_reason());q.executeUpdate();
                 }
-            }c.commit();
+            }c.commit();quanlykhachsan.backend.pricing.PricingQuoteCache.invalidate();
         }catch(SQLException|RuntimeException e){c.rollback();throw e;}
         finally{c.setAutoCommit(true);}
     }

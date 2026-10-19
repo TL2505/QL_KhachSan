@@ -1,5 +1,14 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-20] — @codex — Phase 4 reports, baseline and changelogs — Implementation evidence and pending release acceptance
+
+- Added [implementation checklist](PHASE_4_IMPLEMENTATION.md), [implementation report](PHASE_4_REPORT.md), and [verification evidence](PHASE_4_VERIFICATION.md); linked current evidence from `PHASE_4_AND_BEYOND_BASELINE.md` and updated the root and Vietnamese documentation changelogs. Historical entries remain unchanged.
+- Recorded Phase 4 database bootstrap, transactional service orders/vouchers, signed check-in passes, revenue approval controls, reconciliation, and authentication/payment/booking lifecycle fixes. Removed fabricated booking/payment success and inventory fallbacks.
+- Verification: Maven test/package **187 tests, 0 failures, 0 errors, 38 skipped**; web UI **51 passed, 0 failures or skips**; isolated fresh MariaDB **2 integration tests passed**, applying all ten migrations. Skipped tests are not acceptance evidence.
+- **Phase 4 release acceptance remains pending:** GATE-01 and GATE-03 passed; GATE-02 passed on a reproducible empty-schema equivalent, with Docker startup unverified; **GATE-04 blocked** by localhost/VM HTTP timeouts and unreachable VM database.
+- Outstanding acceptance work: reachable deployed portal/API/webhook/database checks, Docker Compose/entrypoint verification, approved camera/OCR accuracy and timing trials, Python AI tests (`pytest` unavailable), invoice signing/issuer verification, supervised guest pilot, and configured load benchmark. Current PDFs are unsigned internal records.
+- Recorded the initial legacy-fixture risk: synthetic rows may have been written to the application schema before disposable-schema guards were added. No prior snapshot exists to identify safe cleanup; no speculative deletion was performed.
+
 ## [2026-10-19] — @codex — docs/run-project.md, scripts/start-backend.ps1 — Local backend startup and login configuration
 - Added Windows startup instructions, database settings, health verification, and troubleshooting.
 - Added a Maven launcher that generates a local JWT secret to prevent token creation failures during login.

@@ -1,5 +1,14 @@
 # NHẬT KÝ THAY ĐỔI (CHANGELOG) — Tài liệu hệ thống PMS Khách sạn
 
+## [2026-10-20] — @codex — Báo cáo Phase 4, baseline và changelog — Ghi nhận triển khai và các điều kiện nghiệm thu còn thiếu
+
+- Bổ sung [danh sách triển khai](../PHASE_4_IMPLEMENTATION.md), [báo cáo triển khai](../PHASE_4_REPORT.md), [bằng chứng xác minh](../PHASE_4_VERIFICATION.md); liên kết từ baseline Phase 4 và cập nhật changelog gốc/của tài liệu. Giữ nguyên lịch sử.
+- Ghi nhận bootstrap cơ sở dữ liệu, giao dịch đơn dịch vụ/voucher, mã check-in có chữ ký, phê duyệt giá, đối soát và sửa lỗi xác thực/thanh toán/vòng đời đặt phòng; loại bỏ kết quả đặt phòng/thanh toán thành công và tồn phòng giả lập.
+- Kết quả: Maven test/package **187 kiểm thử, 0 thất bại, 0 lỗi, 38 bỏ qua**; web UI **51 đạt, 0 thất bại hoặc bỏ qua**; MariaDB cô lập **2 kiểm thử tích hợp đạt**, áp dụng đủ 10 migration. Kiểm thử bỏ qua không phải bằng chứng nghiệm thu.
+- **Phase 4 chưa hoàn tất nghiệm thu phát hành:** GATE-01 và GATE-03 đạt; GATE-02 đạt trên schema rỗng tương đương, chưa xác minh khởi động Docker; **GATE-04 bị chặn** do HTTP localhost/VM hết thời gian chờ và không kết nối được cơ sở dữ liệu VM.
+- Còn thiếu: nghiệm thu portal/API/webhook/database đã triển khai, Docker Compose/entrypoint, thử nghiệm camera/OCR với dữ liệu được duyệt, kiểm thử Python AI (thiếu `pytest`), xác minh nhà phát hành/chữ ký hóa đơn, pilot có giám sát và benchmark tải được cấu hình. PDF hiện tại là bản ghi nội bộ chưa ký.
+- Ghi nhận rủi ro fixture cũ ban đầu có thể đã ghi dữ liệu kiểm thử vào schema ứng dụng trước khi bổ sung chốt bảo vệ schema dùng một lần. Không có snapshot trước đó để xác định dữ liệu có thể xóa an toàn; không xóa dữ liệu theo suy đoán.
+
 ## Các quy tắc
 - Mọi thay đổi đối với `/docs/` BẮT BUỘC phải được ghi lại ở đây trước khi commit.
 - Định dạng: `## [YYYY-MM-DD] — @author — file(s) — reason — what changed`

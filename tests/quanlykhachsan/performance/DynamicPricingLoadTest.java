@@ -13,6 +13,7 @@ import quanlykhachsan.backend.utils.DatabaseConnection;
 import quanlykhachsan.support.Phase2TestDatabase;
 class DynamicPricingLoadTest {
     @Test void tenThousandQuotesWithFiftyConcurrentClients()throws Exception {
+        Phase2TestDatabase.require();
         // A fresh JVM makes the performance gate independent of PDF/font caches,
         // short-lived HTTP clients and executor lifetimes in preceding functional tests.
         String java=Path.of(System.getProperty("java.home"),"bin",System.getProperty("os.name").startsWith("Windows")?"java.exe":"java").toString();

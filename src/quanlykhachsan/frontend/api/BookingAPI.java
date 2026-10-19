@@ -135,6 +135,7 @@ public class BookingAPI {
             req.addProperty("customerId", customerId);
             req.addProperty("amount", amount);
             req.addProperty("paymentMethod", paymentMethod);
+            req.addProperty("idempotencyKey", java.util.UUID.randomUUID().toString());
             String jsonResponse = HttpUtil.sendPost("/payments", JsonUtil.getGson().toJson(req));
             JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {

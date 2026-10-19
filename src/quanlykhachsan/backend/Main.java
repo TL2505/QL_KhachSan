@@ -21,34 +21,24 @@ public class Main {
     public static void main(String[] args) {
         HttpServer server = null;
         try {
-            // 1. Khởi tạo Server lắng nghe tại cổng 8081 trên 0.0.0.0 (chấp nhận cả localhost và external container)
-            server = createServer(8081);
+            // Required schema and vault readiness must succeed before accepting traffic.
+            quanlykhachsan.backend.utils.UpdateDbUtility.main(new String[0]);
+            quanlykhachsan.backend.customer.IdentityVaultMigration.requireReady();
+            server=createServer(8081);
             server.start();
-            System.out.println("Server đang chạy thành công tại: http://0.0.0.0:8081/ (hỗ trợ localhost & Docker VM 192.168.56.102)");
-
-            // 2. Tự động khởi tạo / cập nhật database schema và migration an toàn (không làm sập server)
-            try {
-                quanlykhachsan.backend.utils.UpdateDbUtility.main(new String[] {});
-            } catch (Throwable t) {
-                System.err.println("[Main] UpdateDbUtility warning (server vẫn tiếp tục chạy): " + t.getMessage());
-            }
-
-            try {
-                quanlykhachsan.backend.customer.IdentityVaultMigration.requireReady();
-            } catch (Throwable t) {
-                System.err.println("[Main] IdentityVaultMigration warning (server vẫn tiếp tục chạy): " + t.getMessage());
-            }
-
             var nightAuditJob = new quanlykhachsan.backend.system.NightAuditJob();
             nightAuditJob.start();
             var noShowJob = new quanlykhachsan.backend.booking.NoShowJob();
             noShowJob.start();
+            var expiryJob=new quanlykhachsan.backend.booking.PendingBookingExpiryJob();
+            expiryJob.start();
             var piiJob = new quanlykhachsan.backend.system.PiiAnonymizerJob();
             piiJob.start();
 
             final HttpServer runningServer = server;
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 noShowJob.close();
+                expiryJob.close();
                 piiJob.close();
                 closeBackgroundServices(runningServer);
                 nightAuditJob.close();
@@ -60,7 +50,8 @@ public class Main {
 
         } catch (Throwable e) {
             System.err.println("Lỗi nghiêm trọng khi khởi động Server: " + e.getMessage());
-            e.printStackTrace();
+            if(server!=null){closeBackgroundServices(server);server.stop(0);}
+            throw new IllegalStateException("PMS startup failed",e);
         }
     }
 
@@ -120,8 +111,10 @@ public class Main {
         registerContext(server, ipRateLimiter, "/api/customers", new quanlykhachsan.backend.customer.CustomerController(), exceptionFilter, corsFilter, jwtFilter);
         // Route Đặt phòng / Check-in / Check-out
         var bookingController = new quanlykhachsan.backend.booking.BookingController();
+        registerContext(server, ipRateLimiter, "/api/v1/checkin-passes", new quanlykhachsan.backend.booking.ExpressPassController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/pricing/quote", new quanlykhachsan.backend.pricing.PricingController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/reports/financial/dbr", new quanlykhachsan.backend.report.FinancialReportController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/reports/financial/reconciliation", new quanlykhachsan.backend.report.FinancialReportController(), exceptionFilter, corsFilter, jwtFilter);
         var yieldController = new quanlykhachsan.backend.report.YieldRecommendationController();
         registerContext(server, ipRateLimiter, "/api/v1/revenue/forecast", yieldController, exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/revenue/apply-rates", yieldController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
@@ -143,7 +136,7 @@ public class Main {
         // Route Đặt Dịch vụ Phòng & Giám sát Lễ tân (Phase 2.1)
         var serviceOrderController = new quanlykhachsan.backend.hotelservice.ServiceOrderController();
         registerContext(server, ipRateLimiter, "/api/v1/service-orders/active", serviceOrderController, exceptionFilter, corsFilter, jwtFilter);
-        registerContext(server, ipRateLimiter, "/api/v1/service-orders", serviceOrderController, exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/service-orders", serviceOrderController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
         // Route Thông báo Vòng đời & Voucher Khách hàng (Phase 2.1)
         var notificationController = new quanlykhachsan.backend.customer.NotificationController();
         registerContext(server, ipRateLimiter, "/api/v1/notifications", notificationController, exceptionFilter, corsFilter, jwtFilter);

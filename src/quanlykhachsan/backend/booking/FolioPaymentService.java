@@ -7,15 +7,29 @@ import quanlykhachsan.backend.utils.*;
 
 /** Bank transaction, applied credit, excess liability and delivery audit commit together. */
 public final class FolioPaymentService {
+    @FunctionalInterface public interface ConnectionSource { Connection open()throws SQLException; }
+    private final ConnectionSource connections;
+    public FolioPaymentService(){this(DatabaseConnection::getConnection);}
+    public FolioPaymentService(ConnectionSource connections){this.connections=java.util.Objects.requireNonNull(connections);}
     public String settle(Payment payment)throws SQLException {
         if(payment.bankTransId()==null || !payment.bankTransId().matches("[A-Za-z0-9_-]{1,100}")
                 || payment.reference()==null || !payment.reference().matches("[A-Za-z0-9-]{1,64}")
                 || payment.amount()==null || payment.amount().signum()<=0 || payment.amount().scale()>2
                 || payment.amount().compareTo(new BigDecimal("9999999999.99"))>0)throw new IllegalArgumentException("Invalid bank payment");
-        try(Connection c=DatabaseConnection.getConnection()) {
+        try(Connection c=connections.open()) {
             FolioDao locks=new FolioDao();String lockKey="bank:"+payment.bankTransId();locks.acquireLock(c,lockKey);
             try {
                 c.setAutoCommit(false);
+                long target;
+                try(var q=c.prepareStatement("SELECT id FROM folios WHERE code=?")){q.setString(1,payment.reference());try(var r=q.executeQuery()){if(!r.next())throw new IllegalArgumentException("Unknown payment reference");target=r.getLong(1);}}
+                // Check replay before state validation: a retry remains valid after checkout.
+                try(var q=c.prepareStatement("SELECT folio_id,amount,response_body FROM bank_webhook_logs WHERE bank_trans_id=?")){
+                    q.setString(1,payment.bankTransId());try(var r=q.executeQuery()){if(r.next()){
+                        if(r.getLong(1)!=target||r.getBigDecimal(2).compareTo(payment.amount())!=0)throw new IllegalStateException("Bank transaction reused");
+                        String response=r.getString(3);delivery(c,payment.bankTransId(),"DUPLICATE");c.commit();return response;
+                    }}
+                }
+                var locked=locks.lockFolio(c,target);if(locked==null)throw new IllegalArgumentException("Unknown payment reference");
                 long folio;BigDecimal balance;String status;
                 try(PreparedStatement q=c.prepareStatement("SELECT id,balance,status FROM folios WHERE code=? FOR UPDATE")) {
                     q.setString(1,payment.reference());try(ResultSet r=q.executeQuery()){if(!r.next())throw new IllegalArgumentException("Unknown payment reference");folio=r.getLong(1);balance=r.getBigDecimal(2);status=r.getString(3);}
@@ -32,10 +46,11 @@ public final class FolioPaymentService {
                 if(excess.signum()>0)credit(c,folio,"credit_adjustment",excess,payment.bankTransId(),"Excess overpayment credit");
                 BigDecimal remaining=balance.subtract(applied).setScale(2);
                 try(PreparedStatement q=c.prepareStatement("UPDATE folios SET balance=?,status=? WHERE id=?")) {q.setBigDecimal(1,remaining);q.setString(2,remaining.signum()==0?"settled":"open");q.setLong(3,folio);if(q.executeUpdate()!=1)throw new SQLException("Folio disappeared");}
+                FolioDao.confirmPaidBooking(c,locked.bookingId());
                 JsonObject data=new JsonObject();data.addProperty("status",remaining.signum()==0?"SETTLED":"PARTIAL");data.addProperty("folio_id",folio);data.addProperty("balance",remaining);data.addProperty("excess_credit",excess);
                 String response=ApiResponseUtil.successWithData(data);
-                try(PreparedStatement q=c.prepareStatement("INSERT INTO bank_webhook_logs(bank_trans_id,folio_id,amount,signature,status,raw_payload,response_body) VALUES (?,?,?,?,'PROCESSED',?,?)")) {
-                    q.setString(1,payment.bankTransId());q.setLong(2,folio);q.setBigDecimal(3,payment.amount());q.setString(4,payment.signature());q.setString(5,payment.rawPayload());q.setString(6,response);q.executeUpdate();
+                try(PreparedStatement q=c.prepareStatement("INSERT INTO bank_webhook_logs(bank_trans_id,folio_id,amount,signature,status,raw_payload,response_body,business_date) SELECT ?,?,?,?,'PROCESSED',?,?,business_date FROM hotel_business_state WHERE id=1")) {
+                    q.setString(1,payment.bankTransId());q.setLong(2,folio);q.setBigDecimal(3,payment.amount());q.setString(4,payment.signature());q.setString(5,payment.rawPayload());q.setString(6,response);if(q.executeUpdate()!=1)throw new SQLException("Bank business date missing");
                 }
                 delivery(c,payment.bankTransId(),"PROCESSED");c.commit();return response;
             }catch(SQLException | RuntimeException ex){c.rollback();throw ex;}

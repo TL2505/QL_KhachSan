@@ -416,7 +416,7 @@ export async function renderBookings(container, session) {
 
       // 2. Express QR Pass Handler
       tableBody.querySelectorAll('.btn-qr-pass').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const id = btn.getAttribute('data-id');
           const booking = bookings.find(x => String(x.id) === String(id));
           if (!booking) return;
@@ -432,9 +432,14 @@ export async function renderBookings(container, session) {
           if (qrGuest) qrGuest.textContent = session.fullName || session.username || 'Quý Hội Viên';
           if (qrDate) qrDate.textContent = `${booking.checkInDate || 'Hôm nay'} (Check-in: 14:00)`;
 
-          const qrData = encodeURIComponent(`AURELIA-PMS-CHECKIN:${booking.id}:${booking.roomId || 101}:${booking.checkInDate || ''}`);
-          if (qrImg) {
-            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
+          try {
+            const result = await api.get('/checkin-passes?booking_id=' + encodeURIComponent(booking.id));
+            const pass = result?.data || result;
+            if (!pass?.qr_svg) throw new Error('Missing pass');
+            if (qrImg) qrImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(pass.qr_svg);
+          } catch (error) {
+            alert('Không tạo được QR check-in. Vui lòng liên hệ Lễ tân để xác minh đặt phòng.');
+            return;
           }
 
           if (modal) modal.classList.remove('hidden');

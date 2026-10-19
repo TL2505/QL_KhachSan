@@ -12,7 +12,7 @@ public final class PricingAndReportMockStubs {
         String path=e.getRequestURI().getPath();
         if(path.equals("/api/v1/reports/financial/dbr") && e.getRequestMethod().equals("GET")) {
             var zero=new BigDecimal("0.00");var room=new BigDecimal("9000000.00");
-            var d=new DbrSnapshot("2026-10-14",room,new BigDecimal("10206000.00"),30,200,new BigDecimal("15.00"),new BigDecimal("300000.00"),new BigDecimal("45000.00"),Map.of("room_rate",room,"service_charge",new BigDecimal("450000.00"),"vat",new BigDecimal("756000.00")),new BigDecimal("10206000.00"),new BigDecimal("10206000.00"),zero,zero,zero);
+            var d=new DbrSnapshot("2026-10-14",room,new BigDecimal("10206000.00"),30,200,new BigDecimal("15.00"),new BigDecimal("300000.00"),new BigDecimal("45000.00"),Map.of("room_rate",room,"service_charge",new BigDecimal("450000.00"),"vat",new BigDecimal("756000.00")),new BigDecimal("10206000.00"),new BigDecimal("10206000.00"),zero,zero,zero,quanlykhachsan.backend.report.CollectionReconciliation.calculate(zero,zero,zero,zero,0));
             ApiResponseUtil.write(e,200,ApiResponseUtil.successWithData(d));return true;
         }
         if(path.equals("/api/v1/promotions/validate") && e.getRequestMethod().equals("POST")) {

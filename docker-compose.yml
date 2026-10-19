@@ -11,8 +11,8 @@ services:
       MYSQL_USER: ${DB_USER:?Set an approved application database user}
       MYSQL_PASSWORD: ${DB_PASSWORD:?Set an approved application database password}
     volumes:
-      - ./database/hotel.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./database/migrations:/docker-entrypoint-initdb.d/migrations:ro
+      - ./database:/pms-database:ro
+      - ./database/bootstrap/00-init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
       - mariadb_data:/var/lib/mysql
     networks:
       - pms-internal-net
@@ -46,6 +46,8 @@ services:
       DB_USER: ${DB_USER:?Set an approved application database user}
       DB_PASSWORD: ${DB_PASSWORD:?Set an approved application database password}
       JWT_SECRET: ${JWT_SECRET:?Set approved JWT_SECRET configuration}
+      AES_VAULT_KEY: ${AES_VAULT_KEY:?Supply an approved Base64 AES-256 vault key}
+      HMAC_IDENTITY_KEY: ${HMAC_IDENTITY_KEY:?Supply an approved Base64 32-byte identity HMAC key}
       HOTEL_VAT_RATE: ${HOTEL_VAT_RATE:?Set approved HOTEL_VAT_RATE configuration}
       BANK_BIN: ${BANK_BIN:?Set approved BANK_BIN configuration}
       BANK_ACCOUNT_NUMBER: ${BANK_ACCOUNT_NUMBER:?Set approved BANK_ACCOUNT_NUMBER configuration}
@@ -57,6 +59,7 @@ services:
       HOTEL_TAX_CODE: ${HOTEL_TAX_CODE:?Set approved HOTEL_TAX_CODE configuration}
       INVOICE_VERIFICATION_URL: ${INVOICE_VERIFICATION_URL:?Set approved INVOICE_VERIFICATION_URL configuration}
       HOTEL_OTP_MODE: ${HOTEL_OTP_MODE:?Set approved HOTEL_OTP_MODE configuration}
+      AI_GUEST_ENABLED: false
     ports:
       - "8081:8081"
     networks:

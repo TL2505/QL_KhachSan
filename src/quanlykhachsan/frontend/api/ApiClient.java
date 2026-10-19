@@ -19,6 +19,7 @@ public final class ApiClient {
         .connectTimeout(Duration.ofMillis(3000)).build());
     private final URI baseUri;
     private final HttpClient client;
+    private boolean followConfiguration;
 
     public ApiClient(URI baseUri, HttpClient client) {
         this.baseUri = Objects.requireNonNull(baseUri, "baseUri");
@@ -27,6 +28,7 @@ public final class ApiClient {
 
     private ApiClient(String baseUrl, HttpClient client) {
         this(URI.create(baseUrl.endsWith("/") ? baseUrl : baseUrl + "/"), client);
+        followConfiguration = true;
     }
 
     public static ApiClient getInstance() { return INSTANCE; }
@@ -113,7 +115,7 @@ public final class ApiClient {
             @Override protected HttpResponse<String> doInBackground() throws IOException, InterruptedException {
                 try {
                     HttpResponse<String> resp = client.send(request, HttpResponse.BodyHandlers.ofString());
-                    if (!isPublic && (resp.statusCode() == 401 || resp.statusCode() == 403) && token != null) {
+                    if (!isPublic && (resp.statusCode() == 401) && token != null) {
                         SessionManagerUtil.setAccessToken(null);
                         SessionManagerUtil.ensureAccessToken();
                         String refreshed = SessionManagerUtil.getAccessToken();
@@ -202,7 +204,7 @@ public final class ApiClient {
         builder.method(method, body);
         try {
             HttpResponse<String> resp = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            if (!isPublic && (resp.statusCode() == 401 || resp.statusCode() == 403) && token != null) {
+            if (!isPublic && (resp.statusCode() == 401) && token != null) {
                 SessionManagerUtil.setAccessToken(null);
                 SessionManagerUtil.ensureAccessToken();
                 String refreshed = SessionManagerUtil.getAccessToken();
@@ -259,7 +261,7 @@ public final class ApiClient {
             return URI.create(path);
         }
         String relative = path.startsWith("/") ? path.substring(1) : path;
-        String configuredBase = ApiConfig.getBaseUrl();
+        String configuredBase = followConfiguration ? ApiConfig.getBaseUrl() : baseUri.toString();
         if (configuredBase == null || configuredBase.isBlank()) {
             configuredBase = ServerConfig.getBaseUrl() + "/api/v1";
         }

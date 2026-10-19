@@ -73,7 +73,6 @@ const state = {
     totalAmount: 0,
     bookingId: null,
     bookingReference: null,
-    isSimulated: false,
     guest: {
       fullName: '',
       phone: '',
@@ -396,11 +395,11 @@ async function loadRooms(filterParams = {}) {
       : null;
     filterAndRenderRooms();
   } catch (err) {
-    state.rooms = err.statusCode ? [] : LUXURY_ROOMS_CATALOG.map(room => ({ ...room, isDemoCatalog: true }));
+    state.rooms = [];
     state.roomsAreLive = false;
     state.roomsSearchedFor = null;
     if (err.statusCode) showToast(`Không thể tải danh sách phòng (HTTP ${err.statusCode}). Vui lòng thử lại.`, 'error', 7000);
-    else showToast('Không thể kết nối máy chủ. Đang hiển thị danh mục Luxury mẫu; đặt phòng sẽ chạy ở chế độ demo.', 'warning', 7000);
+    else showToast('Không thể xác minh giá và tình trạng phòng từ máy chủ. Vui lòng thử lại hoặc liên hệ Lễ tân.', 'error', 7000);
     filterAndRenderRooms();
   }
   if (filterParams.checkIn && filterParams.checkOut) {
@@ -725,7 +724,8 @@ export async function openBookingModal(roomId = null) {
     targetRoom = state.rooms[0];
   }
   if (!targetRoom) {
-    targetRoom = LUXURY_ROOMS_CATALOG[0];
+    showToast('Chưa xác minh được phòng từ máy chủ. Vui lòng tải lại danh sách phòng.', 'error', 6000);
+    return;
   }
 
   state.booking.room = targetRoom;
@@ -819,9 +819,7 @@ function calculateBookingPricing() {
   const b = state.booking;
   if (!b.room) return;
 
-  if (b.room.isDemoCatalog) {
-    showToast('Giá và tình trạng phòng đang dùng dữ liệu mẫu; sẽ không tạo đặt phòng thật.', 'warning', 5000);
-  }
+  if (!state.roomsAreLive) { showToast('Vui lòng tải lại tình trạng phòng từ máy chủ.', 'error', 5000); return; }
 
   const checkIn = parseLocalDate(state.search.checkIn);
   const checkOut = parseLocalDate(state.search.checkOut);
@@ -1135,7 +1133,9 @@ function renderBookingModalContent() {
         if (textSpan) textSpan.innerHTML = 'Đang xử lý đặt phòng...';
 
         try {
+          b.requestKey ||= crypto.randomUUID();
           const res = await submitBooking({
+            idempotencyKey: b.requestKey,
             roomId: b.room.id,
             roomVersion: b.room.version ?? 0,
             checkInDate: state.search.checkIn,
@@ -1148,13 +1148,11 @@ function renderBookingModalContent() {
           });
 
           b.bookingId = res.bookingId;
-          b.isSimulated = Boolean(res.isSimulated);
-          b.bookingReference = res.bookingReference || `${b.isSimulated ? 'DEMO-' : 'BKG-'}${res.bookingId}`;
-          if (!b.isSimulated && res.totalAmount > 0) b.totalAmount = Math.round(res.totalAmount);
+          b.payment = res.payment;
+          b.bookingReference = res.bookingReference;
+          if (res.totalAmount >= 0) b.totalAmount = Math.round(res.totalAmount);
           b.step = 3;
-          showToast(b.isSimulated
-            ? 'Chế độ demo ngoại tuyến: đặt phòng mô phỏng, chưa được gửi đến khách sạn.'
-            : `Đã tạo mã đặt phòng #${b.bookingId} thành công!`, b.isSimulated ? 'warning' : 'success', 7000);
+          showToast('Đã ghi nhận yêu cầu đặt phòng. Chờ xác nhận thanh toán.', 'success', 7000);
           startBookingCountdown();
           renderBookingModalContent();
 
@@ -1170,26 +1168,25 @@ function renderBookingModalContent() {
   // Step 3: Success & Dynamic VietQR Generation
   else if (currentStep === 3) {
     const formattedTotal = formatCurrency(b.totalAmount, state.currency);
-    const qrUrl = generateVietQRUrl(b.totalAmount, b.bookingId);
-    const bankAccount = "0987654321";
-    const bankName = "MB Bank (Ngân hàng Quân Đội)";
-    const accountName = "AURELIA GRAND LUXURY HOTEL";
-    const transferContent = `BOOKING_${b.bookingId}`;
+    const qrUrl = generateVietQRUrl(b.payment);
+    const bankAccount = b.payment?.account_number || 'Liên hệ Lễ tân';
+    const bankName = b.payment?.beneficiary_bank || 'Chưa có thông tin ngân hàng';
+    const accountName = b.payment?.account_holder || 'Liên hệ Lễ tân';
+    const transferContent = b.payment?.reference_code || 'Liên hệ Lễ tân';
 
     body.innerHTML = `
       ${stepHeader}
 
-      ${b.isSimulated ? `<div role="status" class="rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 mb-5 text-sm text-amber-100"><strong>DEMO NGOẠI TUYẾN</strong><br>Đây là mã đặt phòng mô phỏng để xem giao diện. Khách sạn chưa nhận được đặt phòng và không cần chuyển khoản theo mã VietQR này.</div>` : ''}
 
       <!-- Success Congratulatory Banner -->
       <div class="text-center mb-6">
         <div class="w-14 h-14 rounded-full bg-emerald-500/20 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-400 mx-auto mb-3 shadow-lg">
           <i data-lucide="check-check" class="w-7 h-7"></i>
         </div>
-        <span class="text-xs font-semibold uppercase tracking-widest text-amber-400">${b.isSimulated ? 'Mô phỏng ngoại tuyến' : 'Xác nhận giữ chỗ thành công'}</span>
+        <span class="text-xs font-semibold uppercase tracking-widest text-amber-400">Yêu cầu đặt phòng đã được ghi nhận</span>
         <h3 class="font-serif text-2xl text-white font-medium mt-1">Đơn Đặt Phòng ${b.bookingReference || `#${b.bookingId}`}</h3>
         <p class="text-xs text-slate-300 mt-1">
-          ${b.isSimulated ? 'Đây chỉ là bản xem trước ngoại tuyến, khách sạn chưa nhận được yêu cầu.' : `Kính chào Quý khách <strong class="text-amber-200">${b.guest.fullName}</strong>, vé phòng đã được giữ tạm thời.`}
+          Đặt phòng đang chờ xác nhận thanh toán từ khách sạn.
         </p>
       </div>
 

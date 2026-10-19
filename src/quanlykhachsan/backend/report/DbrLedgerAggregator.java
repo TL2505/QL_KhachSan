@@ -15,6 +15,8 @@ public final class DbrLedgerAggregator {
         try(Statement q=c.createStatement();ResultSet r=q.executeQuery("SELECT COALESCE(SUM(balance),0) FROM folios")){r.next();receivables=r.getBigDecimal(1);}
         BigDecimal variance=debits.subtract(credits).subtract(receivables).setScale(2,RoundingMode.HALF_UP);
         if(variance.signum()!=0)throw new SQLException("Ledger snapshot does not reconcile");
+        var collections=new CollectionReconciliation().read(c,date);
+        if(!collections.reconciled())throw new SQLException("Collection evidence mismatch: "+JsonUtil.getGson().toJson(collections));
         Map<String,BigDecimal> departments=new LinkedHashMap<>();
         try(PreparedStatement q=c.prepareStatement("SELECT charge_type,SUM(CASE WHEN transaction_type='debit' THEN amount ELSE -amount END) FROM folio_transactions WHERE business_date=? AND charge_type NOT IN ('payment','credit_adjustment') GROUP BY charge_type ORDER BY charge_type")) {
             q.setDate(1,java.sql.Date.valueOf(date));try(ResultSet r=q.executeQuery()){while(r.next())departments.put(r.getString(1),r.getBigDecimal(2).setScale(2));}
@@ -26,7 +28,7 @@ public final class DbrLedgerAggregator {
         }
         BigDecimal room=departments.getOrDefault("room_rate",new BigDecimal("0.00"));
         BigDecimal total=departments.values().stream().reduce(new BigDecimal("0.00"),BigDecimal::add);
-        return new DbrSnapshot(date.toString(),room,total,occupied,operational,ratio(BigDecimal.valueOf(occupied).multiply(BigDecimal.valueOf(100)),operational),ratio(room,occupied),ratio(room,operational),Map.copyOf(departments),debits,credits,receivables,excess,variance);
+        return new DbrSnapshot(date.toString(),room,total,occupied,operational,ratio(BigDecimal.valueOf(occupied).multiply(BigDecimal.valueOf(100)),operational),ratio(room,occupied),ratio(room,operational),Map.copyOf(departments),debits,credits,receivables,excess,variance,collections);
     }
     public DbrSnapshot generate(LocalDate date)throws SQLException {
         try(Connection c=DatabaseConnection.getConnection()) {

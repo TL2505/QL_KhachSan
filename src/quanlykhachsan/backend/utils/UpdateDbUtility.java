@@ -163,10 +163,11 @@ public class UpdateDbUtility {
             ensureColumn(conn,"daily_business_reports","snapshot_json","LONGTEXT NULL");
             migratePhase3(conn);
             migratePhase2_1(conn);
+            runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_0_phase4_integrity.sql"));
             System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.");
     }
 
-    public static void migratePhase2_1(Connection conn) {
+    public static void migratePhase2_1(Connection conn) throws SQLException {
         try {
             ensureTable(conn, "customer_notifications",
                     "CREATE TABLE IF NOT EXISTS customer_notifications (\n"
@@ -244,18 +245,10 @@ public class UpdateDbUtility {
             ensureColumn(conn, "reviews", "reward_granted", "BOOLEAN NOT NULL DEFAULT FALSE");
             ensureColumn(conn, "reviews", "reward_points", "INT NOT NULL DEFAULT 200");
 
-            // Deduplicate any legacy reviews for the same booking before creating UNIQUE INDEX
-            try (Statement dedupeStmt = conn.createStatement()) {
-                dedupeStmt.executeUpdate("DELETE r1 FROM reviews r1 " +
-                                         "INNER JOIN reviews r2 " +
-                                         "WHERE r1.id < r2.id AND r1.booking_id = r2.booking_id AND r1.booking_id IS NOT NULL");
-            } catch (SQLException ex) {
-                System.out.println("[UpdateDbUtility] Review deduplication note: " + ex.getMessage());
-            }
-
+            // Duplicate legacy reviews require operator review; never delete user data here.
             ensureIndex(conn, "reviews", "uq_booking_review", "UNIQUE INDEX uq_booking_review (booking_id)");
-        } catch (Throwable t) {
-            System.err.println("[UpdateDbUtility] Phase 2.1 non-blocking migration warning: " + t.getMessage());
+        } catch (SQLException ex) {
+            throw new SQLException("Phase 2.1 migration failed", ex);
         }
     }
 

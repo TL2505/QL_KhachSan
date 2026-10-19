@@ -64,89 +64,16 @@ public class BookingService {
         return null;
     }
 
-    public boolean updateBookingStatus(int bookingId, String status) {
-        Booking b = getBookingById(bookingId);
-        if (b != null) {
-            b.setStatus(status);
-            bookingDAO.updateBooking(b);
-            return true;
-        }
-        return false;
+    public boolean updateBookingStatus(int bookingId,String status){
+        try{return new AdminBookingStatusService().decide(bookingId,status).httpStatus()==200;}
+        catch(java.sql.SQLException ex){throw new IllegalStateException("Booking state change was not confirmed",ex);}
     }
+    public boolean cancelBooking(int bookingId){return updateBookingStatus(bookingId,"cancelled");}
 
-    public boolean cancelBooking(int bookingId) {
-        Booking b = getBookingById(bookingId);
-        if (b != null) {
-            b.setStatus("cancelled");
-            bookingDAO.updateBooking(b);
-            return true;
-        }
-        return false;
-    }
-
+    /** All payments must use the transactional folio ledger. */
     public boolean processPayment(int bookingId, double amount, String method) {
-        Booking b = getBookingById(bookingId);
-        if (b != null) {
-            // 1. Fetch info for promotion calculation
-            Customer customer = customerDAO.findById(b.getCustomerId());
-            Room room = roomDAO.findById(b.getRoomId());
-            
-            // 2. Calculate promotion
-            Promotion bestPromo = promotionService.calculateBestDiscount(b, customer, room);
-            double discount = 0;
-            if (bestPromo != null) {
-                long diff = b.getCheckOutDate().getTime() - b.getCheckInDate().getTime();
-                long nights = Math.max(1, diff / (1000 * 60 * 60 * 24));
-                if ("percentage".equals(bestPromo.getDiscountType())) {
-                    discount = (room.getPrice() * nights) * (bestPromo.getDiscountValue() / 100.0);
-                } else {
-                    discount = bestPromo.getDiscountValue();
-                }
-            }
-
-            // 3. Update Booking status to "checked_out" (MySQL ENUM requires 'checked_out', not 'paid')
-            b.setStatus("checked_out");
-            bookingDAO.updateBooking(b);
-            
-            // 4. Create Payment record
-            quanlykhachsan.backend.booking.Payment p = new quanlykhachsan.backend.booking.Payment();
-            p.setInvoiceId(bookingId); 
-            p.setAmount(amount); // This 'amount' from UI is expected to be final price
-            
-            String dbMethod = method;
-            if (method.contains("Cash")) dbMethod = "cash";
-            else if (method.contains("Credit Card")) dbMethod = "credit_card";
-            else if (method.contains("Chuyển khoản")) dbMethod = "bank_transfer";
-            
-            p.setPaymentMethod(dbMethod);
-            p.setPaymentDate(new java.util.Date());
-            new PaymentDAOImpl().addPayment(p);
-            
-            // 5. Create Invoice record
-            Invoice inv = new Invoice();
-            inv.setBookingId(bookingId);
-            
-            long diff = b.getCheckOutDate().getTime() - b.getCheckInDate().getTime();
-            long nights = Math.max(1, diff / (1000 * 60 * 60 * 24));
-            double subtotal = room.getPrice() * nights;
-            
-            inv.setTotalRoomFee(subtotal);
-            inv.setDiscount(discount);
-            double taxableAmount = subtotal - discount;
-            double tax = 0.0;
-            inv.setTaxAmount(tax);
-            inv.setFinalTotal(taxableAmount + tax);
-            inv.setStatus("paid");
-            new InvoiceDAOImpl().addInvoice(inv);
-            
-            // 6. Update Room status to "cleaning"
-            roomDAO.updateStatus(b.getRoomId(), "cleaning");
-            
-            return true;
-        }
-        return false;
+        throw new IllegalStateException("Use FolioService with an authorized collection and Idempotency-Key");
     }
-
     public com.google.gson.JsonObject getBookingFolioDetails(Booking booking) throws java.sql.SQLException {
         com.google.gson.JsonObject result = quanlykhachsan.backend.utils.JsonUtil.getGson()
             .toJsonTree(booking).getAsJsonObject();

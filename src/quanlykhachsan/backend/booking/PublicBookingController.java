@@ -25,7 +25,7 @@ public final class PublicBookingController implements HttpHandler {
             var b=PortalValidation.body(e);String name=PortalValidation.text(b,"customer_name",100,true);
             String phone=PortalValidation.phone(PortalValidation.text(b,"phone",20,true));String email=PortalValidation.email(PortalValidation.text(b,"email",100,false));
             String identity=PortalValidation.text(b,"identity_card",20,walkIn);
-            if(e.getAttribute("role")!=null && role.equals("guest") && !phone.equals(e.getAttribute("phone")))throw new SecurityException();
+            if(e.getAttribute("role")!=null && role.equals("guest") && e.getAttribute("userId")!=null && !phone.equals(e.getAttribute("phone")))throw new SecurityException();
             String voucher=PortalValidation.text(b,"voucher_code",50,false);
             var format=DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT);
             LocalDateTime in=LocalDateTime.parse(PortalValidation.text(b,"check_in_date",19,true),format),out=LocalDateTime.parse(PortalValidation.text(b,"check_out_date",19,true),format);
@@ -35,7 +35,7 @@ public final class PublicBookingController implements HttpHandler {
             int roomId=PortalValidation.integer(b,"room_id",1),roomVersion=PortalValidation.integer(b,"room_version",0);
             int guestCount=b.has("guest_count")?PortalValidation.integer(b,"guest_count",1):1;
             int customer=new GuestIngestionService().ingest(name,phone,email,identity);
-            if(role.equals("guest") && (!(e.getAttribute("customer_id") instanceof Number) || ((Number)e.getAttribute("customer_id")).intValue()!=customer))throw new SecurityException();
+            if(role.equals("guest") && e.getAttribute("userId")!=null && (!(e.getAttribute("customer_id") instanceof Number) || ((Number)e.getAttribute("customer_id")).intValue()!=customer))throw new SecurityException();
             var result=new PublicBookingService().reserve(key.toLowerCase(java.util.Locale.ROOT),new PublicBookingService.Request(name,phone,email,roomId,roomVersion,range.checkIn(),range.checkOut(),voucher,guestCount),customer,walkIn?"Walk-in":"Web");
             ApiResponseUtil.write(e,result.status(),result.body());
         }catch(SecurityException ex){ApiResponseUtil.write(e,403,ApiResponseUtil.error("Role or guest identity is not authorized"));}

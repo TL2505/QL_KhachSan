@@ -1,4 +1,5 @@
 package quanlykhachsan.backend.utils;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -91,7 +92,7 @@ class JwtFilterTest {
     }
 
     @Test
-    void guestXUserRoleHeaderBypassesAuthentication() throws Exception {
+    void guestXUserRoleHeaderCannotBypassProtectedAuthentication() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/v1/bookings"))
@@ -101,8 +102,8 @@ class JwtFilterTest {
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode());
-        assertTrue(handlerInvoked.get(), "Requests with X-User-Role should bypass authentication");
+        assertEquals(401, response.statusCode());
+        assertFalse(handlerInvoked.get(), "Untrusted role headers must not authenticate protected requests");
     }
 
     @Test

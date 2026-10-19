@@ -12,7 +12,7 @@ public class WebSocketService {
     
     public static void connect() {
         String base = quanlykhachsan.frontend.api.ApiConfig.getBaseUrl();
-        String host = quanlykhachsan.frontend.api.ApiConfig.DEFAULT_VM_IP;
+        String host = "localhost";
         int port = quanlykhachsan.frontend.api.ApiConfig.DEFAULT_BACKEND_PORT;
         try {
             URI uri = URI.create(base);

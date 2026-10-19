@@ -56,8 +56,8 @@ public final class VatInvoicePdfGenerator {
             com.itextpdf.text.pdf.BarcodeQRCode qr=new com.itextpdf.text.pdf.BarcodeQRCode(link,180,180,null);
             java.awt.Image awt=qr.createAwtImage(java.awt.Color.BLACK,java.awt.Color.WHITE);BufferedImage png=new BufferedImage(180,180,BufferedImage.TYPE_INT_RGB);var graphics=png.createGraphics();graphics.drawImage(awt,0,0,null);graphics.dispose();ByteArrayOutputStream image=new ByteArrayOutputStream();ImageIO.write(png,"PNG",image);
             doc.add(new Image(ImageDataFactory.create(image.toByteArray())).setWidth(90).setHeight(90).setMarginTop(12));
-            doc.add(new Paragraph("Tra cứu / xác minh hóa đơn: "+link).setFontSize(8));
-            doc.add(new Paragraph("Bản thể hiện dữ liệu hóa đơn. Trạng thái phát hành và chữ ký số được xác minh tại đường dẫn tra cứu.").setFontSize(8).setFontColor(ColorConstants.GRAY));
+            doc.add(new Paragraph("Đường dẫn tham chiếu do khách sạn cấu hình: "+link).setFontSize(8));
+            doc.add(new Paragraph("Bản ghi thu tiền nội bộ, chưa ký số. Không thay thế hóa đơn điện tử đã được nhà cung cấp phát hành.").setFontSize(8).setFontColor(ColorConstants.GRAY));
         }
         return out.toByteArray();
     }

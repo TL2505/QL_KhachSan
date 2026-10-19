@@ -19,6 +19,8 @@ public final class FolioService {
 
     /** Test seam runs after ledger insertion and before balance mutation. */
     public PaymentResult pay(Connection c, FolioDao.PaymentRequest request, FailureInjector injector) throws SQLException {
+        collectionMethod(request.paymentMethod());
+        if(request.amount()==null||request.amount().signum()<0||request.amount().scale()>2||request.amount().compareTo(new BigDecimal("9999999999.99"))>0)throw new IllegalArgumentException("Invalid collection amount");
         dao.acquireLock(c, request.idempotencyKey());
         try {
             c.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
@@ -40,9 +42,13 @@ public final class FolioService {
                     injector.afterLedgerInsert();
                 }
                 dao.updateBalance(c, request.folioId(), balance);
+                FolioDao.confirmPaidBooking(c,folio.bookingId());
                 boolean checkedOut = false;
-                if (request.checkout() && new FolioRoutingEngine().canCloseBooking(c, folio.bookingId()))
-                    checkedOut = dao.checkout(c, folio.bookingId(), folio.roomId());
+                if(request.checkout()){
+                    if(!new FolioRoutingEngine().canCloseBooking(c,folio.bookingId())){c.rollback();return PaymentResult.error(409,"ERR_409_UNPAID_FOLIOS","Unpaid folio balances prevent checkout; payment was not recorded");}
+                    checkedOut=dao.checkout(c,folio.bookingId(),folio.roomId());
+                    if(!checkedOut){c.rollback();return PaymentResult.error(409,"ERR_409_INVALID_STATE","Only checked-in bookings may check out");}
+                }
                 JsonObject data = new JsonObject();
                 data.addProperty("folio_id", request.folioId()); data.addProperty("booking_id", folio.bookingId());
                 data.addProperty("balance", balance); data.addProperty("checked_out", checkedOut);
@@ -59,6 +65,12 @@ public final class FolioService {
     }
 
     @FunctionalInterface public interface FailureInjector { void afterLedgerInsert() throws SQLException; }
+    public static String collectionMethod(String value){
+        String normalized=value==null?"":value.trim().toLowerCase(java.util.Locale.ROOT);
+        if(java.util.Set.of("cash","tiền mặt (cash)").contains(normalized))return "cash";
+        if(java.util.Set.of("pos","credit_card","visa","mastercard","credit card","thẻ tín dụng (credit card)").contains(normalized))return "POS";
+        throw new IllegalArgumentException("Use an authorized cash/POS collection; bank transfers require a verified webhook");
+    }
     public record PaymentResult(int statusCode, String body) {
         static PaymentResult error(int status, String code, String message) {
             JsonObject error = new JsonObject(); error.addProperty("error_code", code);

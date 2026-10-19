@@ -46,7 +46,7 @@ public final class PublicBookingService {
                 if(quote.total_amount().compareTo(new BigDecimal("99999999.99"))>0)throw new IllegalArgumentException("Stay exceeds booking amount limit");
                 int bookingId;
                 try(PreparedStatement q=c.prepareStatement("INSERT INTO bookings(customer_id,room_id,check_in_date,check_out_date,total_price,status,customer_type) VALUES (?,?,?,?,?,?,?)",Statement.RETURN_GENERATED_KEYS)) {
-                    q.setInt(1,customerId);q.setInt(2,request.roomId());q.setTimestamp(3,Timestamp.valueOf(request.checkIn().atTime(14,0)));q.setTimestamp(4,Timestamp.valueOf(request.checkOut().atTime(12,0)));q.setBigDecimal(5,quote.total_amount());q.setString(6,channel.equals("Web")?"confirmed":"checked_in");q.setString(7,channel);q.executeUpdate();
+                    q.setInt(1,customerId);q.setInt(2,request.roomId());q.setTimestamp(3,Timestamp.valueOf(request.checkIn().atTime(14,0)));q.setTimestamp(4,Timestamp.valueOf(request.checkOut().atTime(12,0)));q.setBigDecimal(5,quote.total_amount());q.setString(6,"pending");q.setString(7,channel);q.executeUpdate();
                     try(ResultSet r=q.getGeneratedKeys()){if(!r.next())throw new SQLException("Booking ID missing");bookingId=r.getInt(1);}
                 }
                 long folioId;
@@ -57,9 +57,13 @@ public final class PublicBookingService {
                 post(c,folioId,bookingId,"room_rate",quote.room_subtotal(),"BOOKING-ROOM-"+bookingId);
                 post(c,folioId,bookingId,"service_charge",quote.service_charge(),"BOOKING-SERVICE-"+bookingId);
                 post(c,folioId,bookingId,"vat",quote.vat(),"BOOKING-VAT-"+bookingId);
-                if(channel.equals("Walk-in"))try(PreparedStatement q=c.prepareStatement("UPDATE rooms SET status='occupied_clean' WHERE id=? AND status='reserved'")){q.setInt(1,request.roomId());if(q.executeUpdate()!=1)throw new RoomUnavailableException();}
-                JsonObject data=new JsonObject();data.addProperty("booking_id",bookingId);data.addProperty("booking_code","BKG-"+(channel.equals("Web")?"WEB":"WALKIN")+"-"+request.checkIn().getYear()+"-"+bookingId);data.addProperty("room_number",roomNumber);data.addProperty("room_version",request.version()+1);data.addProperty("status",channel.equals("Web")?"confirmed":"checked_in");
+                JsonObject data=new JsonObject();data.addProperty("booking_id",bookingId);data.addProperty("bookingId",bookingId);data.addProperty("booking_code","BKG-"+(channel.equals("Web")?"WEB":"WALKIN")+"-"+request.checkIn().getYear()+"-"+bookingId);data.addProperty("room_number",roomNumber);data.addProperty("room_version",request.version()+1);data.addProperty("status","pending");
                 JsonObject folio=new JsonObject();folio.addProperty("id",folioId);folio.addProperty("code","FOLIO-MASTER-B"+bookingId);folio.addProperty("balance",quote.total_amount());folio.addProperty("status","open");data.add("folio",folio);
+                String bin=System.getenv("BANK_BIN"),account=System.getenv("BANK_ACCOUNT_NUMBER"),holder=System.getenv("BANK_ACCOUNT_HOLDER");
+                if(bin!=null&&account!=null&&holder!=null){
+                    var qr=new VietQrGenerator().generate(bin,account,quote.total_amount(),"FOLIO-MASTER-B"+bookingId);
+                    JsonObject payment=new JsonObject();payment.addProperty("qr_image_base64",qr.qr_image_base64());payment.addProperty("beneficiary_bank",bin);payment.addProperty("account_number",account);payment.addProperty("account_holder",holder);payment.addProperty("reference_code","FOLIO-MASTER-B"+bookingId);data.add("payment",payment);
+                }
                 String body=ApiResponseUtil.successWithData(data);
                 try(PreparedStatement q=c.prepareStatement("INSERT INTO idempotency_keys(id,request_hash,response_body,status_code) VALUES (?,?,?,201)")){q.setString(1,key);q.setString(2,hash);q.setString(3,body);q.executeUpdate();}
                 c.commit();PricingQuoteCache.invalidate();return new Result(201,body);

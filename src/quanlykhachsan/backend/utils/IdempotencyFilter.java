@@ -31,7 +31,7 @@ public final class IdempotencyFilter extends Filter {
             }
             // FolioController owns the same transaction that updates balances and already persists
             // replay data. The booking route uses this response-capturing service.
-            if (path.matches("/api/v1/folios/[0-9]+/pay")) {
+            if (isProtectedPath(path)) {
                 chain.doFilter(exchange);
             } else {
                 IdempotencyService.execute(exchange, chain, key);

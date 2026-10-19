@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS service_orders (
     special_instructions TEXT NULL,
     scheduled_time DATETIME NULL, -- Dành riêng cho Spa hoặc giờ hẹn ăn sáng
     order_status ENUM('PENDING', 'ACCEPTED', 'DELIVERED', 'COMPLETED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
-    folio_transaction_id INT NULL, -- Liên kết giao dịch nợ trên Folio phòng
+    folio_transaction_id BIGINT NULL, -- Liên kết giao dịch nợ trên Folio phòng
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_sorder_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE ON UPDATE CASCADE,

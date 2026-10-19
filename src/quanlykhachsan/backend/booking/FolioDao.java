@@ -26,6 +26,15 @@ public final class FolioDao {
     }
 
     public FolioState lockFolio(Connection c, long folioId) throws SQLException {
+        // All order/payment writers acquire the booking before its folios.
+        int booking;
+        try(var q=c.prepareStatement("SELECT booking_id FROM folios WHERE id=?")){
+            q.setLong(1,folioId);try(var r=q.executeQuery()){if(!r.next())return null;booking=r.getInt(1);}
+        }
+        try(var q=c.prepareStatement("SELECT status FROM bookings WHERE id=? FOR UPDATE")){
+            q.setInt(1,booking);try(var r=q.executeQuery()){if(!r.next())return null;
+                if(java.util.Set.of("cancelled","no_show","checked_out").contains(r.getString(1)))throw new IllegalStateException("Booking cannot receive payment");}
+        }
         try (PreparedStatement q = c.prepareStatement("SELECT f.booking_id,f.balance,b.room_id FROM folios f JOIN bookings b ON b.id=f.booking_id WHERE f.id=? FOR UPDATE")) {
             q.setLong(1, folioId);
             try (ResultSet r = q.executeQuery()) { return r.next() ? new FolioState(r.getInt(1), r.getInt(3), r.getBigDecimal(2)) : null; }
@@ -36,6 +45,18 @@ public final class FolioDao {
         try (PreparedStatement q = c.prepareStatement("INSERT INTO folio_transactions (folio_id,transaction_type,charge_type,description,amount,business_date,reference_id) SELECT ?,'credit','payment',?,?,business_date,? FROM hotel_business_state WHERE id=1")) {
             q.setLong(1, p.folioId()); q.setString(2, "Checkout payment (" + p.paymentMethod() + ")");
             q.setBigDecimal(3, p.amount());q.setString(4, p.idempotencyKey());if(q.executeUpdate()!=1)throw new SQLException("Hotel business date missing");
+        }
+        try(var q=c.prepareStatement("INSERT INTO staff_collections(folio_id,reference_id,amount,payment_method,collected_by,business_date) SELECT ?,?,?,?,?,business_date FROM hotel_business_state WHERE id=1")){
+            q.setLong(1,p.folioId());q.setString(2,p.idempotencyKey());q.setBigDecimal(3,p.amount());
+            q.setString(4,FolioService.collectionMethod(p.paymentMethod()));
+            if(p.actorId()>0)q.setInt(5,p.actorId());else q.setNull(5,java.sql.Types.INTEGER);
+            if(q.executeUpdate()!=1)throw new SQLException("Collection could not be recorded");
+        }
+    }
+
+    public static void confirmPaidBooking(Connection c,int booking)throws SQLException {
+        try(var q=c.prepareStatement("UPDATE bookings b SET status='confirmed' WHERE b.id=? AND b.status='pending' AND EXISTS(SELECT 1 FROM folios f WHERE f.booking_id=b.id) AND NOT EXISTS(SELECT 1 FROM folios f WHERE f.booking_id=b.id AND f.balance<>0) AND EXISTS(SELECT 1 FROM folio_transactions t JOIN folios f ON f.id=t.folio_id WHERE f.booking_id=b.id AND t.transaction_type='credit' AND t.charge_type='payment')")){
+            q.setInt(1,booking);q.executeUpdate();
         }
     }
 
@@ -82,7 +103,8 @@ public final class FolioDao {
     public record PaymentReplay(String requestHash, String responseBody, int statusCode) { }
     public record FolioState(int bookingId, int roomId, BigDecimal balance) { }
     public record PaymentRequest(long folioId, String idempotencyKey, String requestHash, BigDecimal amount,
-            String paymentMethod, boolean checkout, java.time.ZoneId businessZone) {
+            String paymentMethod, boolean checkout, java.time.ZoneId businessZone, int actorId) {
+        public PaymentRequest(long folioId,String key,String hash,BigDecimal amount,String method,boolean checkout,java.time.ZoneId zone){this(folioId,key,hash,amount,method,checkout,zone,0);}
         public PaymentRequest { UUID.fromString(idempotencyKey); }
     }
 }

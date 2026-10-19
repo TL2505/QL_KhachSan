@@ -672,7 +672,7 @@ public class PaymentForm extends JPanel {
 
     private void settleCashFolios(java.util.List<com.google.gson.JsonObject> folios,int index) {
         if(index>=folios.size()){btnPay.setEnabled(true);loadInitialData();resetInvoice();JOptionPane.showMessageDialog(this,"Đã ghi nhận thanh toán theo folio.");return;}
-        var folio=folios.get(index);com.google.gson.JsonObject body=new com.google.gson.JsonObject();body.add("amount",folio.get("balance"));body.addProperty("payment_method","cash");body.addProperty("checkout",true);
+        var folio=folios.get(index);com.google.gson.JsonObject body=new com.google.gson.JsonObject();body.add("amount",folio.get("balance"));body.addProperty("payment_method",cbMethod.getSelectedIndex()==2?"POS":"cash");body.addProperty("checkout",index==folios.size()-1);
         quanlykhachsan.frontend.api.Phase2UiApi.request("POST","/v1/folios/"+folio.get("id").getAsLong()+"/pay",body.toString(),java.util.UUID.randomUUID().toString(),data->settleCashFolios(folios,index+1),error->{btnPay.setEnabled(true);JOptionPane.showMessageDialog(this,"Thanh toán chưa hoàn tất. Kiểm tra lại số dư trước khi thử tiếp.");});
     }
 

@@ -1,81 +1,35 @@
 package quanlykhachsan.backend.booking;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.*;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import quanlykhachsan.backend.utils.ApiResponseUtil;
-import quanlykhachsan.backend.utils.JsonUtil;
-import quanlykhachsan.backend.booking.dto.PaymentCreateRequest;
-import quanlykhachsan.backend.customer.LoyaltyService;
-import quanlykhachsan.backend.utils.SecurityUtil;
+import java.math.BigDecimal;
+import java.sql.*;
+import java.time.ZoneId;
+import quanlykhachsan.backend.utils.*;
 
-public class PaymentController implements HttpHandler {
-
-    private BookingService bookingService = new BookingService();
-    private LoyaltyService loyaltyService = new LoyaltyService();
-
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath();
-
-        // Check if user is logged in (Role 1, 2, or 3)
-        if (!SecurityUtil.hasPermission(exchange, 1, 2, 3)) return;
-
+/** Compatibility route; the folio service owns all accounting and replay protection. */
+public final class PaymentController implements HttpHandler {
+    public void handle(HttpExchange e)throws IOException {
+        if(!SecurityUtil.hasPermission(e,1,2))return;
+        if(!e.getRequestMethod().equals("POST")){ApiResponseUtil.sendError(e,405,"ERR_405_METHOD_NOT_ALLOWED","Method not allowed");return;}
         try {
-            // POST /api/payments
-            if ("POST".equalsIgnoreCase(method) && "/api/payments".equals(path)) {
-                InputStream is = exchange.getRequestBody();
-                String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-
-                Gson gson = JsonUtil.getGson();
-                PaymentCreateRequest req = gson.fromJson(requestBody, PaymentCreateRequest.class);
-
-                if (req.getBookingId() == null || req.getAmount() == null || req.getPaymentMethod() == null) {
-                    ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu thông tin thanh toán!"));
-                    return;
+            var body=PortalValidation.body(e);
+            int booking=body.get("bookingId").getAsInt();
+            BigDecimal amount=body.get("amount").getAsBigDecimal();
+            String method=body.get("paymentMethod").getAsString();
+            String key=e.getRequestHeaders().getFirst("Idempotency-Key");
+            if(key==null&&body.has("idempotencyKey"))key=body.get("idempotencyKey").getAsString();
+            if(key==null||!key.matches("(?i)[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"))throw new IllegalArgumentException();
+            try(var c=DatabaseConnection.getConnection();var q=c.prepareStatement("SELECT id FROM folios WHERE booking_id=? ORDER BY (folio_type='master') DESC,id LIMIT 1")){
+                q.setInt(1,booking);try(var r=q.executeQuery()){
+                    if(!r.next()){ApiResponseUtil.sendError(e,404,"ERR_404_NOT_FOUND","Folio not found");return;}
+                    String hash=quanlykhachsan.backend.ai.AiInteractionDao.hash("legacy-payment|"+booking+"|"+amount+"|"+method);
+                    var result=new FolioService().pay(c,new FolioDao.PaymentRequest(r.getLong(1),key,hash,amount,method,false,ZoneId.of("Asia/Ho_Chi_Minh"),Integer.parseInt(String.valueOf(e.getAttribute("userId")))));
+                    ApiResponseUtil.write(e,result.statusCode(),result.body());
                 }
-
-                int bookingId = req.getBookingId();
-                double amount = req.getAmount();
-                boolean success = bookingService.processPayment(bookingId, amount, req.getPaymentMethod());
-
-                if (success) {
-                    // Award loyalty points
-                    int earnedPoints = 0;
-                    if (req.getCustomerId() != null) {
-                        int customerId = req.getCustomerId();
-                        loyaltyService.addPoints(customerId, amount, "Thanh toán đơn đặt phòng #" + bookingId);
-                        earnedPoints = (int) (amount / 1000);
-                    }
-
-                    JsonObject resObj = new JsonObject();
-                    resObj.addProperty("status", "success");
-                    resObj.addProperty("message", "Thanh toán thành công!");
-                    
-                    JsonObject dataObj = new JsonObject();
-                    dataObj.addProperty("bookingId", bookingId);
-                    dataObj.addProperty("amount", amount);
-                    dataObj.addProperty("earnedPoints", earnedPoints);
-                    resObj.add("data", dataObj);
-
-                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(resObj));
-                } else {
-                    ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy đơn đặt phòng ID: " + bookingId));
-                }
-
-            } else {
-                exchange.sendResponseHeaders(405, -1);
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi Server Payment: " + e.getMessage()));
-        }
+        }catch(IllegalArgumentException|NullPointerException ex){ApiResponseUtil.sendError(e,400,"ERR_400_BAD_REQUEST","Valid cash/POS payment and UUIDv4 Idempotency-Key required");}
+        catch(IllegalStateException ex){ApiResponseUtil.sendError(e,409,"ERR_409_CONFLICT",ex.getMessage());}
+        catch(SQLException ex){ApiResponseUtil.sendError(e,503,"ERR_503_UNAVAILABLE","Payment was not confirmed; retry the same Idempotency-Key");}
     }
-
 }

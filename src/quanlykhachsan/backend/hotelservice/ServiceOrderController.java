@@ -28,7 +28,10 @@ public class ServiceOrderController implements HttpHandler {
 
     private static final Pattern ORDER_PATH_PATTERN = Pattern.compile(".*/service-orders/(\\d+)(?:/status)?/?$");
 
-    private final ServiceOrderDAO serviceOrderDAO = new ServiceOrderDAO();
+    private final ServiceOrderDAO serviceOrderDAO;
+    private final ServiceOrderDAO.ConnectionSource connections;
+    public ServiceOrderController(){this(new ServiceOrderDAO(),DatabaseConnection::getConnection);}
+    public ServiceOrderController(ServiceOrderDAO dao,ServiceOrderDAO.ConnectionSource connections){this.serviceOrderDAO=java.util.Objects.requireNonNull(dao);this.connections=java.util.Objects.requireNonNull(connections);}
     private final Gson gson = JsonUtil.getGson();
 
     private static final Set<String> STAFF_ROLES = Set.of(
@@ -43,6 +46,7 @@ public class ServiceOrderController implements HttpHandler {
 
         try {
             if ("POST".equalsIgnoreCase(method)) {
+                if(!Set.of("/api/v1/service-orders","/api/v1/service-orders/quote").contains(path)){ApiResponseUtil.sendError(exchange,404,"ERR_404_NOT_FOUND","Order route not found");return;}
                 handleCreateOrder(exchange);
             } else if ("GET".equalsIgnoreCase(method)) {
                 if (path.endsWith("/active")) {
@@ -64,8 +68,12 @@ public class ServiceOrderController implements HttpHandler {
             }
         } catch (IllegalArgumentException e) {
             ApiResponseUtil.sendError(exchange, 400, "ERR_400_BAD_REQUEST", e.getMessage());
-        } catch (IllegalStateException e) {
+        } catch (SecurityException e) {
             ApiResponseUtil.sendError(exchange, 403, "ERR_403_FORBIDDEN", e.getMessage());
+        } catch (IllegalStateException e) {
+            ApiResponseUtil.sendError(exchange, 409, "ERR_409_CONFLICT", e.getMessage());
+        } catch (java.sql.SQLException e) {
+            ApiResponseUtil.sendError(exchange, 503, "ERR_503_UNAVAILABLE", "Service order was not confirmed; retry with the same Idempotency-Key");
         } catch (Exception e) {
             e.printStackTrace();
             ApiResponseUtil.sendError(exchange, 500, "ERR_500_INTERNAL", "Lỗi xử lý đơn dịch vụ: " + e.getMessage());
@@ -73,19 +81,19 @@ public class ServiceOrderController implements HttpHandler {
     }
 
     private void handleCreateOrder(HttpExchange exchange) throws Exception {
-        JsonObject req = gson.fromJson(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8), JsonObject.class);
+        JsonObject req = quanlykhachsan.backend.utils.PortalValidation.body(exchange);
         if (req == null || !req.has("booking_id")) {
             ApiResponseUtil.sendError(exchange, 400, "ERR_400_BAD_REQUEST", "Thiếu thông tin bắt buộc: booking_id");
             return;
         }
 
-        int bookingId = req.get("booking_id").getAsInt();
-        String category = req.has("category") ? req.get("category").getAsString().trim().toUpperCase() : "FNB";
-        String itemName = req.has("item_name") ? req.get("item_name").getAsString().trim() : "";
-        int quantity = req.has("quantity") ? req.get("quantity").getAsInt() : 1;
-        Integer serviceId = req.has("service_id") && !req.get("service_id").isJsonNull() ? req.get("service_id").getAsInt() : null;
-        String voucherCode = req.has("voucher_code") && !req.get("voucher_code").isJsonNull() ? req.get("voucher_code").getAsString().trim() : null;
-        String specialInstructions = req.has("special_instructions") && !req.get("special_instructions").isJsonNull() ? req.get("special_instructions").getAsString().trim() : null;
+        int bookingId = quanlykhachsan.backend.utils.PortalValidation.integer(req,"booking_id",1);
+        String category = req.has("category") ? quanlykhachsan.backend.utils.PortalValidation.text(req,"category",20,true).toUpperCase(java.util.Locale.ROOT) : "FNB";
+        String itemName = java.util.Objects.toString(quanlykhachsan.backend.utils.PortalValidation.text(req,"item_name",150,false),"");
+        int quantity = req.has("quantity") ? quanlykhachsan.backend.utils.PortalValidation.integer(req,"quantity",1) : 1;
+        Integer serviceId = req.has("service_id") && !req.get("service_id").isJsonNull() ? quanlykhachsan.backend.utils.PortalValidation.integer(req,"service_id",1) : null;
+        String voucherCode = quanlykhachsan.backend.utils.PortalValidation.text(req,"voucher_code",50,false);
+        String specialInstructions = quanlykhachsan.backend.utils.PortalValidation.text(req,"special_instructions",2000,false);
 
         if (itemName.isEmpty() && (serviceId == null || serviceId <= 0)) {
             ApiResponseUtil.sendError(exchange, 400, "ERR_400_BAD_REQUEST", "Vui lòng nhập tên món/dịch vụ hoặc chọn service_id hợp lệ");
@@ -97,7 +105,7 @@ public class ServiceOrderController implements HttpHandler {
         String role = String.valueOf(exchange.getAttribute("role"));
         boolean isStaffOrAdmin = STAFF_ROLES.contains(role != null ? role.trim() : "");
 
-        try (Connection c = DatabaseConnection.getConnection();
+        try (Connection c = connections.open();
              PreparedStatement q = c.prepareStatement("SELECT customer_id, status FROM bookings WHERE id = ?")) {
             q.setInt(1, bookingId);
             try (ResultSet r = q.executeQuery()) {
@@ -133,28 +141,23 @@ public class ServiceOrderController implements HttpHandler {
         order.setVoucherCode(voucherCode);
         order.setSpecialInstructions(specialInstructions);
 
-        if ((serviceId == null || serviceId <= 0) && req.has("unit_price") && !req.get("unit_price").isJsonNull()) {
-            order.setUnitPrice(req.get("unit_price").getAsBigDecimal());
-        }
-
         if (req.has("scheduled_time") && !req.get("scheduled_time").isJsonNull()) {
             try {
-                String stStr = req.get("scheduled_time").getAsString().trim();
-                stStr = stStr.replace("Z", "").replace("T", " ");
-                if (stStr.length() > 19) {
-                    stStr = stStr.substring(0, 19);
-                }
-                if (stStr.length() == 16) {
-                    stStr += ":00";
-                }
-                order.setScheduledTime(Timestamp.valueOf(stStr));
-            } catch (Exception ignored) {}
+                String value=req.get("scheduled_time").getAsString().trim();
+                java.time.Instant instant;
+                if(value.endsWith("Z")||value.matches(".*[+-][0-9]{2}:[0-9]{2}$"))instant=java.time.OffsetDateTime.parse(value).toInstant();
+                else instant=java.time.LocalDateTime.parse(value.replace(' ','T')).atZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
+                order.setScheduledTime(Timestamp.from(instant));
+            } catch (Exception invalidSchedule) { throw new IllegalArgumentException("Invalid scheduled_time"); }
         }
 
         // Execute atomic creation & folio debit
-        ServiceOrder created = serviceOrderDAO.createOrderWithFolioDebit(order);
+        boolean preview=exchange.getRequestURI().getPath().equals("/api/v1/service-orders/quote");
+        ServiceOrder created=preview?serviceOrderDAO.previewOrder(order,isStaffOrAdmin?0:jwtCustomerId):serviceOrderDAO.createOrderWithFolioDebit(order,
+                exchange.getRequestHeaders().getFirst("Idempotency-Key"),isStaffOrAdmin?0:jwtCustomerId);
 
         JsonObject data = new JsonObject();
+        data.addProperty("preview",preview);
         data.addProperty("order_id", created.getId());
         data.addProperty("booking_id", created.getBookingId());
         data.addProperty("room_number", created.getRoomNumber());
@@ -168,14 +171,14 @@ public class ServiceOrderController implements HttpHandler {
         data.addProperty("order_status", created.getOrderStatus());
         data.addProperty("folio_id", created.getFolioId());
         data.addProperty("folio_transaction_id", created.getFolioTransactionId());
-        data.addProperty("created_at", System.currentTimeMillis());
+        data.add("created_at", gson.toJsonTree(created.getCreatedAt()));
 
         JsonObject envelope = new JsonObject();
         envelope.addProperty("status", "success");
-        envelope.addProperty("message", "Yêu cầu dịch vụ phòng đã được ghi nhận và hạch toán vào hóa đơn phòng!");
+        envelope.addProperty("message",preview?"Service quote only; no order or charge recorded":"Yêu cầu dịch vụ phòng đã được ghi nhận và hạch toán vào hóa đơn phòng!");
         envelope.add("data", data);
 
-        ApiResponseUtil.write(exchange, 201, gson.toJson(envelope));
+        ApiResponseUtil.write(exchange, preview?200:201, gson.toJson(envelope));
     }
 
     private void handleGetActiveOrders(HttpExchange exchange) throws Exception {
@@ -211,7 +214,7 @@ public class ServiceOrderController implements HttpHandler {
             boolean isStaffOrAdmin = STAFF_ROLES.contains(role != null ? role.trim() : "");
 
             if (!isStaffOrAdmin) {
-                try (Connection c = DatabaseConnection.getConnection();
+                try (Connection c = connections.open();
                      PreparedStatement q = c.prepareStatement("SELECT customer_id FROM bookings WHERE id = ?")) {
                     q.setInt(1, bookingId);
                     try (ResultSet r = q.executeQuery()) {
@@ -278,7 +281,7 @@ public class ServiceOrderController implements HttpHandler {
         }
     }
 
-    public static int resolveCustomerId(HttpExchange exchange) {
+    public static int resolveCustomerId(HttpExchange exchange) throws java.sql.SQLException {
         Object cidObj = exchange.getAttribute("customer_id");
         if (cidObj instanceof Number num && num.intValue() > 0) {
             return num.intValue();
@@ -306,7 +309,7 @@ public class ServiceOrderController implements HttpHandler {
                         try (ResultSet r = q.executeQuery()) {
                             if (r.next()) return r.getInt(1);
                         }
-                    } catch (Exception ignored) {}
+                    }
 
                     // Also check users table if user account references customer_id
                     try (Connection c = DatabaseConnection.getConnection();
@@ -318,12 +321,12 @@ public class ServiceOrderController implements HttpHandler {
                                 if (!r.wasNull() && cid > 0) return cid;
                             }
                         }
-                    } catch (Exception ignored) {}
+                    }
 
                     // Fallback to uid only if not linked to a customer profile
-                    return uid;
+                    return 0;
                 }
-            } catch (Exception ignored) {}
+            } catch (NumberFormatException ignored) {}
         }
         return 0;
     }

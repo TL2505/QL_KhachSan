@@ -1,6 +1,11 @@
 # ĐƯỜNG CƠ SỞ TRIỂN KHAI PHASE 4 VÀ VẬN HÀNH DÀI HẠN (PHASE 4 & BEYOND BASELINE)
 ## Aurelia Grand Palace 5★ PMS (Property Management System)
 
+Implementation evidence (2026-10-20): [Phase 4 report](PHASE_4_REPORT.md) and
+[release verification](PHASE_4_VERIFICATION.md). Status claims below describe the
+historical baseline; in particular, deployed dual-environment operation must be
+verified independently and is not certified by this document.
+
 **Tài liệu:** Production Roadmap, Realistic Operational Baseline & Phase 4 Engineering Governance  
 **Đường dẫn tài liệu:** `docs/PHASE_4_AND_BEYOND_BASELINE.md`  
 **Phiên bản:** `4.1.0-REALISTIC-BASELINE` *(Thay thế toàn diện phiên bản 4.0.0-PROD-BASELINE)*  

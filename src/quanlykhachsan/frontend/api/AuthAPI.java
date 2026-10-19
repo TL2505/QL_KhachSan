@@ -75,9 +75,8 @@ public class AuthAPI {
                     }
                 }
 
-                if (token != null && !token.isBlank()) {
-                    SessionManagerUtil.setAccessToken(token);
-                }
+                if(token==null||token.isBlank()||dataObj==null){SessionManagerUtil.clear();throw new Exception("Máy chủ chưa xác nhận phiên đăng nhập.");}
+                SessionManagerUtil.setAccessToken(token);
 
                 User user = new User();
                 if (dataObj != null) {

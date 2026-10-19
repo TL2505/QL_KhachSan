@@ -53,7 +53,8 @@ public class SecurityHardeningFilter extends Filter {
         var headers = exchange.getResponseHeaders();
         headers.set("X-Content-Type-Options", HEADER_X_CONTENT_TYPE_OPTIONS);
         headers.set("X-Frame-Options", HEADER_X_FRAME_OPTIONS);
-        headers.set("Content-Security-Policy", HEADER_CONTENT_SECURITY_POLICY);
+        headers.set("Content-Security-Policy", exchange.getRequestURI().getPath().startsWith("/api/")
+                ? "default-src 'self'" : HEADER_CONTENT_SECURITY_POLICY);
         headers.set("Strict-Transport-Security", HEADER_STRICT_TRANSPORT_SECURITY);
         headers.set("Referrer-Policy", HEADER_REFERRER_POLICY);
         headers.set("Permissions-Policy", HEADER_PERMISSIONS_POLICY);

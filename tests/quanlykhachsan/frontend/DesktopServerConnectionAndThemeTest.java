@@ -37,14 +37,14 @@ public class DesktopServerConnectionAndThemeTest {
     }
 
     @Test
-    @DisplayName("Verify Desktop App Connection Configuration and VM IP Priority (192.168.56.102)")
+    @DisplayName("Verify configurable Desktop connection defaults without VM probing")
     public void testDesktopConnectionConfiguration() {
         assertEquals("192.168.56.102", ApiConfig.DEFAULT_VM_IP);
-        assertEquals("http://192.168.56.102:8081/api/v1", ApiConfig.DEFAULT_API_BASE_URL);
-        assertEquals("jdbc:mysql://192.168.56.102:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC", ApiConfig.DEFAULT_JDBC_URL);
+        assertEquals("http://localhost:8081/api/v1", ApiConfig.DEFAULT_API_BASE_URL);
+        assertEquals("jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC", ApiConfig.DEFAULT_JDBC_URL);
 
-        assertEquals("http://192.168.56.102:8081/api/v1", DBConnection.DEFAULT_API_BASE_URL);
-        assertEquals("jdbc:mysql://192.168.56.102:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC", DBConnection.DEFAULT_JDBC_URL);
+        assertEquals("http://localhost:8081/api/v1", DBConnection.DEFAULT_API_BASE_URL);
+        assertEquals("jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC", DBConnection.DEFAULT_JDBC_URL);
 
         String activeApiUrl = ApiConfig.getBaseUrl();
         assertNotNull(activeApiUrl);
@@ -76,39 +76,22 @@ public class DesktopServerConnectionAndThemeTest {
     }
 
     @Test
-    @DisplayName("Verify SessionManagerUtil automatically attaches and issues valid JWT token for logged in employee")
+    @DisplayName("Desktop sessions cannot mint a backend JWT from a local user object")
     public void testSessionManagerAutoTokenGeneration() {
+        var employee=new quanlykhachsan.backend.user.User();employee.setId(42);employee.setUsername("synthetic-reception");employee.setRoleId(2);
         quanlykhachsan.frontend.utils.SessionManagerUtil.clear();
-
-        quanlykhachsan.backend.user.User employee = new quanlykhachsan.backend.user.User();
-        employee.setId(42);
-        employee.setUsername("receptionist");
-        employee.setRoleId(2); // Front desk
-
         quanlykhachsan.frontend.utils.SessionManagerUtil.setUser(employee);
-
-        String token = quanlykhachsan.frontend.utils.SessionManagerUtil.getAccessToken();
-        assertNotNull(token, "Access token must never be null after setting user");
-        assertFalse(token.isBlank(), "Access token must not be blank");
-
-        // Verify token authenticity with JwtTokenUtil signing key
-        var claims = io.jsonwebtoken.Jwts.parser()
-            .verifyWith(quanlykhachsan.backend.utils.JwtTokenUtil.signingKey())
-            .build()
-            .parseSignedClaims(token)
-            .getPayload();
-
-        assertEquals("receptionist", claims.get("username"));
-        assertEquals("FRONT_DESK", claims.get("role"));
-        assertEquals("42", claims.getSubject());
+        assertNull(quanlykhachsan.frontend.utils.SessionManagerUtil.getAccessToken());
+        quanlykhachsan.frontend.utils.SessionManagerUtil.setAccessToken("synthetic-server-issued-fixture");
+        assertEquals("synthetic-server-issued-fixture",quanlykhachsan.frontend.utils.SessionManagerUtil.getAccessToken());
+        quanlykhachsan.frontend.utils.SessionManagerUtil.clear();
     }
 
     @Test
-    @DisplayName("Verify IdentityVaultMigration.requireReady does not throw blocking IllegalStateException")
+    @DisplayName("Identity vault readiness propagates database failures")
     public void testIdentityVaultMigrationStartup() {
-        assertDoesNotThrow(() -> {
-            quanlykhachsan.backend.customer.IdentityVaultMigration.requireReady();
-        }, "requireReady must not throw blocking startup exception");
+        var broken=(java.sql.Connection)java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),new Class[]{java.sql.Connection.class},(proxy,method,args)->{throw new java.sql.SQLException("Synthetic vault outage");});
+        assertThrows(java.sql.SQLException.class,()->quanlykhachsan.backend.customer.IdentityVaultMigration.verifyReady(broken));
     }
 
     @Test

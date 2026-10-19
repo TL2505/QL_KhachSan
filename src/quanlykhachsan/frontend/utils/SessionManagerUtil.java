@@ -18,7 +18,7 @@ public class SessionManagerUtil {
         if (user != null) {
             if (user.getRoleId() == 1) setRole("admin");
             else if (user.getRoleId() == 3) setRole("customer");
-            else setRole("front_desk");
+            else if(role==null)setRole("front_desk");
             ensureAccessToken();
         }
     }
@@ -42,22 +42,8 @@ public class SessionManagerUtil {
         return accessToken;
     }
 
-    public static synchronized void ensureAccessToken() {
-        if (accessToken != null && !accessToken.isBlank()) return;
-        if (currentUser == null) return;
-        try {
-            int userId = (currentUser.getId() > 0) ? currentUser.getId() : 1;
-            String username = (currentUser.getUsername() != null && !currentUser.getUsername().isBlank())
-                ? currentUser.getUsername() : "admin";
-            String roleName = getRole();
-            if (roleName == null || roleName.isBlank() || "unknown".equals(roleName)) {
-                roleName = "front_desk";
-            }
-            accessToken = quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(userId, username, roleName.toUpperCase());
-        } catch (Exception ex) {
-            System.err.println("[SessionManagerUtil] Auto-issue JWT token warning: " + ex.getMessage());
-        }
-    }
+    /** Credentials come exclusively from the authenticated backend login response. */
+    public static synchronized void ensureAccessToken() { }
 
     public static void clear() {
         currentUser = null;
