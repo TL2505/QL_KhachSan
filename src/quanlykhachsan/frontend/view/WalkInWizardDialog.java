@@ -18,9 +18,7 @@ public final class WalkInWizardDialog extends JDialog {
         super(owner,"Nhận phòng nhanh · Walk-in",ModalityType.APPLICATION_MODAL);
         JPanel form=new JPanel(new GridLayout(0,2,12,12));form.setBorder(BorderFactory.createEmptyBorder(24,24,24,24));
         form.add(new JLabel("Phòng trống sạch"));form.add(rooms);form.add(new JLabel("Họ và tên"));form.add(name);form.add(new JLabel("CCCD / Hộ chiếu"));form.add(identity);form.add(new JLabel("Số điện thoại"));form.add(phone);form.add(new JLabel("Số đêm"));form.add(nights);
-        var scan=new JButton("AI · Quét CCCD");scan.addActionListener(event->new AiCheckinDialog(this,data->{name.setText(data.get("full_name").getAsString());identity.setText(data.get("id_card").getAsString());}).setVisible(true));
-        form.add(scan);form.add(new JLabel("Luôn kiểm tra CCCD bằng mắt trước khi nhận phòng"));
-        form.add(status);form.add(submit);add(form);setSize(620,380);setLocationRelativeTo(owner);submit.setEnabled(false);
+        form.add(status);form.add(submit);add(form);setSize(560,320);setLocationRelativeTo(owner);submit.setEnabled(false);
         LocalDate today=LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         Phase2UiApi.request("GET","/v1/rooms/availability?check_in="+today+"&check_out="+today.plusDays(1),null,null,data->{
             if(!isDisplayable())return;for(JsonElement row:data.getAsJsonArray())rooms.addItem(new Choice(row.getAsJsonObject()));

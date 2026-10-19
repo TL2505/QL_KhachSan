@@ -20,7 +20,7 @@ public class LoyaltyController implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath();
+        String path = exchange.getRequestURI().getPath().replaceFirst("^/api/v1/loyalty", "/api/loyalty");
         Gson gson = JsonUtil.getGson();
 
         // Kiểm tra quyền cơ bản: phải đăng nhập (role 1, 2, hoặc 3)

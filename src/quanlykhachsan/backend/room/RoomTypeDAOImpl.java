@@ -26,7 +26,7 @@ public class RoomTypeDAOImpl implements RoomTypeDAO {
                 list.add(rt);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể tải hạng phòng từ cơ sở dữ liệu.", e);
         }
         return list;
     }
@@ -49,7 +49,7 @@ public class RoomTypeDAOImpl implements RoomTypeDAO {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể tải hạng phòng từ cơ sở dữ liệu.", e);
         }
         return null;
     }

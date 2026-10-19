@@ -1,5 +1,5 @@
 // Customer Views Module Coordinator
-import { renderDashboard } from "./customer/dashboard.js";
+import { renderDashboard, renderBookings, renderInvoices } from "./customer/dashboard.js";
 import { renderDiscovery } from "./customer/discovery.js";
 import { renderLoyalty } from "./customer/loyalty.js";
 import { renderPromotions } from "./customer/promotions.js";
@@ -19,5 +19,9 @@ export function loadCustomerView(tab = "dashboard") {
         renderPromotions(container, session);
     } else if (tab === "chat") {
         renderChat(container, session);
+    } else if (tab === "bookings") {
+        renderBookings(container);
+    } else if (tab === "invoices") {
+        renderInvoices(container);
     }
 }

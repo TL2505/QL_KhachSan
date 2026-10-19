@@ -6,6 +6,7 @@ public class Room {
     private int roomTypeId;
     private double price;
     private String status;
+    private String typeName;
     private int version;
     public int getVersion(){return version;}
     public void setVersion(int value){version=value;}
@@ -31,4 +32,6 @@ public class Room {
     public void setPrice(double price) { this.price = price; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getTypeName() { return typeName; }
+    public void setTypeName(String typeName) { this.typeName = typeName; }
 }

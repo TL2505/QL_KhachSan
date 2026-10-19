@@ -53,7 +53,7 @@ public class AuthController implements HttpHandler {
                     else {
                         roleStr = null;
                         for(var role:userDAO.selectAllRoles())if(role.getId()==user.getRoleId())roleStr=role.getName();
-                        if(roleStr==null || !java.util.Set.of("staff","front_desk","housekeeping","maintenance","f&b","manager","gm","it","devops","compliance", "revenue_manager").contains(roleStr.toLowerCase(java.util.Locale.ROOT))) {
+                        if(roleStr==null || !java.util.Set.of("staff","front_desk","housekeeping","maintenance","f&b").contains(roleStr.toLowerCase(java.util.Locale.ROOT))) {
                             ApiResponseUtil.write(exchange,403,ApiResponseUtil.error("Role is not authorized"));return;
                         }
                     }
@@ -99,13 +99,17 @@ public class AuthController implements HttpHandler {
                             statusCode = 400;
                             response = AuthMapper.error("Đăng ký thất bại.");
                         }
-                    } catch (java.sql.SQLIntegrityConstraintViolationException e) {
-                        statusCode = 400;
-                        String dbMsg = e.getMessage().toLowerCase();
-                        String userMsg = "Lỗi trùng lặp dữ liệu: ";
-                        if (dbMsg.contains("username")) userMsg = "Tên đăng nhập đã tồn tại";
-                        else if (dbMsg.contains("identity_card") || dbMsg.contains("cccd")) userMsg = "Số CCCD/Passport đã được sử dụng";
-                        else userMsg += e.getMessage();
+                    } catch (IllegalStateException e) {
+                        statusCode = 409;
+                        response = AuthMapper.error(e.getMessage());
+                    } catch (java.sql.SQLException e) {
+                        // MariaDB may expose duplicate keys as a generic SQLException
+                        // through the pooled connection. Convert it to a safe, actionable response.
+                        statusCode = 409;
+                        String dbMsg = String.valueOf(e.getMessage()).toLowerCase(java.util.Locale.ROOT);
+                        String userMsg = "Không thể tạo tài khoản. Vui lòng kiểm tra lại thông tin.";
+                        if (dbMsg.contains("username")) userMsg = "Tên đăng nhập đã tồn tại.";
+                        else if (dbMsg.contains("identity_card") || dbMsg.contains("cccd")) userMsg = "Số CCCD/Hộ chiếu đã được sử dụng.";
                         response = AuthMapper.error(userMsg);
                     } catch (Exception e) {
                         statusCode = 500;

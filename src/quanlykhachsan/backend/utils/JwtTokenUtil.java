@@ -15,7 +15,6 @@ public final class JwtTokenUtil {
 
     private static String resolveSecret() {
         String secret = System.getenv("JWT_SECRET");
-        if(System.getenv("JWT_SECRET_FILE")!=null)secret=SecretConfiguration.required("JWT_SECRET");
         if(secret==null || secret.isBlank())secret=System.getProperty("hotel.jwt.secret");
         if(secret==null || secret.getBytes(StandardCharsets.UTF_8).length<32)throw new IllegalStateException("Configure a JWT signing secret with at least 32 bytes");
         return secret;

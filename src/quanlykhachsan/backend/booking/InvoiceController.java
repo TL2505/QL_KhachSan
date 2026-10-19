@@ -16,7 +16,8 @@ public class InvoiceController implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if(exchange.getRequestURI().getPath().matches("/api/(v1/)?invoices/[0-9]+/pdf")){new quanlykhachsan.backend.invoice.InvoicePdfController().handle(exchange);return;}
-        if(!java.util.Set.of("admin","front_desk").contains(String.valueOf(exchange.getAttribute("role")))){quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange,403,quanlykhachsan.backend.utils.ApiResponseUtil.error("Invoice access denied"));return;}
+        String role = String.valueOf(exchange.getAttribute("role")).toLowerCase(java.util.Locale.ROOT);
+        if(!java.util.Set.of("admin","front_desk").contains(role)){quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange,403,quanlykhachsan.backend.utils.ApiResponseUtil.error("Invoice access denied"));return;}
         String method = exchange.getRequestMethod();
 
         if (method.equalsIgnoreCase("GET")) {

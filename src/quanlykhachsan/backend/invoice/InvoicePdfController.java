@@ -20,7 +20,7 @@ public final class InvoicePdfController implements HttpHandler {
             try(PreparedStatement q=c.prepareStatement("SELECT i.booking_id,i.issue_date,i.status,i.final_total,i.tax_amount,c.id,c.full_name,c.company_name,c.tax_code FROM invoices i JOIN bookings b ON b.id=i.booking_id JOIN customers c ON c.id=b.customer_id WHERE i.id=?")) {
                 q.setLong(1,id);try(ResultSet r=q.executeQuery()) {
                     if(!r.next()){ApiResponseUtil.write(e,404,ApiResponseUtil.error("Invoice not found"));return;}
-                    String role=String.valueOf(e.getAttribute("role"));
+                    String role=String.valueOf(e.getAttribute("role")).toLowerCase(java.util.Locale.ROOT);
                     if(!Set.of("admin","front_desk").contains(role) && (!(e.getAttribute("customer_id") instanceof Number n) || n.intValue()!=r.getInt(6)))throw new SecurityException();
                     if(!"paid".equals(r.getString(3)))throw new IllegalArgumentException("Invoice must be finalized and paid");
                     booking=r.getInt(1);issued=r.getString(2);total=r.getBigDecimal(4);vat=r.getBigDecimal(5);guest=r.getString(7);company=r.getString(8);tax=r.getString(9);

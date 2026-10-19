@@ -1,4 +1,4 @@
-import { api, clearAuthSession, getAuthSession, setAuthSession } from './public/api.js';
+import { api, getAuthSession, setAuthSession } from './public/api.js';
 import { loadAdminView } from './public/js/view-admin.js';
 import { loadStaffView } from './public/js/view-staff.js';
 import { loadCustomerView } from './public/js/view-customer.js';
@@ -17,7 +17,7 @@ const menus = {
     ['invoices', 'Hóa đơn', 'receipt-text'], ['loyalty', 'Thành viên', 'award'], ['chat', 'Tin nhắn', 'messages-square'], ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   CUSTOMER: [
-    ['dashboard', 'Tổng quan', 'layout-dashboard'], ['discovery', 'Khám phá phòng', 'bed-double'],
+    ['dashboard', 'Tổng quan', 'layout-dashboard'], ['discovery', 'Khám phá phòng', 'bed-double'], ['bookings', 'Đặt phòng của tôi', 'calendar-check'], ['invoices', 'Hóa đơn', 'receipt-text'],
     ['loyalty', 'Điểm thưởng', 'award'], ['promotions', 'Ưu đãi', 'ticket-percent'], ['chat', 'Hỗ trợ concierge', 'messages-square'], ['profile', 'Hồ sơ & bảo mật', 'settings']
   ]
 };
@@ -32,6 +32,19 @@ const roleOf = value => {
   return null;
 };
 const byId = id => document.getElementById(id);
+const clearAuthSession = () => setAuthSession(null);
+let googleChallengeId = null;
+
+// Only return to known hotel pages on this origin, never an arbitrary redirect.
+function bookingReturnUrl() {
+  const value = new URLSearchParams(location.search).get('returnTo');
+  if (!value) return null;
+  try {
+    const url = new URL(value, location.origin);
+    if (url.origin !== location.origin || !['/', '/index.html', '/booking/', '/booking/index.html'].includes(url.pathname)) return null;
+    return url.pathname + url.search + url.hash;
+  } catch { return null; }
+}
 
 function status(message, kind = 'error') {
   const node = byId('auth-status');
@@ -41,11 +54,13 @@ function status(message, kind = 'error') {
 
 function showAuth(tab = 'login') {
   document.body.classList.remove('customer-portal');
+  document.body.classList.remove('admin-portal');
   byId('auth-view').hidden = false;
   byId('app-view').hidden = true;
   const login = tab === 'login';
   byId('login-form').hidden = !login;
   byId('register-form').hidden = login;
+  byId('google-otp-form').hidden = true;
   byId('show-login').classList.toggle('active', login);
   byId('show-login').classList.toggle('tab-active', login);
   byId('show-register').classList.toggle('active', !login);
@@ -101,6 +116,7 @@ function enterPortal(session) {
   }
   const isCustomer = role === 'CUSTOMER';
   document.body.classList.toggle('customer-portal', isCustomer);
+  document.body.classList.toggle('admin-portal', role === 'ADMIN');
   byId('app-view').setAttribute('aria-label', role === 'CUSTOMER' ? 'Cổng khách hàng Aurelia' : 'Cổng quản lý Aurelia');
   byId('auth-view').hidden = true;
   byId('app-view').hidden = false;
@@ -109,34 +125,102 @@ function enterPortal(session) {
   openView(session, role, requested || defaultTab);
 }
 
+function completeLogin(result) {
+  if (!result || !result.token || !roleOf(result.role)) throw new Error('Máy chủ không trả về quyền truy cập hợp lệ cho tài khoản này.');
+  const session = {
+    ...result,
+    userId: result.userId ?? result.id,
+    role: roleOf(result.role) === 'STAFF' ? String(result.role).toUpperCase() : roleOf(result.role)
+  };
+  setAuthSession(session);
+  const returnUrl = bookingReturnUrl();
+  if (returnUrl) { window.location.replace(returnUrl); return; }
+  if (roleOf(result.role) === 'CUSTOMER' && new URLSearchParams(location.search).get('resumeBooking') === '1') {
+    window.location.replace('portal.html?view=discovery&resumeBooking=1'); return;
+  }
+  const destination = roleOf(result.role) === 'STAFF' ? 'room-map' : 'dashboard';
+  window.location.replace(`portal.html?view=${encodeURIComponent(destination)}`);
+}
+
+async function startGoogleOtp(googleResponse) {
+  if (!googleResponse?.credential) { status('Google không trả về thông tin xác thực. Vui lòng thử lại.'); return; }
+  status('Đang xác thực tài khoản Google…', 'success');
+  try {
+    const data = await api.post('/auth/google/request-otp', { credential: googleResponse.credential });
+    googleChallengeId = data.challenge_id;
+    byId('login-form').hidden = true;
+    byId('register-form').hidden = true;
+    byId('google-otp-form').hidden = false;
+    byId('google-otp-email').textContent = data.email || 'email đã xác minh';
+    byId('google-otp-code').value = '';
+    byId('google-otp-code').focus();
+    status('Mã xác thực đã được gửi. Mã có hiệu lực trong 5 phút.', 'success');
+  } catch (error) { status(error.message || 'Không thể bắt đầu xác thực Google. Vui lòng thử lại.'); }
+}
+
+async function initialiseGoogleLogin() {
+  try {
+    const config = await api.get('/auth/google/config');
+    if (!config?.enabled || !config.client_id) return;
+    for (let tries = 0; tries < 100 && !window.google?.accounts?.id; tries += 1) await new Promise(resolve => setTimeout(resolve, 50));
+    if (!window.google?.accounts?.id) return;
+    window.google.accounts.id.initialize({ client_id: config.client_id, callback: startGoogleOtp, auto_select: false, cancel_on_tap_outside: true });
+    window.google.accounts.id.renderButton(byId('google-signin-button'), { theme: 'outline', size: 'large', text: 'signin_with', locale: 'vi', width: 300 });
+    byId('google-login-area').hidden = false;
+  } catch { /* Configuration is intentionally silent until the hotel enables Google login. */ }
+}
+
 byId('show-login').addEventListener('click', () => { status(''); showAuth('login'); });
 byId('show-register').addEventListener('click', () => { status(''); showAuth('register'); });
 
 byId('login-form').addEventListener('submit', async event => {
   event.preventDefault();
   const button = event.currentTarget.querySelector('button[type="submit"]');
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => {
+    timeoutController.abort(new DOMException('Login request timed out.', 'TimeoutError'));
+  }, 15000);
   button.disabled = true;
   status('Đang xác thực tài khoản…', 'success');
   try {
     const result = await api.post('/auth/login', {
       username: byId('login-username').value.trim(),
       password: byId('login-password').value
-    });
-    if (!result || !result.token || !roleOf(result.role)) throw new Error('Máy chủ không trả về quyền truy cập hợp lệ cho tài khoản này.');
-    const session = {
-      ...result,
-      userId: result.userId ?? result.id,
-      role: roleOf(result.role) === 'STAFF' ? String(result.role).toUpperCase() : roleOf(result.role)
-    };
-    setAuthSession(session);
-    const destination = roleOf(result.role) === 'STAFF' ? 'room-map' : 'dashboard';
-    window.location.replace(`portal.html?view=${encodeURIComponent(destination)}`);
+    }, { signal: timeoutController.signal });
+    completeLogin(result);
   } catch (error) {
-    status(error.message || 'Không thể đăng nhập. Vui lòng kiểm tra kết nối và thử lại.');
+    const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
+    status(timedOut
+      ? 'Máy chủ đăng nhập phản hồi quá lâu. Vui lòng kiểm tra MySQL và máy chủ rồi thử lại.'
+      : error.message || 'Không thể đăng nhập. Vui lòng kiểm tra kết nối và thử lại.');
   } finally {
+    clearTimeout(timeoutId);
     button.disabled = false;
   }
 });
+
+byId('google-otp-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = event.currentTarget.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+    const result = await api.post('/auth/google/verify-otp', { challenge_id: googleChallengeId, otp: byId('google-otp-code').value.trim() });
+    completeLogin(result);
+  } catch (error) { status(error.message || 'Không thể xác nhận mã. Vui lòng thử lại.'); }
+  finally { button.disabled = false; }
+});
+
+byId('google-otp-resend').addEventListener('click', async event => {
+  event.currentTarget.disabled = true;
+  try {
+    const data = await api.post('/auth/google/resend-otp', { challenge_id: googleChallengeId });
+    byId('google-otp-email').textContent = data.email || byId('google-otp-email').textContent;
+    status('Mã mới đã được gửi. Mã cũ không còn hiệu lực.', 'success');
+  } catch (error) { status(error.message || 'Không thể gửi lại mã.'); }
+  finally { event.currentTarget.disabled = false; }
+});
+
+byId('google-otp-cancel').addEventListener('click', () => { googleChallengeId = null; status(''); showAuth('login'); });
 
 byId('register-form').addEventListener('submit', async event => {
   event.preventDefault();
@@ -171,7 +255,20 @@ byId('logout-button').addEventListener('click', () => {
   byId('login-username').focus();
 });
 
+// apiFetch clears an invalid JWT and dispatches this event. Return to the
+// existing login screen so protected views cannot remain in a loading state.
+window.addEventListener('hotel:session-expired', () => {
+  clearAuthSession();
+  history.replaceState(null, '', 'portal.html');
+  byId('view-container').replaceChildren();
+  showAuth();
+  status('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+  byId('login-username').focus();
+});
+
 if (window.lucide?.createIcons) window.lucide.createIcons();
 const currentSession = getAuthSession();
-if (currentSession?.token) enterPortal(currentSession);
+if (currentSession?.token && bookingReturnUrl()) window.location.replace(bookingReturnUrl());
+else if (currentSession?.token) enterPortal(currentSession);
 else showAuth();
+initialiseGoogleLogin();

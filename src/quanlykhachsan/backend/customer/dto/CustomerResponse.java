@@ -7,9 +7,6 @@ public class CustomerResponse {
     private String phone;
     private String email;
     private String address;
-    private String dateOfBirth;
-    public String getDateOfBirth(){return dateOfBirth;}
-    public void setDateOfBirth(String value){dateOfBirth=value;}
     private boolean isVip;
     private int loyaltyPoints;
     private int totalLoyaltyPoints;

@@ -4,7 +4,11 @@
 @media(max-width:480px){.portal-topbar{height:68px;padding:0 16px}.portal-brand strong{font-size:15px}.portal-brand small{font-size:8px}.portal-return{font-size:10px}.auth-layout{width:calc(100% - 28px);padding:35px 0}.auth-story h1{font-size:40px}.auth-card{padding:22px;border-radius:18px}.auth-fields-row{grid-template-columns:1fr}.portal-content-bar .portal-return{display:none}}
 
 .portal-brand-back{width:16px;height:16px;flex:0 0 auto;transition:transform .2s ease}.portal-brand:hover .portal-brand-back{transform:translateX(-3px)}
+.portal-topbar-actions{display:flex;align-items:center;gap:10px}.portal-return-top{padding:9px 12px;border:1px solid var(--portal-border);border-radius:999px;transition:background .2s ease,border-color .2s ease}.portal-return-top:hover{background:rgba(212,175,55,.12);border-color:var(--portal-gold)}
 
 .portal-body :where(a,button,input,select,textarea,[tabindex]):focus-visible{outline:3px solid var(--portal-gold);outline-offset:3px}
 .portal-view .table-container{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin}
 @media(max-width:600px){.portal-view .table-container table{min-width:620px}.portal-view .table-container{margin-inline:-4px;padding-inline:4px}.portal-content-bar{align-items:flex-start}}
+
+/* Google Identity and four-digit OTP step */
+.google-login-area{display:grid;justify-items:center;gap:12px;margin-top:8px}.google-login-area>span{width:100%;display:flex;align-items:center;gap:10px;color:var(--portal-muted);font-size:11px}.google-login-area>span::before,.google-login-area>span::after{content:"";height:1px;flex:1;background:rgba(148,163,184,.2)}.otp-intro{margin:0;color:#cbd5e1;font-size:12px;line-height:1.6}.google-otp-code{font-size:22px!important;font-weight:700;letter-spacing:.45em;text-align:center}.auth-secondary,.auth-link{min-height:42px;border-radius:9px;cursor:pointer;font-weight:700}.auth-secondary{border:1px solid var(--portal-border);background:rgba(212,175,55,.08);color:var(--portal-soft)}.auth-link{border:0;background:transparent;color:var(--portal-muted)}

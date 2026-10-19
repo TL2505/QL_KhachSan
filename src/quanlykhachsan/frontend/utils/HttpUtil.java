@@ -13,7 +13,7 @@ public class HttpUtil {
         // 1. Đọc URL từ config.properties
         try {
             java.util.Properties props = new java.util.Properties();
-            java.io.File configFile = new java.io.File(System.getProperty("hotel.config.file","config.properties"));
+            java.io.File configFile = new java.io.File("config.properties");
             if (configFile.exists()) {
                 try (java.io.FileInputStream fis = new java.io.FileInputStream(configFile)) {
                     props.load(fis);

@@ -1,3 +1,124 @@
+/* Shared typography; native fallbacks retain Vietnamese when fonts are offline. */
+:root {
+  --font-sans: 'Inter', 'Segoe UI', Arial, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+.room-availability { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; margin: 8px 0 4px; border-radius: 999px; font: 600 12px/1.5 var(--font-sans); }
+.room-availability--available { color: #065f46; background: #d1fae5; }
+.room-availability--reserved { color: #9a3412; background: #ffedd5; }
+.room-availability--occupied { color: #9f1239; background: #ffe4e6; }
+.room-availability--maintenance { color: #334155; background: #e2e8f0; }
+.room-availability--unknown { color: #334155; background: #e2e8f0; }
+.room-statistics { width: 100%; max-width: 1152px; margin: 24px auto 0; font-family: var(--font-sans); }
+.room-statistics-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.room-statistic { min-width: 0; padding: 20px; border: 1px solid rgba(212, 175, 55, .22); border-radius: 14px; background: rgba(15, 27, 47, .94); box-shadow: 0 8px 24px rgba(0, 0, 0, .1); }
+.room-statistic dt { display: flex; align-items: center; gap: 9px; color: #e2e8f0; font-size: 13px; line-height: 1.6; }
+.room-statistic dt span { display: inline-flex; justify-content: center; align-items: center; width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: rgba(255, 255, 255, .06); color: var(--stat-color); font-size: 21px; }
+.room-statistic dd { margin: 12px 0 0; color: var(--stat-color); font-size: 34px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.room-statistic dt svg { width: 18px; height: 18px; }
+.room-statistic--available { --stat-color: #6ee7b7; }
+.room-statistic--reserved { --stat-color: #fdba74; }
+.room-statistic--occupied { --stat-color: #93c5fd; }
+.room-statistic--maintenance { --stat-color: #fda4af; }
+#room-statistics-note { margin-top: 12px; color: #e2e8f0; font-size: 12px; line-height: 1.7; }
+@media (max-width: 900px) { .room-statistics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 400px) { .room-statistic { padding: 14px 12px; } .room-statistic dt { font-size: 12px; gap: 6px; flex-wrap: wrap; } }
+.booking-login-prompt {
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  margin: auto;
+  padding: 32px;
+  border: 1px solid rgba(212, 175, 55, .4);
+  border-radius: 20px;
+  color: #f8fafc;
+  background: #101d32;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .4);
+  text-align: center;
+  font-family: var(--font-sans);
+}
+.booking-login-prompt::backdrop { background: rgba(4, 12, 25, .72); backdrop-filter: blur(6px); }
+.booking-login-symbol { color: #e5c96f; font-size: 32px; margin-bottom: 12px; }
+.booking-login-prompt h2 { font-family: var(--font-serif); font-size: 26px; line-height: 1.4; margin-bottom: 12px; }
+.booking-login-prompt p { color: #e2e8f0; line-height: 1.7; font-size: 15px; }
+.booking-login-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 28px; }
+.booking-login-actions :is(a, button) { display: flex; align-items: center; justify-content: center; min-height: 46px; padding: 10px; border-radius: 10px; font-size: 14px; }
+body, button, input, select, textarea, .font-sans {
+  font-family: var(--font-sans);
+}
+
+/* Local presentation refinements, scoped to the public hotel landing page. */
+#main-header {
+  background: rgba(11, 20, 38, .94);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(212, 175, 55, .18);
+}
+#main-header > div { gap: 20px; }
+#main-header > div > a { flex-shrink: 0; }
+#main-header nav { font-size: 11px; letter-spacing: .04em; gap: 16px; }
+#main-header button, #main-header select { min-height: 40px; }
+#main-header nav a, #header-book-now { white-space: nowrap; }
+#hero { padding-top: 156px; padding-bottom: 80px; }
+#hero-image-overlay {
+  background: linear-gradient(180deg, rgba(8, 18, 35, .5), rgba(8, 18, 35, .62) 60%, #0b0f17);
+}
+#hero-radial-overlay { background: radial-gradient(ellipse at center, transparent, rgba(8, 18, 35, .25)); }
+#hero h1 { font-size: clamp(2.5rem, 5.2vw, 5rem); line-height: 1.2; letter-spacing: -.025em; text-wrap: balance; }
+#hero h1 + p { line-height: 1.85; font-weight: 400; max-width: 680px; }
+#hero > .z-20 { margin-top: 56px; }
+#hero .glass-panel { padding: 24px; border-color: rgba(212, 175, 55, .24); box-shadow: 0 20px 60px rgba(0, 0, 0, .2); }
+#hero .glass-panel > .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(180px, 1.1fr); gap: 16px; align-items: end; }
+#hero .glass-panel > .grid > div { min-width: 0; grid-column: auto; }
+#hero .glass-panel label { min-height: 20px; font-size: 11px; letter-spacing: .06em; }
+#hero .glass-panel input, #hero .glass-panel select, #btn-check-availability { min-width: 0; height: 50px; font-size: 13px; }
+#hero .glass-panel input, #hero .glass-panel select { padding: 12px; border-color: rgba(148, 163, 184, .35); }
+#btn-check-availability { white-space: nowrap; letter-spacing: .035em; padding-inline: 12px; }
+#rooms h2 { line-height: 1.25; text-wrap: balance; }
+#rooms-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; align-items: stretch; }
+#rooms-grid > .room-card { min-width: 0; height: 100%; border-color: var(--border-subtle); border-radius: 18px; box-shadow: 0 12px 36px rgba(0, 0, 0, .13); }
+.room-card .room-image-container { aspect-ratio: 16 / 10; height: auto; flex-shrink: 0; }
+.room-card .room-image-container img { width: 100%; height: 100%; object-fit: cover; }
+.room-card > .p-6 { padding: 26px; gap: 20px; min-width: 0; }
+.room-card h3 { font-family: var(--font-serif); font-size: 25px; line-height: 1.35; min-height: 2.7em; white-space: normal; overflow: visible; display: block; -webkit-line-clamp: unset; margin: 8px 0 16px; }
+.room-card h3 + .grid { border: 0; display: flex; flex-wrap: wrap; gap: 12px 18px; padding: 0; margin-bottom: 18px; font-size: 13px; }
+.room-card h3 + .grid > div { min-width: 0; }
+.room-card h3 + .grid .truncate { white-space: normal; overflow: visible; }
+.room-card h3 + .grid + div { gap: 8px 16px; margin-bottom: 0; }
+.room-card h3 + .grid + div > span { background: transparent !important; border: 0; padding: 0; font-size: 12px; line-height: 1.7; }
+.room-card > .p-6 > .border-t { display: flex; flex-direction: column; align-items: stretch; gap: 16px; padding-top: 20px; border-color: var(--border-subtle); margin-top: auto; }
+.room-card > .p-6 > .border-t > div:first-child > .text-gold-gradient { font-family: var(--font-sans); font-size: clamp(1.25rem, 2vw, 1.5rem); line-height: 1.5; white-space: nowrap; font-variant-numeric: tabular-nums; letter-spacing: -.025em; }
+.room-card > .p-6 > .border-t > div:last-child { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.room-card .btn-detail, .room-card .btn-book { min-width: 0; min-height: 44px; justify-content: center; white-space: nowrap; padding: 10px 12px; font-size: 13px; letter-spacing: 0; }
+.room-card .btn-detail span { display: inline; }
+#room-detail-body .text-gold-gradient, #booking-modal-body .text-gold-gradient { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
+#rooms .room-filter-tab { min-height: 42px; white-space: nowrap; }
+:is(#main-header, #hero, #rooms) :is(button, a, input, select):focus-visible { outline: 2px solid #d4af37; outline-offset: 4px; }
+@media (min-width: 1280px) and (max-width: 1535px) {
+  #main-header > div { flex-wrap: wrap; gap: 12px 24px; }
+  #main-header nav { order: 3; flex-basis: 100%; }
+}
+@media (max-width: 1100px) {
+  #rooms-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  #hero .glass-panel > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #hero .glass-panel > .grid > div:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 639px) {
+  #main-header > div { gap: 8px; }
+  #main-header > div > a { flex-shrink: 1; }
+  #main-header > div > a > div:last-child > span:last-child { font-size: 7px; letter-spacing: .06em; }
+  #header-book-now { padding-inline: 10px; font-size: 10px; letter-spacing: 0; }
+  #hero { padding-top: 128px; padding-bottom: 48px; }
+  #hero h1 { font-size: clamp(2.1rem, 8.5vw, 3rem); }
+  #hero h1 + p { font-size: 15px; line-height: 1.75; }
+  #hero .glass-panel { padding: 18px; }
+  #hero .glass-panel > .grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  #rooms-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .room-card > .p-6 { padding: 22px; }
+  .room-card h3 { min-height: 0; font-size: 24px; }
+  #toast-container { right: 12px; max-width: calc(100vw - 24px); }
+  .toast { min-width: 0; width: 100%; }
+}
+
 html[data-theme="light"] {
   color-scheme: light;
   --bg-obsidian: #f6f3ed;
@@ -189,6 +310,16 @@ html[data-theme="light"] #hero [class~="text-slate-300"] {
   color: #e2e8f0 !important;
 }
 
+/* Gold on the photograph must retain contrast in the light theme as well. */
+html[data-theme="light"] #hero h1 .text-gold-gradient {
+  color: #f3df9b !important;
+}
+html[data-theme="light"] #hero .btn-outline-gold {
+  color: #f3df9b !important;
+  border-color: #d4af37;
+  background: rgba(11, 20, 38, .65);
+}
+
 html[data-theme="light"] #search-checkin,
 html[data-theme="light"] #search-checkout,
 html[data-theme="light"] #search-guests,
@@ -255,6 +386,30 @@ html[data-theme="light"] footer#contact a[class~="bg-slate-800"] {
 html[data-theme="light"] footer#contact a[class~="bg-slate-800"]:hover {
   background-color: #344258 !important;
 }
+
+/* Keep photograph labels and the sticky navigation legible in both themes. */
+.room-card .room-image-container > [class~="inset-0"] {
+  background: linear-gradient(0deg, rgba(8, 18, 35, .72), transparent 48%);
+}
+.room-card .room-image-container > [class~="top-4"][class~="left-4"] {
+  background: #f3df9b;
+  color: #102039 !important;
+}
+.room-card .room-image-container > [class~="bottom-3"] {
+  color: #fff !important;
+  text-shadow: 0 1px 4px #000;
+}
+html[data-theme="light"] #main-header.header-scrolled {
+  background: rgba(11, 20, 38, .97) !important;
+}
+html[data-theme="light"] #main-header.header-scrolled :is([class~="text-white"], [class~="text-slate-300"]) {
+  color: #f8fafc !important;
+}
+html[data-theme="light"] #main-header.header-scrolled :is(.text-gold-gradient, a[class~="text-amber-200"]) {
+  color: #f3df9b !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+#main-header > div > a > div:last-child > span:last-child { color: #f3df9b; }
 
 html[data-theme="light"] footer#contact .btn-outline-gold {
   color: #f3e5ab !important;

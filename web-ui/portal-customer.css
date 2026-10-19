@@ -75,6 +75,29 @@ body.customer-portal {
   backdrop-filter: blur(16px);
 }
 
+/* Keep the brand and account controls clear of the long customer menu. */
+.customer-portal .portal-sidebar {
+  grid-template-columns: minmax(210px, auto) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  row-gap: 10px;
+}
+
+.customer-portal .portal-nav {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-content: flex-start;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: 2px 0 6px;
+}
+
+.customer-portal .sidebar-account {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  min-width: 0;
+}
+
 .customer-portal .sidebar-logo {
   padding: 0;
   color: var(--portal-text);
@@ -121,6 +144,198 @@ body.customer-portal {
   background: var(--customer-nav-active-bg);
   border-color: var(--customer-nav-active-border);
 }
+
+.customer-portal .portal-nav button { font-size: 12px; font-weight: 600; letter-spacing: .01em; }
+.customer-portal .portal-nav button:hover { transform: translateY(-1px); transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+.customer-portal .portal-nav button.active { box-shadow: inset 0 -2px 0 var(--portal-gold); }
+.customer-portal .portal-view .customer-empty,.customer-portal .portal-view .customer-error { text-align:center; padding:28px; color:var(--portal-muted); }
+.customer-portal .portal-view .customer-error { color:#d98282; }
+.customer-portal .portal-view td small { display:block; margin-top:3px; color:var(--portal-muted); }
+
+.customer-portal .greeting-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 132px;
+  margin-bottom: 20px;
+  padding: 24px 28px;
+  overflow: hidden;
+  border: 1px solid var(--customer-nav-active-border);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 92% 20%, rgba(183, 143, 95, .2), transparent 32%),
+    linear-gradient(120deg, var(--customer-surface), var(--customer-secondary-bg));
+  box-shadow: var(--customer-card-shadow);
+}
+
+.customer-portal .greeting-avatar {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--customer-nav-active-border);
+  border-radius: 50%;
+  color: var(--customer-nav-active-text);
+  background: var(--customer-avatar-bg);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.customer-portal .greeting-text {
+  min-width: 0;
+}
+
+.customer-portal .greeting-text h2 {
+  margin: 0 0 7px;
+  color: var(--portal-text);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(20px, 2vw, 27px);
+  line-height: 1.3;
+}
+
+.customer-portal .greeting-text p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--portal-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.customer-portal .portal-view #cust-stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px !important;
+}
+
+.customer-portal .stat-card-enhanced {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 154px;
+  align-content: start;
+  justify-items: start;
+  gap: 9px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid var(--portal-border);
+  border-radius: 16px;
+  background: var(--customer-surface);
+  box-shadow: var(--customer-card-shadow);
+  animation: customer-stat-enter .35s ease both;
+}
+
+.customer-portal .stat-card-enhanced::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: var(--accent-color, var(--portal-gold));
+  content: '';
+  opacity: .8;
+}
+
+.customer-portal .stat-card-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+}
+
+.customer-portal .stat-card-title {
+  color: var(--portal-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.customer-portal .stat-card-value {
+  color: var(--portal-text);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 25px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.customer-portal .portal-view > .card {
+  padding: 22px;
+}
+
+.customer-portal .portal-view > .card h3 {
+  margin: 0 0 4px;
+  color: var(--portal-text);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 19px !important;
+}
+
+.customer-portal .portal-view > .card > div:first-child p {
+  margin: 0;
+  color: var(--portal-muted) !important;
+  font-size: 12px !important;
+}
+
+.customer-portal .portal-view .table-container {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+}
+
+.customer-portal .portal-view table th {
+  padding: 13px 14px;
+  background: var(--customer-secondary-bg);
+  color: var(--portal-soft);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.customer-portal .portal-view table td {
+  padding: 14px;
+  color: var(--portal-text);
+  vertical-align: middle;
+}
+
+.customer-portal .portal-view .empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px 12px;
+  color: var(--portal-muted);
+  text-align: center;
+}
+
+.customer-portal .portal-view .empty-state-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 2px;
+  place-items: center;
+  border: 1px solid var(--portal-border);
+  border-radius: 14px;
+  color: var(--portal-gold);
+  background: var(--customer-secondary-bg);
+}
+
+.customer-portal .portal-view .empty-state p {
+  margin: 0;
+  color: var(--portal-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.customer-portal .portal-view .empty-state small {
+  color: var(--portal-muted);
+  font-size: 11px;
+}
+
+@keyframes customer-stat-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.discovery-fields{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr)) auto;gap:14px;align-items:end}.discovery-fields label{display:grid;gap:7px;font-size:12px;font-weight:600}.discovery-fields input,.discovery-fields select{width:100%;min-height:42px}.discovery-fields button{min-height:42px;white-space:nowrap}.discovery-result-head{display:flex;justify-content:space-between;gap:16px;margin:24px 0 14px;color:var(--portal-muted);font-size:13px}.discovery-result-head strong{color:var(--portal-text);font-size:15px}.customer-room-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.customer-room-card{overflow:hidden;border:1px solid var(--portal-border);border-radius:15px;background:var(--customer-surface);box-shadow:var(--customer-card-shadow)}.customer-room-image{position:relative;height:168px;background:var(--portal-surface)}.customer-room-image img{width:100%;height:100%;object-fit:cover}.room-status{position:absolute;top:12px;left:12px;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#d1fae5;color:#065f46}.room-status.reserved{background:#ffedd5;color:#9a3412}.room-status.occupied{background:#fee2e2;color:#991b1b}.room-status.maintenance,.room-status.not-ready{background:#e5e7eb;color:#374151}.customer-room-content{display:grid;gap:12px;padding:16px}.customer-room-content small{color:var(--portal-gold);font-weight:700;letter-spacing:.08em}.customer-room-content h3{margin:4px 0;font-family:'Playfair Display',serif;font-size:21px}.customer-room-content p{margin:0;color:var(--portal-muted);font-size:13px;line-height:1.55}.customer-room-content>strong{color:var(--portal-gold);font-size:18px}.customer-room-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.customer-room-actions button:disabled{opacity:.5;cursor:not-allowed}@media(max-width:1100px){.discovery-fields{grid-template-columns:repeat(3,minmax(150px,1fr))}.customer-room-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:640px){.discovery-fields,.customer-room-grid{grid-template-columns:1fr}.discovery-result-head{align-items:flex-start;flex-direction:column}}
 
 .customer-portal .sidebar-account {
   display: flex;
@@ -191,6 +406,133 @@ body.customer-portal {
   color: var(--portal-text);
   background: var(--customer-secondary-bg);
   border-color: var(--portal-border);
+}
+
+/* Customer dashboard: keep feedback, welcome content and account figures
+   readable as separate, balanced sections in both portal themes. */
+.customer-portal #portal-message[hidden] {
+  display: none !important;
+}
+
+.customer-portal .greeting-banner {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 0 0 22px;
+  padding: 22px 24px;
+  border: 1px solid var(--portal-border);
+  border-radius: 16px;
+  color: var(--portal-text);
+  background:
+    linear-gradient(112deg, color-mix(in srgb, var(--customer-surface) 94%, var(--portal-gold) 6%), var(--customer-surface));
+  box-shadow: var(--customer-card-shadow);
+}
+
+.customer-portal .greeting-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--portal-border);
+  border-radius: 50%;
+  color: var(--customer-nav-active-text);
+  background: var(--customer-avatar-bg);
+  font-weight: 800;
+}
+
+.customer-portal .greeting-text h2 {
+  margin: 0 0 5px;
+  font: 600 clamp(19px, 2vw, 25px)/1.25 'Playfair Display', Georgia, serif;
+  color: var(--portal-text);
+}
+
+.customer-portal .greeting-text p {
+  max-width: 800px;
+  margin: 0;
+  color: var(--portal-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.customer-portal .stat-card-enhanced {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid var(--portal-border);
+  border-radius: 14px;
+  color: var(--portal-text);
+  background: var(--customer-surface);
+  box-shadow: var(--customer-card-shadow);
+}
+
+.customer-portal .stat-card-enhanced::after {
+  position: absolute;
+  inset: auto 18px 0;
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: var(--accent-color, var(--portal-gold));
+  content: '';
+  opacity: .78;
+}
+
+.customer-portal .stat-card-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 13px;
+  border-radius: 12px;
+}
+
+.customer-portal .stat-card-title {
+  margin-bottom: 4px;
+  color: var(--portal-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.customer-portal .stat-card-value {
+  overflow-wrap: anywhere;
+  color: var(--portal-text);
+  font-size: clamp(20px, 2vw, 27px);
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.customer-portal .stat-card-value span {
+  color: var(--portal-muted) !important;
+  font-size: 13px !important;
+}
+
+.customer-portal .empty-state {
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+  padding: 8px 0;
+  color: var(--portal-muted);
+}
+
+.customer-portal .empty-state-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 3px;
+  border-radius: 10px;
+  color: var(--portal-gold);
+  background: var(--customer-secondary-bg);
+}
+
+.customer-portal .empty-state p {
+  margin: 0;
+  color: var(--portal-text);
+  font-weight: 650;
+}
+
+.customer-portal .empty-state small {
+  color: var(--portal-muted);
 }
 
 html[data-theme="dark"] body.customer-portal {
@@ -270,7 +612,1705 @@ html[data-theme="dark"] body.customer-portal {
     padding-top: 24px;
   }
 
+  .customer-portal .greeting-banner {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 18px;
+  }
+
+  .customer-portal .greeting-avatar {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .customer-portal .greeting-text h2 {
+    font-size: 20px;
+  }
+
+  .customer-portal .greeting-text p {
+    font-size: 13px;
+  }
+
+  .portal-return-top span { display:none; }
+  .portal-return-top { padding:9px; }
+
   .customer-portal .portal-content-bar {
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .customer-portal .portal-view #cust-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .customer-portal .portal-view #cust-stats-grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .customer-portal .greeting-banner {
+    align-items: flex-start;
+    gap: 14px;
+    min-height: 0;
+    padding: 18px;
+  }
+
+  .customer-portal .greeting-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .customer-portal .greeting-text h2 {
+    font-size: 19px;
+  }
+
+  .customer-portal .greeting-text p {
+    font-size: 12px;
+  }
+
+  .customer-portal .portal-view #cust-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .customer-portal .portal-view #cust-stats-grid > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .customer-portal .stat-card-enhanced {
+    min-height: 136px;
+    padding: 16px;
+  }
+
+  .customer-portal .portal-view > .card {
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-portal .stat-card-enhanced {
+    animation: none;
+  }
+}
+
+.customer-portal .customer-room-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.customer-portal .customer-room-actions .btn {
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--portal-border);
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.customer-portal .customer-room-actions .btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  border-color: var(--portal-gold);
+}
+
+.customer-portal .customer-room-actions .btn:focus-visible,
+.customer-portal .discovery-dialog button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--portal-gold) 48%, transparent);
+  outline-offset: 2px;
+}
+
+.customer-portal .customer-room-actions .btn:disabled {
+  color: var(--portal-muted);
+  background: var(--customer-secondary-bg);
+  cursor: not-allowed;
+  opacity: .72;
+}
+
+.customer-portal .room-unavailable-reason {
+  margin: -4px 0 0;
+  color: var(--portal-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.customer-portal .room-image-placeholder,
+.customer-portal .discovery-detail-no-image {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--portal-gold);
+  background: var(--portal-surface);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 36px;
+}
+
+.customer-portal .discovery-feedback {
+  min-height: 18px;
+  margin: 12px 0 0;
+  color: var(--portal-muted);
+  font-size: 12px;
+}
+
+.customer-portal .discovery-feedback.is-error {
+  color: #b4534b;
+}
+
+.customer-portal .discovery-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(720px, calc(100% - 28px));
+  max-height: min(88vh, 900px);
+  margin: auto;
+  transform: none;
+  padding: 24px;
+  overflow: auto;
+  border: 1px solid var(--portal-border);
+  border-radius: 18px;
+  color: var(--portal-text);
+  background: var(--customer-surface);
+  box-shadow: 0 24px 80px rgba(34, 25, 15, .3);
+}
+
+.customer-portal .customer-room-image .room-status {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: auto;
+}
+
+.customer-portal .discovery-room-facts .room-status {
+  position: static;
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px 10px;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.customer-portal .discovery-dialog::backdrop {
+  background: rgba(24, 20, 16, .56);
+  backdrop-filter: blur(3px);
+}
+
+.customer-portal .discovery-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.customer-portal .discovery-dialog-header .portal-eyebrow {
+  margin: 0 0 5px;
+}
+
+.customer-portal .discovery-dialog-header h2 {
+  margin: 0;
+  color: var(--portal-text);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 24px;
+}
+
+.customer-portal .discovery-close {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--portal-border);
+  border-radius: 50%;
+  color: var(--portal-text);
+  background: var(--customer-secondary-bg);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.customer-portal .discovery-detail-image,
+.customer-portal .discovery-detail-no-image {
+  width: 100%;
+  height: clamp(190px, 34vw, 300px);
+  margin-bottom: 18px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.customer-portal .discovery-detail-no-image {
+  height: 180px;
+  color: var(--portal-muted);
+  font: 13px 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.customer-portal .discovery-room-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.customer-portal .discovery-room-facts > div {
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+  border: 1px solid var(--portal-border);
+  border-radius: 10px;
+  background: var(--customer-secondary-bg);
+}
+
+.customer-portal .discovery-room-facts span:not(.room-status) {
+  color: var(--portal-muted);
+  font-size: 11px;
+}
+
+.customer-portal .discovery-room-facts strong {
+  color: var(--portal-text);
+  font-size: 13px;
+}
+
+.customer-portal .discovery-detail-section {
+  margin-top: 20px;
+}
+
+.customer-portal .discovery-detail-section h3 {
+  margin: 0 0 8px;
+  color: var(--portal-soft);
+  font-size: 14px;
+}
+
+.customer-portal .discovery-detail-section p,
+.customer-portal .discovery-detail-section li {
+  color: var(--portal-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.customer-portal .discovery-detail-section p {
+  margin: 0;
+}
+
+.customer-portal .discovery-detail-section ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 20px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.customer-portal .discovery-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--portal-border);
+}
+
+.customer-portal .discovery-dialog-actions .btn {
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid var(--portal-border);
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.customer-portal .discovery-dialog-actions .btn:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.customer-portal .discovery-booking-content {
+  max-height: min(62vh, 680px);
+  overflow-y: auto;
+  padding: 14px;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+  background: var(--customer-secondary-bg);
+}
+
+.customer-portal .booking-rate-breakdown,
+.customer-portal .booking-contact-summary {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--portal-border);
+}
+
+.customer-portal .booking-rate-breakdown > strong,
+.customer-portal .booking-contact-summary > strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--portal-text);
+  font-size: 12px;
+}
+
+.customer-portal .booking-total-line {
+  border-bottom: 0;
+  font-size: 14px;
+}
+
+.customer-portal .booking-total-line strong {
+  color: var(--portal-gold);
+  font-size: 16px;
+}
+
+.customer-portal .booking-confirm-personal {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 15px;
+  color: var(--portal-text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.customer-portal .booking-confirm-personal input {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  accent-color: var(--portal-gold);
+}
+
+.customer-portal .booking-payment-choice {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  color: var(--portal-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.customer-portal .booking-payment-choice select {
+  width: 100%;
+  min-height: 42px;
+}
+
+.customer-portal .booking-payment-panel {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--portal-border);
+  border-radius: 10px;
+  color: var(--portal-text);
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.customer-portal .booking-payment-qr {
+  display: block;
+  width: min(220px, 100%);
+  height: auto;
+  margin: 12px auto;
+  border-radius: 8px;
+  background: white;
+}
+
+.customer-portal .booking-summary-line {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--portal-border);
+  font-size: 12px;
+}
+
+.customer-portal .booking-summary-line:last-of-type {
+  border-bottom: 0;
+}
+
+.customer-portal .booking-summary-line span {
+  color: var(--portal-muted);
+}
+
+.customer-portal .booking-summary-line strong {
+  color: var(--portal-text);
+  text-align: right;
+}
+
+.customer-portal .booking-price-note {
+  margin: 12px 0 0;
+  color: var(--portal-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .customer-portal .discovery-dialog {
+    width: calc(100% - 20px);
+    max-height: 92vh;
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .customer-portal .discovery-dialog-header h2 {
+    font-size: 21px;
+  }
+
+  .customer-portal .discovery-room-facts,
+  .customer-portal .discovery-detail-section ul {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-portal .discovery-dialog-actions {
+    flex-direction: column-reverse;
+  }
+
+  .customer-portal .discovery-dialog-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-portal .customer-room-actions .btn {
+    transition: none;
+  }
+}
+
+.customer-portal .customer-room-card {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  border-radius: 18px;
+  box-shadow: 0 12px 32px rgba(67, 49, 29, .1);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.customer-portal .customer-room-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(67, 49, 29, .16);
+}
+
+.customer-portal .customer-room-image {
+  height: auto;
+  aspect-ratio: 16 / 10;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.customer-portal .customer-room-image img {
+  transition: transform .5s ease;
+}
+
+.customer-portal .customer-room-card:hover .customer-room-image img {
+  transform: scale(1.04);
+}
+
+.customer-portal .customer-room-content {
+  min-width: 0;
+  flex: 1;
+  gap: 14px;
+  padding: 20px;
+}
+
+.customer-portal .discovery-room-heading small {
+  color: var(--portal-gold);
+  font-size: 10px;
+  letter-spacing: .12em;
+}
+
+.customer-portal .discovery-room-heading h3 {
+  margin: 7px 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 23px;
+  line-height: 1.3;
+}
+
+.customer-portal .discovery-room-heading p,
+.customer-portal .discovery-room-description {
+  margin: 0;
+  color: var(--portal-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.customer-portal .discovery-room-amenities {
+  display: flex;
+  min-height: 28px;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.customer-portal .discovery-room-amenities span {
+  padding: 5px 9px;
+  border: 1px solid var(--portal-border);
+  border-radius: 999px;
+  color: var(--portal-muted);
+  background: var(--customer-secondary-bg);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.customer-portal .discovery-card-footer {
+  display: grid;
+  gap: 13px;
+  margin-top: auto;
+  padding-top: 15px;
+  border-top: 1px solid var(--portal-border);
+}
+
+.customer-portal .discovery-room-price {
+  display: grid;
+  gap: 3px;
+}
+
+.customer-portal .discovery-room-price small {
+  color: var(--portal-muted);
+  font-size: 9px;
+  letter-spacing: .1em;
+}
+
+.customer-portal .discovery-room-price strong {
+  color: var(--portal-gold);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.customer-portal .customer-room-actions {
+  gap: 10px;
+}
+
+.customer-portal .room-image-placeholder,
+.customer-portal .discovery-detail-no-image {
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(188, 151, 107, .2), transparent 42%),
+    linear-gradient(135deg, var(--portal-surface), var(--customer-secondary-bg));
+}
+
+.customer-portal .room-image-placeholder {
+  align-content: center;
+  justify-items: center;
+  gap: 5px;
+}
+
+.customer-portal .room-image-placeholder span,
+.customer-portal .discovery-detail-no-image span {
+  color: var(--portal-gold);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 48px;
+  line-height: 1;
+}
+
+.customer-portal .room-image-placeholder small,
+.customer-portal .discovery-detail-no-image small {
+  color: var(--portal-muted);
+  font-size: 10px;
+  letter-spacing: .04em;
+}
+
+.customer-portal .discovery-detail-hero {
+  overflow: hidden;
+  margin-bottom: 18px;
+  border: 1px solid var(--portal-border);
+  border-radius: 14px;
+}
+
+.customer-portal .discovery-detail-image,
+.customer-portal .discovery-detail-no-image {
+  display: grid;
+  width: 100%;
+  height: auto;
+  min-height: 220px;
+  max-height: 340px;
+  margin: 0;
+  aspect-ratio: 16 / 9;
+  place-items: center;
+  object-fit: cover;
+}
+
+.customer-portal .discovery-room-facts > div {
+  min-width: 0;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+.customer-portal .discovery-room-facts > div strong {
+  overflow-wrap: anywhere;
+}
+
+.customer-portal .discovery-detail-section h3 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 17px;
+}
+
+@media (max-width: 640px) {
+  .customer-portal .customer-room-content {
+    padding: 17px;
+  }
+
+  .customer-portal .customer-room-actions .btn {
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+
+  .customer-portal .discovery-detail-image,
+  .customer-portal .discovery-detail-no-image {
+    min-height: 170px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-portal .customer-room-card,
+  .customer-portal .customer-room-image img {
+    transition: none;
+  }
+}
+
+.customer-portal .loyalty-view {
+  display: grid;
+  gap: 22px;
+}
+
+.customer-portal .loyalty-view > .page-header {
+  margin: 0;
+}
+
+.customer-portal .loyalty-view #loyalty-hero-wrap:empty {
+  display: none;
+}
+
+.customer-portal .loyalty-view .loyalty-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, .8fr);
+  grid-template-areas:
+    "label tier"
+    "points progress";
+  align-items: center;
+  gap: 10px 28px;
+  padding: 24px 28px;
+  border: 1px solid var(--customer-nav-active-border);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at 92% 12%, rgba(183, 143, 95, .18), transparent 40%),
+    linear-gradient(120deg, var(--customer-surface), var(--customer-secondary-bg));
+  box-shadow: var(--customer-card-shadow);
+}
+
+.customer-portal .loyalty-view .loyalty-hero-label {
+  grid-area: label;
+  color: var(--portal-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.customer-portal .loyalty-view .loyalty-hero-points {
+  grid-area: points;
+  color: var(--portal-text);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(32px, 4vw, 46px);
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.customer-portal .loyalty-view .loyalty-hero-points span {
+  margin-left: 9px;
+  color: var(--portal-gold);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.customer-portal .loyalty-view .loyalty-hero > div:nth-child(3) {
+  grid-area: tier;
+  justify-self: end;
+}
+
+.customer-portal .loyalty-view .tier-badge {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 7px 12px;
+  border: 1px solid var(--customer-nav-active-border);
+  border-radius: 999px;
+  color: var(--customer-nav-active-text);
+  background: var(--customer-secondary-bg);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.customer-portal .loyalty-view .tier-badge.tier-gold,
+.customer-portal .loyalty-view .tier-badge.tier-vip {
+  color: #78562e;
+  background: #f5ead6;
+}
+
+.customer-portal .loyalty-view .loyalty-progress-wrap {
+  grid-area: progress;
+  display: grid;
+  gap: 9px;
+  width: 100%;
+}
+
+.customer-portal .loyalty-view .loyalty-progress-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--portal-muted);
+  font-size: 11px;
+}
+
+.customer-portal .loyalty-view .loyalty-progress-info span:last-child {
+  color: var(--portal-text);
+  font-weight: 700;
+  text-align: right;
+}
+
+.customer-portal .loyalty-view .loyalty-progress-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--portal-border);
+}
+
+.customer-portal .loyalty-view .loyalty-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #986b3f, #c79b61);
+  transition: width .7s ease;
+}
+
+.customer-portal .loyalty-view .loyalty-tier-complete {
+  grid-area: progress;
+  justify-self: end;
+  color: var(--portal-gold);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.customer-portal .loyalty-view .loyalty-content-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, .9fr) minmax(0, 1.8fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.customer-portal .loyalty-view .loyalty-content-grid > .card {
+  min-width: 0;
+  margin: 0;
+  padding: 22px;
+  border: 1px solid var(--portal-border);
+  border-radius: 16px;
+  background: var(--customer-surface);
+  box-shadow: var(--customer-card-shadow);
+}
+
+.customer-portal .loyalty-view .loyalty-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.customer-portal .loyalty-view .loyalty-panel-heading h3 {
+  margin: 0 0 5px;
+  color: var(--portal-text);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px !important;
+  line-height: 1.35;
+}
+
+.customer-portal .loyalty-view .loyalty-panel-heading p {
+  margin: 0;
+  color: var(--portal-muted) !important;
+  font-size: 11px !important;
+  line-height: 1.6;
+}
+
+.customer-portal .loyalty-view .loyalty-panel-heading > svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: var(--portal-gold);
+}
+
+.customer-portal .loyalty-view #loyalty-redeem-msg {
+  min-height: 0;
+  margin-bottom: 10px;
+  color: var(--portal-muted);
+  font-size: 12px;
+}
+
+.customer-portal .loyalty-view .redeem-card {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--portal-border);
+  border-radius: 13px;
+  background: var(--customer-secondary-bg);
+}
+
+.customer-portal .loyalty-view .redeem-card-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--customer-nav-active-border);
+  border-radius: 10px;
+  color: var(--portal-gold);
+  background: var(--customer-surface);
+}
+
+.customer-portal .loyalty-view .redeem-card-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.customer-portal .loyalty-view .redeem-card-icon-premium {
+  color: #8a6439;
+}
+
+.customer-portal .loyalty-view .redeem-card-title {
+  color: var(--portal-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.customer-portal .loyalty-view .redeem-card-desc {
+  color: var(--portal-muted);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.customer-portal .loyalty-view .redeem-card-cost {
+  color: var(--portal-soft);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.customer-portal .loyalty-view .redeem-card-cost-premium {
+  color: var(--portal-gold);
+}
+
+.customer-portal .loyalty-view .redeem-card-benefit {
+  color: #52734d;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.customer-portal .loyalty-view .redeem-card .btn {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.customer-portal .loyalty-view .redeem-card-button-premium {
+  border: 1px solid var(--customer-nav-active-border);
+  color: var(--customer-nav-active-text);
+  background: var(--customer-surface);
+}
+
+.customer-portal .loyalty-view .loyalty-history-panel .table-container {
+  overflow-x: auto;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+}
+
+.customer-portal .loyalty-view .loyalty-history-panel table {
+  min-width: 480px;
+}
+
+.customer-portal .loyalty-view .loyalty-history-panel th {
+  background: var(--customer-secondary-bg);
+}
+
+.customer-portal .loyalty-view .loyalty-loading {
+  display: flex;
+  min-height: 160px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: var(--portal-muted);
+  font-size: 12px;
+}
+
+.customer-portal .loyalty-view .loyalty-loading svg {
+  width: 16px;
+  height: 16px;
+  color: var(--portal-gold);
+}
+
+@media (max-width: 900px) {
+  .customer-portal .loyalty-view .loyalty-content-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .customer-portal .loyalty-view .loyalty-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label label"
+      "points tier"
+      "progress progress";
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .customer-portal .loyalty-view .loyalty-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-portal .loyalty-view .loyalty-tier-complete {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 420px) {
+  .customer-portal .loyalty-view .loyalty-content-grid > .card {
+    padding: 17px;
+  }
+
+  .customer-portal .loyalty-view .loyalty-hero-points {
+    font-size: 34px;
+  }
+
+  .customer-portal .loyalty-view .loyalty-hero-points span {
+    font-size: 12px;
+  }
+
+  .customer-portal .loyalty-view .loyalty-progress-info {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-portal .loyalty-view .loyalty-progress-fill {
+    transition: none;
+  }
+}
+
+.customer-portal .portal-message:empty,
+.customer-portal .portal-message[hidden] {
+  display: none !important;
+}
+
+.customer-portal .concierge-view {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.customer-portal .concierge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--portal-border);
+}
+
+.customer-portal .concierge-header .portal-eyebrow {
+  margin: 0 0 5px;
+}
+
+.customer-portal .concierge-header h2 {
+  margin: 0 0 5px;
+  color: var(--portal-text);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(21px, 2vw, 26px);
+  line-height: 1.3;
+}
+
+.customer-portal .concierge-header p:last-child {
+  margin: 0;
+  color: var(--portal-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.customer-portal .concierge-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--portal-border);
+  border-radius: 999px;
+  color: var(--portal-muted);
+  background: var(--customer-surface);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.customer-portal .concierge-status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4e9a67;
+  box-shadow: 0 0 0 3px rgba(78, 154, 103, .13);
+}
+
+.customer-portal .concierge-tabs {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+  background: var(--customer-secondary-bg);
+}
+
+.customer-portal .concierge-tab {
+  min-height: 42px;
+  padding: 9px 15px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--portal-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-portal .concierge-tab.active {
+  border-color: var(--portal-border);
+  color: var(--portal-text);
+  background: var(--customer-surface);
+  box-shadow: 0 2px 6px rgba(38, 31, 24, .06);
+}
+
+.customer-portal .concierge-tab:focus-visible,
+.customer-portal .ai-chat-escalation button:focus-visible {
+  outline: 3px solid var(--portal-gold);
+  outline-offset: 2px;
+}
+
+.customer-portal .concierge-panel[hidden] {
+  display: none !important;
+}
+
+.customer-portal .concierge-view .chat-container {
+  display: flex;
+  height: min(68vh, 680px) !important;
+  min-height: 420px;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--portal-border);
+  border-radius: 16px;
+  background: var(--customer-surface);
+  box-shadow: var(--customer-card-shadow);
+}
+
+.customer-portal .concierge-view .chat-main {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.customer-portal .chat-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 clamp(16px, 3vw, 28px) 12px;
+  background: var(--customer-surface);
+}
+
+.customer-portal .chat-suggestion {
+  min-height: 44px;
+  padding: 7px 11px;
+  border: 1px solid var(--portal-border);
+  border-radius: 999px;
+  color: var(--portal-text);
+  background: var(--customer-secondary-bg);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+
+.customer-portal .chat-suggestion:hover {
+  border-color: var(--portal-gold);
+  background: var(--customer-nav-active-bg);
+}
+
+.customer-portal .chat-suggestion:focus-visible,
+.customer-portal .chat-input-area button:focus-visible,
+.customer-portal .customer-review-form :focus-visible {
+  outline: 3px solid var(--portal-gold);
+  outline-offset: 2px;
+}
+
+.customer-portal .chat-feedback {
+  min-height: 18px;
+  margin: 0;
+  padding: 0 14px 10px;
+  color: var(--portal-muted);
+  background: var(--customer-surface);
+  font-size: 11px;
+}
+
+.customer-portal .ai-chat-feedback {
+  min-height: 18px;
+  padding: 0 14px 8px;
+  color: var(--portal-muted);
+  background: var(--customer-surface);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.customer-portal .ai-chat-escalation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--portal-border);
+  color: var(--portal-muted);
+  background: var(--customer-surface);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.customer-portal .ai-chat-escalation[hidden] {
+  display: none !important;
+}
+
+.customer-portal .ai-chat-escalation .btn {
+  min-height: 40px;
+  flex: 0 0 auto;
+}
+
+.customer-portal .ai-chat-citations {
+  display: block;
+  margin-top: 8px;
+  color: var(--portal-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.customer-portal .concierge-view .chat-messages {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  padding: clamp(16px, 3vw, 28px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(ellipse at 50% 0, rgba(183, 143, 95, .07), transparent 50%),
+    var(--customer-surface);
+}
+
+.customer-portal .concierge-view .chat-empty-state {
+  display: grid;
+  min-height: 220px;
+  flex: 1;
+  align-content: center;
+  justify-items: center;
+  gap: 9px;
+  color: var(--portal-muted);
+  text-align: center;
+}
+
+.customer-portal .concierge-view .chat-empty-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 4px;
+  place-items: center;
+  border: 1px solid var(--portal-border);
+  border-radius: 17px;
+  color: var(--portal-gold);
+  background: var(--customer-secondary-bg);
+}
+
+.customer-portal .concierge-view .chat-empty-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.customer-portal .concierge-view .chat-empty-state strong {
+  color: var(--portal-text);
+  font-size: 14px;
+}
+
+.customer-portal .concierge-view .chat-empty-state > span:last-child {
+  max-width: 360px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.customer-portal .concierge-view .chat-bubble {
+  max-width: min(76%, 620px);
+  padding: 11px 14px;
+  border: 1px solid var(--portal-border);
+  border-radius: 15px 15px 15px 5px;
+  color: var(--portal-text);
+  background: var(--customer-secondary-bg);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.customer-portal .concierge-view .chat-bubble.sent {
+  align-self: flex-end;
+  border-color: var(--customer-nav-active-border);
+  border-radius: 15px 15px 5px 15px;
+  color: #fff;
+  background: var(--customer-primary-bg);
+}
+
+.customer-portal .concierge-view .chat-input-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid var(--portal-border);
+  background: var(--customer-surface);
+}
+
+.customer-portal .concierge-view .chat-input-area input {
+  min-width: 0;
+  min-height: 46px;
+  flex: 1;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.customer-portal .concierge-view .chat-input-area button {
+  display: inline-flex;
+  min-height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.customer-portal .concierge-view .chat-input-area button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.customer-portal .concierge-view .chat-input-area button:disabled,
+.customer-portal .customer-review-form button:disabled {
+  opacity: .62;
+  cursor: wait;
+}
+
+.customer-portal .customer-review-form {
+  display: grid;
+  min-width: 150px;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid var(--portal-border);
+  border-radius: 10px;
+  background: var(--customer-secondary-bg);
+}
+
+.customer-portal .customer-review-form label {
+  display: grid;
+  gap: 4px;
+  color: var(--portal-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.customer-portal .customer-review-form select,
+.customer-portal .customer-review-form textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--portal-border);
+  border-radius: 7px;
+  padding: 7px 8px;
+  color: var(--portal-text);
+  background: var(--customer-surface);
+  font: inherit;
+  font-size: 11px;
+}
+
+.customer-portal .customer-review-form textarea {
+  resize: vertical;
+}
+
+.customer-portal .customer-review-form .btn {
+  justify-self: start;
+  min-height: 34px;
+}
+
+.customer-portal .customer-review-message {
+  color: #a44836;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.customer-portal .customer-review-complete {
+  color: var(--portal-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .customer-portal .concierge-header {
+    align-items: flex-start;
+  }
+
+  .customer-portal .concierge-status {
+    padding: 7px 9px;
+    font-size: 0;
+  }
+
+  .customer-portal .concierge-tabs {
+    width: 100%;
+  }
+
+  .customer-portal .concierge-tab {
+    min-width: 0;
+    flex: 1;
+    padding-inline: 8px;
+  }
+
+  .customer-portal .concierge-status i {
+    width: 9px;
+    height: 9px;
+  }
+
+  .customer-portal .concierge-view .chat-container {
+    height: min(68dvh, 620px) !important;
+    min-height: 360px;
+  }
+
+  .customer-portal .concierge-view .chat-input-area {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .customer-portal .concierge-view .chat-input-area button {
+    padding-inline: 12px;
+  }
+
+  .customer-portal .chat-suggestions {
+    gap: 6px;
+  }
+
+  .customer-portal .chat-suggestion {
+    min-height: 44px;
+    padding-inline: 10px;
+  }
+
+  .customer-portal .customer-review-form {
+    min-width: 190px;
+  }
+
+  .customer-portal .ai-chat-escalation {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .customer-portal .ai-chat-escalation .btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-portal .concierge-view * {
+    scroll-behavior: auto;
+  }
+}
+
+.customer-portal .profile-security-view {
+  display: grid;
+  gap: 20px;
+}
+
+.customer-portal .profile-security-view > .page-header {
+  margin: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--portal-border);
+}
+
+.customer-portal .profile-security-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px;
+}
+
+.customer-portal .profile-security-card {
+  min-width: 0;
+  padding: 22px !important;
+  border: 1px solid var(--portal-border);
+  border-radius: 16px;
+  background: var(--customer-surface);
+  box-shadow: var(--customer-card-shadow);
+}
+
+.customer-portal .profile-security-card-title {
+  margin: 0 0 18px !important;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--portal-border);
+  color: var(--portal-text);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px !important;
+  line-height: 1.4;
+}
+
+.customer-portal .profile-security-form {
+  display: grid;
+  grid-template-columns: minmax(116px, .72fr) minmax(0, 1.5fr);
+  gap: 12px;
+}
+
+.customer-portal .profile-security-form .form-group {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(116px, .72fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+}
+
+.customer-portal .profile-security-form .form-label {
+  margin: 0;
+  color: var(--portal-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.customer-portal .profile-security-form .form-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid var(--customer-input-border);
+  border-radius: 9px;
+  padding: 9px 12px;
+  color: var(--portal-text);
+  background: var(--customer-surface);
+  font-size: 12px;
+}
+
+.customer-portal .profile-security-form .form-input:disabled {
+  color: var(--portal-muted);
+  background: var(--customer-secondary-bg);
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+}
+
+.customer-portal .profile-security-form > .btn {
+  grid-column: 2;
+  justify-self: start;
+  min-height: 42px;
+  border-radius: 9px;
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.customer-portal .profile-security-card > [id$="-success"],
+.customer-portal .profile-security-card > [id$="-error"] {
+  padding: 9px 11px;
+  border: 1px solid var(--portal-border);
+  border-radius: 8px;
+  font-size: 11px !important;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .customer-portal .profile-security-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .customer-portal .profile-security-card {
+    padding: 17px !important;
+  }
+
+  .customer-portal .profile-security-form {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-portal .profile-security-form .form-group {
+    grid-template-columns: 1fr;
+    grid-column: 1;
+    gap: 6px;
+  }
+
+  .customer-portal .profile-security-form > .btn {
+    grid-column: 1;
+    width: 100%;
+  }
+}
+
+.customer-portal .discovery-status-overview {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--portal-border);
+}
+
+.customer-portal .room-status-summary {
+  display: grid;
+  grid-template-columns: minmax(130px, .55fr) minmax(0, 3fr);
+  align-items: stretch;
+  gap: 10px;
+}
+
+.customer-portal .room-status-summary-total,
+.customer-portal .room-status-summary-item {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--portal-border);
+  border-radius: 10px;
+  background: var(--customer-secondary-bg);
+}
+
+.customer-portal .room-status-summary-total {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+}
+
+.customer-portal .room-status-summary-total strong {
+  color: var(--portal-text);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 23px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.customer-portal .room-status-summary-total span,
+.customer-portal .room-status-summary-item span {
+  color: var(--portal-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.customer-portal .room-status-summary-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.customer-portal .room-status-summary-item strong {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--portal-text);
+  background: var(--customer-surface);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.customer-portal .room-status-summary-item.available {
+  border-color: rgba(78, 154, 103, .35);
+}
+
+.customer-portal .room-status-summary-item.available strong {
+  color: #27643b;
+  background: rgba(78, 154, 103, .14);
+}
+
+.customer-portal .room-status-summary-item.reserved {
+  border-color: rgba(183, 122, 57, .35);
+}
+
+.customer-portal .room-status-summary-item.reserved strong {
+  color: #835523;
+  background: rgba(183, 122, 57, .14);
+}
+
+.customer-portal .room-status-summary-item.occupied {
+  border-color: rgba(174, 83, 76, .35);
+}
+
+.customer-portal .room-status-summary-item.occupied strong {
+  color: #963f3a;
+  background: rgba(174, 83, 76, .14);
+}
+
+.customer-portal .room-status-summary-item.maintenance strong,
+.customer-portal .room-status-summary-item.not-ready strong {
+  color: var(--portal-soft);
+}
+
+.customer-portal .room-status-summary-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--portal-border);
+  border-radius: 10px;
+  color: var(--portal-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .customer-portal .room-status-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-portal .room-status-summary-total {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .customer-portal .room-status-summary-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .customer-portal .room-status-summary-item {
+    padding: 9px;
+  }
+
+  .customer-portal .room-status-summary-item span {
+    font-size: 9px;
+  }
+}
+
+.customer-portal .discovery-fields {
+  grid-template-columns: repeat(7, minmax(0, 1fr)) auto;
+}
+
+.customer-portal .discovery-fields input[type="time"] {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  .customer-portal .discovery-fields {
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .customer-portal .discovery-fields {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -6,21 +6,22 @@ export function loadProfileView() {
     const session = getAuthSession();
 
     container.innerHTML = `
+      <div class="profile-security-view">
         <div class="page-header">
             <h1>Hồ Sơ & Bảo Mật</h1>
             <p>Quản lý thông tin tài khoản cá nhân và mật khẩu của bạn</p>
         </div>
 
-        <div class="grid grid-cols-2">
+        <div class="profile-security-grid">
             <!-- 1. Edit Profile Info Card -->
-            <div class="card">
-                <h3 style="font-size: 18px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+            <section class="card profile-security-card">
+                <h3 class="profile-security-card-title">
                     Thông tin cá nhân
                 </h3>
                 <div id="profile-success" style="color: var(--success); font-size: 14px; margin-bottom: 15px; display: none;"></div>
                 <div id="profile-error" style="color: var(--danger); font-size: 14px; margin-bottom: 15px; display: none;"></div>
 
-                <form id="form-update-profile">
+                <form id="form-update-profile" class="profile-security-form">
                     <div class="form-group">
                         <label class="form-label">Tên đăng nhập</label>
                         <input class="form-input" type="text" value="${session.username}" disabled style="opacity: 0.6; cursor: not-allowed;">
@@ -39,17 +40,17 @@ export function loadProfileView() {
                     </div>
                     <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
                 </form>
-            </div>
+            </section>
 
             <!-- 2. Change Password Card -->
-            <div class="card">
-                <h3 style="font-size: 18px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+            <section class="card profile-security-card">
+                <h3 class="profile-security-card-title">
                     Đổi mật khẩu bảo mật
                 </h3>
                 <div id="pass-success" style="color: var(--success); font-size: 14px; margin-bottom: 15px; display: none;"></div>
                 <div id="pass-error" style="color: var(--danger); font-size: 14px; margin-bottom: 15px; display: none;"></div>
 
-                <form id="form-change-password">
+                <form id="form-change-password" class="profile-security-form">
                     <div class="form-group">
                         <label class="form-label">Mật khẩu hiện tại</label>
                         <input class="form-input" type="password" id="pass-old" required>
@@ -64,8 +65,9 @@ export function loadProfileView() {
                     </div>
                     <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
                 </form>
-            </div>
+            </section>
         </div>
+      </div>
     `;
 
     // Add submit event listeners

@@ -2,58 +2,56 @@ import { api } from "../../api.js";
 
 export async function renderLoyalty(container, session) {
     container.innerHTML = `
-        <div class="page-header">
-            <h1>Khách Hàng Thân Thiết</h1>
-            <p>Theo dõi điểm tích lũy và đổi điểm lấy ưu đãi độc quyền dành cho thành viên.</p>
-        </div>
+        <div class="loyalty-view">
+            <div class="page-header">
+                <h1>Khách Hàng Thân Thiết</h1>
+                <p>Theo dõi điểm tích lũy và đổi điểm lấy ưu đãi độc quyền dành cho thành viên.</p>
+            </div>
 
-        <!-- Hero Points Card (populated after data fetch) -->
-        <div id="loyalty-hero-wrap"></div>
+            <div id="loyalty-hero-wrap"></div>
 
-        <div class="grid grid-cols-3">
-            <!-- Left: Redeem Panel -->
-            <div style="grid-column: span 1;">
-                <div class="card" style="margin-bottom: 0;">
-                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">Đổi Điểm Lấy Voucher</h3>
-                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Chọn gói đổi điểm phù hợp với bạn</p>
+            <div class="loyalty-content-grid">
+                <section class="card loyalty-redeem-panel">
+                    <div class="loyalty-panel-heading">
+                        <div>
+                            <h3>Đổi điểm lấy Voucher</h3>
+                            <p>Chọn gói đổi điểm phù hợp với bạn</p>
+                        </div>
+                        <i data-lucide="ticket-percent" aria-hidden="true"></i>
+                    </div>
 
-                    <div id="loyalty-redeem-msg" style="font-size: 13px; margin-bottom: 12px;"></div>
+                    <div id="loyalty-redeem-msg"></div>
 
-                    <!-- Redeem Card 100pt -->
                     <div class="redeem-card" id="redeem-card-100">
                         <div class="redeem-card-icon">
-                            <i data-lucide="ticket" style="width: 20px; height: 20px;"></i>
+                            <i data-lucide="ticket" aria-hidden="true"></i>
                         </div>
                         <div class="redeem-card-title">Gói Cơ Bản</div>
                         <div class="redeem-card-desc">Đổi điểm tích lũy lấy Voucher giảm giá trực tiếp vào hóa đơn phòng tiếp theo.</div>
                         <div class="redeem-card-cost">100 Điểm</div>
-                        <div style="font-size: 12px; color: var(--success); font-weight: 600; margin-bottom: 12px;">→ Nhận Voucher 50.000 VNĐ</div>
-                        <button class="btn btn-primary btn-sm" id="btn-redeem-100" style="width: 100%;">Đổi ngay</button>
+                        <div class="redeem-card-benefit">Nhận Voucher 50.000 VNĐ</div>
+                        <button class="btn btn-primary btn-sm" id="btn-redeem-100">Đổi ngay</button>
                     </div>
 
-                    <!-- Redeem Card 500pt -->
                     <div class="redeem-card" id="redeem-card-500">
-                        <div class="redeem-card-icon" style="background: rgba(6,182,212,0.15); color: #22d3ee;">
-                            <i data-lucide="crown" style="width: 20px; height: 20px;"></i>
+                        <div class="redeem-card-icon redeem-card-icon-premium">
+                            <i data-lucide="crown" aria-hidden="true"></i>
                         </div>
                         <div class="redeem-card-title">Gói Cao Cấp</div>
                         <div class="redeem-card-desc">Dành cho thành viên tích cực. Giá trị Voucher cao hơn đáng kể so với gói cơ bản.</div>
-                        <div class="redeem-card-cost" style="color: #22d3ee;">500 Điểm</div>
-                        <div style="font-size: 12px; color: var(--success); font-weight: 600; margin-bottom: 12px;">→ Nhận Voucher 300.000 VNĐ</div>
-                        <button class="btn btn-sm" id="btn-redeem-500" style="width: 100%; background: rgba(6,182,212,0.2); color: #22d3ee; border: 1px solid rgba(6,182,212,0.4);">Đổi ngay</button>
+                        <div class="redeem-card-cost redeem-card-cost-premium">500 Điểm</div>
+                        <div class="redeem-card-benefit">Nhận Voucher 300.000 VNĐ</div>
+                        <button class="btn btn-sm redeem-card-button-premium" id="btn-redeem-500">Đổi ngay</button>
                     </div>
-                </div>
-            </div>
+                </section>
 
-            <!-- Right: History Table -->
-            <div style="grid-column: span 2;">
-                <div class="card" style="margin-bottom: 0;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <section class="card loyalty-history-panel">
+                    <div class="loyalty-panel-heading">
                         <div>
-                            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 2px;">Lịch Sử Giao Dịch Điểm</h3>
-                            <p style="font-size: 13px; color: var(--text-muted);">Toàn bộ lịch sử tích lũy và đổi điểm của bạn</p>
+                            <h3>Lịch sử giao dịch điểm</h3>
+                            <p>Toàn bộ lịch sử tích lũy và đổi điểm của bạn</p>
                         </div>
-                        <i data-lucide="history" style="width: 20px; height: 20px; color: var(--text-muted);"></i>
+                        <i data-lucide="history" aria-hidden="true"></i>
                     </div>
                     <div class="table-container">
                         <table class="table">
@@ -66,9 +64,9 @@ export async function renderLoyalty(container, session) {
                             </thead>
                             <tbody id="loyalty-history-body">
                                 <tr>
-                                    <td colspan="3" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                                        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
-                                            <i data-lucide="loader" style="width:16px;height:16px;"></i> Đang tải lịch sử...
+                                    <td colspan="3">
+                                        <div class="loyalty-loading">
+                                            <i data-lucide="loader" aria-hidden="true"></i> Đang tải lịch sử...
                                         </div>
                                     </td>
                                 </tr>
@@ -76,7 +74,7 @@ export async function renderLoyalty(container, session) {
                         </table>
                     </div>
                     <div id="pagination-loyalty-history"></div>
-                </div>
+                </section>
             </div>
         </div>
     `;
@@ -127,7 +125,7 @@ export async function renderLoyalty(container, session) {
                         <div class="loyalty-progress-bar">
                             <div class="loyalty-progress-fill" style="width: 0%;" data-target="${tier.progress}"></div>
                         </div>
-                    </div>` : `<div style="font-size: 13px; color: #22d3ee; margin-top: 8px;">🎉 Bạn đã đạt hạng thành viên cao nhất!</div>`}
+                    </div>` : `<div class="loyalty-tier-complete">Bạn đã đạt hạng thành viên cao nhất!</div>`}
                 </div>
             `;
 

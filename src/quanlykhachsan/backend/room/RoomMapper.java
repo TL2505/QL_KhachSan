@@ -18,6 +18,7 @@ public class RoomMapper {
         response.setId(room.getId());
         response.setRoomNumber(room.getRoomNumber());
         response.setRoomTypeId(room.getRoomTypeId());
+        response.setTypeName(room.getTypeName());
         response.setPrice(room.getPrice());
         response.setStatus(room.getStatus());
         response.setVersion(room.getVersion());

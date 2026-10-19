@@ -7,6 +7,9 @@
  */
 
 import {
+  getAuthSession,
+  apiFetch,
+  getApiBaseUrl,
   getRooms,
   submitBooking,
   lookupBooking,
@@ -177,6 +180,15 @@ if (typeof document !== 'undefined') {
     initEventListeners();
     initScrollObservers();
     await loadRooms();
+    const returnParams = new URLSearchParams(window.location.search);
+    const requestedRoom = Number(returnParams.get('bookRoom'));
+    if (getAuthSession()?.token && requestedRoom && state.rooms.some(room => room.id === requestedRoom)) {
+      returnParams.delete('bookRoom');
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.search = returnParams.toString();
+      window.history.replaceState(null, '', cleanUrl);
+      openBookingModal(requestedRoom);
+    }
     renderGallery();
     refreshLucideIcons();
     applyLanguage(state.language);
@@ -327,6 +339,7 @@ export function showToast(message, type = 'info', duration = 4000) {
 // ROOMS DATA & RENDERING
 // ==========================================
 async function loadRooms(filterParams = {}) {
+  renderRoomStatistics();
   const grid = document.getElementById('rooms-grid');
   if (grid) {
     grid.innerHTML = `
@@ -338,8 +351,25 @@ async function loadRooms(filterParams = {}) {
   }
 
   try {
-    const result = await getRooms(filterParams);
+    // Keep the original room cards and enrich only their date-specific labels.
+    const result = await getRooms();
     state.rooms = result.rooms;
+    const checkIn = filterParams.checkIn || document.getElementById('search-checkin')?.value;
+    const checkOut = filterParams.checkOut || document.getElementById('search-checkout')?.value;
+    if (result.source === 'api' && checkIn && checkOut) {
+      try {
+        const query = new URLSearchParams({ check_in: checkIn, check_out: checkOut, include_status: 'true' });
+        const response = await fetch(`${getApiBaseUrl()}/rooms/availability?${query}`, { signal: AbortSignal.timeout(5000) });
+        if (!response.ok) throw new Error('Room status unavailable');
+        const payload = await response.json();
+        if (!Array.isArray(payload.data)) throw new Error('Invalid room status response');
+        renderRoomStatistics(payload.data, checkIn, checkOut);
+        const statuses = new Map(payload.data.map(room => [String(room.id), room.availability_status]));
+        state.rooms = state.rooms.map(room => ({ ...room, availabilityStatus: statuses.get(String(room.id)), statusDates: `${checkIn} → ${checkOut}` }));
+      } catch {
+        // Missing status is displayed honestly, never inferred from demo data.
+      }
+    }
     state.roomsAreLive = result.source === 'api';
     state.roomsSearchedFor = filterParams.checkIn && filterParams.checkOut
       ? { checkIn: filterParams.checkIn, checkOut: filterParams.checkOut }
@@ -358,6 +388,29 @@ async function loadRooms(filterParams = {}) {
     const checkOutInput = document.getElementById('search-checkout');
     if (checkInInput) checkInInput.value = filterParams.checkIn;
     if (checkOutInput) checkOutInput.value = filterParams.checkOut;
+  }
+}
+
+function renderRoomStatistics(rows = null, checkIn = '', checkOut = '') {
+  const container = document.getElementById('room-statistics');
+  if (!container) return;
+  const counts = { available: 0, reserved: 0, occupied: 0, maintenance: 0 };
+  let other = 0;
+  // Count API identities, not rendered/filterable cards or presentation labels.
+  const unique = new Map((rows || []).filter(room => room && room.id != null).map(room => [String(room.id), room]));
+  for (const room of unique.values()) {
+    if (Object.hasOwn(counts, room.availability_status)) counts[room.availability_status]++;
+    else other++;
+  }
+  container.querySelectorAll('[data-room-count]').forEach(node => {
+    node.textContent = rows === null ? '—' : String(counts[node.dataset.roomCount]);
+  });
+  const note = document.getElementById('room-statistics-note');
+  if (note) {
+    note.textContent = rows === null
+      ? 'Chưa có dữ liệu thống kê. Vui lòng kiểm tra phòng hoặc thử lại.'
+      : `Ngày ${checkIn.split('-').reverse().join('/')} – ${checkOut.split('-').reverse().join('/')} · Tổng ${unique.size} phòng`
+        + (other ? ` · ${other} phòng thuộc trạng thái khác/chưa đủ điều kiện nhận khách, chưa tính vào 4 nhóm trên.` : '');
   }
 }
 
@@ -387,6 +440,12 @@ function filterAndRenderRooms() {
   grid.innerHTML = filtered.map(room => {
     const formattedPrice = formatCurrency(room.price, state.currency);
     const primaryAmenities = room.amenities.slice(0, 3);
+    const labels = {
+      available: ['🟢 Còn phòng', 'available'], reserved: ['🟠 Đã đặt', 'reserved'],
+      occupied: ['🔴 Đang sử dụng', 'occupied'], maintenance: ['⚙️ Đang bảo trì', 'maintenance'],
+      not_ready: ['🟢 Còn phòng', 'available']
+    };
+    const [statusLabel, statusColor] = labels[room.availabilityStatus] || ['Chưa xác định', 'unknown'];
 
     return `
       <div class="room-card glass-card rounded-2xl overflow-hidden flex flex-col group" data-room-id="${room.id}">
@@ -424,6 +483,7 @@ function filterAndRenderRooms() {
               <span>${room.category} Class${room.isDemoCatalog ? ' · Demo' : ''}</span>
               <span class="text-slate-400">#${room.roomNumber}</span>
             </div>
+            <div class="room-availability room-availability--${statusColor}" title="Theo ngày nhận/trả phòng đã kiểm tra: ${room.statusDates || 'chưa có dữ liệu'}" role="status">${statusLabel}</div>
             <h3 class="font-serif text-xl text-white font-medium group-hover:text-amber-200 transition-colors line-clamp-1 mb-3">
               ${room.name}
             </h3>
@@ -607,7 +667,6 @@ _global.closeRoomDetailModal = function() {
 _global.proceedToBookingFromDetail = function() {
   if (state.detailRoom) {
     const roomId = state.detailRoom.id;
-    _global.closeRoomDetailModal();
     openBookingModal(roomId);
   }
 };
@@ -615,7 +674,29 @@ _global.proceedToBookingFromDetail = function() {
 // ==========================================
 // 3-STEP VIETQR BOOKING MODAL
 // ==========================================
-export function openBookingModal(roomId = null) {
+export async function openBookingModal(roomId = null) {
+  const token = getAuthSession()?.token;
+  if (typeof token !== 'string' || !token.trim()) {
+    _global.closeBookingModal();
+    showBookingLoginPrompt(roomId);
+    return;
+  }
+  try {
+    // A stored token alone is insufficient: use the existing JWT middleware
+    // through a read-only endpoint and the existing session-expiry handling.
+    await apiFetch('/rooms', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+  } catch (error) {
+    _global.closeBookingModal();
+    if (error.status === 401 || error.status === 403) showBookingLoginPrompt(roomId);
+    else showToast('Chưa thể xác minh phiên đăng nhập. Vui lòng thử lại.', 'warning');
+    return;
+  }
+  if (getAuthSession()?.token !== token) {
+    _global.closeBookingModal();
+    showBookingLoginPrompt(roomId);
+    return;
+  }
+  if (state.detailRoom) _global.closeRoomDetailModal();
   let targetRoom = null;
   if (roomId) {
     targetRoom = state.rooms.find(r => r.id === roomId);
@@ -653,6 +734,42 @@ export function openBookingModal(roomId = null) {
     renderBookingModalContent();
     modal.classList.add('active');
   }
+}
+
+// The mobile drawer's existing inline onclick uses the same guarded entry point.
+_global.openBookingModal = openBookingModal;
+
+function showBookingLoginPrompt(roomId) {
+  let dialog = document.getElementById('booking-login-prompt');
+  if (!dialog) {
+    dialog = document.createElement('dialog');
+    dialog.id = 'booking-login-prompt';
+    dialog.className = 'booking-login-prompt';
+    dialog.setAttribute('aria-labelledby', 'booking-login-heading');
+    dialog.setAttribute('aria-describedby', 'booking-login-message');
+    dialog.innerHTML = `
+      <div class="booking-login-symbol" aria-hidden="true">✦</div>
+      <h2 id="booking-login-heading">Đặt phòng tại Aurelia</h2>
+      <p id="booking-login-message">Vui lòng đăng nhập để thực hiện đặt phòng.</p>
+      <div class="booking-login-actions">
+        <button type="button" class="btn-outline-gold" data-dismiss>Quay lại</button>
+        <a class="btn-gold" data-login>Đăng nhập</a>
+      </div>`;
+    dialog.querySelector('[data-dismiss]').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', event => { if (event.target === dialog) {
+      const bounds = dialog.getBoundingClientRect();
+      if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
+    } });
+    document.body.append(dialog);
+  }
+  const target = new URL(window.location.href);
+  target.searchParams.delete('bookRoom');
+  const selectedRoom = roomId || state.rooms[0]?.id;
+  if (selectedRoom) target.searchParams.set('bookRoom', selectedRoom);
+  const login = new URL('/portal.html', window.location.origin);
+  login.searchParams.set('returnTo', target.pathname + target.search + target.hash);
+  dialog.querySelector('[data-login]').href = login.href;
+  if (!dialog.open) dialog.showModal();
 }
 
 _global.closeBookingModal = function() {

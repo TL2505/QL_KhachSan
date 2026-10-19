@@ -12,10 +12,12 @@
   <link rel="stylesheet" href="public/css/style.css">
   <link rel="stylesheet" href="portal.css">
   <link rel="stylesheet" href="portal-customer.css">
+  <link rel="stylesheet" href="portal-admin.css">
   <link rel="stylesheet" href="portal-theme.css">
   <link rel="stylesheet" href="public/css/page-transition.css">
   <script src="public/js/shared/page-transition.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="portal-body">
   <header class="portal-topbar">
@@ -24,9 +26,12 @@
       <span class="portal-brand-mark"><i data-lucide="crown"></i></span>
       <span><strong>Aurelia <em>Palace</em></strong><small>5★ LUXURY HOTEL & RESORT</small></span>
     </a>
-    <button type="button" class="portal-theme-toggle" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
+    <div class="portal-topbar-actions">
+      <a class="portal-return portal-return-top" href="index.html"><i data-lucide="external-link"></i><span>Trang khách sạn</span></a>
+      <button type="button" class="portal-theme-toggle" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
       <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
-    </button>
+      </button>
+    </div>
   </header>
 
   <main>
@@ -49,6 +54,18 @@
           <label for="login-password">Mật khẩu</label>
           <input class="input input-md" id="login-password" name="password" type="password" autocomplete="current-password" required maxlength="200" placeholder="Nhập mật khẩu">
           <button class="btn portal-primary" type="submit"><span>Đăng nhập an toàn</span><i data-lucide="arrow-right"></i></button>
+          <div id="google-login-area" class="google-login-area" hidden>
+            <span>hoặc</span>
+            <div id="google-signin-button" aria-label="Đăng nhập bằng Google"></div>
+          </div>
+        </form>
+        <form id="google-otp-form" class="auth-form" hidden>
+          <p class="otp-intro">Nhập mã gồm 4 chữ số đã gửi tới <strong id="google-otp-email"></strong>.</p>
+          <label for="google-otp-code">Mã xác thực</label>
+          <input class="input input-md google-otp-code" id="google-otp-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{4}" maxlength="4" placeholder="0000" required>
+          <button class="btn portal-primary" type="submit"><span>Xác nhận mã</span><i data-lucide="shield-check"></i></button>
+          <button id="google-otp-resend" class="btn auth-secondary" type="button">Gửi lại mã</button>
+          <button id="google-otp-cancel" class="btn auth-link" type="button">Quay lại đăng nhập</button>
         </form>
         <form id="register-form" class="auth-form" hidden>
           <label for="register-name">Họ và tên</label><input class="input input-md" id="register-name" required maxlength="100" autocomplete="name">
@@ -72,7 +89,6 @@
       <section class="portal-content">
         <div class="portal-content-bar">
           <div><p class="portal-eyebrow">AURELIA GRAND PALACE</p><h1 id="portal-heading">Tổng quan</h1></div>
-          <a class="portal-return" href="index.html"><i data-lucide="external-link"></i> Trang khách sạn</a>
         </div>
         <div id="portal-message" class="portal-message alert alert-error" role="status" aria-live="polite" hidden></div>
         <main id="view-container" class="portal-view"></main>

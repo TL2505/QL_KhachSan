@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import quanlykhachsan.backend.utils.DatabaseConnection;
 
 /** Performs a room reservation using the rooms.version optimistic lock. */
@@ -51,6 +53,50 @@ public final class RoomAllocationService {
                 }
                 throw new OptimisticLockException();
             }
+        }
+    }
+
+    /** Atomically validates a date-specific stay and advances the room version. */
+    public static void reserveForStay(Connection connection, int roomId, int expectedVersion,
+            int guestCount, LocalDate checkIn, LocalDate checkOut)
+            throws SQLException, OptimisticLockException {
+        String status;
+        int version;
+        int capacity;
+        try (PreparedStatement query = connection.prepareStatement(
+                "SELECT r.status,r.version,t.capacity FROM rooms r "
+              + "JOIN room_types t ON t.id=r.room_type_id WHERE r.id=? FOR UPDATE")) {
+            query.setInt(1, roomId);
+            try (ResultSet row = query.executeQuery()) {
+                if (!row.next()) throw new RoomUnavailableException();
+                status = row.getString("status");
+                version = row.getInt("version");
+                capacity = row.getInt("capacity");
+            }
+        }
+        if (version != expectedVersion) throw new OptimisticLockException();
+        if (guestCount < 1 || guestCount > capacity) throw new IllegalArgumentException("Guest count exceeds room capacity");
+        if ("out_of_order".equals(status) || "out_of_service".equals(status)) throw new RoomUnavailableException();
+        if (checkIn.equals(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"))) && !"vacant_clean".equals(status)) {
+            throw new RoomUnavailableException();
+        }
+        try (PreparedStatement query = connection.prepareStatement(
+                "SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in') "
+              + "AND check_in_date<? AND check_out_date>? LIMIT 1 FOR UPDATE")) {
+            query.setInt(1, roomId);
+            query.setTimestamp(2, java.sql.Timestamp.valueOf(checkOut.atTime(12, 0)));
+            query.setTimestamp(3, java.sql.Timestamp.valueOf(checkIn.atTime(14, 0)));
+            try (ResultSet row = query.executeQuery()) {
+                if (row.next()) throw new RoomUnavailableException();
+            }
+        }
+        String update = checkIn.equals(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))
+                ? "UPDATE rooms SET status='reserved',version=version+1 WHERE id=? AND version=? AND status='vacant_clean'"
+                : "UPDATE rooms SET version=version+1 WHERE id=? AND version=? AND status NOT IN ('out_of_order','out_of_service')";
+        try (PreparedStatement query = connection.prepareStatement(update)) {
+            query.setInt(1, roomId);
+            query.setInt(2, expectedVersion);
+            if (query.executeUpdate() != 1) throw new RoomUnavailableException();
         }
     }
 

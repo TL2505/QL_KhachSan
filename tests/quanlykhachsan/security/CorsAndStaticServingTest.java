@@ -33,12 +33,12 @@ class CorsAndStaticServingTest {
             assertEquals("*", preflight.headers().firstValue("Access-Control-Allow-Origin").orElseThrow());
             String headers = preflight.headers().firstValue("Access-Control-Allow-Headers").orElseThrow();
             assertTrue(headers.contains("Idempotency-Key")); assertTrue(headers.contains("X-Signature"));
-            for (String path : new String[]{"/api/v1/rooms/availability", "/api/v1/pricing/quote",
+            for (String path : new String[]{"/api/v1/rooms", "/api/v1/rooms/availability", "/api/v1/pricing/quote",
                     "/api/v1/auth/guest-otp/request", "/api/v1/auth/guest-otp/verify", "/api/v1/bookings/public"}) {
                 assertEquals(200, send(client, base, path, "GET", null).statusCode());
                 assertEquals(401, send(client, base, path, "GET", "Bearer invalid").statusCode());
             }
-            for (String path : new String[]{"/api/v1/rooms", "/api/v1/rooms/availability/private",
+            for (String path : new String[]{"/api/v1/rooms/availability/private",
                     "/api/v1/bookings/publicity", "/api/v1/auth/guest-otp/admin", "/api/v1/users"}) {
                 assertEquals(401, send(client, base, path, "GET", null).statusCode(), path);
             }

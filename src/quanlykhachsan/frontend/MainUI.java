@@ -39,7 +39,6 @@ public class MainUI extends JFrame {
     private RoomForm roomForm;
     private BookingForm bookingForm;
     private GlobalKeyDispatcher globalKeyDispatcher;
-    private boolean logoutPending;
 
     public MainUI(User user) {
         quanlykhachsan.frontend.utils.EdtViolationDetector.install();
@@ -252,15 +251,12 @@ public class MainUI extends JFrame {
 
         // 5. Hồ sơ cá nhân (Dùng chung)
         String phase2Role=quanlykhachsan.frontend.utils.SessionManagerUtil.getRole();
-        if(java.util.Set.of("admin","manager","gm").contains(phase2Role))addTab("Quản Trị Doanh Thu & Dự Báo (Yield)",new quanlykhachsan.frontend.view.RevenueForecastPanel());
-        if(java.util.Set.of("it","devops").contains(phase2Role))addTab("Vận hành AI",new quanlykhachsan.frontend.view.AiGuestSwitchPanel());
         if(phase2Role.equals("admin") || phase2Role.equals("front_desk"))addTab("Báo Cáo Doanh Thu (DBR)",new quanlykhachsan.frontend.view.DbrReportPanel());
         if(phase2Role.equals("admin") || phase2Role.equals("housekeeping"))addTab("Buồng phòng",new quanlykhachsan.frontend.view.HousekeepingPanel());
         if(phase2Role.equals("maintenance") || phase2Role.equals("f&b")){roomForm=new RoomForm(currentUser,systemStatusBanner);addTab(phase2Role.equals("maintenance")?"Bảo trì":"Minibar",roomForm);}
         addTab("Hồ sơ cá nhân", new ProfileForm(currentUser));
 
         add(tabbedPane, BorderLayout.CENTER);
-        if(java.util.Set.of("admin","manager","gm","front_desk").contains(phase2Role))add(new quanlykhachsan.frontend.view.AiCopilotPanel(),BorderLayout.EAST);
     }
 
     /**
@@ -301,36 +297,15 @@ public class MainUI extends JFrame {
     }
 
     private void logout() {
-        if (logoutPending) return;
         int confirm = JOptionPane.showConfirmDialog(this, "Bạn có thực sự muốn đăng xuất?", "Đăng xuất",
                 JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            logoutPending = true;
-            quanlykhachsan.frontend.api.ApiClient.getInstance().post("v1/auth/logout", "{}",
-                    new quanlykhachsan.frontend.api.ApiCallback() {
-                @Override public void onSuccess(java.net.http.HttpResponse<String> response) {
-                    finishLogout();
-                }
-                @Override public void onError(Exception error) {
-                    logoutPending = false;
-                    if (error instanceof quanlykhachsan.frontend.api.ApiClient.ApiException apiError
-                            && apiError.getStatusCode() == 401) {
-                        finishLogout();
-                    } else {
-                        JOptionPane.showMessageDialog(MainUI.this,
-                                "Chưa thể thu hồi phiên trên máy chủ. Vui lòng thử đăng xuất lại.",
-                                "Đăng xuất chưa hoàn tất", JOptionPane.WARNING_MESSAGE);
-                    }
-                }
+            WebSocketService.disconnect(); // Đóng kết nối WS
+            this.dispose();
+            SwingUtilities.invokeLater(() -> {
+                new LoginForm().setVisible(true);
             });
         }
-    }
-
-    private void finishLogout() {
-        WebSocketService.disconnect();
-        quanlykhachsan.frontend.utils.SessionManagerUtil.clear();
-        dispose();
-        new LoginForm().setVisible(true);
     }
 
     private void setupGlobalHotkeys() {

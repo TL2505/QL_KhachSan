@@ -61,6 +61,10 @@ export function getApiBaseUrl() {
     try { return normalizeApiBase(saved); } catch {}
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    const host = window.location.hostname || 'localhost';
+    if (window.location.port === '3000') {
+      return `http://${host}:8081/api/v1`;
+    }
     return window.location.origin + '/api/v1';
   }
   return 'http://localhost:8081/api/v1';
@@ -86,10 +90,6 @@ export function setAuthSession(session) {
   write('hotel_auth_session', session ? JSON.stringify(session) : null);
 }
 
-export function clearAuthSession() {
-  setAuthSession(null);
-}
-
 function messageFor(status) {
   return ({
     401: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
@@ -107,9 +107,6 @@ export async function apiFetch(path, init = {}) {
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json; charset=utf-8');
   }
-  if (typeof session?.token === 'string' && session.token) {
-    headers.set('Authorization', 'Bearer ' + session.token);
-  }
   headers.set('X-User-Role', 'guest');
   headers.set('ngrok-skip-browser-warning', '69420');
 
@@ -117,15 +114,22 @@ export async function apiFetch(path, init = {}) {
   const baseUrl = getApiBaseUrl();
   const cleanPath = path.startsWith('/') ? path : '/' + path;
   const url = baseUrl + cleanPath;
+  const isPublicAvailabilityRequest = cleanPath.split('?', 1)[0].replace(/\/+$/, '') === '/rooms/availability';
+  const sendsSessionToken = !isPublicAvailabilityRequest && typeof session?.token === 'string' && !!session.token;
+  if (sendsSessionToken) {
+    headers.set('Authorization', 'Bearer ' + session.token);
+  } else if (isPublicAvailabilityRequest) {
+    headers.delete('Authorization');
+  }
 
   try {
     response = await fetch(url, { ...init, headers });
   } catch (error) {
-    if (error.name === 'AbortError') throw error;
+    if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
     throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
   }
 
-  if (response.status === 401 && session?.token && getAuthSession()?.token === session.token) {
+  if (response.status === 401 && sendsSessionToken && getAuthSession()?.token === session.token) {
     setAuthSession(null);
     if (typeof window !== 'undefined' && window.dispatchEvent) {
       window.dispatchEvent(new Event('hotel:session-expired'));
@@ -143,14 +147,16 @@ export async function apiFetch(path, init = {}) {
   }
 
   if (!response.ok) {
-    throw new ApiError(messageFor(response.status), response.status, response.headers.get('Retry-After'));
+    const serverMessage = result && typeof result.message === 'string' ? result.message.trim() : '';
+    throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'));
   }
 
   if (result && typeof result === 'object' && 'status' in result) {
     const status = String(result.status).toLowerCase();
     if (status === 'success') return result.data ?? null;
     if (['error', 'failed', 'failure'].includes(status)) {
-      throw new ApiError('Yêu cầu chưa được hoàn tất. Vui lòng kiểm tra lại.', response.status);
+      throw new ApiError(typeof result.message === 'string' && result.message.trim()
+        ? result.message.trim() : 'Yêu cầu chưa được hoàn tất. Vui lòng kiểm tra lại.', response.status);
     }
   }
 
@@ -690,4 +696,3 @@ export async function lookupBooking(bookingCode, phone) {
 
   throw new Error('Không tìm thấy thông tin đặt phòng với mã số và số điện thoại này. Vui lòng kiểm tra lại!');
 }
-

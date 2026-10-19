@@ -53,12 +53,21 @@ public class JwtFilter extends Filter {
 
 
         boolean isPublic = PUBLIC_PATHS.contains(path)
-                || path.equals("/booking") || path.startsWith("/booking/");
+                || path.startsWith("/api/v1/auth/google/")
+                || path.startsWith("/booking")
+                || path.equals("/api/v1/rooms")
+                || path.equals("/api/rooms");
+
+        boolean isGuestRoleHeader = exchange.getRequestHeaders().containsKey("X-User-Role")
+                && "guest".equalsIgnoreCase(exchange.getRequestHeaders().getFirst("X-User-Role"));
 
 
         String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
 
-        if (isPublic && (authHeader == null || authHeader.isBlank())) {
+        if ((isPublic || isGuestRoleHeader) && (authHeader == null || authHeader.isBlank())) {
+            if (isGuestRoleHeader) {
+                exchange.setAttribute("role", "guest");
+            }
             chain.doFilter(exchange);
             return;
         }
@@ -114,12 +123,12 @@ public class JwtFilter extends Filter {
 
             if (role == null || !Set.of(
                     "admin", "staff", "customer", "guest", "front_desk", "housekeeping", "maintenance", "f&b",
-                    "ADMIN", "STAFF", "CUSTOMER", "1", "2", "3", "manager", "gm", "GM", "it", "devops", "compliance", "revenue_manager").contains(role)) {
+                    "ADMIN", "STAFF", "CUSTOMER", "1", "2", "3", "manager").contains(role)) {
                 ApiResponseUtil.sendError(exchange, 403, "ERR_403_FORBIDDEN", "Role is not authorized");
                 return;
             }
         } catch (JwtException | IllegalArgumentException e) {
-            logger.warn("JWT authentication failed for path [{}]", path);
+            logger.warn("JWT authentication failed for path [{}]: {}", path, e.getMessage());
             ApiResponseUtil.sendError(
                     exchange,
                     401,

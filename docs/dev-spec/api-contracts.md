@@ -747,13 +747,16 @@ These routes support Phase 1 folio routing and the OOO-room manager override:
     ```
 
 ### 3.2 Virtual Concierge & RAG Policy Gateway
+
+**Implemented Phase 3 guest gateway:** both endpoints require a customer JWT. Chat is limited to 10 requests per authenticated customer per rolling minute, with prompt guardrails applied before forwarding. The opaque client `session_id` is scoped by the server to the authenticated user; only the question and scoped session ID are sent to the local RAG service. Configure `AI_RAG_URL` (default `http://127.0.0.1:8082/rag/query`); only loopback HTTP is accepted. The RAG service must return JSON containing a non-empty `reply` and numeric `confidence_score` from 0 to 1; citations and suggested actions are optional. Confidence below 0.80 creates a durable escalation ticket. Unavailable/invalid upstream responses return `503`, timeouts return `504`, and no answer is fabricated. Escalation creates a durable `ai_escalation_tickets` record associated with the authenticated customer's profile.
+
 * **Endpoint:** `POST /api/v1/ai/concierge/chat`
   * **Auth:** Scoped Guest Token or Bearer Token
-  * **Rate Limit:** 10 requests / minute / session
+  * **Rate Limit:** 10 requests / minute / authenticated customer.
   * **Request Body:**
     ```json
     {
-      "session_id": "sess-guest-room-105-abc1234",
+      "session_id": "e1a606d0-cd39-4c82-8cc4-6e924f3b4176",
       "message": "Cho tôi hỏi giờ mở cửa của hồ bơi vô cực và phòng tập gym?"
     }
     ```
@@ -785,12 +788,12 @@ These routes support Phase 1 folio routing and the OOO-room manager override:
     ```
 
 * **Endpoint:** `POST /api/v1/ai/concierge/escalate`
-  * **Auth:** Scoped Guest Token
+  * **Auth:** Authenticated customer JWT.
   * **Request Body:**
     ```json
     {
-      "session_id": "sess-guest-room-105-abc1234",
-      "reason": "Khách cần hỗ trợ đổi phòng do máy lạnh phòng 105 kêu ồn."
+      "session_id": "e1a606d0-cd39-4c82-8cc4-6e924f3b4176",
+      "reason": "Tôi cần nhân viên hỗ trợ."
     }
     ```
   * **Response (`200 OK`):**
@@ -799,10 +802,8 @@ These routes support Phase 1 folio routing and the OOO-room manager override:
       "status": "success",
       "data": {
         "ticket_id": 501,
-        "room_number": "105",
         "status": "OPEN",
-        "eta_minutes": 3,
-        "message": "Yêu cầu đã được chuyển tới Lễ tân ca trực. Nhân viên sẽ liên hệ với Quý khách ngay lập tức."
+        "message": "Yêu cầu đã được ghi nhận cho Lễ tân. Mã tiếp nhận: 501"
       },
       "meta": { "timestamp": "2026-10-14T04:12:00Z" }
     }
@@ -865,15 +866,10 @@ These routes support Phase 1 folio routing and the OOO-room manager override:
       "meta": { "timestamp": "2026-10-14T04:20:00Z" }
     }
     ```
+# Public room status labels (2026-10-16)
 
-## Phase 3 compatibility addendum — 2026-10-16
-
-Approved by the user during implementation; the frozen canonical examples above remain the default contract.
-
-- OCR accepts canonical `image_base64` (`document_type=VIETNAMESE_CCCD`) or WBS `image`. Conflicting aliases return400. Response includes canonical `id_number`, `residence_address` and WBS `id_card`, `address`, with shared `full_name`/`dob`. Unavailable gender/nationality/origin/expiry/confidence fields are null; no invented values. Face accepts `id_photo_base64`/`live_face_base64` or `id_photo`/`live_face`, and returns both `is_match`/`similarity_score`/`adaptive_threshold`/`decision` and `match`/`confidence`/`recommendation`. Manual gateway failures use504 `ERR_504_GATEWAY_TIMEOUT`.
-- Concierge returns `reply`/`confidence_score` plus `answer`/`confidence` aliases, `suggested_actions`, and citations containing `doc`, nullable `section`, and `source`. Explicit escalation requires `session_id` and `reason`; stores the reason in scoped encrypted human chat. Room and ETA are null until authoritative information exists, rather than an unverified three-minute promise. Ticket messages are accessible only to the authenticated ticket owner or authorized staff. Management/operations state and staff tickets are additional protected routes under `/api/v1/ai/concierge`.
-- Forecast defaults to an object containing `model`, cached `generated_at` and `forecast`; `?format=array` opts into the WBS array. Rows expose both confidence bounds and `confidence_interval`; unavailable values and category-specific BAR are null. Fallback source/model `RULE_BASED_ON_BOOKS` is explicitly distinguished from Prophet. `revenue_manager` can read; only management can apply.
-- Apply-rates accepts `approved_multiplier` or `multiplier` (conflicting values rejected). Optional `version` defaults0, which only creates a new rule; updating an existing rule requires the current version or returns409. Actor is verified JWT identity, never body `approved_by_user_id`. Response includes `updated_count` and `applied`. Recommendations stay>=0.80; authorized management override in[0.70,0.80) requires a reason and audit; values outside[0.70,2.50] fail. `preview=true` currently returns `available=false` because hotel-wide occupancy including existing bookings cannot safely support a category/sellable-inventory revenue illustration.
-- `POST /api/v1/auth/logout` revokes the verified bearer token until its signed expiry in the current backend process. Customer identity search now uses an exact normalized HMAC index after the approved encrypted-vault cutover; partial ID matching is not supported. Plain identity decryption remains Admin/Front Desk only.
-
-See `../phase3-implementation-report.md` for route behavior, limitations and test evidence; these additions do not imply release acceptance.
+`GET /api/v1/rooms/availability?check_in=YYYY-MM-DD&check_out=YYYY-MM-DD&include_status=true`
+is an optional read-only projection for all room cards. Without `include_status=true`, the existing available-room response is unchanged.
+Each item contains `id`, `availability_status` and `available`; no guest or booking identifiers are exposed.
+Statuses: `available`, `reserved` (overlapping pending/confirmed booking), `occupied` (overlapping checked-in booking), `maintenance` (out_of_order/out_of_service), `not_ready` (same-day room not clean/vacant without a matching booking).
+Maintenance takes precedence, followed by occupied and reserved. Overlap uses existing 14:00 check-in and 12:00 check-out boundaries. Historical, cancelled and non-overlapping stays do not block future dates. Maintenance remains blocked until released by the existing management workflow.

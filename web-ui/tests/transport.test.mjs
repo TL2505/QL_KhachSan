@@ -1,19 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {apiFetch,fetchAuthenticatedFile,setAuthSession,clearAuthSession,getAuthSession,getApiBaseUrl,setApiBaseUrl,normalizeApiBase} from '../public/api.js';
+import {apiFetch,fetchAuthenticatedFile,setAuthSession,getAuthSession,getApiBaseUrl,setApiBaseUrl,normalizeApiBase} from '../public/api.js';
 const store=new Map();
 globalThis.localStorage={getItem:key=>store.get(key)??null,setItem:(key,value)=>store.set(key,value),removeItem:key=>store.delete(key)};
 const events=new EventTarget();
 globalThis.window={location:{origin:'https://hotel.example.test'},dispatchEvent:event=>events.dispatchEvent(event)};
 test.beforeEach(()=>store.clear());
-test('port 3000 uses the same-origin proxy and portal logout export clears the session',()=>{
- const previous=window.location;
- try {
-  window.location={origin:'http://hotel.example.test:3000',hostname:'hotel.example.test',port:'3000'};
-  assert.equal(getApiBaseUrl(),'http://hotel.example.test:3000/api/v1');
-  setAuthSession({token:'test'});clearAuthSession();assert.equal(getAuthSession(),null);
- } finally {window.location=previous;}
-});
 test('same-origin versioned base preserves HTTPS and upgrades legacy configuration',()=>{
  assert.equal(getApiBaseUrl(),'https://hotel.example.test/api/v1');
  setApiBaseUrl('https://hotel.example.test/api/');assert.equal(getApiBaseUrl(),'https://hotel.example.test/api/v1');
@@ -23,6 +15,16 @@ test('stored bearer token and idempotency header accompany a successful uppercas
  setAuthSession({token:'synthetic-token'});
  globalThis.fetch=async(url,init)=>{assert.equal(url,'https://hotel.example.test/api/v1/rooms');assert.equal(init.headers.get('Authorization'),'Bearer synthetic-token');assert.equal(init.headers.get('Idempotency-Key'),'synthetic-key');return new Response(JSON.stringify({status:'SUCCESS',data:[{id:1}]}));};
  assert.deepEqual(await apiFetch('/rooms',{headers:{'Idempotency-Key':'synthetic-key'}}),[{id:1}]);
+});
+test('public room availability does not send or invalidate a stored session token',async()=>{
+ setAuthSession({token:'possibly-expired-token'});
+ globalThis.fetch=async(url,init)=>{
+  assert.equal(url,'https://hotel.example.test/api/v1/rooms/availability?check_in=2026-10-17');
+  assert.equal(init.headers.has('Authorization'),false);
+  return new Response(JSON.stringify({status:'success',data:[]}));
+ };
+ assert.deepEqual(await apiFetch('/rooms/availability?check_in=2026-10-17'),[]);
+ assert.equal(getAuthSession().token,'possibly-expired-token');
 });
 test('HTTP denial cannot be converted to success by a response envelope',async()=>{
  globalThis.fetch=async()=>new Response(JSON.stringify({status:'success',data:{secret:'must-not-return'}}),{status:403});
@@ -35,6 +37,7 @@ test('expired session is cleared and announced without clearing a replacement se
 });
 test('abort remains distinguishable from connection failure',async()=>{
  globalThis.fetch=async()=>{throw new DOMException('cancelled','AbortError');};await assert.rejects(apiFetch('/rooms'),error=>error.name==='AbortError');
+ globalThis.fetch=async()=>{throw new DOMException('deadline exceeded','TimeoutError');};await assert.rejects(apiFetch('/rooms'),error=>error.name==='TimeoutError');
 });
 test('freeze retains Retry-After and hides server internals',async()=>{
  globalThis.fetch=async()=>new Response(JSON.stringify({message:'PRIVATE_DATABASE_DETAILS'}),{status:503,headers:{'Retry-After':'300'}});

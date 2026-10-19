@@ -30,13 +30,18 @@ public class ReportController implements HttpHandler {
         String path = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
 
-        if ("GET".equalsIgnoreCase(method) && path.equals("/api/reports/monthly-revenue")) {
+        // Keep the original Swing route and the Phase 3 /api/v1 route in sync.
+        String reportPath = path.startsWith("/api/v1/reports/")
+                ? "/api/reports/" + path.substring("/api/v1/reports/".length())
+                : path;
+
+        if ("GET".equalsIgnoreCase(method) && reportPath.equals("/api/reports/monthly-revenue")) {
             handleGetMonthlyRevenue(exchange);
-        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/reports/today-stats")) {
+        } else if ("GET".equalsIgnoreCase(method) && reportPath.equals("/api/reports/today-stats")) {
             handleGetTodayStats(exchange);
-        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/reports/active-accounts")) {
+        } else if ("GET".equalsIgnoreCase(method) && reportPath.equals("/api/reports/active-accounts")) {
             handleGetActiveAccounts(exchange);
-        } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/reports/dashboard")) {
+        } else if ("POST".equalsIgnoreCase(method) && reportPath.equals("/api/reports/dashboard")) {
             handleGetDashboardData(exchange);
         } else {
             ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Endpoint không tồn tại"));

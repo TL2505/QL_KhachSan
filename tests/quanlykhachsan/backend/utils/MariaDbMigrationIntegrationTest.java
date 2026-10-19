@@ -40,8 +40,10 @@ class MariaDbMigrationIntegrationTest {
                 assertTrue(tableExists(connection, "folios"));
                 assertTrue(tableExists(connection, "folio_transactions"));
                 assertTrue(tableExists(connection, "audit_checkpoints"));
+                assertTrue(tableExists(connection, "ai_escalation_tickets"));
                 assertTrue(foreignKeyExists(connection, "folios", "fk_folios_bookings"));
                 assertTrue(foreignKeyExists(connection, "folio_transactions", "fk_folio_transactions_folios"));
+                assertTrue(foreignKeyExists(connection, "ai_escalation_tickets", "fk_ai_escalation_customer"));
 
                 String scriptSchema = "hotel_script_test_" + UUID.randomUUID().toString().replace("-", "");
                 try (Statement create = connection.createStatement()) {
@@ -71,6 +73,7 @@ class MariaDbMigrationIntegrationTest {
         try (Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE rooms (id INT AUTO_INCREMENT PRIMARY KEY, room_number VARCHAR(20) NOT NULL UNIQUE, status ENUM('available','booked','occupied','maintenance','cleaning','out_of_service') NOT NULL DEFAULT 'available', INDEX idx_room_number (room_number)) ENGINE=InnoDB");
             statement.execute("CREATE TABLE bookings (id INT AUTO_INCREMENT PRIMARY KEY, status ENUM('pending','confirmed','checked_in','checked_out','cancelled') DEFAULT 'pending') ENGINE=InnoDB");
+            statement.execute("CREATE TABLE customers (id INT AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB");
             statement.execute("CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB");
         }
     }
