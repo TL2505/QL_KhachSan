@@ -71,9 +71,9 @@ function escapeHtml(str) {
 export function getStoredCustomerToken() {
   if (typeof localStorage === 'undefined') return null;
   return localStorage.getItem('customer_token')
-      || localStorage.getItem('auth_token')
-      || localStorage.getItem('token')
-      || null;
+    || localStorage.getItem('auth_token')
+    || localStorage.getItem('token')
+    || null;
 }
 
 function status(message, kind = 'error') {
@@ -83,7 +83,7 @@ function status(message, kind = 'error') {
       node.textContent = message;
       node.className = `auth-status ${kind === 'success' ? 'success' : ''}`;
     }
-  } catch {}
+  } catch { }
 }
 
 export function setupAuthTabs() {
@@ -245,7 +245,7 @@ function openView(session, role, tab) {
       url.searchParams.set('view', tab);
       window.history.replaceState(null, '', url);
     }
-  } catch {}
+  } catch { }
 }
 
 /**
@@ -388,7 +388,7 @@ async function initNotificationTray(session) {
               btn.innerHTML = `<i data-lucide="copy" class="w-3 h-3"></i><span>Sao chép</span>`;
               if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
             }, 1800);
-          } catch {}
+          } catch { }
         });
       });
 
@@ -409,7 +409,7 @@ async function initNotificationTray(session) {
                 badge.classList.add('hidden');
               }
             }
-          } catch {}
+          } catch { }
         });
       });
 
@@ -425,7 +425,7 @@ async function initNotificationTray(session) {
       listEl.querySelectorAll('.notif-item').forEach(async item => {
         const id = item.getAttribute('data-id');
         if (id) {
-          api.put(`/notifications/${id}/read`, {}).catch(() => {});
+          api.put(`/notifications/${id}/read`, {}).catch(() => { });
           item.classList.remove('bg-amber-500/5', 'border-l-2', 'border-amber-400');
           item.classList.add('bg-slate-950/40');
         }
@@ -587,7 +587,7 @@ try {
 // Global icons refresh
 try {
   if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
-} catch {}
+} catch { }
 
 // Definitive Auth Guard initialization wrapped in try...catch
 try {
@@ -596,7 +596,9 @@ try {
   if (!token) {
     // If no token is present: Display a user-friendly notification and redirect to index.html#login
     if (typeof alert !== 'undefined') {
-      alert('Vui lòng đăng nhập để truy cập Cổng thành viên Aurelia.');
+      const authCard = document.getElementById('auth-card') || document.querySelector('.auth-container');
+      if (authCard) authCard.style.display = 'block';
+      return;
     }
     if (typeof window !== 'undefined' && window.location) {
       window.location.href = 'index.html#login';
