@@ -1,5 +1,9 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-19] — @codex — docs/run-project.md, scripts/start-backend.ps1 — Local backend startup and login configuration
+- Added Windows startup instructions, database settings, health verification, and troubleshooting.
+- Added a Maven launcher that generates a local JWT secret to prevent token creation failures during login.
+
 ## Rules
 - Every change to `/docs/` MUST be logged here before commit.
 - Format: `## [YYYY-MM-DD] — @author — file(s) — reason — what changed`
