@@ -48,12 +48,42 @@
   <header class="portal-topbar">
     <a class="portal-brand" href="index.html" aria-label="Về trang khách sạn Aurelia Grand Palace">
       <i class="portal-brand-back" data-lucide="arrow-left" aria-hidden="true"></i>
-      <span class="portal-brand-mark"><i data-lucide="crown"></i></span>
+      <span class="portal-brand-mark royal-shield-emblem"><i data-lucide="shield-check"></i></span>
       <span><strong>Aurelia <em>Palace</em></strong><small>5★ LUXURY HOTEL & RESORT</small></span>
     </a>
-    <button type="button" class="portal-theme-toggle" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
-      <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
-    </button>
+
+    <div class="portal-topbar-actions flex items-center gap-3">
+      <!-- Task 15: Lifecycle Notification Tray -->
+      <div class="relative inline-block">
+        <button type="button" id="btn-notification-bell" class="portal-icon-btn relative w-10 h-10 rounded-full border border-amber-500/30 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 flex items-center justify-center transition-all shadow-md cursor-pointer" aria-label="Thông báo vòng đời" title="Thông báo vòng đời">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span id="notif-unread-badge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow">0</span>
+        </button>
+        <!-- Dropdown Tray -->
+        <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-slate-900/95 border border-amber-500/30 shadow-2xl backdrop-blur-xl z-50 overflow-hidden text-left" role="dialog" aria-label="Trung tâm thông báo">
+          <div class="p-3.5 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="bell" class="w-4 h-4 text-amber-400"></i>
+              <span class="text-xs font-bold text-white uppercase tracking-wider">Thông Báo Vòng Đời</span>
+            </div>
+            <button type="button" id="btn-mark-all-read" class="text-[11px] text-amber-400 hover:text-amber-300 transition-colors cursor-pointer">Đọc tất cả</button>
+          </div>
+          <div id="notification-list" class="max-h-80 overflow-y-auto divide-y divide-slate-800/60 p-2 space-y-1">
+            <div class="p-4 text-center text-xs text-slate-400">Đang tải thông báo...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Theme Switcher -->
+      <button type="button" class="portal-theme-toggle" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
+        <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
+      </button>
+
+      <!-- Task 13: Elegant circular close button navigating back to index.html -->
+      <a href="index.html" class="portal-close-circle w-10 h-10 rounded-full border border-amber-500/30 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 flex items-center justify-center transition-all shadow-lg hover:scale-105" title="Đóng & Về trang chủ" aria-label="Quay lại trang chủ">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </a>
+    </div>
   </header>
 
   <main>
@@ -62,13 +92,23 @@
         <p class="portal-eyebrow">AURELIA GRAND PALACE · CỔNG THÀNH VIÊN</p>
         <h1 id="auth-title">Đặc quyền<br><span>bắt đầu từ đây.</span></h1>
         <p>Đăng nhập an toàn để quản lý kỳ nghỉ, vận hành khách sạn hoặc theo dõi hoạt động kinh doanh.</p>
-        <div class="auth-benefits"><span><i data-lucide="shield-check"></i> Bảo mật tài khoản</span><span><i data-lucide="sparkles"></i> Trải nghiệm cá nhân hóa</span></div>
-      </div>
-      <div class="auth-card card">
-        <div class="auth-tabs tabs tabs-border" role="tablist" aria-label="Tài khoản">
-          <button type="button" id="show-login" class="auth-tab tab tab-active active" role="tab" aria-selected="true">Đăng nhập</button>
-          <button type="button" id="show-register" class="auth-tab tab" role="tab" aria-selected="false">Tạo tài khoản</button>
+        <div class="auth-benefits">
+          <span><i data-lucide="shield-check"></i> Bảo mật tài khoản</span>
+          <span><i data-lucide="sparkles"></i> Trải nghiệm cá nhân hóa</span>
         </div>
+      </div>
+      <div class="auth-card card relative">
+        <!-- Close button on auth card -->
+        <a href="index.html" class="auth-card-close absolute top-4 right-4 w-8 h-8 rounded-full border border-amber-500/30 bg-slate-950/80 hover:bg-amber-500/20 text-amber-300 flex items-center justify-center transition-all shadow-md" title="Về trang chủ" aria-label="Về trang chủ">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </a>
+
+        <!-- Task 13: Pill-shaped Tabs -->
+        <div class="auth-tabs auth-pill-tabs p-1 rounded-full bg-slate-950/80 border border-amber-500/20 flex gap-1 mb-6" role="tablist" aria-label="Tài khoản">
+          <button type="button" id="show-login" class="auth-tab auth-pill-tab flex-1 py-2 px-4 rounded-full text-xs font-bold transition-all tab-active active" role="tab" aria-selected="true">Đăng nhập</button>
+          <button type="button" id="show-register" class="auth-tab auth-pill-tab flex-1 py-2 px-4 rounded-full text-xs font-bold transition-all text-slate-400 hover:text-white" role="tab" aria-selected="false">Tạo tài khoản</button>
+        </div>
+
         <p id="auth-status" class="auth-status" role="status" aria-live="polite"></p>
         <form id="login-form" class="auth-form">
           <label for="login-username">Tên đăng nhập</label>
@@ -91,7 +131,7 @@
 
     <section id="app-view" class="portal-shell" hidden aria-label="Cổng quản lý Aurelia">
       <aside class="portal-sidebar">
-        <a href="index.html" class="sidebar-logo"><span class="portal-brand-mark"><i data-lucide="crown"></i></span><span>AURELIA <em>PALACE</em></span></a>
+        <a href="index.html" class="sidebar-logo"><span class="portal-brand-mark royal-shield-emblem"><i data-lucide="shield-check"></i></span><span>AURELIA <em>PALACE</em></span></a>
         <p id="sidebar-role" class="sidebar-caption">CỔNG THÀNH VIÊN</p>
         <nav id="portal-nav" class="portal-nav" role="tablist" aria-label="Điều hướng cổng"></nav>
         <div class="sidebar-account"><div class="account-avatar" id="account-avatar">A</div><div class="account-meta"><strong id="user-display-name">Aurelia</strong><small id="account-role">Thành viên</small></div><button id="logout-button" type="button" aria-label="Đăng xuất"><i data-lucide="log-out"></i></button></div>
@@ -99,7 +139,12 @@
       <section class="portal-content">
         <div class="portal-content-bar">
           <div><p class="portal-eyebrow">AURELIA GRAND PALACE</p><h1 id="portal-heading">Tổng quan & Hạng thẻ</h1></div>
-          <a class="portal-return" href="index.html"><i data-lucide="external-link"></i> Trang khách sạn</a>
+          <div class="flex items-center gap-3">
+            <a class="portal-return" href="index.html"><i data-lucide="external-link"></i> Trang khách sạn</a>
+            <a href="index.html" class="portal-close-circle w-9 h-9 rounded-full border border-amber-500/30 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 flex items-center justify-center transition-all shadow" title="Đóng cổng & Về trang chủ" aria-label="Đóng cổng">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </a>
+          </div>
         </div>
         <div id="portal-message" class="portal-message alert alert-error" role="status" aria-live="polite" hidden></div>
         <main id="view-container" class="portal-view" role="tabpanel" tabindex="0"></main>

@@ -52,9 +52,19 @@ export function normalizeApiBase(url) {
   return normalized.origin + path;
 }
 
-// Dynamically resolve PMS Backend URL:
-// - If accessed on port 3000 (e.g. http://192.168.56.102:3000), route to http://192.168.56.102:8081/api/v1
-// - Otherwise, route to current origin /api/v1 (supporting Nginx /api/ reverse proxy)
+// Dynamic Host Normalization: Retrieve the actual hostname being accessed in the browser
+export const getDynamicApiBaseUrl = () => {
+  // Safe for Node.js testing environments (where 'window' is undefined)
+  if (typeof window === 'undefined' || !window.location || !window.location.hostname) {
+    return 'http://localhost:8081/api/v1'; 
+  }
+  const hostname = window.location.hostname; 
+  // Automatic resolution: If accessed via a virtual machine's IP, target port 8081 on that IP; if via localhost, target localhost:8081
+  return `http://${hostname}:8081/api/v1`; 
+}; 
+
+export const API_BASE_URL = getDynamicApiBaseUrl();
+
 export function getApiBaseUrl() {
   const saved = read('hotel_api_url') || read('aurelia_api_base') || read('hotel_api_base');
   if (saved) {
@@ -63,13 +73,24 @@ export function getApiBaseUrl() {
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     return window.location.origin + '/api/v1';
   }
-  return 'http://localhost:8081/api/v1';
+  return getDynamicApiBaseUrl();
 }
 
 export function setApiBaseUrl(url) {
   write('hotel_api_url', url ? normalizeApiBase(url) : null);
   write('aurelia_api_base', url ? normalizeApiBase(url) : null);
   write('hotel_api_base', url ? normalizeApiBase(url) : null);
+}
+
+export function getStoredCustomerToken() {
+  try {
+    return read('customer_token')
+        || read('auth_token')
+        || read('token')
+        || null;
+  } catch {
+    return null;
+  }
 }
 
 export function getAuthSession() {
@@ -83,13 +104,18 @@ export function getAuthSession() {
 }
 
 export function setAuthSession(session) {
+  const token = session?.token || null;
   write('hotel_auth_session', session ? JSON.stringify(session) : null);
-  write('auth_token', session?.token || null);
+  write('customer_token', token);
+  write('auth_token', token);
+  write('token', token);
 }
 
 export function clearAuthSession() {
-  setAuthSession(null);
+  write('hotel_auth_session', null);
+  write('customer_token', null);
   write('auth_token', null);
+  write('token', null);
 }
 
 function messageFor(status) {
@@ -104,13 +130,14 @@ function messageFor(status) {
 export async function apiFetch(path, init = {}) {
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn yêu cầu không hợp lệ.');
   const session = getAuthSession();
+  const token = (typeof session?.token === 'string' && session.token) ? session.token : getStoredCustomerToken();
   const headers = new Headers(init.headers || {});
   headers.set('Accept', 'application/json');
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json; charset=utf-8');
   }
-  if (typeof session?.token === 'string' && session.token) {
-    headers.set('Authorization', 'Bearer ' + session.token);
+  if (typeof token === 'string' && token) {
+    headers.set('Authorization', 'Bearer ' + token);
   }
   headers.set('X-User-Role', 'guest');
   headers.set('ngrok-skip-browser-warning', '69420');
@@ -162,10 +189,11 @@ export async function apiFetch(path, init = {}) {
 export async function fetchAuthenticatedFile(path, init = {}) {
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn tải xuống không hợp lệ.');
   const session = getAuthSession();
+  const token = (typeof session?.token === 'string' && session.token) ? session.token : getStoredCustomerToken();
   const headers = new Headers(init.headers || {});
   headers.set('Accept', 'application/pdf');
-  if (typeof session?.token === 'string' && session.token) {
-    headers.set('Authorization', 'Bearer ' + session.token);
+  if (typeof token === 'string' && token) {
+    headers.set('Authorization', 'Bearer ' + token);
   }
   headers.set('X-User-Role', 'guest');
   let response;

@@ -1,4 +1,4 @@
-import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js';
+import { api, API_BASE_URL, clearAuthSession, getAuthSession, setAuthSession } from './api.js';
 import { loadAdminView } from './js/view-admin.js';
 import { loadStaffView } from './js/view-staff.js';
 import { loadCustomerView } from './js/view-customer.js';
@@ -56,7 +56,25 @@ const roleOf = value => {
   return null;
 };
 
-const byId = id => document.getElementById(id);
+const byId = id => (typeof document !== 'undefined' ? document.getElementById(id) : null);
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+export function getStoredCustomerToken() {
+  if (typeof localStorage === 'undefined') return null;
+  return localStorage.getItem('customer_token')
+      || localStorage.getItem('auth_token')
+      || localStorage.getItem('token')
+      || null;
+}
 
 function status(message, kind = 'error') {
   try {
@@ -68,9 +86,42 @@ function status(message, kind = 'error') {
   } catch {}
 }
 
+export function setupAuthTabs() {
+  const showLoginBtn = byId('show-login');
+  const showRegisterBtn = byId('show-register');
+  const loginForm = byId('login-form');
+  const registerForm = byId('register-form');
+
+  if (!showLoginBtn || !showRegisterBtn) return;
+
+  showLoginBtn.addEventListener('click', (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    showLoginBtn.classList.add('tab-active', 'active');
+    showRegisterBtn.classList.remove('tab-active', 'active');
+    showLoginBtn.setAttribute('aria-selected', 'true');
+    showRegisterBtn.setAttribute('aria-selected', 'false');
+    if (loginForm) loginForm.hidden = false;
+    if (registerForm) registerForm.hidden = true;
+    status('');
+  });
+
+  showRegisterBtn.addEventListener('click', (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    showRegisterBtn.classList.add('tab-active', 'active');
+    showLoginBtn.classList.remove('tab-active', 'active');
+    showRegisterBtn.setAttribute('aria-selected', 'true');
+    showLoginBtn.setAttribute('aria-selected', 'false');
+    if (registerForm) registerForm.hidden = false;
+    if (loginForm) loginForm.hidden = true;
+    status('');
+  });
+}
+
 function showAuth(tab = 'login') {
   try {
-    document.body.classList.remove('customer-portal');
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.remove('customer-portal');
+    }
     const authView = byId('auth-view');
     const appView = byId('app-view');
     if (authView) authView.hidden = false;
@@ -137,7 +188,7 @@ function renderNav(session, activeTab) {
       });
     }
 
-    if (window.lucide?.createIcons) window.lucide.createIcons();
+    if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
   } catch (err) {
     console.error('Lỗi render thanh điều hướng:', err);
   }
@@ -189,10 +240,202 @@ function openView(session, role, tab) {
   }
 
   try {
-    const url = new URL(window.location.href);
-    url.searchParams.set('view', tab);
-    history.replaceState(null, '', url);
+    if (typeof window !== 'undefined' && window.location) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', tab);
+      window.history.replaceState(null, '', url);
+    }
   } catch {}
+}
+
+/**
+ * Task 15: Lifecycle Notification Tray Center
+ */
+async function initNotificationTray(session) {
+  const bellBtn = byId('btn-notification-bell');
+  const dropdown = byId('notification-dropdown');
+  const badge = byId('notif-unread-badge');
+  const listEl = byId('notification-list');
+  const markAllBtn = byId('btn-mark-all-read');
+
+  if (!bellBtn || !dropdown) return;
+
+  // Toggle Dropdown
+  bellBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('hidden');
+    if (!dropdown.classList.contains('hidden')) {
+      loadNotifications();
+    }
+  });
+
+  // Close on outside click
+  if (typeof document !== 'undefined') {
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target) && !bellBtn.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  }
+
+  async function loadNotifications() {
+    if (!listEl) return;
+    try {
+      const resp = await api.get('/notifications?limit=20').catch(() => null);
+      let notifs = [];
+      let unread = 0;
+
+      if (resp && resp.data && Array.isArray(resp.data)) {
+        notifs = resp.data;
+        unread = resp.unread_count ?? notifs.filter(n => !n.is_read).length;
+      } else if (Array.isArray(resp)) {
+        notifs = resp;
+        unread = notifs.filter(n => !n.is_read).length;
+      } else {
+        // Fallback default notifications if offline / demo
+        notifs = [
+          {
+            id: 1,
+            notification_type: 'checkin_welcome',
+            title: 'Chào Mừng Quý Khách Đến Với Aurelia!',
+            message: 'Trân trọng gửi tặng Quý khách mã ưu đãi ẩm thực AURELIA_DINE15 giảm 15% cho dịch vụ F&B tại phòng.',
+            voucher_code: 'AURELIA_DINE15',
+            action_url: 'portal.html?view=concierge',
+            is_read: false,
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 2,
+            notification_type: 'checkout_gratitude',
+            title: 'Tri Ân Nghỉ Dưỡng Trở Lại',
+            message: 'Kính tặng Quý khách mã tri ân MEMORIAL_ROOM25 giảm 25% giá phòng cho kỳ nghỉ kế tiếp.',
+            voucher_code: 'MEMORIAL_ROOM25',
+            action_url: 'portal.html?view=bookings',
+            is_read: true,
+            created_at: new Date(Date.now() - 86400000).toISOString()
+          }
+        ];
+        unread = 1;
+      }
+
+      // Update badge
+      if (badge) {
+        if (unread > 0) {
+          badge.textContent = unread > 99 ? '99+' : String(unread);
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      if (notifs.length === 0) {
+        listEl.innerHTML = `
+          <div class="p-6 text-center text-xs text-slate-400">
+            <i data-lucide="bell-off" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
+            <p>Quý khách chưa có thông báo mới.</p>
+          </div>
+        `;
+        if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
+        return;
+      }
+
+      listEl.innerHTML = notifs.map(n => {
+        const isUnread = !n.is_read;
+        const safeTitle = escapeHtml(n.title || 'Thông báo');
+        const safeMsg = escapeHtml(n.message || '');
+        const voucher = n.voucher_code ? escapeHtml(n.voucher_code) : '';
+        const timeStr = n.created_at ? new Date(n.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : 'Vừa xong';
+
+        return `
+          <div class="notif-item p-3 rounded-xl transition-colors cursor-pointer ${isUnread ? 'bg-amber-500/5 border-l-2 border-amber-400' : 'bg-slate-950/40'}" data-id="${n.id}">
+            <div class="flex items-start justify-between gap-2 mb-1">
+              <h4 class="text-xs font-bold ${isUnread ? 'text-amber-300' : 'text-slate-200'}">${safeTitle}</h4>
+              <span class="text-[10px] text-slate-500 shrink-0 font-mono">${timeStr}</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed mb-2">${safeMsg}</p>
+            ${voucher ? `
+              <div class="p-2 rounded-lg bg-slate-900 border border-amber-500/20 flex items-center justify-between gap-2 mt-1.5">
+                <span class="font-mono text-xs font-bold text-amber-400 select-all">${voucher}</span>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" class="btn-copy-notif-voucher px-2 py-1 rounded bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-200 text-[10px] font-semibold transition-colors flex items-center gap-1" data-code="${voucher}">
+                    <i data-lucide="copy" class="w-3 h-3"></i>
+                    <span>Sao chép</span>
+                  </button>
+                  <a href="${n.action_url || 'portal.html?view=concierge'}" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-semibold transition-colors flex items-center gap-1">
+                    <i data-lucide="sparkles" class="w-3 h-3"></i>
+                    <span>Dùng ngay</span>
+                  </a>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // Copy voucher handler
+      listEl.querySelectorAll('.btn-copy-notif-voucher').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const code = btn.getAttribute('data-code');
+          if (!code) return;
+          try {
+            if (navigator.clipboard?.writeText) {
+              await navigator.clipboard.writeText(code);
+            }
+            btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i><span class="text-emerald-400">Đã chép!</span>`;
+            if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
+            setTimeout(() => {
+              btn.innerHTML = `<i data-lucide="copy" class="w-3 h-3"></i><span>Sao chép</span>`;
+              if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
+            }, 1800);
+          } catch {}
+        });
+      });
+
+      // Mark single notification read on click
+      listEl.querySelectorAll('.notif-item').forEach(item => {
+        item.addEventListener('click', async () => {
+          const id = item.getAttribute('data-id');
+          if (!id) return;
+          try {
+            await api.put(`/notifications/${id}/read`, {});
+            item.classList.remove('bg-amber-500/5', 'border-l-2', 'border-amber-400');
+            item.classList.add('bg-slate-950/40');
+            const unreadItems = listEl.querySelectorAll('.border-l-2').length;
+            if (badge) {
+              if (unreadItems > 0) {
+                badge.textContent = String(unreadItems);
+              } else {
+                badge.classList.add('hidden');
+              }
+            }
+          } catch {}
+        });
+      });
+
+      if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
+
+    } catch (err) {
+      console.warn('Không thể tải thông báo:', err);
+    }
+  }
+
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', async () => {
+      listEl.querySelectorAll('.notif-item').forEach(async item => {
+        const id = item.getAttribute('data-id');
+        if (id) {
+          api.put(`/notifications/${id}/read`, {}).catch(() => {});
+          item.classList.remove('bg-amber-500/5', 'border-l-2', 'border-amber-400');
+          item.classList.add('bg-slate-950/40');
+        }
+      });
+      if (badge) badge.classList.add('hidden');
+    });
+  }
+
+  // Initial load
+  loadNotifications();
 }
 
 function enterPortal(session) {
@@ -201,13 +444,17 @@ function enterPortal(session) {
     if (!role) {
       clearAuthSession();
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('customer_token');
+      localStorage.removeItem('token');
       alert('Tài khoản này chưa được cấp quyền truy cập cổng web.');
       window.location.href = 'index.html#login';
       return;
     }
 
     const isCustomer = role === 'CUSTOMER';
-    document.body.classList.toggle('customer-portal', isCustomer);
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.toggle('customer-portal', isCustomer);
+    }
 
     const appView = byId('app-view');
     const authView = byId('auth-view');
@@ -222,9 +469,12 @@ function enterPortal(session) {
       authView.hidden = true;
     }
 
-    const requested = new URLSearchParams(location.search).get('view');
+    const requested = typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search).get('view') : null;
     const defaultTab = role === 'STAFF' ? 'room-map' : 'dashboard';
     openView(session, role, requested || defaultTab);
+
+    // Initialize Lifecycle Notifications
+    initNotificationTray(session);
 
     if (session?.isGuestPreview) {
       const msg = byId('portal-message');
@@ -241,9 +491,11 @@ function enterPortal(session) {
         byId('btn-guest-login-now')?.addEventListener('click', () => {
           clearAuthSession();
           localStorage.removeItem('auth_token');
+          localStorage.removeItem('customer_token');
+          localStorage.removeItem('token');
           window.location.href = 'index.html#login';
         });
-        if (window.lucide?.createIcons) window.lucide.createIcons();
+        if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
       }
     }
   } catch (err) {
@@ -253,6 +505,8 @@ function enterPortal(session) {
 
 // Initial DOM events setup wrapped in try...catch
 try {
+  setupAuthTabs();
+
   byId('show-login')?.addEventListener('click', () => { status(''); showAuth('login'); });
   byId('show-register')?.addEventListener('click', () => { status(''); showAuth('register'); });
 
@@ -278,8 +532,12 @@ try {
       };
       setAuthSession(session);
       localStorage.setItem('auth_token', result.token);
+      localStorage.setItem('customer_token', result.token);
+      localStorage.setItem('token', result.token);
       const destination = roleOf(result.role) === 'STAFF' ? 'room-map' : 'dashboard';
-      window.location.replace(`portal.html?view=${encodeURIComponent(destination)}`);
+      if (typeof window !== 'undefined' && window.location?.replace) {
+        window.location.replace(`portal.html?view=${encodeURIComponent(destination)}`);
+      }
     } catch (error) {
       status(error.message || 'Không thể đăng nhập. Vui lòng kiểm tra kết nối và thử lại.');
     } finally {
@@ -315,8 +573,12 @@ try {
   byId('logout-button')?.addEventListener('click', () => {
     clearAuthSession();
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('customer_token');
+    localStorage.removeItem('token');
     alert('Bạn đã đăng xuất thành công.');
-    window.location.href = 'index.html#login';
+    if (typeof window !== 'undefined' && window.location) {
+      window.location.href = 'index.html#login';
+    }
   });
 } catch (e) {
   console.warn('Thiết lập sự kiện DOM:', e);
@@ -324,17 +586,21 @@ try {
 
 // Global icons refresh
 try {
-  if (window.lucide?.createIcons) window.lucide.createIcons();
+  if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
 } catch {}
 
 // Definitive Auth Guard initialization wrapped in try...catch
 try {
-  const token = (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null) || getAuthSession()?.token;
+  const token = getStoredCustomerToken() || (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null) || getAuthSession()?.token;
 
   if (!token) {
     // If no token is present: Display a user-friendly notification and redirect to index.html#login
-    alert('Vui lòng đăng nhập để truy cập Cổng thành viên Aurelia.');
-    window.location.href = 'index.html#login';
+    if (typeof alert !== 'undefined') {
+      alert('Vui lòng đăng nhập để truy cập Cổng thành viên Aurelia.');
+    }
+    if (typeof window !== 'undefined' && window.location) {
+      window.location.href = 'index.html#login';
+    }
   } else {
     // If a token is present: IMMEDIATELY remove hidden or opacity-0 from main container to trigger paint
     const appView = byId('app-view');
@@ -358,8 +624,16 @@ try {
       };
       setAuthSession(session);
     }
-    if (!localStorage.getItem('auth_token') && session.token) {
-      localStorage.setItem('auth_token', session.token);
+    if (typeof localStorage !== 'undefined') {
+      if (!localStorage.getItem('auth_token') && session.token) {
+        localStorage.setItem('auth_token', session.token);
+      }
+      if (!localStorage.getItem('customer_token') && session.token) {
+        localStorage.setItem('customer_token', session.token);
+      }
+      if (!localStorage.getItem('token') && session.token) {
+        localStorage.setItem('token', session.token);
+      }
     }
 
     enterPortal(session);

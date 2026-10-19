@@ -255,8 +255,14 @@ public final class ApiClient {
 
     private URI resolve(String path) {
         Objects.requireNonNull(path, "path");
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            return URI.create(path);
+        }
         String relative = path.startsWith("/") ? path.substring(1) : path;
         String configuredBase = ApiConfig.getBaseUrl();
+        if (configuredBase == null || configuredBase.isBlank()) {
+            configuredBase = ServerConfig.getBaseUrl() + "/api/v1";
+        }
         URI currentBaseUri = (configuredBase != null && !configuredBase.isBlank())
             ? URI.create(configuredBase.endsWith("/") ? configuredBase : configuredBase + "/")
             : baseUri;

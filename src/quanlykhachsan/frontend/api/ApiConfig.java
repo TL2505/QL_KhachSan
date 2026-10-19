@@ -138,6 +138,11 @@ public final class ApiConfig {
      * 3. Fallback to localhost:8081 if 192.168.56.102 is completely unreachable.
      */
     private static String resolveBaseUrl() {
+        String pmsUrl = System.getProperty("pms.backend.url", System.getenv("PMS_BACKEND_URL"));
+        if (pmsUrl != null && !pmsUrl.trim().isEmpty()) {
+            return normalizeApiUrl(pmsUrl.trim());
+        }
+
         // 1. Check config.properties first
         String configured = PROPS.getProperty("server.url");
         if (configured != null && !configured.trim().isEmpty()) {
@@ -148,22 +153,13 @@ public final class ApiConfig {
                 }
                 String envUrl = getEnvUrl();
                 if (envUrl != null) return normalizeApiUrl(envUrl);
-                return "http://localhost:8081/api/v1";
+                return ServerConfig.getBaseUrl() + "/api/v1";
             }
             return normalizeApiUrl(configured);
         }
 
-        // 2. Absolute priority: check 192.168.56.102:8081
-        if (isTcpReachable(DEFAULT_VM_IP, DEFAULT_BACKEND_PORT, 600)) {
-            return DEFAULT_API_BASE_URL;
-        }
-
-        // 3. Fallback: environment variables
-        String envUrl = getEnvUrl();
-        if (envUrl != null) return normalizeApiUrl(envUrl);
-
-        // 4. Default absolute priority
-        return DEFAULT_API_BASE_URL;
+        // 2. Active auto-discovery via ServerConfig
+        return ServerConfig.getBaseUrl() + "/api/v1";
     }
 
     private static String getEnvUrl() {

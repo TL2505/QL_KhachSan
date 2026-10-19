@@ -137,6 +137,13 @@ public class Main {
             // Route Dịch vụ khách sạn
             registerContext(server, ipRateLimiter, "/api/v1/services", new quanlykhachsan.backend.hotelservice.ServiceController(), exceptionFilter, corsFilter, jwtFilter);
             registerContext(server, ipRateLimiter, "/api/v1/service-usage", new quanlykhachsan.backend.hotelservice.ServiceUsageController(), exceptionFilter, corsFilter, jwtFilter);
+            // Route Đặt Dịch vụ Phòng & Giám sát Lễ tân (Phase 2.1)
+            var serviceOrderController = new quanlykhachsan.backend.hotelservice.ServiceOrderController();
+            registerContext(server, ipRateLimiter, "/api/v1/service-orders/active", serviceOrderController, exceptionFilter, corsFilter, jwtFilter);
+            registerContext(server, ipRateLimiter, "/api/v1/service-orders", serviceOrderController, exceptionFilter, corsFilter, jwtFilter);
+            // Route Thông báo Vòng đời & Voucher Khách hàng (Phase 2.1)
+            var notificationController = new quanlykhachsan.backend.customer.NotificationController();
+            registerContext(server, ipRateLimiter, "/api/v1/notifications", notificationController, exceptionFilter, corsFilter, jwtFilter);
             // Route Đánh giá (Review)
             registerContext(server, ipRateLimiter, "/api/v1/reviews", new quanlykhachsan.backend.interaction.ReviewController(), exceptionFilter, corsFilter, jwtFilter);
             // Route Chat

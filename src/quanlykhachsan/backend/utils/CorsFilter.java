@@ -8,10 +8,23 @@ public class CorsFilter extends Filter {
 
     public static final String ALLOWED_ORIGIN = "*";
     public static final String ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
-
     public static final String ALLOWED_HEADERS = "Content-Type, Authorization, X-User-Role, Idempotency-Key, X-Signature, ngrok-skip-browser-warning";
     public static final String MAX_AGE = "86400";
 
+    /**
+     * Dynamically resolves the requesting origin to ensure dual-environment parity:
+     * Reflects incoming origin (e.g. http://localhost:3000, http://127.0.0.1:3000, http://192.168.56.102:3000)
+     * or defaults to '*' when no Origin header is present.
+     */
+    public static String resolveOrigin(HttpExchange exchange) {
+        if (exchange != null && exchange.getRequestHeaders() != null) {
+            String origin = exchange.getRequestHeaders().getFirst("Origin");
+            if (origin != null && !origin.isBlank()) {
+                return origin.trim();
+            }
+        }
+        return ALLOWED_ORIGIN;
+    }
 
     @Override
     public String description() {
@@ -20,16 +33,21 @@ public class CorsFilter extends Filter {
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+        String origin = resolveOrigin(exchange);
 
         // Set standard CORS response headers
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", origin);
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", ALLOWED_METHODS);
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", ALLOWED_HEADERS);
         exchange.getResponseHeaders().set("Access-Control-Max-Age", MAX_AGE);
+        if (!"*".equals(origin)) {
+            exchange.getResponseHeaders().set("Access-Control-Allow-Credentials", "true");
+        }
 
         // REQUIRED HTTP 204 No Content according to W3C / ADR-05 standards
         if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
             exchange.sendResponseHeaders(204, -1);
+            exchange.close();
             return;
         }
 

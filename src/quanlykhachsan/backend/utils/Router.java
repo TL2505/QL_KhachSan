@@ -124,11 +124,16 @@ public class Router implements HttpHandler {
 
         // 1. Handle CORS pre-flight OPTIONS requests (W3C & ADR-05: 204 No Content with X-Signature)
         if ("OPTIONS".equalsIgnoreCase(requestMethod)) {
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", CorsFilter.ALLOWED_ORIGIN);
+            String origin = CorsFilter.resolveOrigin(exchange);
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", origin);
             exchange.getResponseHeaders().set("Access-Control-Allow-Methods", CorsFilter.ALLOWED_METHODS);
             exchange.getResponseHeaders().set("Access-Control-Allow-Headers", CorsFilter.ALLOWED_HEADERS);
             exchange.getResponseHeaders().set("Access-Control-Max-Age", CorsFilter.MAX_AGE);
+            if (!"*".equals(origin)) {
+                exchange.getResponseHeaders().set("Access-Control-Allow-Credentials", "true");
+            }
             exchange.sendResponseHeaders(204, -1);
+            exchange.close();
             return;
         }
 

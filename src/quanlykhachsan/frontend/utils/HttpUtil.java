@@ -4,19 +4,13 @@ public class HttpUtil {
 
     private static volatile java.util.function.IntConsumer serviceUnavailableHandler;
 
-    private static final String DEFAULT_URL = quanlykhachsan.frontend.api.ApiConfig.DEFAULT_API_BASE_URL;
-    private static final String BASE_URL;
-
-    static {
-        String configuredUrl = quanlykhachsan.frontend.api.ApiConfig.getBaseUrl();
-        if (configuredUrl == null || configuredUrl.trim().isEmpty()) {
-            configuredUrl = DEFAULT_URL;
-        }
-        BASE_URL = configuredUrl;
+    /**
+     * Configured API base URL dynamically resolved via ServerConfig auto-discovery.
+     * Dual-environment parity (Localhost & VM 192.168.56.102).
+     */
+    public static String getBaseUrl() {
+        return ServerConfig.getBaseUrl() + "/api/v1";
     }
-
-    /** Configured API base URL. The returned value is available without network I/O. */
-    public static String getBaseUrl() { return BASE_URL; }
 
     public static String sendGet(String endpoint) throws Exception {
         return sendGetWithHeaders(endpoint, null);

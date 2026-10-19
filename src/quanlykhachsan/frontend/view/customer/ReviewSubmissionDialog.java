@@ -93,17 +93,40 @@ public class ReviewSubmissionDialog extends JDialog {
 
     private void submitReview() {
         Review r = new Review();
-        r.setCustomerId(booking.getCustomerId());
-        r.setRoomId(booking.getRoomId());
-        r.setRating(sldRating.getValue());
+        if (booking != null) {
+            r.setBookingId(booking.getId());
+            r.setCustomerId(booking.getCustomerId());
+            r.setRoomId(booking.getRoomId());
+        }
+        int stars = sldRating.getValue();
+        r.setRating(stars);
+        r.setRatingOverall(java.math.BigDecimal.valueOf(stars));
+        r.setRatingRoom(stars);
+        r.setRatingFnb(stars);
+        r.setRatingService(stars);
+        r.setRatingCleanliness(stars);
         r.setComment(txtComment.getText());
 
-        String res = ReviewAPI.addReview(r);
-        if ("Success".equals(res)) {
-            JOptionPane.showMessageDialog(this, "Cảm ơn bạn đã đóng góp ý kiến!");
-            dispose();
-        } else {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + res);
-        }
+        new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() {
+                return ReviewAPI.addReview(r);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String res = get();
+                    if ("Success".equalsIgnoreCase(res)) {
+                        JOptionPane.showMessageDialog(ReviewSubmissionDialog.this, "Cảm ơn Quý khách đã gửi đánh giá! Quý khách đã được cộng ngay 200 điểm thưởng hội viên.");
+                        dispose();
+                    } else {
+                        JOptionPane.showMessageDialog(ReviewSubmissionDialog.this, "Lỗi: " + res);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(ReviewSubmissionDialog.this, "Lỗi: " + ex.getMessage());
+                }
+            }
+        }.execute();
     }
 }

@@ -144,7 +144,101 @@ public class UpdateDbUtility {
             migratePromotionalWallet(conn);
             ensureColumn(conn,"daily_business_reports","snapshot_json","LONGTEXT NULL");
             migratePhase3(conn);
+            migratePhase2_1(conn);
             System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.");
+    }
+
+    public static void migratePhase2_1(Connection conn) {
+        try {
+            ensureTable(conn, "customer_notifications",
+                    "CREATE TABLE IF NOT EXISTS customer_notifications (\n"
+                    + "  id BIGINT AUTO_INCREMENT PRIMARY KEY,\n"
+                    + "  customer_id INT NOT NULL,\n"
+                    + "  booking_id INT NULL,\n"
+                    + "  notification_type ENUM('booking_confirmed', 'checkin_welcome', 'checkout_gratitude', 'service_update', 'promo_alert') NOT NULL,\n"
+                    + "  title VARCHAR(255) NOT NULL,\n"
+                    + "  message TEXT NOT NULL,\n"
+                    + "  voucher_code VARCHAR(50) NULL,\n"
+                    + "  action_url VARCHAR(255) NULL,\n"
+                    + "  is_read BOOLEAN NOT NULL DEFAULT FALSE,\n"
+                    + "  read_at DATETIME NULL,\n"
+                    + "  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n"
+                    + "  INDEX idx_notif_cust_unread (customer_id, is_read, created_at),\n"
+                    + "  INDEX idx_notif_booking (booking_id)\n"
+                    + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            ensureTable(conn, "service_orders",
+                    "CREATE TABLE IF NOT EXISTS service_orders (\n"
+                    + "  id BIGINT AUTO_INCREMENT PRIMARY KEY,\n"
+                    + "  booking_id INT NOT NULL,\n"
+                    + "  customer_id INT NOT NULL,\n"
+                    + "  room_id INT NOT NULL,\n"
+                    + "  category ENUM('FNB', 'SPA', 'HOUSEKEEPING') NOT NULL,\n"
+                    + "  service_id INT NULL,\n"
+                    + "  item_name VARCHAR(150) NOT NULL,\n"
+                    + "  quantity INT NOT NULL DEFAULT 1 CHECK (quantity > 0),\n"
+                    + "  unit_price DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (unit_price >= 0),\n"
+                    + "  subtotal DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (subtotal >= 0),\n"
+                    + "  discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (discount_amount >= 0),\n"
+                    + "  final_price DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (final_price >= 0),\n"
+                    + "  voucher_code VARCHAR(50) NULL,\n"
+                    + "  special_instructions TEXT NULL,\n"
+                    + "  scheduled_time DATETIME NULL,\n"
+                    + "  order_status ENUM('PENDING', 'ACCEPTED', 'DELIVERED', 'COMPLETED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',\n"
+                    + "  folio_transaction_id BIGINT NULL,\n"
+                    + "  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n"
+                    + "  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n"
+                    + "  INDEX idx_sorder_active_polling (order_status, created_at),\n"
+                    + "  INDEX idx_sorder_booking_cat (booking_id, category),\n"
+                    + "  INDEX idx_sorder_room (room_id)\n"
+                    + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            ensureTable(conn, "loyalty_histories",
+                    "CREATE TABLE IF NOT EXISTS loyalty_histories (\n"
+                    + "  id INT AUTO_INCREMENT PRIMARY KEY,\n"
+                    + "  customer_id INT NOT NULL,\n"
+                    + "  points INT NOT NULL,\n"
+                    + "  type ENUM('earn', 'redeem') NOT NULL DEFAULT 'earn',\n"
+                    + "  description VARCHAR(255) NULL,\n"
+                    + "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n"
+                    + "  CONSTRAINT fk_lh_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,\n"
+                    + "  INDEX idx_lh_customer (customer_id, created_at)\n"
+                    + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            ensureColumn(conn, "customers", "user_id", "INT NULL");
+            ensureColumn(conn, "customers", "loyalty_points", "INT NOT NULL DEFAULT 0");
+            ensureColumn(conn, "customers", "total_loyalty_points", "INT NOT NULL DEFAULT 0");
+            ensureColumn(conn, "promotions", "applicable_scope", "ENUM('ROOM', 'FNB', 'SPA', 'ALL') NOT NULL DEFAULT 'ALL'");
+            ensureColumn(conn, "promotions", "special_occasion", "VARCHAR(50) NULL");
+            ensureColumn(conn, "promotions", "valid_after_checkout_days", "INT NULL");
+            ensureColumn(conn, "promotions", "used_count", "INT NOT NULL DEFAULT 0");
+
+            ensureColumn(conn, "reviews", "booking_id", "INT NULL");
+            ensureColumn(conn, "reviews", "rating", "TINYINT NOT NULL DEFAULT 5");
+            ensureColumn(conn, "reviews", "rating_room", "TINYINT NOT NULL DEFAULT 5");
+            ensureColumn(conn, "reviews", "rating_fnb", "TINYINT NOT NULL DEFAULT 5");
+            ensureColumn(conn, "reviews", "rating_service", "TINYINT NOT NULL DEFAULT 5");
+            ensureColumn(conn, "reviews", "rating_cleanliness", "TINYINT NOT NULL DEFAULT 5");
+            ensureColumn(conn, "reviews", "rating_overall", "DECIMAL(2,1) NOT NULL DEFAULT 5.0");
+            ensureColumn(conn, "reviews", "management_response", "TEXT NULL");
+            ensureColumn(conn, "reviews", "responded_by_user_id", "INT NULL");
+            ensureColumn(conn, "reviews", "responded_at", "DATETIME NULL");
+            ensureColumn(conn, "reviews", "reward_granted", "BOOLEAN NOT NULL DEFAULT FALSE");
+            ensureColumn(conn, "reviews", "reward_points", "INT NOT NULL DEFAULT 200");
+
+            // Deduplicate any legacy reviews for the same booking before creating UNIQUE INDEX
+            try (Statement dedupeStmt = conn.createStatement()) {
+                dedupeStmt.executeUpdate("DELETE r1 FROM reviews r1 " +
+                                         "INNER JOIN reviews r2 " +
+                                         "WHERE r1.id < r2.id AND r1.booking_id = r2.booking_id AND r1.booking_id IS NOT NULL");
+            } catch (SQLException ex) {
+                System.out.println("[UpdateDbUtility] Review deduplication note: " + ex.getMessage());
+            }
+
+            ensureIndex(conn, "reviews", "uq_booking_review", "UNIQUE INDEX uq_booking_review (booking_id)");
+        } catch (Throwable t) {
+            System.err.println("[UpdateDbUtility] Phase 2.1 non-blocking migration warning: " + t.getMessage());
+        }
     }
 
     private static void migratePhase3(Connection conn) throws SQLException {

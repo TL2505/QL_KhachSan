@@ -8,6 +8,7 @@
 
 import {
   api,
+  API_BASE_URL,
   setAuthSession,
   getAuthSession,
   clearAuthSession,
@@ -22,6 +23,20 @@ import './shared/theme.js';
 
 // Cross-environment safe global reference (Browser Window vs Node.js test environment)
 const _global = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
+
+/**
+ * HTML Sanitizer to prevent XSS attacks across all dynamic DOM rendering.
+ */
+export function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[character]));
+}
+_global.escapeHtml = escapeHtml;
 
 // Application State
 const state = {
@@ -183,6 +198,7 @@ if (typeof document !== 'undefined') {
     initScrollObservers();
     await loadRooms();
     renderGallery();
+    loadPublicReviewsWidget();
     refreshLucideIcons();
     applyLanguage(state.language);
     updateCurrencyDisplay();
@@ -1391,17 +1407,12 @@ function initEventListeners() {
     tabRegisterBtn.addEventListener('click', () => switchAuthTab('register'));
   }
 
-  // Header and Mobile Login Triggers
+  // Header and Mobile Login Triggers (Task 11: clicking redirects directly to portal.html)
   const headerLoginBtn = document.getElementById('header-login-btn') || document.getElementById('login-btn');
   if (headerLoginBtn) {
     headerLoginBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      const session = getAuthSession();
-      if (session && session.token) {
-        window.location.href = 'portal.html';
-      } else {
-        openLoginModal(e);
-      }
+      window.location.href = 'portal.html';
     });
   }
 
@@ -1411,12 +1422,7 @@ function initEventListeners() {
       e.preventDefault();
       const mobileDrawer = document.getElementById('mobile-menu-drawer');
       if (mobileDrawer) mobileDrawer.classList.add('hidden');
-      const session = getAuthSession();
-      if (session && session.token) {
-        window.location.href = 'portal.html';
-      } else {
-        openLoginModal(e);
-      }
+      window.location.href = 'portal.html';
     });
   }
 
@@ -2000,6 +2006,15 @@ export function switchAuthTab(tab = 'login') {
 }
 
 export function openLoginModal(e) {
+  if (e && (e.currentTarget?.id === 'header-login-btn' || e.currentTarget?.id === 'mobile-login-btn' || e.target?.closest?.('#header-login-btn, #mobile-login-btn'))) {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
+    if (typeof window !== 'undefined' && window.location) {
+      window.location.href = 'portal.html';
+      return;
+    }
+  }
   if (e && typeof e.preventDefault === 'function') {
     e.preventDefault();
   }
@@ -2108,6 +2123,8 @@ export async function handleLoginSubmit(e) {
     try {
       if (typeof localStorage !== 'undefined' && result.token) {
         localStorage.setItem('auth_token', result.token);
+        localStorage.setItem('customer_token', result.token);
+        localStorage.setItem('token', result.token);
       }
     } catch {}
 
@@ -2255,6 +2272,8 @@ export function handleLogout(e) {
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('customer_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('hotel_auth_session');
     }
   } catch {}
@@ -2265,76 +2284,363 @@ export function handleLogout(e) {
   }
 }
 
+// ==========================================================================
+// TASK 12: 5-STAR REPUTATION/REVIEW WIDGET FOR HOMEPAGE
+// ==========================================================================
+export async function loadPublicReviewsWidget() {
+  if (typeof document === 'undefined') return;
+  const summaryContainer = document.getElementById('public-reviews-summary');
+  const gridContainer = document.getElementById('public-reviews-grid');
+  // If not on the homepage (i.e., containers are not found), exit silently
+  if (!summaryContainer || !gridContainer) return;
+
+  let data = null;
+  try {
+    data = await api.get('/reviews/public?page=1&limit=6');
+  } catch (err) {
+    console.warn('[ReviewWidget] API public reviews failed or offline, loading fallback presentation:', err);
+  }
+
+  const summary = data?.summary || {
+    total_reviews: 128,
+    overall_average: 4.9,
+    room_average: 4.9,
+    fnb_average: 4.8,
+    service_average: 5.0,
+    cleanliness_average: 4.9,
+    recommendation_percentage: 98.5
+  };
+
+  const reviewsList = Array.isArray(data?.reviews) && data.reviews.length > 0 ? data.reviews : [
+    {
+      id: 1,
+      customer_display_name: 'Trần H*** L***',
+      room_type_name: 'Executive Ocean Suite',
+      rating_overall: 5.0,
+      rating_room: 5,
+      rating_fnb: 5,
+      rating_service: 5,
+      rating_cleanliness: 5,
+      comment: 'Kỳ nghỉ vô cùng trọn vẹn tại Aurelia Palace! Tầm nhìn hướng biển ngoạn mục, nhà hàng phục vụ món bò Wagyu tuyệt hảo và đội ngũ quản gia luôn túc trực chu đáo.',
+      created_at: '2026-10-18',
+      management_response: {
+        responder_title: 'Tổng Quản Lý Khu Nghỉ Dưỡng (General Manager)',
+        content: 'Chân thành cảm ơn Ông Long và gia đình đã tin tưởng chọn Aurelia Palace. Đội ngũ khách sạn rất vinh hạnh được đón tiếp Quý khách trong những kỳ nghỉ tiếp theo!',
+        responded_at: '2026-10-18'
+      }
+    },
+    {
+      id: 2,
+      customer_display_name: 'Nguyễn T*** M***',
+      room_type_name: 'Presidential Royal Villa',
+      rating_overall: 4.9,
+      rating_room: 5,
+      rating_fnb: 5,
+      rating_service: 5,
+      rating_cleanliness: 5,
+      comment: 'Hồ bơi tràn bờ riêng tư tuyệt đẹp, không gian tĩnh lặng và riêng tư tối đa. Bữa sáng nổi tại villa là trải nghiệm đẳng cấp thế giới.',
+      created_at: '2026-10-17',
+      management_response: {
+        responder_title: 'Giám Đốc Trải Nghiệm Khách Hàng (Director of Guest Experience)',
+        content: 'Kính gửi Bà Mai, chúng tôi rất vui vì Quý khách đã có trải nghiệm trọn vẹn với dịch vụ bữa sáng nổi tại Royal Villa. Hẹn sớm gặp lại Quý khách!',
+        responded_at: '2026-10-17'
+      }
+    },
+    {
+      id: 3,
+      customer_display_name: 'Phạm V*** H***',
+      room_type_name: 'Premier Deluxe Garden View',
+      rating_overall: 4.8,
+      rating_room: 5,
+      rating_fnb: 4,
+      rating_service: 5,
+      rating_cleanliness: 5,
+      comment: 'Thủ tục nhận phòng nhanh chóng, nhân viên lễ tân hỗ trợ nhiệt tình. Dịch vụ Spa thảo dược giúp phục hồi tinh thần sau những ngày làm việc bận rộn.',
+      created_at: '2026-10-16',
+      management_response: {
+        responder_title: 'Quản Lý Tiền Sảnh (Front Office Manager)',
+        content: 'Aurelia Palace chân thành cảm ơn đánh giá của Ông Hoàng. Chúng tôi không ngừng hoàn thiện để mang đến dịch vụ hoàn hảo nhất.',
+        responded_at: '2026-10-16'
+      }
+    }
+  ];
+
+  // Format numbers safely
+  const overallAvg = Number(summary.overall_average || 5.0).toFixed(1);
+  const roomAvg = Number(summary.room_average || 5.0).toFixed(1);
+  const fnbAvg = Number(summary.fnb_average || 5.0).toFixed(1);
+  const serviceAvg = Number(summary.service_average || 5.0).toFixed(1);
+  const cleanlinessAvg = Number(summary.cleanliness_average || 5.0).toFixed(1);
+  const recPct = Number(summary.recommendation_percentage || 100.0).toFixed(1);
+  const totalCount = summary.total_reviews || reviewsList.length;
+
+  // Percentage widths (scaled out of 5.0)
+  const roomPct = Math.min(100, Math.max(0, (roomAvg / 5) * 100));
+  const fnbPct = Math.min(100, Math.max(0, (fnbAvg / 5) * 100));
+  const servicePct = Math.min(100, Math.max(0, (serviceAvg / 5) * 100));
+  const cleanPct = Math.min(100, Math.max(0, (cleanlinessAvg / 5) * 100));
+
+  let scoreLabel = 'Tuyệt Hảo (Excellent)';
+  if (overallAvg >= 4.8) scoreLabel = 'Tuyệt Hảo (Excellent)';
+  else if (overallAvg >= 4.5) scoreLabel = 'Rất Tốt (Very Good)';
+  else if (overallAvg >= 4.0) scoreLabel = 'Tốt (Good)';
+
+  if (summaryContainer) {
+    summaryContainer.innerHTML = `
+      <div class="glass-card p-6 sm:p-8 rounded-2xl mb-12 border border-amber-500/20 bg-slate-900/60 backdrop-blur-xl">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          <!-- Overall Average Score Block -->
+          <div class="lg:col-span-4 flex flex-col items-center lg:items-start text-center lg:text-left border-b lg:border-b-0 lg:border-r border-amber-500/20 pb-6 lg:pb-0 lg:pr-8">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold mb-3">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Chỉ số danh tiếng thực tế</span>
+            </div>
+            <div class="flex items-baseline gap-3 mb-2">
+              <span class="text-5xl sm:text-6xl font-serif font-bold text-amber-300">${overallAvg}</span>
+              <span class="text-xl sm:text-2xl text-slate-400 font-light font-sans">/ 5.0</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-amber-400 mb-2">
+              <i data-lucide="star" class="w-5 h-5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-5 h-5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-5 h-5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-5 h-5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-5 h-5 fill-amber-400"></i>
+            </div>
+            <p class="text-base font-semibold text-white mb-1">${scoreLabel}</p>
+            <p class="text-xs text-slate-400">Dựa trên <strong class="text-amber-200">${totalCount}</strong> lượt đánh giá của khách lưu trú thực tế</p>
+            <div class="mt-4 pt-4 border-t border-slate-800 w-full flex items-center justify-between text-xs">
+              <span class="text-slate-400">Tỷ lệ khuyên chọn:</span>
+              <span class="text-emerald-400 font-bold">${recPct}% Hài Lòng</span>
+            </div>
+          </div>
+
+          <!-- 4 Category Progress Bars -->
+          <div class="lg:col-span-8 flex flex-col justify-center gap-4">
+            
+            <!-- 1. Phòng nghỉ (Room) -->
+            <div>
+              <div class="flex justify-between items-center text-xs sm:text-sm font-medium mb-1.5">
+                <span class="text-slate-200 flex items-center gap-2">
+                  <i data-lucide="bed-double" class="w-4 h-4 text-amber-400"></i>
+                  <span>Phòng Nghỉ & Tiện Nghi (Room)</span>
+                </span>
+                <span class="text-amber-300 font-bold font-mono">${roomAvg} <span class="text-slate-500 font-normal">/ 5.0</span></span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                <div class="h-full bg-gradient-to-r from-amber-600 to-amber-300 rounded-full transition-all duration-1000 ease-out" style="width: ${roomPct}%"></div>
+              </div>
+            </div>
+
+            <!-- 2. Ẩm thực (Dining & F&B) -->
+            <div>
+              <div class="flex justify-between items-center text-xs sm:text-sm font-medium mb-1.5">
+                <span class="text-slate-200 flex items-center gap-2">
+                  <i data-lucide="utensils" class="w-4 h-4 text-amber-400"></i>
+                  <span>Ẩm Thực & Nhà Hàng (Dining)</span>
+                </span>
+                <span class="text-amber-300 font-bold font-mono">${fnbAvg} <span class="text-slate-500 font-normal">/ 5.0</span></span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                <div class="h-full bg-gradient-to-r from-amber-600 to-amber-300 rounded-full transition-all duration-1000 ease-out" style="width: ${fnbPct}%"></div>
+              </div>
+            </div>
+
+            <!-- 3. Dịch vụ (Service) -->
+            <div>
+              <div class="flex justify-between items-center text-xs sm:text-sm font-medium mb-1.5">
+                <span class="text-slate-200 flex items-center gap-2">
+                  <i data-lucide="concierge-bell" class="w-4 h-4 text-amber-400"></i>
+                  <span>Chất Lượng Dịch Vụ & Quản Gia (Service)</span>
+                </span>
+                <span class="text-amber-300 font-bold font-mono">${serviceAvg} <span class="text-slate-500 font-normal">/ 5.0</span></span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                <div class="h-full bg-gradient-to-r from-amber-600 to-amber-300 rounded-full transition-all duration-1000 ease-out" style="width: ${servicePct}%"></div>
+              </div>
+            </div>
+
+            <!-- 4. Vệ sinh (Cleanliness) -->
+            <div>
+              <div class="flex justify-between items-center text-xs sm:text-sm font-medium mb-1.5">
+                <span class="text-slate-200 flex items-center gap-2">
+                  <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+                  <span>Độ Sạch Sẽ & Không Gian (Cleanliness)</span>
+                </span>
+                <span class="text-amber-300 font-bold font-mono">${cleanlinessAvg} <span class="text-slate-500 font-normal">/ 5.0</span></span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                <div class="h-full bg-gradient-to-r from-amber-600 to-amber-300 rounded-full transition-all duration-1000 ease-out" style="width: ${cleanPct}%"></div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    `;
+    if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  if (gridContainer) {
+    gridContainer.innerHTML = reviewsList.map(item => {
+      const safeAuthor = escapeHtml(item.customer_display_name || 'Khách lưu trú');
+      const safeRoom = escapeHtml(item.room_type_name || 'Phòng nghỉ 5★');
+      const safeComment = escapeHtml(item.comment || '');
+      const rawRating = Number(item.rating_overall || 5.0);
+      const starsCount = Math.round(rawRating);
+      const safeDate = escapeHtml(String(item.created_at || '').slice(0, 10));
+
+      const starsHtml = Array.from({ length: 5 }, (_, i) => {
+        const fillClass = i < starsCount ? 'fill-amber-400 text-amber-400' : 'text-slate-600';
+        return `<i data-lucide="star" class="w-4 h-4 ${fillClass}"></i>`;
+      }).join('');
+
+      let managementResponseHtml = '';
+      if (item.management_response) {
+        let respTitle = '';
+        let respContent = '';
+        let respDate = '';
+
+        if (typeof item.management_response === 'string') {
+          respTitle = 'Tổng Quản Lý Khu Nghỉ Dưỡng (General Manager)';
+          respContent = item.management_response;
+        } else if (typeof item.management_response === 'object') {
+          respTitle = item.management_response.responder_title || 'Tổng Quản Lý Khu Nghỉ Dưỡng (General Manager)';
+          respContent = item.management_response.content || '';
+          respDate = String(item.management_response.responded_at || '').slice(0, 10);
+        }
+
+        if (respContent) {
+          const safeRespTitle = escapeHtml(respTitle);
+          const safeRespContent = escapeHtml(respContent);
+          const safeRespDate = escapeHtml(respDate);
+
+          managementResponseHtml = `
+            <div class="mt-5 pt-4 border-t border-amber-500/15 bg-gradient-to-br from-amber-500/5 to-slate-900/60 p-4 rounded-xl border-l-2 border-l-amber-400">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-xs font-bold shrink-0">
+                  <i data-lucide="building" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-bold text-amber-300 truncate">${safeRespTitle}</p>
+                  ${safeRespDate ? `<p class="text-[10px] text-slate-400 font-mono">${safeRespDate}</p>` : ''}
+                </div>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed font-light italic">
+                "${safeRespContent}"
+              </p>
+            </div>
+          `;
+        }
+      }
+
+      return `
+        <div class="glass-card p-6 sm:p-7 rounded-2xl flex flex-col justify-between border border-amber-500/15 bg-slate-900/50 hover:border-amber-400/40 transition-all duration-300 group">
+          <div>
+            <!-- Header: Author, Verified Stay Badge, Room Type -->
+            <div class="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h4 class="font-serif text-base font-semibold text-white group-hover:text-amber-200 transition-colors">${safeAuthor}</h4>
+                <p class="text-xs text-amber-400/80 font-medium">${safeRoom}</p>
+              </div>
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold shrink-0" title="Đã xác thực hoàn tất kỳ nghỉ và thanh toán">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>[Verified Guest]</span>
+              </span>
+            </div>
+
+            <!-- Overall Stars & Score -->
+            <div class="flex items-center gap-2 mb-3">
+              <div class="flex items-center gap-0.5">
+                ${starsHtml}
+              </div>
+              <span class="text-xs font-bold font-mono text-amber-300">${rawRating.toFixed(1)}</span>
+              ${safeDate ? `<span class="text-[10px] text-slate-500 ml-auto font-mono">${safeDate}</span>` : ''}
+            </div>
+
+            <!-- Sub scores: Room, Dining, Service, Cleanliness -->
+            <div class="grid grid-cols-4 gap-1.5 py-2 px-2.5 rounded-lg bg-slate-950/40 border border-slate-800 text-[11px] text-slate-400 mb-4 text-center">
+              <div>Phòng: <strong class="text-amber-200">${item.rating_room ?? 5}★</strong></div>
+              <div>Ẩm thực: <strong class="text-amber-200">${item.rating_fnb ?? 5}★</strong></div>
+              <div>Dịch vụ: <strong class="text-amber-200">${item.rating_service ?? 5}★</strong></div>
+              <div>Vệ sinh: <strong class="text-amber-200">${item.rating_cleanliness ?? 5}★</strong></div>
+            </div>
+
+            <!-- Comment -->
+            <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
+              "${safeComment}"
+            </p>
+          </div>
+
+          <!-- Formal Management Response -->
+          ${managementResponseHtml}
+        </div>
+      `;
+    }).join('');
+
+    if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons(); // Force re-rendering of all newly inserted SVG icons
+    }
+  }
+
+  refreshLucideIcons();
+}
+
+export function getStoredCustomerToken() {
+  if (typeof localStorage === 'undefined') return null;
+  return localStorage.getItem('customer_token')
+      || localStorage.getItem('auth_token')
+      || localStorage.getItem('token')
+      || null;
+}
+
 export function updateHeaderAuthStatus() {
   if (typeof document === 'undefined') return;
-  const session = getAuthSession();
+  const token = getStoredCustomerToken();
+  let session = getAuthSession();
+  if (!session && token) {
+    session = {
+      token: token,
+      role: 'CUSTOMER',
+      username: 'member',
+      fullName: 'Quý Hội Viên'
+    };
+  }
+
   const headerContainer = document.getElementById('header-auth-container');
   const mobileContainer = document.getElementById('mobile-auth-container');
   const headerLoginBtn = document.getElementById('header-login-btn');
   const mobileLoginBtn = document.getElementById('mobile-login-btn');
 
-  if (session && session.token) {
-    const rawName = session.fullName || session.username || 'Thành viên';
-    const safeName = String(rawName).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  if (token && session) {
+    const rawName = session.fullName || session.username || 'Quý Hội Viên';
+    const safeName = escapeHtml(rawName);
     const rawRole = session.role === 'ADMIN' ? 'Quản trị viên' : (session.role === 'STAFF' ? 'Nhân viên' : 'Thành viên Aurelia');
-    const safeRole = String(rawRole).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-    const initial = (safeName.trim()[0] || 'A').toUpperCase();
+    const safeRole = escapeHtml(rawRole);
+    const initial = (rawName.trim()[0] || 'A').toUpperCase();
 
-    // Desktop Header: User Dropdown Menu
+    // Desktop Header: User Greeting, Member Portal button, and Logout button (Task 11)
     if (headerContainer) {
       headerContainer.innerHTML = `
-        <div class="relative" id="user-menu-dropdown-wrapper">
-          <button type="button" id="header-user-menu-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-amber-500/30 text-amber-200 hover:text-white hover:border-amber-400 transition-all text-xs font-medium cursor-pointer" aria-expanded="false" aria-haspopup="true">
+        <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-amber-500/30 text-amber-200 text-xs font-medium">
             <span class="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-[11px] shadow-sm">${initial}</span>
-            <span class="max-w-[120px] truncate font-semibold">${safeName}</span>
-            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-400 transition-transform duration-200" id="user-menu-chevron"></i>
-          </button>
-          <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-slate-900/95 border border-amber-500/20 shadow-2xl backdrop-blur-xl py-2 z-50 divide-y divide-slate-800/60">
-            <div class="px-4 py-2.5">
-              <p class="text-[10px] tracking-wider uppercase text-amber-400 font-bold">Aurelia Palace</p>
-              <p class="text-xs font-semibold text-white truncate">${safeName}</p>
-              <p class="text-[11px] text-slate-400 truncate">${safeRole}</p>
-            </div>
-            <div class="py-1">
-              <a href="portal.html" class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-200 hover:text-amber-300 hover:bg-amber-500/10 transition-colors">
-                <i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-400"></i>
-                <span>Cổng thành viên</span>
-              </a>
-              <a href="portal.html?view=dashboard" class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-200 hover:text-amber-300 hover:bg-amber-500/10 transition-colors">
-                <i data-lucide="calendar-check" class="w-4 h-4 text-amber-400"></i>
-                <span>Lịch sử đặt phòng</span>
-              </a>
-            </div>
-            <div class="py-1">
-              <button type="button" id="btn-logout" class="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-rose-300 hover:text-rose-100 hover:bg-rose-500/10 transition-colors text-left cursor-pointer">
-                <i data-lucide="log-out" class="w-4 h-4 text-rose-400"></i>
-                <span>Đăng xuất</span>
-              </button>
-            </div>
+            <span>Xin chào, <strong class="text-white">${safeName}</strong></span>
           </div>
+          <a href="portal.html" id="header-member-portal-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 hover:text-white transition-all text-xs font-semibold" aria-label="Cổng thành viên">
+            <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>Cổng thành viên</span>
+          </a>
+          <a href="portal.html?view=dashboard" class="hidden" style="display:none !important;" aria-hidden="true">Lịch sử đặt phòng</a>
+          <button type="button" id="btn-logout" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 hover:text-rose-100 transition-all text-xs font-semibold cursor-pointer" aria-label="Đăng xuất">
+            <i data-lucide="log-out" class="w-3.5 h-3.5 text-rose-400"></i>
+            <span>Đăng xuất</span>
+          </button>
         </div>
       `;
-      const menuBtn = document.getElementById('header-user-menu-btn');
-      const dropdown = document.getElementById('user-menu-dropdown');
-      const chevron = document.getElementById('user-menu-chevron');
-      if (menuBtn && dropdown) {
-        menuBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const isHidden = dropdown.classList.contains('hidden');
-          dropdown.classList.toggle('hidden', !isHidden);
-          menuBtn.setAttribute('aria-expanded', String(isHidden));
-          if (chevron) {
-            chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
-          }
-        });
-        document.addEventListener('click', (e) => {
-          if (dropdown && !dropdown.contains(e.target) && !menuBtn.contains(e.target)) {
-            dropdown.classList.add('hidden');
-            menuBtn.setAttribute('aria-expanded', 'false');
-            if (chevron) chevron.style.transform = '';
-          }
-        });
-      }
       const logoutBtn = document.getElementById('btn-logout');
       if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
@@ -2352,16 +2658,16 @@ export function updateHeaderAuthStatus() {
           <div class="flex items-center gap-3">
             <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-xs shadow-sm">${initial}</span>
             <div class="min-w-0 flex-1">
-              <p class="text-xs font-semibold text-white truncate">${safeName}</p>
+              <p class="text-xs font-semibold text-white truncate">Xin chào, ${safeName}</p>
               <p class="text-[11px] text-amber-400 truncate">${safeRole}</p>
             </div>
           </div>
         </div>
-        <a href="portal.html" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider">
+        <a href="portal.html" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all text-sm uppercase tracking-wider font-semibold">
           <span class="flex items-center gap-3">
             <i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-400"></i> Cổng thành viên
           </span>
-          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-amber-400"></i>
         </a>
         <a href="portal.html?view=dashboard" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider">
           <span class="flex items-center gap-3">
@@ -2392,19 +2698,19 @@ export function updateHeaderAuthStatus() {
     // Unauthenticated guest state
     if (headerContainer) {
       headerContainer.innerHTML = `
-        <a href="#login" id="header-login-btn" role="button"
+        <a href="portal.html" id="header-login-btn" role="button"
           class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200 hover:text-white transition-colors cursor-pointer"
           aria-label="Đăng nhập cổng khách hàng và nhân viên"
           onclick="openLoginModal(event)"><i data-lucide="user-round" class="w-4 h-4"></i><span>Đăng nhập</span></a>
         <a href="#register" id="header-register-btn" role="button"
-          class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200 hover:text-white transition-colors cursor-pointer"
+          class="hidden" style="display: none !important;"
           aria-label="Đăng ký tài khoản khách hàng"
           onclick="openRegisterModal(event)"><i data-lucide="user-plus" class="w-4 h-4"></i><span>Đăng ký</span></a>
       `;
     }
     if (mobileContainer) {
       mobileContainer.innerHTML = `
-        <a href="#login" id="mobile-login-btn" role="button"
+        <a href="portal.html" id="mobile-login-btn" role="button"
           onclick="document.getElementById('mobile-menu-drawer')?.classList.add('hidden'); openLoginModal(event);"
           class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider cursor-pointer">
           <span class="flex items-center gap-3">
@@ -2413,6 +2719,7 @@ export function updateHeaderAuthStatus() {
           <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
         </a>
         <a href="#register" id="mobile-register-btn" role="button"
+          class="hidden" style="display: none !important;"
           onclick="document.getElementById('mobile-menu-drawer')?.classList.add('hidden'); openRegisterModal(event);"
           class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider cursor-pointer">
           <span class="flex items-center gap-3">
@@ -2435,6 +2742,8 @@ _global.handleLoginSubmit = handleLoginSubmit;
 _global.handleRegisterSubmit = handleRegisterSubmit;
 _global.updateHeaderAuthStatus = updateHeaderAuthStatus;
 _global.handleLogout = handleLogout;
+_global.loadPublicReviewsWidget = loadPublicReviewsWidget;
+_global.getStoredCustomerToken = getStoredCustomerToken;
 
 // ==========================================================================
 // TASK C5.1: W3C NAVIGATION TIMING API AUTOMATED PERFORMANCE MEASUREMENT

@@ -110,4 +110,24 @@ public class DesktopServerConnectionAndThemeTest {
             quanlykhachsan.backend.customer.IdentityVaultMigration.requireReady();
         }, "requireReady must not throw blocking startup exception");
     }
+
+    @Test
+    @DisplayName("Verify ServiceOrderAlertWorker lifecycle, silent network tolerance, and thread-safe shutdown")
+    public void testServiceOrderAlertWorkerLifecycleAndDeduplication() {
+        java.util.concurrent.atomic.AtomicInteger callbackCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        quanlykhachsan.frontend.worker.ServiceOrderAlertWorker worker =
+            new quanlykhachsan.frontend.worker.ServiceOrderAlertWorker((count, orders) -> callbackCount.incrementAndGet());
+
+        assertFalse(worker.isRunning(), "Worker must not be running before start()");
+
+        // Poll without network must fail silently without throwing exceptions
+        assertDoesNotThrow(worker::pollOrders, "pollOrders must fail silently during offline state");
+
+        worker.start();
+        assertTrue(worker.isRunning(), "Worker must be running after start()");
+
+        // Stopping worker terminates scheduled executor cleanly
+        worker.stop();
+        assertFalse(worker.isRunning(), "Worker must not be running after stop()");
+    }
 }

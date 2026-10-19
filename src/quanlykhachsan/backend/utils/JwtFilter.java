@@ -27,7 +27,9 @@ public class JwtFilter extends Filter {
         "/api/v1/promotions/validate",
         "/api/v1/bookings/public",
         "/api/v1/auth/guest-otp/request",
-        "/api/v1/auth/guest-otp/verify"
+        "/api/v1/auth/guest-otp/verify",
+        "/api/v1/reviews/public",
+        "/reviews/public"
     );
 
 
@@ -38,13 +40,15 @@ public class JwtFilter extends Filter {
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
-
-        exchange = new RequestIdentityExchange(exchange);
-
         if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-Role, Idempotency-Key, X-Signature, ngrok-skip-browser-warning");
             chain.doFilter(exchange);
             return;
         }
+
+        exchange = new RequestIdentityExchange(exchange);
 
 
         String rawPath = exchange.getRequestURI().getPath();
@@ -58,7 +62,8 @@ public class JwtFilter extends Filter {
                 || path.equals("/booking") || path.startsWith("/booking/")
                 || path.endsWith("/auth/login")
                 || path.endsWith("/auth/register")
-                || path.endsWith("/health");
+                || path.endsWith("/health")
+                || path.endsWith("/reviews/public");
 
         if (isPublic) {
             chain.doFilter(exchange);

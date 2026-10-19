@@ -319,11 +319,21 @@ test('Scenario 2 (Integration): Successful login stores JWT in localStorage.getI
 
     await handleLoginSubmit(mockEvent);
 
-    // CRITICAL REQUIREMENT 2: Successfully saved to localStorage.getItem('auth_token')
+    // CRITICAL REQUIREMENT 2: Successfully saved to localStorage across all three keys
     assert.equal(
       globalThis.localStorage.getItem('auth_token'),
       jwtSample,
       'JWT token must be successfully saved to localStorage.getItem("auth_token")'
+    );
+    assert.equal(
+      globalThis.localStorage.getItem('customer_token'),
+      jwtSample,
+      'JWT token must be saved to localStorage.getItem("customer_token")'
+    );
+    assert.equal(
+      globalThis.localStorage.getItem('token'),
+      jwtSample,
+      'JWT token must be saved to localStorage.getItem("token")'
     );
 
     // Also assert hotel_auth_session is populated
@@ -691,10 +701,14 @@ test('Scenario 6 (Integration): Post-login flow retains user on index.html, rend
     assert.match(mobileContainer.innerHTML, /Nguyễn Văn Aurelia/);
     assert.match(mobileContainer.innerHTML, /id="mobile-btn-logout"/);
 
-    // Assert handleLogout clears session and localStorage
+    // Assert handleLogout clears session and localStorage across all three keys
     assert.equal(globalThis.localStorage.getItem('auth_token'), jwtSample);
+    assert.equal(globalThis.localStorage.getItem('customer_token'), jwtSample);
+    assert.equal(globalThis.localStorage.getItem('token'), jwtSample);
     handleLogout();
     assert.equal(globalThis.localStorage.getItem('auth_token'), null, 'handleLogout must clear auth_token');
+    assert.equal(globalThis.localStorage.getItem('customer_token'), null, 'handleLogout must clear customer_token');
+    assert.equal(globalThis.localStorage.getItem('token'), null, 'handleLogout must clear token');
     assert.equal(globalThis.localStorage.getItem('hotel_auth_session'), null, 'handleLogout must clear hotel_auth_session');
   } finally {
     await stop(server);

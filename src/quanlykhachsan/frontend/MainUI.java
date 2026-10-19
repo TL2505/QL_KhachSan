@@ -28,6 +28,8 @@ import quanlykhachsan.frontend.view.OfflinePosDialog;
 import quanlykhachsan.frontend.view.QuickFilterBar;
 import quanlykhachsan.frontend.utils.HttpUtil;
 import quanlykhachsan.frontend.utils.GlobalKeyDispatcher;
+import quanlykhachsan.frontend.worker.ServiceOrderAlertWorker;
+import quanlykhachsan.frontend.view.staff.ServiceOrderDetailDialog;
 
 public class MainUI extends JFrame {
 
@@ -41,6 +43,11 @@ public class MainUI extends JFrame {
     private GlobalKeyDispatcher globalKeyDispatcher;
     private boolean logoutPending;
 
+    // Task 10: Service Order Alert Worker & Status Bar Badge
+    private ServiceOrderAlertWorker serviceOrderAlertWorker;
+    private JLabel lblServiceOrderBadge;
+    private JPanel statusBar;
+
     public MainUI(User user) {
         quanlykhachsan.frontend.utils.EdtViolationDetector.install();
         this.currentUser = user;
@@ -52,8 +59,16 @@ public class MainUI extends JFrame {
         initUI();
         setupGlobalHotkeys();
         addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosing(java.awt.event.WindowEvent event) {
+                if (serviceOrderAlertWorker != null) {
+                    serviceOrderAlertWorker.stop();
+                }
+            }
             @Override public void windowClosed(java.awt.event.WindowEvent event) {
                 if (globalKeyDispatcher != null) globalKeyDispatcher.close();
+                if (serviceOrderAlertWorker != null) {
+                    serviceOrderAlertWorker.stop();
+                }
             }
         });
 
@@ -64,6 +79,9 @@ public class MainUI extends JFrame {
         // Khởi chạy WebSocket để nhận thông báo real-time (chỉ dành cho Admin & Lễ tân)
         if (currentUser.getRoleId() == 1 || currentUser.getRoleId() == 2) {
             WebSocketService.connect();
+            // Task 10: Khởi chạy background worker thăm dò đơn dịch vụ phòng mới (15s polling)
+            serviceOrderAlertWorker = new ServiceOrderAlertWorker((count, orders) -> updateServiceOrderBadge(count));
+            serviceOrderAlertWorker.start();
         }
     }
 
@@ -261,6 +279,43 @@ public class MainUI extends JFrame {
 
         add(tabbedPane, BorderLayout.CENTER);
         if(java.util.Set.of("admin","manager","gm","front_desk").contains(phase2Role))add(new quanlykhachsan.frontend.view.AiCopilotPanel(),BorderLayout.EAST);
+
+        // Status Bar at SOUTH (Task 10: Service Order Alert Badge & System Status)
+        statusBar = new JPanel(new BorderLayout());
+        statusBar.setPreferredSize(new Dimension(getWidth(), 34));
+        statusBar.setBackground(ThemeManager.getSidebarBg());
+        statusBar.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 0, 0, ThemeManager.getBorderColor()),
+            BorderFactory.createEmptyBorder(0, 15, 0, 15)
+        ));
+
+        JLabel lblSystemStatus = new JLabel("🟢 Hệ thống PMS trực tuyến | Người dùng: " + currentUser.getFullName());
+        lblSystemStatus.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblSystemStatus.setForeground(ThemeManager.getTextMuted());
+        statusBar.add(lblSystemStatus, BorderLayout.WEST);
+
+        lblServiceOrderBadge = new JLabel("🛎️ Dịch vụ phòng: 0 yêu cầu mới");
+        lblServiceOrderBadge.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblServiceOrderBadge.setForeground(ThemeManager.getTextMuted());
+        lblServiceOrderBadge.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        lblServiceOrderBadge.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
+        lblServiceOrderBadge.setToolTipText("Nhấp đúp chuột để xem và tiếp nhận đơn dịch vụ phòng");
+
+        lblServiceOrderBadge.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    openServiceOrderDetailDialog();
+                }
+            }
+        });
+
+        JPanel rightStatusPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 2));
+        rightStatusPanel.setOpaque(false);
+        rightStatusPanel.add(lblServiceOrderBadge);
+        statusBar.add(rightStatusPanel, BorderLayout.EAST);
+
+        add(statusBar, BorderLayout.SOUTH);
     }
 
     /**
@@ -327,10 +382,57 @@ public class MainUI extends JFrame {
     }
 
     private void finishLogout() {
+        if (serviceOrderAlertWorker != null) {
+            serviceOrderAlertWorker.stop();
+        }
         WebSocketService.disconnect();
         quanlykhachsan.frontend.utils.SessionManagerUtil.clear();
         dispose();
         new LoginForm().setVisible(true);
+    }
+
+    /**
+     * Updates the status bar order alert badge in an EDT-safe manner.
+     */
+    public void updateServiceOrderBadge(int pendingCount) {
+        if (lblServiceOrderBadge == null) return;
+        if (pendingCount > 0) {
+            lblServiceOrderBadge.setText("🛎️ " + pendingCount + " ĐƠN PHÒNG MỚI (PENDING) [NHẤP ĐÚP ĐỂ XEM]");
+            lblServiceOrderBadge.setOpaque(true);
+            lblServiceOrderBadge.setBackground(new Color(239, 68, 68));
+            lblServiceOrderBadge.setForeground(Color.WHITE);
+            lblServiceOrderBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            lblServiceOrderBadge.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 38, 38), 1),
+                BorderFactory.createEmptyBorder(4, 12, 4, 12)
+            ));
+            lblServiceOrderBadge.setToolTipText("Có " + pendingCount + " yêu cầu dịch vụ phòng mới. Nhấp đúp chuột để tiếp nhận đơn.");
+        } else {
+            lblServiceOrderBadge.setText("🛎️ Dịch vụ phòng: 0 yêu cầu mới");
+            lblServiceOrderBadge.setOpaque(false);
+            lblServiceOrderBadge.setBackground(null);
+            lblServiceOrderBadge.setForeground(ThemeManager.getTextMuted());
+            lblServiceOrderBadge.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            lblServiceOrderBadge.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
+            lblServiceOrderBadge.setToolTipText("Không có đơn phòng chờ xử lý. Nhấp đúp chuột để mở danh sách đơn.");
+        }
+        lblServiceOrderBadge.repaint();
+    }
+
+    public quanlykhachsan.frontend.worker.ServiceOrderAlertWorker getAlertWorker() {
+        return serviceOrderAlertWorker;
+    }
+
+    /**
+     * Opens the detailed room service orders dialog for staff.
+     */
+    public void openServiceOrderDetailDialog() {
+        ServiceOrderDetailDialog dlg = new ServiceOrderDetailDialog(this, () -> {
+            if (serviceOrderAlertWorker != null) {
+                serviceOrderAlertWorker.triggerImmediateCheck();
+            }
+        });
+        dlg.setVisible(true);
     }
 
     private void setupGlobalHotkeys() {
