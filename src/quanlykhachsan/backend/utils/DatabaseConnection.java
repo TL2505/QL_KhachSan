@@ -42,7 +42,6 @@ public final class DatabaseConnection {
     }
 
     private static String env(String name, String fallback) {
-        if(System.getenv(name+"_FILE")!=null)return SecretConfiguration.required(name);
         String value = System.getenv(name);
         if (value != null && !value.isBlank()) return value;
 

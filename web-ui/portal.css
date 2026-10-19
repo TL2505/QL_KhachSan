@@ -785,3 +785,118 @@ button, input, select, textarea {
     align-items: flex-start;
   }
 }
+/* Global Modal Dialog */
+.portal-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(2, 6, 14, 0.74);
+  backdrop-filter: blur(7px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.portal-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.portal-modal .modal-content {
+  width: min(620px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid var(--portal-border);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #17223a, #0d1425);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.5);
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.18s ease;
+}
+.portal-modal.active .modal-content {
+  transform: translateY(0) scale(1);
+}
+.portal-modal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+.portal-modal .modal-header h2 {
+  margin: 0;
+  font: 600 22px/1.25 'Playfair Display', Georgia, serif;
+}
+.portal-modal .modal-close {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 1px solid var(--portal-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--portal-text);
+  font-size: 24px;
+  cursor: pointer;
+}
+.portal-modal .modal-close:hover {
+  background: rgba(212, 175, 55, 0.12);
+}
+
+/* Google Identity and four-digit OTP step */
+.google-login-area {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.google-login-area > span {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--portal-muted);
+  font-size: 11px;
+}
+.google-login-area > span::before,
+.google-login-area > span::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: rgba(148, 163, 184, 0.2);
+}
+.otp-intro {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.google-otp-code {
+  font-size: 22px !important;
+  font-weight: 700;
+  letter-spacing: 0.45em;
+  text-align: center;
+}
+.auth-secondary,
+.auth-link {
+  min-height: 42px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.auth-secondary {
+  border: 1px solid var(--portal-border);
+  background: rgba(212, 175, 55, 0.08);
+  color: var(--portal-soft);
+}
+.auth-link {
+  border: 0;
+  background: transparent;
+  color: var(--portal-muted);
+}
+

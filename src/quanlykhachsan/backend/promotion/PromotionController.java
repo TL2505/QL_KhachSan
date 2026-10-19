@@ -37,7 +37,8 @@ public class PromotionController implements HttpHandler {
 
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
-        String pathInfo = path.replace("/api/promotions", "");
+        String normalizedPath = path.replaceFirst("^/api/v1/promotions", "/api/promotions");
+        String pathInfo = normalizedPath.replace("/api/promotions", "");
 
         if (!SecurityUtil.hasPermission(exchange, 1, 2, 3)) return;
 

@@ -16,7 +16,8 @@
      - `DB_NAME`
      - `DB_USER`
      - `DB_PASSWORD`
-   - Chọn đúng thuế VAT hiện hành cho khách sạn bằng `HOTEL_VAT_RATE=0.08` hoặc `HOTEL_VAT_RATE=0.10`. Booking không được tính giá nếu chưa cấu hình mức thuế hợp lệ.
+   - Mức VAT được phê duyệt hiện tại là `HOTEL_VAT_RATE=0.08` (8%); cấu hình này được dùng khi báo giá, đặt phòng và lập hóa đơn. Nếu quy định áp dụng thay đổi, chỉ đổi sang `0.10` sau khi được phê duyệt. Booking không được tính giá nếu chưa có mức thuế hợp lệ.
+   - Concierge Phase 3 chuyển câu hỏi qua gateway Java tới RAG nội bộ tại `AI_RAG_URL` (mặc định `http://127.0.0.1:8082/rag/query`). Chỉ cấu hình endpoint HTTP trên loopback; RAG phải trả JSON có `reply` và `confidence_score` từ 0 đến 1; `citations` và `suggested_actions` không bắt buộc. Độ tin cậy dưới 0.80 sẽ tạo ticket cho Lễ tân. Nếu RAG chưa chạy/cấu hình, chatbot báo không khả dụng và không tự tạo câu trả lời.
 
 3. Build và chạy backend
    - Chạy `build_project.bat` để biên dịch và tạo class.

@@ -8,10 +8,10 @@ public interface RoomDAO {
     public void addRoom(Room room);
 
 //    update Room
-    public void updateRoom(Room room);
+    public boolean updateRoom(Room room);
 
 //    delete Room
-    public void deleteRoom(Room room);
+    public boolean deleteRoom(Room room);
 
 //    list of Room
     public ArrayList<Room> selectRoom();

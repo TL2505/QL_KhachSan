@@ -5,10 +5,78 @@ import { loadCustomerView } from './js/view-customer.js';
 import { loadProfileView } from './js/view-shared.js';
 import './js/shared/theme.js';
 
+const closeGlobalModal = (modalId = 'global-modal') => {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal.classList.remove('active');
+  modal.setAttribute('aria-hidden', 'true');
+  const content = modal.querySelector('.modal-content');
+  if (content) content.replaceChildren();
+};
+
+window.closeModal = closeGlobalModal;
+
+window.showCustomConfirm = (message, options = {}) => new Promise(resolve => {
+  const modal = document.getElementById('global-modal');
+  const content = document.getElementById('global-modal-content');
+  if (!modal || !content) { resolve(window.confirm(message)); return; }
+  content.replaceChildren();
+  const heading = document.createElement('div');
+  heading.className = 'modal-header';
+  const title = document.createElement('h2');
+  title.textContent = options.title || 'Xác nhận thao tác';
+  const close = document.createElement('button');
+  close.type = 'button'; close.className = 'modal-close'; close.setAttribute('aria-label', 'Đóng'); close.textContent = '×';
+  heading.append(title, close);
+  const text = document.createElement('p');
+  text.textContent = message;
+  text.style.cssText = 'margin:0;color:var(--portal-muted);line-height:1.65';
+  const actions = document.createElement('div');
+  actions.className = 'flex-row'; actions.style.justifyContent = 'flex-end'; actions.style.marginTop = '22px';
+  const cancel = document.createElement('button');
+  cancel.type = 'button'; cancel.className = 'btn btn-secondary'; cancel.textContent = 'Hủy';
+  const accept = document.createElement('button');
+  accept.type = 'button'; accept.className = `btn ${options.kind === 'primary' ? 'btn-primary' : 'btn-danger'}`; accept.textContent = options.confirmLabel || 'Xác nhận';
+  actions.append(cancel, accept); content.append(heading, text, actions);
+  const finish = value => { closeGlobalModal(); resolve(value); };
+  close.addEventListener('click', () => finish(false));
+  cancel.addEventListener('click', () => finish(false));
+  accept.addEventListener('click', () => finish(true));
+  modal.classList.add('active'); modal.setAttribute('aria-hidden', 'false'); accept.focus();
+});
+
+// Shared feedback dialog: modules can show API errors instead of failing silently.
+window.showCustomAlert = (message, options = {}) => new Promise(resolve => {
+  const modal = document.getElementById('global-modal');
+  const content = document.getElementById('global-modal-content');
+  if (!modal || !content) { window.alert(message); resolve(); return; }
+  content.replaceChildren();
+  const heading = document.createElement('div');
+  heading.className = 'modal-header';
+  const title = document.createElement('h2');
+  title.textContent = options.title || (options.kind === 'success' ? 'Thành công' : 'Không thể thực hiện');
+  const close = document.createElement('button');
+  close.type = 'button'; close.className = 'modal-close'; close.setAttribute('aria-label', 'Đóng'); close.textContent = '×';
+  heading.append(title, close);
+  const text = document.createElement('p');
+  text.textContent = message || 'Đã xảy ra lỗi không xác định.';
+  text.style.cssText = 'margin:0;color:var(--portal-muted);line-height:1.65';
+  const actions = document.createElement('div');
+  actions.className = 'flex-row'; actions.style.justifyContent = 'flex-end'; actions.style.marginTop = '22px';
+  const acknowledge = document.createElement('button');
+  acknowledge.type = 'button'; acknowledge.className = `btn ${options.kind === 'success' ? 'btn-primary' : 'btn-secondary'}`; acknowledge.textContent = 'Đã hiểu';
+  actions.append(acknowledge); content.append(heading, text, actions);
+  const finish = () => { closeGlobalModal(); resolve(); };
+  close.addEventListener('click', finish);
+  acknowledge.addEventListener('click', finish);
+  modal.classList.add('active'); modal.setAttribute('aria-hidden', 'false'); acknowledge.focus();
+});
+
 const menus = {
   ADMIN: [
     ['dashboard', 'Tổng quan', 'chart-no-axes-combined'],
     ['rooms', 'Quản lý phòng', 'bed-double'],
+    ['bookings', 'Đặt phòng', 'calendar-check'],
     ['users', 'Tài khoản nhân viên', 'users'],
     ['customers', 'Khách hàng', 'contact-round'],
     ['promotions', 'Khuyến mãi', 'ticket-percent'],
@@ -55,7 +123,6 @@ const roleOf = value => {
   if (['STAFF', 'FRONT_DESK', 'HOUSEKEEPING', 'MAINTENANCE', 'F&B', 'FB'].includes(role)) return 'STAFF';
   return null;
 };
-
 const byId = id => (typeof document !== 'undefined' ? document.getElementById(id) : null);
 
 function escapeHtml(str) {
@@ -74,6 +141,20 @@ export function getStoredCustomerToken() {
     || localStorage.getItem('auth_token')
     || localStorage.getItem('token')
     || null;
+}
+
+let googleChallengeId = null;
+
+// Only return to known hotel pages on this origin, never an arbitrary redirect.
+function bookingReturnUrl() {
+  if (typeof location === 'undefined') return null;
+  const value = new URLSearchParams(location.search).get('returnTo');
+  if (!value) return null;
+  try {
+    const url = new URL(value, location.origin);
+    if (url.origin !== location.origin || !['/', '/index.html', '/booking/', '/booking/index.html'].includes(url.pathname)) return null;
+    return url.pathname + url.search + url.hash;
+  } catch { return null; }
 }
 
 function status(message, kind = 'error') {
@@ -178,6 +259,8 @@ function showAuth(tab = 'login') {
   try {
     if (typeof document !== 'undefined' && document.body) {
       document.body.classList.remove('customer-portal');
+      document.body.classList.remove('admin-portal');
+      document.body.classList.remove('staff-portal');
     }
     const authView = byId('auth-view');
     const appView = byId('app-view');
@@ -187,8 +270,10 @@ function showAuth(tab = 'login') {
     const login = tab === 'login';
     const loginForm = byId('login-form');
     const registerForm = byId('register-form');
+    const otpForm = byId('google-otp-form');
     if (loginForm) loginForm.hidden = !login;
     if (registerForm) registerForm.hidden = login;
+    if (otpForm) otpForm.hidden = true;
 
     const showLoginBtn = byId('show-login');
     const showRegisterBtn = byId('show-register');
@@ -560,6 +645,63 @@ function enterPortal(session) {
   }
 }
 
+function completeLogin(result) {
+  if (!result || !result.token || !roleOf(result.role)) throw new Error('Máy chủ không trả về quyền truy cập hợp lệ cho tài khoản này.');
+  const token = result.token;
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('customer_token', token);
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('token', token);
+    const user = {
+      token: token,
+      userId: result.userId ?? result.id,
+      username: result.username || '',
+      fullName: result.fullName || result.username || 'Quý Hội Viên',
+      role: roleOf(result.role) === 'STAFF' ? String(result.role).toUpperCase() : roleOf(result.role)
+    };
+    localStorage.setItem('hotel_auth_session', JSON.stringify(user));
+    setAuthSession(user);
+  }
+  const returnUrl = bookingReturnUrl();
+  if (returnUrl) { window.location.replace(returnUrl); return; }
+  const destination = roleOf(result.role) === 'STAFF' ? 'room-map' : 'dashboard';
+  window.location.replace(`portal.html?view=${encodeURIComponent(destination)}`);
+}
+
+async function startGoogleOtp(googleResponse) {
+  if (!googleResponse?.credential) { status('Google không trả về thông tin xác thực. Vui lòng thử lại.'); return; }
+  status('Đang xác thực tài khoản Google…', 'success');
+  try {
+    const data = await api.post('/auth/google/request-otp', { credential: googleResponse.credential });
+    googleChallengeId = data.challenge_id;
+    if (byId('login-form')) byId('login-form').hidden = true;
+    if (byId('register-form')) byId('register-form').hidden = true;
+    if (byId('google-otp-form')) {
+      byId('google-otp-form').hidden = false;
+      if (byId('google-otp-email')) byId('google-otp-email').textContent = data.email || 'email đã xác minh';
+      if (byId('google-otp-code')) {
+        byId('google-otp-code').value = '';
+        byId('google-otp-code').focus();
+      }
+    }
+    status('Mã xác thực đã được gửi. Mã có hiệu lực trong 5 phút.', 'success');
+  } catch (error) { status(error.message || 'Không thể bắt đầu xác thực Google. Vui lòng thử lại.'); }
+}
+
+async function initialiseGoogleLogin() {
+  try {
+    const config = await api.get('/auth/google/config');
+    if (!config?.enabled || !config.client_id) return;
+    for (let tries = 0; tries < 100 && !window.google?.accounts?.id; tries += 1) await new Promise(resolve => setTimeout(resolve, 50));
+    if (!window.google?.accounts?.id) return;
+    window.google.accounts.id.initialize({ client_id: config.client_id, callback: startGoogleOtp, auto_select: false, cancel_on_tap_outside: true });
+    if (byId('google-signin-button')) {
+      window.google.accounts.id.renderButton(byId('google-signin-button'), { theme: 'outline', size: 'large', text: 'signin_with', locale: 'vi', width: 300 });
+    }
+    if (byId('google-login-area')) byId('google-login-area').hidden = false;
+  } catch { /* Configuration is intentionally silent until the hotel enables Google login. */ }
+}
+
 export async function handleLoginSubmit(e) {
   if (e && typeof e.preventDefault === 'function') {
     e.preventDefault();
@@ -755,6 +897,48 @@ export function initAuthEvents() {
     registerForm.addEventListener('submit', handleRegisterSubmit);
   }
 
+  // Google OTP Form
+  const otpForm = byId('google-otp-form');
+  if (otpForm) {
+    otpForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = event.currentTarget.querySelector('button[type="submit"]');
+      if (button) button.disabled = true;
+      try {
+        const result = await api.post('/auth/google/verify-otp', {
+          challenge_id: googleChallengeId,
+          otp: byId('google-otp-code')?.value.trim()
+        });
+        completeLogin(result);
+      } catch (error) {
+        status(error.message || 'Không thể xác nhận mã. Vui lòng thử lại.');
+      } finally {
+        if (button) button.disabled = false;
+      }
+    });
+  }
+
+  byId('google-otp-resend')?.addEventListener('click', async event => {
+    event.currentTarget.disabled = true;
+    try {
+      const data = await api.post('/auth/google/resend-otp', { challenge_id: googleChallengeId });
+      if (byId('google-otp-email')) {
+        byId('google-otp-email').textContent = data.email || byId('google-otp-email').textContent;
+      }
+      status('Mã mới đã được gửi. Mã cũ không còn hiệu lực.', 'success');
+    } catch (error) {
+      status(error.message || 'Không thể gửi lại mã.');
+    } finally {
+      event.currentTarget.disabled = false;
+    }
+  });
+
+  byId('google-otp-cancel')?.addEventListener('click', () => {
+    googleChallengeId = null;
+    status('');
+    showAuth('login');
+  });
+
   // Social Auth Scaffolding handlers
   const googleBtn = byId('google-signin-btn');
   if (googleBtn) {
@@ -853,8 +1037,25 @@ try {
 }
 
 if (typeof window !== 'undefined') {
+  // apiFetch clears an invalid JWT and dispatches this event. Return to the
+  // existing login screen so protected views cannot remain in a loading state.
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('hotel:session-expired', () => {
+      clearAuthSession();
+      if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', 'portal.html');
+      if (byId('view-container')) byId('view-container').replaceChildren();
+      showAuth();
+      status('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      byId('login-username')?.focus();
+    });
+  }
+
   window.handleLoginSubmit = handleLoginSubmit;
   window.handleRegisterSubmit = handleRegisterSubmit;
   window.setupAuthSwitching = setupAuthSwitching;
   window.setupAuthTabs = setupAuthTabs;
 }
+
+try {
+  initialiseGoogleLogin();
+} catch {}

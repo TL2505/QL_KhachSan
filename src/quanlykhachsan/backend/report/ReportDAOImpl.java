@@ -58,7 +58,7 @@ public class ReportDAOImpl implements ReportDAO {
                     int count = rs.getInt(2);
                     counts.put(status, count);
                     total += count;
-                    if ("occupied".equals(status)) occupied = count;
+                    if (status != null && status.toLowerCase(java.util.Locale.ROOT).startsWith("occupied")) occupied += count;
                 }
             }
             stats.setRoomStatusCounts(counts);
@@ -66,7 +66,7 @@ public class ReportDAOImpl implements ReportDAO {
             stats.setOccupiedRooms(occupied);
 
             // 3. Pending Check-ins
-            String q3 = "SELECT COUNT(*) FROM bookings WHERE DATE(check_in_date) = CURDATE() AND status IN ('pending', 'confirmed')";
+            String q3 = "SELECT COUNT(*) FROM bookings WHERE DATE(check_in_date) = CURDATE() AND LOWER(status) IN ('pending', 'confirmed')";
             try (PreparedStatement ps = con.prepareStatement(q3); ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) stats.setPendingCheckIns(rs.getInt(1));
             }

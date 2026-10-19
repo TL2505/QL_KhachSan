@@ -6,6 +6,7 @@ target/
 .svn/
 .env
 *.lnk
-__pycache__/
-.pytest_cache/
 
+
+# Local development process logs
+.run/

@@ -15,7 +15,6 @@ public final class VoucherService {
             Quote quote,boolean redeeming)throws SQLException {
         if(code==null || !code.matches("[A-Za-z0-9_-]{1,50}"))throw new IllegalArgumentException("Invalid voucher code");
         if(redeeming && c.getAutoCommit())throw new IllegalStateException("Redemption requires a transaction");
-        for(var night:quote.nightly_rates())if(night.occupied_rooms()>=night.operational_rooms())throw new IllegalStateException("Promotions are disabled at full occupancy");
         try(PreparedStatement q=c.prepareStatement("SELECT id,discount_type,discount_value,max_discount,minimum_spend,max_uses_per_user,condition_type,condition_value FROM promotions WHERE code=? AND status='active' AND CURRENT_TIMESTAMP BETWEEN start_date AND end_date"+(redeeming?" FOR UPDATE":""))) {
             q.setString(1,code);try(ResultSet r=q.executeQuery()) {
                 if(!r.next())throw new IllegalArgumentException("Voucher is invalid or expired");

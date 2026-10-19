@@ -6,6 +6,7 @@ import { renderPromotions } from "./admin/promotions.js";
 import { renderReviews } from "./admin/reviews.js";
 import { renderInvoices } from "./admin/invoices.js";
 import { renderAdminCustomers } from "./admin/customers.js";
+import { renderAdminBookings } from "./admin/bookings.js";
 
 export function loadAdminView(tab = "dashboard") {
     const container = document.getElementById("view-container");
@@ -15,6 +16,8 @@ export function loadAdminView(tab = "dashboard") {
         renderDashboard(container, session);
     } else if (tab === "rooms") {
         renderRooms(container, session);
+    } else if (tab === "bookings") {
+        renderAdminBookings(container, session);
     } else if (tab === "users") {
         renderUsers(container, session);
     } else if (tab === "customers") {

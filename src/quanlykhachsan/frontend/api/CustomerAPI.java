@@ -19,7 +19,7 @@ public class CustomerAPI {
             Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
 
-            if (resObj == null || !resObj.has("status") || !"success".equalsIgnoreCase(resObj.get("status").getAsString()))
+            if (resObj == null || !resObj.has("status") || !"success".equals(resObj.get("status").getAsString()))
                 throw new IllegalStateException("Customer API returned an unsuccessful response");
             JsonArray dataArray = resObj.getAsJsonArray("data");
             if (dataArray != null) for (JsonElement element : dataArray) customers.add(gson.fromJson(element, Customer.class));
@@ -35,14 +35,12 @@ public class CustomerAPI {
             req.addProperty("name", customer.getFullName());
             req.addProperty("phone", customer.getPhone());
             req.addProperty("cccd", customer.getIdentityCard());
-            req.addProperty("address", customer.getAddress());
-            req.addProperty("date_of_birth", customer.getDateOfBirth());
 
             String jsonResponse = HttpUtil.sendPost("/v1/customers", JsonUtil.getGson().toJson(req));
             JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
-                if ("success".equalsIgnoreCase(resObj.get("status").getAsString())) {
-                    return "Success";
+                if ("success".equals(resObj.get("status").getAsString())) {
+                    return "Success: " + resObj.get("message").getAsString();
                 } else {
                     return "Error: " + resObj.get("message").getAsString();
                 }
@@ -60,14 +58,12 @@ public class CustomerAPI {
             req.addProperty("name", customer.getFullName());
             req.addProperty("phone", customer.getPhone());
             req.addProperty("cccd", customer.getIdentityCard());
-            req.addProperty("address", customer.getAddress());
-            req.addProperty("date_of_birth", customer.getDateOfBirth());
 
             String jsonResponse = HttpUtil.sendPut("/v1/customers/" + customer.getId(), JsonUtil.getGson().toJson(req));
             JsonObject resObj = JsonUtil.getGson().fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
-                if ("success".equalsIgnoreCase(resObj.get("status").getAsString())) {
-                    return "Success";
+                if ("success".equals(resObj.get("status").getAsString())) {
+                    return "Success: " + resObj.get("message").getAsString();
                 } else {
                     return "Error: " + resObj.get("message").getAsString();
                 }
@@ -85,8 +81,8 @@ public class CustomerAPI {
             Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
             if (resObj != null) {
-                if ("success".equalsIgnoreCase(resObj.get("status").getAsString())) {
-                    return "Success";
+                if ("success".equals(resObj.get("status").getAsString())) {
+                    return "Success: " + resObj.get("message").getAsString();
                 } else {
                     return "Error: " + resObj.get("message").getAsString();
                 }
@@ -103,7 +99,7 @@ public class CustomerAPI {
             String jsonResponse = HttpUtil.sendGet("/v1/customers/" + id);
             Gson gson = JsonUtil.getGson();
             JsonObject resObj = gson.fromJson(jsonResponse, JsonObject.class);
-            if (resObj != null && "success".equalsIgnoreCase(resObj.get("status").getAsString())) {
+            if (resObj != null && "success".equals(resObj.get("status").getAsString())) {
                 return gson.fromJson(resObj.get("data"), Customer.class);
             }
         } catch (Exception e) {

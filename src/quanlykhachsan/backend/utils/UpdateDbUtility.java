@@ -50,6 +50,10 @@ public class UpdateDbUtility {
                     "DATETIME NULL DEFAULT NULL");
             ensureColumn(conn, "users", "theme",
                     "VARCHAR(20) NOT NULL DEFAULT 'light'");
+            // Google accounts are linked by Google's immutable subject, never by email.
+            ensureColumn(conn, "users", "google_subject", "VARCHAR(255) NULL");
+            ensureIndex(conn, "users", "uq_users_google_subject",
+                    "UNIQUE INDEX uq_users_google_subject (google_subject)");
 
             // ── TASK-B1.1: Cột version cho Optimistic Locking ────────────────
             ensureColumn(conn, "rooms", "version",
@@ -72,6 +76,20 @@ public class UpdateDbUtility {
                     + "  status_code INT          NOT NULL,\n"
                     + "  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,\n"
                     + "  INDEX idx_idempotency_created_at (created_at)\n"
+                    + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            ensureTable(conn, "ai_escalation_tickets",
+                    "CREATE TABLE IF NOT EXISTS ai_escalation_tickets (\n"
+                    + "  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\n"
+                    + "  customer_id INT NOT NULL,\n"
+                    + "  session_id VARCHAR(110) NOT NULL,\n"
+                    + "  reason TEXT NOT NULL,\n"
+                    + "  status ENUM('OPEN','ACKNOWLEDGED','CLOSED') NOT NULL DEFAULT 'OPEN',\n"
+                    + "  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n"
+                    + "  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n"
+                    + "  CONSTRAINT fk_ai_escalation_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT ON UPDATE CASCADE,\n"
+                    + "  INDEX idx_ai_escalation_status_created (status, created_at),\n"
+                    + "  INDEX idx_ai_escalation_customer_session (customer_id, session_id)\n"
                     + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
             // ── TASK-B1.1: Bảng folios ──────────────────────────────────────
@@ -255,6 +273,7 @@ public class UpdateDbUtility {
         runMigrationScript(conn, java.nio.file.Path.of("database", "migrations", "v3_3_revenue_views.sql"));
         runMigrationScript(conn, java.nio.file.Path.of("database", "migrations", "v3_2_ai_interactions.sql"));
     }
+
 
     /** Refuses lossy ENUM conversion and executes the versioned portal script. */
     public static void migratePublicPortal(Connection conn) throws SQLException {

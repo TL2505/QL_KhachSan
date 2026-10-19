@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.math.BigDecimal;
 import com.google.gson.Gson;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
@@ -35,7 +36,9 @@ public class RoomController implements HttpHandler {
         String prefix = path.startsWith("/api/v1/rooms") ? "/api/v1/rooms" : "/api/rooms";
         String pathInfo = path.startsWith(prefix) ? path.substring(prefix.length()) : path;
 
-        if ("GET".equalsIgnoreCase(method) && (pathInfo.isEmpty() || pathInfo.equals("/"))) {
+        if ("GET".equalsIgnoreCase(method) && pathInfo.equals("/types")) {
+            handleGetAllRoomTypes(exchange);
+        } else if ("GET".equalsIgnoreCase(method) && (pathInfo.isEmpty() || pathInfo.equals("/"))) {
             // GET /api/rooms - Lấy danh sách tất cả phòng
             handleGetAll(exchange);
         } else if ("GET".equalsIgnoreCase(method) && (pathInfo.equals("/search") || path.endsWith("/search"))) {
@@ -44,6 +47,10 @@ public class RoomController implements HttpHandler {
         } else if ("POST".equalsIgnoreCase(method) && (pathInfo.isEmpty() || pathInfo.equals("/"))) {
             // POST /api/rooms - Thêm phòng mới
             handleAdd(exchange);
+
+        } else if ("PUT".equalsIgnoreCase(method) && pathInfo.matches("/\\d+")) {
+            int id = Integer.parseInt(pathInfo.substring(1));
+            handleUpdate(exchange, id);
 
         } else if ("PUT".equalsIgnoreCase(method) && pathInfo.matches("/\\d+/status")) {
             // PUT /api/rooms/{id}/status - Đổi trạng thái phòng
@@ -95,12 +102,16 @@ public class RoomController implements HttpHandler {
     }
 
     private void handleGetAll(HttpExchange exchange) throws IOException {
-        List<Room> rooms = roomService.getAllRooms();
-        List<RoomResponse> dtoList = new java.util.ArrayList<>();
-        for (Room r : rooms) {
-            dtoList.add(RoomMapper.toRoomResponse(r));
+        try {
+            List<Room> rooms = roomService.getAllRooms();
+            List<RoomResponse> dtoList = new java.util.ArrayList<>();
+            for (Room r : rooms) {
+                dtoList.add(RoomMapper.toRoomResponse(r));
+            }
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dtoList));
+        } catch (IllegalStateException ex) {
+            ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("Không thể tải danh sách phòng lúc này."));
         }
-        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dtoList));
     }
 
     private void handleUpdateStatus(HttpExchange exchange, int roomId) throws IOException {
@@ -135,48 +146,108 @@ public class RoomController implements HttpHandler {
     private void handleAdd(HttpExchange exchange) throws IOException {
         if (!SecurityUtil.checkAdmin(exchange)) return;
         try {
-            InputStream is = exchange.getRequestBody();
-            String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            RoomCreateRequest req = gson.fromJson(body, RoomCreateRequest.class);
-            Room room = RoomMapper.toRoom(req);
-
-            if (room.getRoomNumber() == null || room.getRoomNumber().trim().isEmpty()) {
-                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Số phòng không được để trống"));
-                return;
-            }
-            if (room.getPrice() <= 0) {
-                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Giá phòng phải lớn hơn 0"));
-                return;
-            }
-            if (room.getStatus() == null || room.getStatus().isEmpty()) {
-                room.setStatus("vacant_clean");
-            }
-
+            RoomCreateRequest req = readRoomRequest(exchange);
+            Room room = buildValidatedRoom(req, 0, true);
             boolean ok = roomService.addRoom(room);
             if (ok) {
                 ApiResponseUtil.write(exchange, 201, ApiResponseUtil.success("Thêm phòng thành công"));
             } else {
                 ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Thêm phòng thất bại"));
             }
+        } catch (RoomConflictException ex) {
+            ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error(ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error(ex.getMessage()));
+        } catch (IllegalStateException ex) {
+            ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("Không thể thêm phòng lúc này."));
         } catch (Exception e) {
-            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi server: " + e.getMessage()));
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Dữ liệu phòng không hợp lệ."));
         }
+    }
+
+    private void handleUpdate(HttpExchange exchange, int roomId) throws IOException {
+        if (!SecurityUtil.checkAdmin(exchange)) return;
+        try {
+            RoomCreateRequest req = readRoomRequest(exchange);
+            Room room = buildValidatedRoom(req, roomId, false);
+            if (roomService.updateRoom(room)) {
+                ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Cập nhật phòng thành công"));
+            } else {
+                ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy phòng."));
+            }
+        } catch (RoomConflictException ex) {
+            ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error(ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error(ex.getMessage()));
+        } catch (IllegalStateException ex) {
+            ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("Không thể cập nhật phòng lúc này."));
+        } catch (Exception ex) {
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Dữ liệu phòng không hợp lệ."));
+        }
+    }
+
+    private RoomCreateRequest readRoomRequest(HttpExchange exchange) throws IOException {
+        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        RoomCreateRequest request = gson.fromJson(body, RoomCreateRequest.class);
+        if (request == null) throw new IllegalArgumentException("Thiếu thông tin phòng.");
+        return request;
+    }
+
+    private Room buildValidatedRoom(RoomCreateRequest request, int roomId, boolean creating) {
+        String number = request.getRoomNumber() == null ? "" : request.getRoomNumber().trim();
+        if (!number.matches("[A-Za-z0-9][A-Za-z0-9-]{0,19}")) {
+            throw new IllegalArgumentException("Số phòng chỉ gồm chữ, số hoặc dấu gạch ngang (tối đa 20 ký tự).");
+        }
+        if (request.getRoomTypeId() == null || request.getRoomTypeId() < 1
+                || roomService.getRoomTypeById(request.getRoomTypeId()) == null) {
+            throw new IllegalArgumentException("Vui lòng chọn hạng phòng hợp lệ.");
+        }
+        Double price = request.getPrice();
+        if (price == null || !Double.isFinite(price) || price <= 0
+                || BigDecimal.valueOf(price).compareTo(new BigDecimal("99999999.99")) > 0
+                || BigDecimal.valueOf(price).stripTrailingZeros().scale() > 2) {
+            throw new IllegalArgumentException("Giá phòng phải lớn hơn 0 và tối đa có 2 chữ số thập phân.");
+        }
+        Room room = new Room();
+        room.setId(roomId);
+        room.setRoomNumber(number);
+        room.setRoomTypeId(request.getRoomTypeId());
+        room.setPrice(price);
+        if (creating) {
+            String status = request.getStatus();
+            if (status == null || status.isBlank()) status = "vacant_dirty";
+            if (!java.util.Set.of("vacant_clean", "vacant_dirty", "out_of_order", "out_of_service").contains(status)) {
+                throw new IllegalArgumentException("Trạng thái ban đầu của phòng không hợp lệ.");
+            }
+            room.setStatus(status);
+        }
+        return room;
     }
 
     private void handleDelete(HttpExchange exchange, int roomId) throws IOException {
         if (!SecurityUtil.checkAdmin(exchange)) return;
-        boolean ok = roomService.deleteRoom(roomId);
-        if (ok) {
-            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Xóa phòng thành công"));
-        } else {
-            ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy phòng với ID: " + roomId));
+        try {
+            boolean ok = roomService.deleteRoom(roomId);
+            if (ok) {
+                ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Xóa phòng thành công"));
+            } else {
+                ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy phòng."));
+            }
+        } catch (RoomConflictException ex) {
+            ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error(ex.getMessage()));
+        } catch (IllegalStateException ex) {
+            ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("Không thể xóa phòng lúc này."));
         }
     }
 
 
     private void handleGetAllRoomTypes(HttpExchange exchange) throws IOException {
-        List<RoomType> list = roomService.getAllRoomTypes();
-        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(list));
+        try {
+            List<RoomType> list = roomService.getAllRoomTypes();
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(list));
+        } catch (IllegalStateException ex) {
+            ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("Không thể tải hạng phòng lúc này."));
+        }
     }
 
     private void handleGetRoomTypeById(HttpExchange exchange, int id) throws IOException {

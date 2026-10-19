@@ -9,15 +9,15 @@ import quanlykhachsan.backend.utils.JwtFilter;
 import quanlykhachsan.backend.utils.GlobalExceptionHandler;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 import quanlykhachsan.backend.utils.SystemStatusFilter;
 import quanlykhachsan.backend.utils.IdempotencyFilter;
 
 public class Main {
-    private static final java.util.Map<HttpServer,quanlykhachsan.backend.ai.VirtualConciergeController> BACKGROUND_SERVICES=
-            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
-    public static void closeBackgroundServices(HttpServer server){var service=BACKGROUND_SERVICES.remove(server);if(service!=null)service.close();}
+    private static final Map<HttpServer, AutoCloseable> BACKGROUND_SERVICES = new ConcurrentHashMap<>();
+
     public static void main(String[] args) {
         HttpServer server = null;
         try {
@@ -67,136 +67,158 @@ public class Main {
     /** Configures the same production routes used by main, without starting jobs or migrating data. */
     public static HttpServer createServer(int port) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
-            // Khởi tạo các Filter
-            Filter corsFilter = new CorsFilter();
-            Filter jwtFilter = new JwtFilter();
-            Filter exceptionFilter = new GlobalExceptionHandler();
-            Filter systemStatusFilter = new SystemStatusFilter();
-            Filter idempotencyFilter = new IdempotencyFilter();
-            Filter ipRateLimiter = new quanlykhachsan.backend.utils.IpRateLimiter();
+        // Khởi tạo các Filter
+        Filter corsFilter = new CorsFilter();
+        Filter jwtFilter = new JwtFilter();
+        Filter exceptionFilter = new GlobalExceptionHandler();
+        Filter systemStatusFilter = new SystemStatusFilter();
+        Filter idempotencyFilter = new IdempotencyFilter();
+        Filter ipRateLimiter = new quanlykhachsan.backend.utils.IpRateLimiter();
 
-            // --- ĐĂNG KÝ CÁC ROUTE (API ENDPOINTS) TẠI ĐÂY ---
-            // Route Health (Cả /api/v1/health và /health đều public)
-            registerContext(server, ipRateLimiter, "/api/v1/health", Main::handleHealthCheck, exceptionFilter, corsFilter);
-            registerContext(server, ipRateLimiter, "/health", Main::handleHealthCheck, exceptionFilter, corsFilter);
+        // --- ĐĂNG KÝ CÁC ROUTE (API ENDPOINTS) TẠI ĐÂY ---
+        // Route Health (Cả /api/v1/health và /health đều public)
+        registerContext(server, ipRateLimiter, "/api/v1/health", Main::handleHealthCheck, exceptionFilter, corsFilter);
+        registerContext(server, ipRateLimiter, "/health", Main::handleHealthCheck, exceptionFilter, corsFilter);
 
-            // Route Đăng nhập và Đăng ký (Được skip JWT auth bên trong JwtFilter)
-            registerContext(server, ipRateLimiter, "/api/v1/auth/login", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/auth/register", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/auth/logout", new quanlykhachsan.backend.auth.LogoutController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/auth/change-password", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
-            var aiCheckin = new quanlykhachsan.backend.ai.AiCheckinController();
-            registerContext(server, ipRateLimiter, "/api/v1/ai/id-ocr", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/ai/face-verify", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
-            var concierge = new quanlykhachsan.backend.ai.VirtualConciergeController();
-            BACKGROUND_SERVICES.put(server,concierge);
-            Filter conciergeBudget = new Filter(){
-                public String description(){return "Verified-token concierge budget before prompt validation";}
-                public void doFilter(com.sun.net.httpserver.HttpExchange e,Chain chain)throws IOException{if(concierge.checkChatBudget(e))chain.doFilter(e);}
-            };
-            registerContext(server, ipRateLimiter, "/api/v1/ai/concierge/chat", concierge, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, conciergeBudget, new quanlykhachsan.backend.ai.PromptGuardrailFilter(concierge::recordRejectedPrompt));
-            registerContext(server, ipRateLimiter, "/api/v1/ai/concierge", concierge, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/auth/guest-otp", new quanlykhachsan.backend.auth.GuestAuthController(), exceptionFilter, corsFilter, jwtFilter);
-            
-            // Route Quản lý phòng
-            registerContext(server, ipRateLimiter, "/api/v1/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/rooms/availability", new quanlykhachsan.backend.room.RoomAvailabilityController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Hồ sơ người dùng
-            registerContext(server, ipRateLimiter, "/api/v1/users/update-profile", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/users/change-password", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/users/update-theme", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Phân quyền (Roles) - PHẢI đăng ký TRƯỚC /api/v1/users
-            registerContext(server, ipRateLimiter, "/api/v1/roles", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Quản lý nhân sự
-            registerContext(server, ipRateLimiter, "/api/v1/users", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Báo cáo
-            registerContext(server, ipRateLimiter, "/api/v1/reports", new quanlykhachsan.backend.report.ReportController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Khách hàng
-            registerContext(server, ipRateLimiter, "/api/v1/customers", new quanlykhachsan.backend.customer.CustomerController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/customers", new quanlykhachsan.backend.customer.CustomerController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Đặt phòng / Check-in / Check-out
-            var bookingController = new quanlykhachsan.backend.booking.BookingController();
-            registerContext(server, ipRateLimiter, "/api/v1/pricing/quote", new quanlykhachsan.backend.pricing.PricingController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/reports/financial/dbr", new quanlykhachsan.backend.report.FinancialReportController(), exceptionFilter, corsFilter, jwtFilter);
-            var yieldController = new quanlykhachsan.backend.report.YieldRecommendationController();
-            registerContext(server, ipRateLimiter, "/api/v1/revenue/forecast", yieldController, exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/revenue/apply-rates", yieldController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/bookings/public", new quanlykhachsan.backend.booking.PublicBookingController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/bookings/walk-in", new quanlykhachsan.backend.booking.PublicBookingController(true), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
-            registerContext(server, ipRateLimiter, "/api/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
-            // Route Thanh toán (Payment)
-            registerContext(server, ipRateLimiter, "/api/v1/webhooks/vietqr", new quanlykhachsan.backend.booking.BankWebhookController(), exceptionFilter, corsFilter, systemStatusFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/folios", new quanlykhachsan.backend.booking.FolioController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/pos/sync", new quanlykhachsan.backend.booking.PosSyncController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
-            // Route Quản lý Hóa đơn
-            registerContext(server, ipRateLimiter, "/api/v1/invoices", new quanlykhachsan.backend.booking.InvoiceController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Dịch vụ khách sạn
-            registerContext(server, ipRateLimiter, "/api/v1/services", new quanlykhachsan.backend.hotelservice.ServiceController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/service-usage", new quanlykhachsan.backend.hotelservice.ServiceUsageController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Đặt Dịch vụ Phòng & Giám sát Lễ tân (Phase 2.1)
-            var serviceOrderController = new quanlykhachsan.backend.hotelservice.ServiceOrderController();
-            registerContext(server, ipRateLimiter, "/api/v1/service-orders/active", serviceOrderController, exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/service-orders", serviceOrderController, exceptionFilter, corsFilter, jwtFilter);
-            // Route Thông báo Vòng đời & Voucher Khách hàng (Phase 2.1)
-            var notificationController = new quanlykhachsan.backend.customer.NotificationController();
-            registerContext(server, ipRateLimiter, "/api/v1/notifications", notificationController, exceptionFilter, corsFilter, jwtFilter);
-            // Route Đánh giá (Review)
-            registerContext(server, ipRateLimiter, "/api/v1/reviews", new quanlykhachsan.backend.interaction.ReviewController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Chat
-            registerContext(server, ipRateLimiter, "/api/v1/chat", new quanlykhachsan.backend.interaction.ChatController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Khuyến mãi (Promotion)
-            registerContext(server, ipRateLimiter, "/api/v1/promotions/validate", new quanlykhachsan.backend.promotion.VoucherValidationController(), exceptionFilter, corsFilter, jwtFilter);
-            registerContext(server, ipRateLimiter, "/api/v1/promotions", new quanlykhachsan.backend.promotion.PromotionController(), exceptionFilter, corsFilter, jwtFilter);
-            // Route Khách hàng thân thiết (Loyalty)
-            registerContext(server, ipRateLimiter, "/api/v1/loyalty", new quanlykhachsan.backend.customer.LoyaltyController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Đăng nhập và Đăng ký (Được skip JWT auth bên trong JwtFilter)
+        registerContext(server, ipRateLimiter, "/api/v1/auth/login", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/auth/register", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/auth/logout", new quanlykhachsan.backend.auth.LogoutController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/auth/change-password", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/auth/guest-otp", new quanlykhachsan.backend.auth.GuestAuthController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/auth/google", new quanlykhachsan.backend.auth.GoogleOtpAuthController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/customer-portal", new quanlykhachsan.backend.customer.CustomerPortalController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
 
-            // Thiết lập cấu hình mặc định và chạy server
-            var staticFiles = new quanlykhachsan.backend.utils.StaticFileHandler(
-                    java.nio.file.Path.of("web-ui", "public"));
-            registerContext(server, ipRateLimiter, "/booking", staticFiles, exceptionFilter, corsFilter);
-            registerContext(server, ipRateLimiter, "/", staticFiles, exceptionFilter, corsFilter);
-            server.setExecutor(Executors.newFixedThreadPool(20));
+        var aiCheckin = new quanlykhachsan.backend.ai.AiCheckinController();
+        registerContext(server, ipRateLimiter, "/api/v1/ai/id-ocr", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/ai/face-verify", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
+        var concierge = new quanlykhachsan.backend.ai.VirtualConciergeController();
+        BACKGROUND_SERVICES.put(server, concierge);
+        Filter conciergeBudget = new Filter() {
+            public String description() { return "Verified-token concierge budget before prompt validation"; }
+            public void doFilter(com.sun.net.httpserver.HttpExchange e, Chain chain) throws IOException { if (concierge.checkChatBudget(e)) chain.doFilter(e); }
+        };
+        registerContext(server, ipRateLimiter, "/api/v1/ai/concierge/chat", concierge, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, conciergeBudget, new quanlykhachsan.backend.ai.PromptGuardrailFilter(concierge::recordRejectedPrompt));
+        registerContext(server, ipRateLimiter, "/api/v1/ai/concierge", concierge, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+
+        // Route Quản lý phòng
+        registerContext(server, ipRateLimiter, "/api/v1/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/rooms/availability", new quanlykhachsan.backend.room.RoomAvailabilityController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Hồ sơ người dùng
+        registerContext(server, ipRateLimiter, "/api/v1/users/update-profile", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/users/change-password", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/users/update-theme", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Phân quyền (Roles) - PHẢI đăng ký TRƯỚC /api/v1/users
+        registerContext(server, ipRateLimiter, "/api/v1/roles", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Quản lý nhân sự
+        registerContext(server, ipRateLimiter, "/api/v1/users", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Báo cáo
+        registerContext(server, ipRateLimiter, "/api/v1/reports", new quanlykhachsan.backend.report.ReportController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Khách hàng
+        registerContext(server, ipRateLimiter, "/api/v1/customers", new quanlykhachsan.backend.customer.CustomerController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/customers", new quanlykhachsan.backend.customer.CustomerController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Đặt phòng / Check-in / Check-out
+        var bookingController = new quanlykhachsan.backend.booking.BookingController();
+        registerContext(server, ipRateLimiter, "/api/v1/pricing/quote", new quanlykhachsan.backend.pricing.PricingController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/reports/financial/dbr", new quanlykhachsan.backend.report.FinancialReportController(), exceptionFilter, corsFilter, jwtFilter);
+        var yieldController = new quanlykhachsan.backend.report.YieldRecommendationController();
+        registerContext(server, ipRateLimiter, "/api/v1/revenue/forecast", yieldController, exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/revenue/apply-rates", yieldController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/bookings/public", new quanlykhachsan.backend.booking.PublicBookingController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/bookings/walk-in", new quanlykhachsan.backend.booking.PublicBookingController(true), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
+        registerContext(server, ipRateLimiter, "/api/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
+        // Route Thanh toán (Payment)
+        registerContext(server, ipRateLimiter, "/api/v1/webhooks/vietqr", new quanlykhachsan.backend.booking.BankWebhookController(), exceptionFilter, corsFilter, systemStatusFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/folios", new quanlykhachsan.backend.booking.FolioController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/pos/sync", new quanlykhachsan.backend.booking.PosSyncController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        // Route Quản lý Hóa đơn
+        registerContext(server, ipRateLimiter, "/api/v1/invoices", new quanlykhachsan.backend.booking.InvoiceController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Dịch vụ khách sạn
+        registerContext(server, ipRateLimiter, "/api/v1/services", new quanlykhachsan.backend.hotelservice.ServiceController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/service-usage", new quanlykhachsan.backend.hotelservice.ServiceUsageController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Đặt Dịch vụ Phòng & Giám sát Lễ tân (Phase 2.1)
+        var serviceOrderController = new quanlykhachsan.backend.hotelservice.ServiceOrderController();
+        registerContext(server, ipRateLimiter, "/api/v1/service-orders/active", serviceOrderController, exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/service-orders", serviceOrderController, exceptionFilter, corsFilter, jwtFilter);
+        // Route Thông báo Vòng đời & Voucher Khách hàng (Phase 2.1)
+        var notificationController = new quanlykhachsan.backend.customer.NotificationController();
+        registerContext(server, ipRateLimiter, "/api/v1/notifications", notificationController, exceptionFilter, corsFilter, jwtFilter);
+        // Route Đánh giá (Review)
+        registerContext(server, ipRateLimiter, "/api/v1/reviews", new quanlykhachsan.backend.interaction.ReviewController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Chat
+        registerContext(server, ipRateLimiter, "/api/v1/chat", new quanlykhachsan.backend.interaction.ChatController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Khuyến mãi (Promotion)
+        registerContext(server, ipRateLimiter, "/api/v1/promotions/validate", new quanlykhachsan.backend.promotion.VoucherValidationController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/promotions", new quanlykhachsan.backend.promotion.PromotionController(), exceptionFilter, corsFilter, jwtFilter);
+        // Route Khách hàng thân thiết (Loyalty)
+        registerContext(server, ipRateLimiter, "/api/v1/loyalty", new quanlykhachsan.backend.customer.LoyaltyController(), exceptionFilter, corsFilter, jwtFilter);
+
+        // Thiết lập cấu hình mặc định và chạy server
+        var staticFiles = new quanlykhachsan.backend.utils.StaticFileHandler(
+                java.nio.file.Path.of("web-ui", "public"));
+        registerContext(server, ipRateLimiter, "/booking", staticFiles, exceptionFilter, corsFilter);
+        registerContext(server, ipRateLimiter, "/", staticFiles, exceptionFilter, corsFilter);
+        server.setExecutor(Executors.newFixedThreadPool(20));
 
         return server;
     }
 
     private static void handleHealthCheck(com.sun.net.httpserver.HttpExchange exchange) throws IOException {
         if (!"GET".equals(exchange.getRequestMethod())) {
-            quanlykhachsan.backend.utils.GlobalExceptionHandler.sendError(exchange,405,"ERR_405_METHOD_NOT_ALLOWED","Method not allowed"); return;
+            quanlykhachsan.backend.utils.GlobalExceptionHandler.sendError(exchange, 405, "ERR_405_METHOD_NOT_ALLOWED", "Method not allowed");
+            return;
         }
         com.google.gson.JsonObject health = new com.google.gson.JsonObject();
-        health.addProperty("status","UP");
+        health.addProperty("status", "UP");
         health.addProperty("timestamp", System.currentTimeMillis());
         try (java.sql.Connection c = quanlykhachsan.backend.utils.DatabaseConnection.getConnection();
              java.sql.Statement stmt = c.createStatement()) {
             stmt.setQueryTimeout(1);
             try (java.sql.ResultSet rows = stmt.executeQuery("SELECT 1")) {
                 if (rows.next()) {
-                    health.addProperty("database","CONNECTED");
-                    health.addProperty("active_connections",quanlykhachsan.backend.utils.DatabaseConnection.activeConnections());
-                    health.addProperty("awaiting_connections",quanlykhachsan.backend.utils.DatabaseConnection.awaitingConnections());
-                    quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange,200,health.toString());
+                    health.addProperty("database", "CONNECTED");
+                    health.addProperty("active_connections", quanlykhachsan.backend.utils.DatabaseConnection.activeConnections());
+                    health.addProperty("awaiting_connections", quanlykhachsan.backend.utils.DatabaseConnection.awaitingConnections());
+                    quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange, 200, health.toString());
                     return;
                 }
             }
         } catch (Exception e) {
-            health.addProperty("database","DISCONNECTED");
+            health.addProperty("database", "DISCONNECTED");
             health.addProperty("warning", e.getMessage());
         }
-        quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange,200,health.toString());
+        quanlykhachsan.backend.utils.ApiResponseUtil.write(exchange, 200, health.toString());
     }
 
     private static void registerContext(HttpServer server, Filter limiter, String path, HttpHandler handler, Filter... filters) {
         var context = server.createContext(path, handler);
-
         context.getFilters().add(new quanlykhachsan.backend.utils.SecurityHardeningFilter());
-        context.getFilters().add(limiter);
+        if (limiter != null) {
+            context.getFilters().add(limiter);
+        }
         for (Filter filter : filters) {
             context.getFilters().add(filter);
+        }
+    }
+
+    private static void registerContext(HttpServer server, String path, HttpHandler handler, Filter... filters) {
+        registerContext(server, null, path, handler, filters);
+    }
+
+    public static void closeBackgroundServices(HttpServer server) {
+        if (server != null) {
+            AutoCloseable service = BACKGROUND_SERVICES.remove(server);
+            if (service != null) {
+                try {
+                    service.close();
+                } catch (Exception ex) {
+                    System.err.println("[Main] Error closing background service: " + ex.getMessage());
+                }
+            }
         }
     }
 }

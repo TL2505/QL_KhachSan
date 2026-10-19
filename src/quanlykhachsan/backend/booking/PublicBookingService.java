@@ -29,14 +29,10 @@ public final class PublicBookingService {
                     q.setString(1,key);try(ResultSet r=q.executeQuery()){replay=r.next()?new FolioDao.PaymentReplay(r.getString(1),r.getString(2),r.getInt(3)):null;}
                 }
                 if(replay!=null){c.rollback();if(!replay.requestHash().equals(hash))throw new IllegalStateException("Idempotency-Key was reused with different data");return new Result(replay.statusCode(),replay.responseBody());}
-                RoomAllocationService.reserve(c,request.roomId(),request.version());
+                RoomAllocationService.reserveForStay(c,request.roomId(),request.version(),request.guestCount(),request.checkIn(),request.checkOut());
                 String roomNumber;int roomType;
                 try(PreparedStatement q=c.prepareStatement("SELECT room_number,room_type_id FROM rooms WHERE id=?")) {
                     q.setInt(1,request.roomId());try(ResultSet r=q.executeQuery()){if(!r.next())throw new RoomUnavailableException();roomNumber=r.getString(1);roomType=r.getInt(2);}
-                }
-                try(PreparedStatement q=c.prepareStatement("SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in') AND check_in_date<? AND check_out_date>? LIMIT 1 FOR UPDATE")) {
-                    q.setInt(1,request.roomId());q.setTimestamp(2,Timestamp.valueOf(request.checkOut().atTime(12,0)));q.setTimestamp(3,Timestamp.valueOf(request.checkIn().atTime(14,0)));
-                    try(ResultSet r=q.executeQuery()){if(r.next())throw new RoomUnavailableException();}
                 }
                 var quote=new DynamicPricingEngine().quote(c,roomType,new PortalValidation.DateRange(request.checkIn(),request.checkOut()));
                 var vouchers=new quanlykhachsan.backend.promotion.VoucherService();
@@ -45,6 +41,8 @@ public final class PublicBookingService {
                     discount=vouchers.evaluate(c,request.voucherCode(),customerId,roomType,new PortalValidation.DateRange(request.checkIn(),request.checkOut()),quote,true);
                     quote=new DynamicPricingEngine.Quote(quote.room_type_id(),quote.base_price(),quote.nightly_rates(),discount.room_subtotal(),discount.service_charge(),discount.vat(),discount.total_amount());
                 }
+                if(request.expectedTotal()!=null && request.expectedTotal().compareTo(quote.total_amount())!=0)
+                    throw new IllegalStateException("Booking quote changed");
                 if(quote.total_amount().compareTo(new BigDecimal("99999999.99"))>0)throw new IllegalArgumentException("Stay exceeds booking amount limit");
                 int bookingId;
                 try(PreparedStatement q=c.prepareStatement("INSERT INTO bookings(customer_id,room_id,check_in_date,check_out_date,total_price,status,customer_type) VALUES (?,?,?,?,?,?,?)",Statement.RETURN_GENERATED_KEYS)) {
@@ -74,8 +72,10 @@ public final class PublicBookingService {
             q.setLong(1,folio);q.setString(2,type);q.setBigDecimal(3,amount);q.setString(4,reference);if(q.executeUpdate()!=1)throw new SQLException("Hotel business date missing");
         }
     }
-    public record Request(String name,String phone,String email,int roomId,int version,LocalDate checkIn,LocalDate checkOut,String voucherCode) {
-        public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out){this(name,phone,email,roomId,version,in,out,null);}
+    public record Request(String name,String phone,String email,int roomId,int version,LocalDate checkIn,LocalDate checkOut,String voucherCode,int guestCount,BigDecimal expectedTotal) {
+        public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out,String voucherCode,int guestCount){this(name,phone,email,roomId,version,in,out,voucherCode,guestCount,null);}
+        public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out){this(name,phone,email,roomId,version,in,out,null,1,null);}
+        public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out,String voucherCode){this(name,phone,email,roomId,version,in,out,voucherCode,1,null);}
     }
     public record Result(int status,String body) { }
 }

@@ -33,9 +33,10 @@ public final class PublicBookingController implements HttpHandler {
             var range=PortalValidation.range(in.toLocalDate().toString(),out.toLocalDate().toString());
             if(walkIn && !range.checkIn().equals(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"))))throw new IllegalArgumentException();
             int roomId=PortalValidation.integer(b,"room_id",1),roomVersion=PortalValidation.integer(b,"room_version",0);
+            int guestCount=b.has("guest_count")?PortalValidation.integer(b,"guest_count",1):1;
             int customer=new GuestIngestionService().ingest(name,phone,email,identity);
             if(role.equals("guest") && (!(e.getAttribute("customer_id") instanceof Number) || ((Number)e.getAttribute("customer_id")).intValue()!=customer))throw new SecurityException();
-            var result=new PublicBookingService().reserve(key.toLowerCase(java.util.Locale.ROOT),new PublicBookingService.Request(name,phone,email,roomId,roomVersion,range.checkIn(),range.checkOut(),voucher),customer,walkIn?"Walk-in":"Web");
+            var result=new PublicBookingService().reserve(key.toLowerCase(java.util.Locale.ROOT),new PublicBookingService.Request(name,phone,email,roomId,roomVersion,range.checkIn(),range.checkOut(),voucher,guestCount),customer,walkIn?"Walk-in":"Web");
             ApiResponseUtil.write(e,result.status(),result.body());
         }catch(SecurityException ex){ApiResponseUtil.write(e,403,ApiResponseUtil.error("Role or guest identity is not authorized"));}
         catch(IllegalArgumentException | DateTimeException ex){ApiResponseUtil.write(e,400,ApiResponseUtil.error("Invalid booking data or Idempotency-Key"));}

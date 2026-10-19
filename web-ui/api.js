@@ -72,6 +72,10 @@ export function getApiBaseUrl() {
     try { return normalizeApiBase(saved); } catch {}
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    const host = window.location.hostname || 'localhost';
+    if (window.location.port === '3000') {
+      return `http://${host}:8081/api/v1`;
+    }
     return window.location.origin + '/api/v1';
   }
   return getDynamicApiBaseUrl();
@@ -130,6 +134,8 @@ function messageFor(status) {
 
 export async function apiFetch(path, init = {}) {
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn yêu cầu không hợp lệ.');
+  const cleanPath = path.startsWith('/') ? path : '/' + path;
+  const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/');
   const session = getAuthSession();
   const token = (typeof session?.token === 'string' && session.token) ? session.token : getStoredCustomerToken();
   const headers = new Headers(init.headers || {});
@@ -137,7 +143,7 @@ export async function apiFetch(path, init = {}) {
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json; charset=utf-8');
   }
-  if (typeof token === 'string' && token) {
+  if (!isPublic && typeof token === 'string' && token) {
     headers.set('Authorization', 'Bearer ' + token);
   }
   headers.set('X-User-Role', 'guest');
@@ -145,17 +151,16 @@ export async function apiFetch(path, init = {}) {
 
   let response;
   const baseUrl = getApiBaseUrl();
-  const cleanPath = path.startsWith('/') ? path : '/' + path;
   const url = baseUrl + cleanPath;
 
   try {
     response = await fetch(url, { ...init, headers });
   } catch (error) {
-    if (error.name === 'AbortError') throw error;
+    if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
     throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
   }
 
-  if (response.status === 401 && session?.token && getAuthSession()?.token === session.token) {
+  if (!isPublic && response.status === 401 && session?.token && getAuthSession()?.token === session.token) {
     setAuthSession(null);
     if (typeof window !== 'undefined' && window.dispatchEvent) {
       window.dispatchEvent(new Event('hotel:session-expired'));
@@ -173,7 +178,8 @@ export async function apiFetch(path, init = {}) {
   }
 
   if (!response.ok) {
-    throw new ApiError(messageFor(response.status), response.status, response.headers.get('Retry-After'));
+    const serverMessage = (response.status < 500 && result && typeof result.message === 'string') ? result.message.trim() : '';
+    throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'));
   }
 
   if (result && typeof result === 'object' && 'status' in result) {
@@ -582,8 +588,8 @@ export async function submitBooking(bookingPayload) {
       checkInDate: `${bookingPayload.checkInDate} 14:00`,
       checkOutDate: `${bookingPayload.checkOutDate} 12:00`,
       totalAmount: totalAmount,
-      status: 'CONFIRMED',
-      paymentStatus: 'PAID'
+      status: 'PENDING',
+      paymentStatus: 'PENDING'
     };
 
     try {
@@ -597,44 +603,12 @@ export async function submitBooking(bookingPayload) {
       bookingId: bookingId,
       bookingReference: createdBooking.bookingReference,
       totalAmount: totalAmount,
-      message: 'Đặt phòng thành công!'
+      message: 'Đặt phòng thành công! Trạng thái: Chờ xác nhận.'
     };
 
   } catch (err) {
-    if (err.statusCode) throw err;
-
-    console.warn(`[Aurelia PMS] Server note: ${err.message}. Generating verified booking ticket.`);
-    await new Promise(res => setTimeout(res, 500));
-
-    const simulatedBookingId = Math.floor(202600 + Math.random() * 9000);
-    const simulatedBooking = {
-      bookingId: simulatedBookingId,
-      bookingReference: `BKG-${simulatedBookingId}`,
-      customerName: bookingPayload.fullName,
-      phone: bookingPayload.phone,
-      email: bookingPayload.email,
-      roomNumber: bookingPayload.roomNumber || `#${bookingPayload.roomId}`,
-      checkInDate: `${bookingPayload.checkInDate} 14:00`,
-      checkOutDate: `${bookingPayload.checkOutDate} 12:00`,
-      totalAmount: bookingPayload.totalAmount || 1850000,
-      status: 'CONFIRMED',
-      paymentStatus: 'PENDING'
-    };
-
-    try {
-      const recents = JSON.parse(localStorage.getItem('aurelia_recent_bookings') || '[]');
-      recents.unshift(simulatedBooking);
-      localStorage.setItem('aurelia_recent_bookings', JSON.stringify(recents.slice(0, 10)));
-    } catch (e) {}
-
-    return {
-      success: true,
-      bookingId: simulatedBookingId,
-      bookingReference: simulatedBooking.bookingReference,
-      totalAmount: simulatedBooking.totalAmount,
-      message: 'Đặt phòng thành công! (Xác thực trực tiếp từ hệ thống PMS)',
-      isSimulated: true
-    };
+    console.error('[Aurelia PMS] Booking creation failed:', err);
+    throw err;
   }
 }
 
@@ -658,8 +632,10 @@ export async function lookupBooking(bookingCode, phone) {
   // 2. Query backend by numeric ID
   const numericId = cleanCode.replace(/[^\d]/g, '');
   if (numericId) {
+    let timeoutId = null;
     try {
       const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 10000);
       const base = baseUrl.replace(/\/+$/, '');
       const root = base.endsWith('/api/v1') ? base : `${base}/api/v1`;
       const url = `${root}/bookings/${numericId}`;
@@ -672,7 +648,6 @@ export async function lookupBooking(bookingCode, phone) {
         },
         signal: controller.signal
       });
-      clearTimeout(timeoutId);
 
       if (response.ok) {
         const json = await response.json();
@@ -689,34 +664,17 @@ export async function lookupBooking(bookingCode, phone) {
               checkInDate: data.check_in_date || data.checkInDate || '---',
               checkOutDate: data.check_out_date || data.checkOutDate || '---',
               totalAmount: data.total_amount || data.totalAmount || data.price || 1850000,
-              status: data.status || 'CONFIRMED',
-              paymentStatus: data.payment_status || data.paymentStatus || 'PAID'
+              status: data.status || 'PENDING',
+              paymentStatus: data.payment_status || data.paymentStatus || 'PENDING'
             }
           };
         }
       }
     } catch (err) {
       console.warn('[Aurelia PMS] Online booking lookup failed:', err.message);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
-  }
-
-  // 3. Fallback demo data if valid format entered
-  if (cleanCode.length >= 3) {
-    return {
-      success: true,
-      booking: {
-        bookingId: numericId || '101',
-        bookingReference: cleanCode.toUpperCase(),
-        customerName: 'Nguyễn Văn A',
-        phone: cleanPhone || '0901234567',
-        roomNumber: '101 - Deluxe Ocean View',
-        checkInDate: '2026-10-20 14:00',
-        checkOutDate: '2026-10-22 12:00',
-        totalAmount: 3700000,
-        status: 'CONFIRMED',
-        paymentStatus: 'PAID'
-      }
-    };
   }
 
   throw new Error('Không tìm thấy thông tin đặt phòng với mã số và số điện thoại này. Vui lòng kiểm tra lại!');

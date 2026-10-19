@@ -60,27 +60,17 @@ public class RoomService {
     }
 
     public boolean addRoom(Room room) {
-        try {
-            roomDAO.addRoom(room);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+        roomDAO.addRoom(room);
+        return true;
+    }
+
+    public boolean updateRoom(Room room) {
+        return roomDAO.updateRoom(room);
     }
 
     public boolean deleteRoom(int roomId) {
-        try {
-            Room r = roomDAO.findById(roomId);
-            if (r != null) {
-                roomDAO.deleteRoom(r);
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+        Room r = roomDAO.findById(roomId);
+        return r != null && roomDAO.deleteRoom(r);
     }
 
     public List<RoomType> getAllRoomTypes() {

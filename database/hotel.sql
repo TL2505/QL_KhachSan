@@ -7,7 +7,7 @@ USE hotel_prod_db;
 
 -- CLEANUP OLD TABLES
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS loyalty_histories, reviews, promotions, messages, payments, invoices, service_usage, services, folio_transactions, folios, booking_details, bookings, customers, audit_checkpoints, idempotency_keys, rooms, room_types, users, roles;
+DROP TABLE IF EXISTS loyalty_histories, reviews, promotions, messages, payments, invoices, service_usage, services, folio_transactions, folios, booking_details, bookings, ai_escalation_tickets, customers, audit_checkpoints, idempotency_keys, rooms, room_types, users, roles;
 DROP VIEW IF EXISTS v_monthly_revenue;
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -221,6 +221,22 @@ CREATE TABLE IF NOT EXISTS messages (
   FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_chat_participants (sender_id, receiver_id)
 ) ENGINE=InnoDB;
+
+-- --------------------------------------------------------
+-- Table: ai_escalation_tickets
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ai_escalation_tickets (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  customer_id INT NOT NULL,
+  session_id VARCHAR(110) NOT NULL,
+  reason TEXT NOT NULL,
+  status ENUM('OPEN','ACKNOWLEDGED','CLOSED') NOT NULL DEFAULT 'OPEN',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ai_escalation_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  INDEX idx_ai_escalation_status_created (status, created_at),
+  INDEX idx_ai_escalation_customer_session (customer_id, session_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 -- Table: promotions
@@ -655,6 +671,5 @@ GRANT SELECT ON hotel_prod_db.services TO 'ai_reader'@'%';
 
 -- TUYỆT ĐỐI KHÔNG CẤP QUYỀN trên: users, customers, bookings, folios, payments
 FLUSH PRIVILEGES;
-
 
 

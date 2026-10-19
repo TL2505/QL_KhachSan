@@ -5,7 +5,6 @@ import com.sun.net.httpserver.HttpExchange;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 
-
 import java.io.IOException;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 public class JwtFilter extends Filter {
     private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
-
 
     private static final Set<String> PUBLIC_PATHS = Set.of(
         "/api/v1/auth/login",
@@ -32,7 +30,6 @@ public class JwtFilter extends Filter {
         "/reviews/public"
     );
 
-
     @Override
     public String description() {
         return "Production JWT Authentication Filter validating Bearer tokens with Guest Web bypass";
@@ -50,28 +47,35 @@ public class JwtFilter extends Filter {
 
         exchange = new RequestIdentityExchange(exchange);
 
-
         String rawPath = exchange.getRequestURI().getPath();
         String path = (rawPath == null || rawPath.isEmpty()) ? "/" : rawPath;
         if (path.length() > 1 && path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
         }
 
-
         boolean isPublic = PUBLIC_PATHS.contains(path)
                 || path.equals("/booking") || path.startsWith("/booking/")
+                || path.startsWith("/api/v1/auth/google/")
+                || path.equals("/api/v1/rooms")
+                || path.equals("/api/rooms")
                 || path.endsWith("/auth/login")
                 || path.endsWith("/auth/register")
                 || path.endsWith("/health")
                 || path.endsWith("/reviews/public");
 
-        if (isPublic) {
+        boolean isGuestRoleHeader = exchange.getRequestHeaders().containsKey("X-User-Role")
+                && "guest".equalsIgnoreCase(exchange.getRequestHeaders().getFirst("X-User-Role"));
+
+        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+
+        // Public endpoint or guest role header bypass ONLY applies when no Authorization header is present
+        if ((isPublic || isGuestRoleHeader) && (authHeader == null || authHeader.isBlank())) {
+            if (isGuestRoleHeader) {
+                exchange.setAttribute("role", "guest");
+            }
             chain.doFilter(exchange);
             return;
         }
-
-
-        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             ApiResponseUtil.sendError(
@@ -94,7 +98,6 @@ public class JwtFilter extends Filter {
             return;
         }
 
-
         // Validate credentials separately from downstream handling so handler
         // exceptions are not mistaken for invalid JWTs and the chain runs once.
         final Claims claims;
@@ -106,6 +109,9 @@ public class JwtFilter extends Filter {
             claims = SecurityUtil.validateAndExtractClaims(token);
 
             Object rawUserId = claims.get("userId");
+            if (rawUserId == null) {
+                rawUserId = claims.get("user_id");
+            }
             int parsedUserId = (rawUserId instanceof Number number)
                     ? number.intValue()
                     : (rawUserId != null ? Integer.parseInt(rawUserId.toString().trim()) : 0);
@@ -124,12 +130,12 @@ public class JwtFilter extends Filter {
 
             if (role == null || !Set.of(
                     "admin", "staff", "customer", "guest", "front_desk", "housekeeping", "maintenance", "f&b",
-                    "ADMIN", "STAFF", "CUSTOMER", "1", "2", "3", "manager", "gm", "GM", "it", "devops", "compliance", "revenue_manager").contains(role)) {
+                    "ADMIN", "STAFF", "CUSTOMER", "1", "2", "3", "manager").contains(role)) {
                 ApiResponseUtil.sendError(exchange, 403, "ERR_403_FORBIDDEN", "Role is not authorized");
                 return;
             }
         } catch (JwtException | IllegalArgumentException e) {
-            logger.warn("JWT authentication failed for path [{}]", path);
+            logger.warn("JWT authentication failed for path [{}]: {}", path, e.getMessage());
             ApiResponseUtil.sendError(
                     exchange,
                     401,
@@ -158,6 +164,5 @@ public class JwtFilter extends Filter {
      */
     private boolean isWhitelisted(String path) {
         return PUBLIC_PATHS.contains(path) || path.equals("/health");
-
     }
 }

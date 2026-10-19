@@ -12,6 +12,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD:?Set an approved application database password}
     volumes:
       - ./database/hotel.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./database/migrations:/docker-entrypoint-initdb.d/migrations:ro
       - mariadb_data:/var/lib/mysql
     networks:
       - pms-internal-net
@@ -81,6 +82,32 @@ services:
         condition: service_healthy
     networks:
       - pms-internal-net
+
+  # ============================================================================
+  # 4. AI Service: Microservice for Vision & RAG Knowledge Retrieval (Port 8082)
+  # ============================================================================
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      HOME: /tmp
+      MPLCONFIGDIR: /tmp/matplotlib
+      AI_FACE_MATCH_THRESHOLD: ${AI_FACE_MATCH_THRESHOLD:-0.68}
+    volumes:
+      - ./ai-service/models:/models:ro
+      - ./ai-service/knowledge_store:/knowledge:ro
+    networks:
+      - pms-internal-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8082/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
 networks:
   pms-internal-net:

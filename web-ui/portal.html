@@ -39,10 +39,12 @@
   <link rel="stylesheet" href="public/css/style.css?v=3.5.0">
   <link rel="stylesheet" href="portal.css?v=3.5.0">
   <link rel="stylesheet" href="portal-customer.css?v=3.5.0">
+  <link rel="stylesheet" href="portal-admin.css?v=3.5.0">
   <link rel="stylesheet" href="portal-theme.css?v=3.5.0">
   <link rel="stylesheet" href="public/css/page-transition.css?v=3.5.0">
   <script src="public/js/shared/page-transition.js?v=3.5.0"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="portal-body">
   <header class="portal-topbar">
@@ -121,6 +123,18 @@
           <label for="login-password">Mật khẩu</label>
           <input class="input input-md" id="login-password" name="password" type="password" autocomplete="current-password" required maxlength="200" placeholder="Nhập mật khẩu">
           <button class="btn portal-primary w-full" type="submit" id="btn-login-submit"><span>Secure Login</span><i data-lucide="arrow-right"></i></button>
+          <div id="google-login-area" class="google-login-area" hidden>
+            <span>hoặc</span>
+            <div id="google-signin-button" aria-label="Đăng nhập bằng Google"></div>
+          </div>
+        </form>
+        <form id="google-otp-form" class="auth-form" onsubmit="return false;" hidden>
+          <p class="otp-intro">Nhập mã gồm 4 chữ số đã gửi tới <strong id="google-otp-email"></strong>.</p>
+          <label for="google-otp-code">Mã xác thực</label>
+          <input class="input input-md google-otp-code" id="google-otp-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{4}" maxlength="4" placeholder="0000" required>
+          <button class="btn portal-primary" type="submit"><span>Xác nhận mã</span><i data-lucide="shield-check"></i></button>
+          <button id="google-otp-resend" class="btn auth-secondary" type="button">Gửi lại mã</button>
+          <button id="google-otp-cancel" class="btn auth-link" type="button">Quay lại đăng nhập</button>
         </form>
 
         <!-- Registration Form: Full Profile Verification & Zero Page Reload -->
@@ -199,6 +213,9 @@
       </section>
     </section>
   </main>
+  <div id="global-modal" class="portal-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Hộp thoại thao tác">
+    <div id="global-modal-content" class="modal-content" role="document"></div>
+  </div>
   <script type="module" src="portal-app.js?v=3.5.0"></script>
 </body>
 </html>

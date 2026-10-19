@@ -23,14 +23,9 @@ public final class DynamicPricingEngine {
             try(ResultSet r=q.executeQuery()){while(r.next())reservations.add(new Reservation(r.getInt(1),r.getDate(2).toLocalDate(),r.getDate(3).toLocalDate()));}
         }
         List<NightlyRate> nights=new ArrayList<>();BigDecimal subtotal=BigDecimal.ZERO;
-        Map<LocalDate,BigDecimal> approved=new HashMap<>();
-        try(PreparedStatement q=c.prepareStatement("SELECT rate_date,multiplier,override_reason FROM pricing_rules WHERE room_type_id=? AND rate_date>=? AND rate_date<?")){
-            q.setInt(1,roomTypeId);q.setDate(2,java.sql.Date.valueOf(range.checkIn()));q.setDate(3,java.sql.Date.valueOf(range.checkOut()));
-            try(ResultSet r=q.executeQuery()){while(r.next())approved.put(r.getDate(1).toLocalDate(),YieldRatePolicy.approve(r.getBigDecimal(2),true,r.getString(3)));}
-        }
         for(LocalDate day=range.checkIn();day.isBefore(range.checkOut());day=day.plusDays(1)) {
             Set<Integer> occupied=new HashSet<>();for(Reservation r:reservations)if(!day.isBefore(r.in()) && day.isBefore(r.out()))occupied.add(r.room());
-            BigDecimal multiplier=approved.getOrDefault(day,PricingTier.forOccupancy(occupied.size(),operational).multiplier());
+            BigDecimal multiplier=PricingTier.forOccupancy(occupied.size(),operational).multiplier();
             BigDecimal amount=nightly(base,multiplier);subtotal=subtotal.add(amount);
             nights.add(new NightlyRate(day.toString(),base,multiplier,amount,occupied.size(),operational));
         }

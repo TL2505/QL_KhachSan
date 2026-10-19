@@ -104,7 +104,7 @@ public class BookingDAOImpl implements BookingDAO {
     @Override
     public ArrayList<Booking> selectBooking() {
         ArrayList<Booking> list = new ArrayList<>();
-        String query = "SELECT * FROM bookings";
+        String query = "SELECT * FROM bookings ORDER BY created_at DESC, id DESC";
         try (Connection con = DBconn.getConnection(); 
              PreparedStatement ps = con.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {

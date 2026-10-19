@@ -2,14 +2,11 @@ package quanlykhachsan.backend.customer;
 
 public class Customer {
     private int id;
-    @com.google.gson.annotations.SerializedName(value="fullName",alternate={"full_name","name"}) private String fullName;
-    @com.google.gson.annotations.SerializedName(value="identityCard",alternate={"identity_card","id_card","cccd"}) private String identityCard;
+    private String fullName;
+    private String identityCard;
     private String phone;
     private String email;
     private String address;
-    @com.google.gson.annotations.SerializedName(value="dateOfBirth",alternate={"date_of_birth","dob"}) private String dateOfBirth;
-    public String getDateOfBirth(){return dateOfBirth;}
-    public void setDateOfBirth(String value){dateOfBirth=value==null||value.isBlank()?null:java.time.LocalDate.parse(value).toString();}
     private boolean isVip;
     private int loyaltyPoints;
     private int totalLoyaltyPoints;

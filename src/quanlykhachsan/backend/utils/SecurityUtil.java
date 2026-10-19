@@ -22,7 +22,7 @@ public class SecurityUtil {
         int roleId = -1;
         if (roleHeader != null) {
             roleHeader = roleHeader.trim();
-            if (roleHeader.equalsIgnoreCase("ADMIN") || roleHeader.equalsIgnoreCase("manager") || roleHeader.equalsIgnoreCase("gm")) {
+            if (roleHeader.equalsIgnoreCase("ADMIN")) {
                 roleId = 1;
             } else if (roleHeader.equalsIgnoreCase("STAFF") || roleHeader.equalsIgnoreCase("front_desk")) {
                 roleId = 2;
@@ -83,17 +83,12 @@ public class SecurityUtil {
         if (quanlykhachsan.backend.auth.TokenBlacklistService.shared().isRevoked(token.trim())) {
             throw new io.jsonwebtoken.JwtException("Token revoked");
         }
-        var claims = io.jsonwebtoken.Jwts.parser()
+        return io.jsonwebtoken.Jwts.parser()
                 .setSigningKey(JwtTokenUtil.signingKey())
                 .setAllowedClockSkewSeconds(180)
                 .build()
                 .parseSignedClaims(token.trim())
                 .getPayload();
-        if (claims.getExpiration() == null) throw new io.jsonwebtoken.JwtException("Token expiry required");
-        if (quanlykhachsan.backend.auth.TokenBlacklistService.shared().isRevoked(token.trim())) {
-            throw new io.jsonwebtoken.JwtException("Token revoked");
-        }
-        return claims;
     }
 
     private static void sendError(HttpExchange exchange, int code, String message) throws IOException {

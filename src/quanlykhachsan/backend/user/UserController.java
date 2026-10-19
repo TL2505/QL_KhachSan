@@ -32,21 +32,27 @@ public class UserController implements HttpHandler {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
 
         String path = exchange.getRequestURI().getPath();
+        // Main exposes this controller below /api/v1, while the original
+        // controller predicates were written for the legacy /api paths.
+        // Normalize once so both public API versions reach the same handlers.
+        String legacyPath = path.startsWith("/api/v1/")
+                ? "/api/" + path.substring("/api/v1/".length())
+                : path;
         String method = exchange.getRequestMethod();
-        String pathInfo = path.replace("/api/users", "");
+        String pathInfo = legacyPath.replace("/api/users", "");
 
-        if (path.equals("/api/users/register")) {
+        if (legacyPath.equals("/api/users/register")) {
             handleRegister(exchange);
             return;
         }
 
-        if (path.equals("/api/roles") && "GET".equalsIgnoreCase(method)) {
+        if (legacyPath.equals("/api/roles") && "GET".equalsIgnoreCase(method)) {
             handleGetAllRoles(exchange);
             return;
         }
 
-        if (path.equals("/api/users/update-profile") || path.equals("/api/users/change-password")) {
-            handleProfileActions(exchange, path);
+        if (legacyPath.equals("/api/users/update-profile") || legacyPath.equals("/api/users/change-password")) {
+            handleProfileActions(exchange, legacyPath);
             return;
         }
 

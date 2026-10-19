@@ -1,5 +1,9 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-19] — @codex — docs/run-project.md, scripts/start-backend.ps1 — Local backend startup and login configuration
+- Added Windows startup instructions, database settings, health verification, and troubleshooting.
+- Added a Maven launcher that generates a local JWT secret to prevent token creation failures during login.
+
 ## [3.0.0] - 2026-10-17 — @architect — Phase 3 Final Audit, Customer Portal Enhancements, FlatLaf Theme & Go Decision
 - **Added:** Web Concierge & Voucher Wallet module (`concierge.js`), Express Check-in QR Pass modal, E-Folio electronic invoice modal, auto-fill for customer bookings, `/api/v1/auth/change-password`, `/api/v1/services`, `/api/v1/service-usage` route registrations, Netplan static IP `192.168.56.102/24` configuration (`deploy/01-netplan-static-ip.yaml`), `DBConnection.java` compatibility wrappers.
 - **Fixed:** Complete prevention of UI button freezing across all forms (`#profile-form`, `#password-form`, `#concierge-form`, cancel booking) via `try...catch...finally`; 100% binary synchronization between `web-ui/` and `web-ui/public/` verified with `fc /b`; MariaDB container port `3306:3306` exposure; flexible database configuration in `DatabaseConnection.java` and `config.properties`.
@@ -19,12 +23,15 @@
 - Verified local mutual TLS with disposable certificates, including rejection of missing client identity and wrong hostname. Built the final desktop preview with bundled JRE; it was not launched or released. Generated 100 visibly invalid synthetic OCR fixtures and a JMeter draft; neither establishes model accuracy or load acceptance.
 - **Phase 3 remains PARTIAL / NOT RELEASED.** Pending gates include approved real-model accuracy/latency/resource measurements, camera/EDT/native UI/RAM checks, Python 3.11 Docker deployment and PKI validation, 200 CCU/two-hour soak, ZAP/manual penetration tests, and outstanding Phase 2 acceptance. Remaining implementation work includes semantic multilingual escalation, complete scan/face capture persistence and key-rotation lifecycle, and correlated/signed load fixtures. No production migration or deployment was performed; guest AI stays disabled by default.
 
+
 ## Rules
 - Every change to `/docs/` MUST be logged here before commit.
 - Format: `## [YYYY-MM-DD] — @author — file(s) — reason — what changed`
 - If a constraint rule is added/modified → note which edge case or incident triggered it.
 - If an API endpoint is added/removed → reference the phase (P1/P2/P3).
 - Retention: permanent (do not delete old entries).
+
+## [2026-10-16] — @copilot — docs/dev-spec/api-contracts.md, README.md — Phase 3 guest concierge gateway — Document customer JWT/RAG contract, confidence gate, local upstream configuration, and escalation ticket behavior.
 
 ## [2026-10-09] — @toan — All 17 files — Initial documentation set
 - Created `/docs/ai-context/` (6 files): constraints, data-access, escalation-rules, edge-cases, monitoring, incident-response
@@ -139,8 +146,6 @@
 - Added theme behavior tests and recorded browser theme-color updates. Focused Node tests passed (6/6); JavaScript syntax and `git diff --check` passed.
 - Created GitHub issues for outstanding UI/integration findings: #36 unsupported social icons, #37 lightbox close control, #38 room identity/pricing, #39 incomplete English localization, #40 missing party/room selectors, #41 admin statistics endpoint, #42 customer dashboard/loyalty loading, and #43 offers loading state.
 - Documented the issue references in `docs/WEB_UI_ISSUES.md`. No issues already marked resolved were re-opened; `.phase2-runtime/` remains excluded from version control.
+# 2026-10-16 — Room status labels
 
-## [2026-10-16] — @codex — docker-compose.yml, web-ui portal/API serving and tests — Local portal integration
-- Mounted the portal entry point and its assets in the web container, and served portal/public assets safely from the development server.
-- Routed browser API requests through the same origin and added an explicit auth-session clearing helper for portal logout.
-- Added regression coverage for portal assets, same-origin API routing, and session clearing.
+- Added the optional read-only `include_status=true` availability projection to `dev-spec/api-contracts.md`; existing endpoint behavior remains unchanged by default. No schema or data changes.

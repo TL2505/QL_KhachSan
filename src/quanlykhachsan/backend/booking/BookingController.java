@@ -52,7 +52,36 @@ public class BookingController implements HttpHandler {
                 return;
             }
 
+            // Administrative decisions are intentionally limited to confirming
+            // or cancelling a future reservation. Reception owns check-in,
+            // check-out and housekeeping workflows.
+            if ("PUT".equalsIgnoreCase(method) && path.matches("/api/v1/bookings/\\d+/admin-status")) {
+                if (!SecurityUtil.checkAdmin(exchange)) return;
+                int bookingId = Integer.parseInt(path.split("/")[4]);
+                JsonObject request = JsonUtil.getGson().fromJson(
+                    new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8), JsonObject.class);
+                String requestedStatus = request != null && request.has("status") && !request.get("status").isJsonNull()
+                    ? request.get("status").getAsString() : "";
+                AdminBookingStatusService.Result result = new AdminBookingStatusService().decide(bookingId, requestedStatus);
+                ApiResponseUtil.write(exchange, result.httpStatus(),
+                    result.httpStatus() == 200 ? ApiResponseUtil.success(result.message()) : ApiResponseUtil.error(result.message()));
+                return;
+            }
+
             // 1. POST /api/bookings (Đặt phòng)
+            if ("PUT".equalsIgnoreCase(method) && path.matches("/api/v1/bookings/\\d+/reception-status")) {
+                if (!SecurityUtil.hasPermission(exchange, 2)) return;
+                int bookingId = Integer.parseInt(path.split("/")[4]);
+                JsonObject request = JsonUtil.getGson().fromJson(
+                    new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8), JsonObject.class);
+                String requestedStatus = request != null && request.has("status") && !request.get("status").isJsonNull()
+                    ? request.get("status").getAsString() : "";
+                AdminBookingStatusService.Result result = new AdminBookingStatusService().decideForReception(bookingId, requestedStatus);
+                ApiResponseUtil.write(exchange, result.httpStatus(), result.httpStatus() == 200
+                    ? ApiResponseUtil.success(result.message()) : ApiResponseUtil.error(result.message()));
+                return;
+            }
+
             if ("POST".equalsIgnoreCase(method) && ("/api/bookings".equals(path) || "/api/v1/bookings".equals(path))) {
                 InputStream is = exchange.getRequestBody();
                 String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
@@ -124,43 +153,16 @@ public class BookingController implements HttpHandler {
             }
             // 2. PUT /api/bookings/checkin/{id}
             else if ("PUT".equalsIgnoreCase(method) && (path.startsWith("/api/bookings/checkin/") || path.startsWith("/api/v1/bookings/checkin/"))) {
+                if (!SecurityUtil.hasPermission(exchange, 2)) return;
                 int bookingId = Integer.parseInt(path.substring(path.lastIndexOf('/') + 1));
-                Booking b = bookingService.getBookingById(bookingId);
-                
-                if (b != null) {
-                    bookingService.updateBookingStatus(bookingId, "checked_in");
-                    roomService.updateRoomStatus(b.getRoomId(), "occupied_clean");
-                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Check-in thành công"));
-                } else {
-                    ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy Booking ID"));
-                }
+                AdminBookingStatusService.Result result = new AdminBookingStatusService().checkIn(bookingId);
+                ApiResponseUtil.write(exchange, result.httpStatus(), result.httpStatus() == 200
+                    ? ApiResponseUtil.success(result.message()) : ApiResponseUtil.error(result.message()));
             }
             // 3. PUT /api/bookings/checkout/{id}
             else if ("PUT".equalsIgnoreCase(method) && (path.startsWith("/api/bookings/checkout/") || path.startsWith("/api/v1/bookings/checkout/"))) {
-                int bookingId = Integer.parseInt(path.substring(path.lastIndexOf('/') + 1));
-                Booking b = bookingService.getBookingById(bookingId);
-                
-                if (b != null) {
-                    bookingService.updateBookingStatus(bookingId, "checked_out");
-
-                    // Cộng điểm tích lũy cho khách hàng sau khi check-out
-                    try {
-                        if (b.getCustomerId() > 0 && b.getTotalPrice() > 0) {
-                            loyaltyService.addPoints(
-                                b.getCustomerId(),
-                                b.getTotalPrice(),
-                                "Thanh toán phòng #" + b.getRoomId() + " (Booking #" + bookingId + ")"
-                            );
-                        }
-                    } catch (Exception loyaltyEx) {
-                        // Không để lỗi điểm thưởng ảnh hưởng đến việc check-out
-                        System.err.println("[WARN] Không thể cộng điểm thành viên: " + loyaltyEx.getMessage());
-                    }
-
-                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Check-out thành công"));
-                } else {
-                    ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy Booking ID"));
-                }
+                if (!SecurityUtil.hasPermission(exchange, 2)) return;
+                ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error("Use the folio payment checkout workflow"));
             }
             // 4. Cancellation: DELETE /api/bookings/{id} or PUT/POST /api/bookings/{id}/cancel
             else if (("DELETE".equalsIgnoreCase(method) && path.matches("/api/(v1/)?bookings/\\d+"))

@@ -1,17 +1,45 @@
 import { api } from "../../api.js";
 
 const STATUS_LABEL = {
-    PENDING:   { label: 'Chờ xác nhận', cls: 'badge-booked' },
-    CONFIRMED: { label: 'Đã xác nhận',  cls: 'badge-occupied' },
-    CHECKED_IN:{ label: 'Đã check-in',  cls: 'badge-available' },
-    CHECKED_OUT:{ label: 'Đã trả phòng', cls: 'badge-cleaning' },
-    CANCELLED: { label: 'Đã hủy',       cls: 'badge-maintenance' },
+    pending:    { label: 'Chờ xác nhận', cls: 'badge-booked' },
+    confirmed:  { label: 'Đã xác nhận', cls: 'badge-available' },
+    checked_in: { label: 'Đang lưu trú', cls: 'badge-occupied' },
+    checked_out:{ label: 'Đã trả phòng', cls: 'badge-cleaning' },
+    cancelled:  { label: 'Đã hủy', cls: 'badge-maintenance' },
+    no_show:    { label: 'Không đến', cls: 'badge-maintenance' },
 };
+
+function bookingTime(value) {
+    const time = new Date(value || '').getTime();
+    return Number.isFinite(time) ? time : null;
+}
+
+// Keep the available actions aligned with the backend's reservation rules.
+function decisionAvailability(booking) {
+    const checkIn = bookingTime(booking.checkInDate);
+    if (checkIn === null) return { allowed: false, reason: 'Thiếu thời điểm nhận phòng' };
+    if (checkIn <= Date.now()) return { allowed: false, reason: 'Đã đến hoặc qua thời điểm nhận phòng' };
+    return { allowed: true, reason: '' };
+}
+
+function checkInAvailability(booking) {
+    const checkIn = bookingTime(booking.checkInDate);
+    const checkOut = bookingTime(booking.checkOutDate);
+    if (checkIn === null || checkOut === null) return { allowed: false, reason: 'Thiếu thời gian lưu trú' };
+    const dateOnly = value => {
+        const date = new Date(value);
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    };
+    const today = dateOnly(Date.now());
+    if (today < dateOnly(checkIn)) return { allowed: false, reason: 'Chưa đến ngày nhận phòng' };
+    if (today >= dateOnly(checkOut)) return { allowed: false, reason: 'Đã quá ngày lưu trú' };
+    return { allowed: true, reason: '' };
+}
 
 function skeletonRows(count = 6) {
     return Array.from({ length: count }, () => `
-        <tr>${Array.from({ length: 7 }, (_, i) =>
-            `<td><div class="skeleton-block" style="width:${[30,70,90,80,80,80,60][i]}px;border-radius:${i===6?'30px':'4px'};"></div></td>`
+        <tr>${Array.from({ length: 8 }, (_, i) =>
+            `<td><div class="skeleton-block" style="width:${[30,70,90,80,80,80,60,90][i]}px;border-radius:${i===6?'30px':'4px'};"></div></td>`
         ).join('')}</tr>`).join('');
 }
 
@@ -62,6 +90,7 @@ export async function renderBookings(container, session) {
                             <th>Check-out</th>
                             <th>Tổng tiền</th>
                             <th>Trạng thái</th>
+                            <th>Thao tác</th>
                         </tr>
                     </thead>
                     <tbody id="staff-bookings-body">
@@ -83,7 +112,7 @@ export async function renderBookings(container, session) {
         const q      = document.getElementById("staff-bookings-search").value.toLowerCase().trim();
         const status = document.getElementById("staff-bookings-status").value;
         let list = allBookings;
-        if (status) list = list.filter(b => b.status === status);
+        if (status) list = list.filter(b => String(b.status || '').toUpperCase() === status);
         if (q) list = list.filter(b =>
             String(b.id).includes(q) ||
             String(b.roomId).includes(q) ||
@@ -99,7 +128,7 @@ export async function renderBookings(container, session) {
         const body = document.getElementById("staff-bookings-body");
         body.innerHTML = "";
         if (!list || list.length === 0) {
-            body.innerHTML = `<tr><td colspan="7">
+            body.innerHTML = `<tr><td colspan="8">
                 <div class="empty-state">
                     <div class="empty-state-icon"><i data-lucide="calendar-x" style="width:26px;height:26px;"></i></div>
                     <p>Không tìm thấy đơn đặt phòng nào</p>
@@ -116,7 +145,26 @@ export async function renderBookings(container, session) {
         const paginatedList = currentDisplayList.slice(start, end);
 
         paginatedList.forEach((b, i) => {
-            const s = STATUS_LABEL[b.status] || { label: b.status, cls: '' };
+            const normalizedStatus = String(b.status || '').toLowerCase();
+            const s = STATUS_LABEL[normalizedStatus] || { label: 'Chưa xác định', cls: 'badge-maintenance' };
+            let actions = '<span class="staff-bookings-na">Không có thao tác</span>';
+            const decision = decisionAvailability(b);
+            if (normalizedStatus === 'pending') {
+                actions = decision.allowed
+                    ? `<button class="btn btn-primary btn-sm" data-booking-action="confirmed" data-booking-id="${b.id}">Xác nhận</button><button class="btn btn-danger btn-sm" data-booking-action="cancelled" data-booking-id="${b.id}">Hủy đơn</button>`
+                    : `<span class="staff-bookings-na" title="${decision.reason}">${decision.reason}</span>`;
+            }
+            if (normalizedStatus === 'confirmed') {
+                const checkIn = checkInAvailability(b);
+                if (checkIn.allowed) {
+                    actions = `<button class="btn btn-primary btn-sm" data-booking-action="checkin" data-booking-id="${b.id}">Nhận phòng</button>`;
+                } else if (decision.allowed) {
+                    actions = `<button class="btn btn-danger btn-sm" data-booking-action="cancelled" data-booking-id="${b.id}">Hủy đơn</button>`;
+                } else {
+                    actions = `<span class="staff-bookings-na" title="${checkIn.reason}">${checkIn.reason}</span>`;
+                }
+            }
+            if (normalizedStatus === 'checked_in') actions = `<button class="btn btn-primary btn-sm" data-booking-action="checkout" data-booking-id="${b.id}">Trả phòng</button>`;
             const tr = document.createElement("tr");
             tr.className = "table-row-animate";
             tr.style.animationDelay = `${i * 0.03}s`;
@@ -128,6 +176,7 @@ export async function renderBookings(container, session) {
                 <td style="font-size:13px;">${b.checkOutDate || '—'}</td>
                 <td style="font-weight:600;color:var(--success);">${Number(b.totalPrice || 0).toLocaleString('vi-VN')} đ</td>
                 <td><span class="room-badge ${s.cls}" style="white-space:nowrap;">${s.label}</span></td>
+                <td class="staff-bookings-actions">${actions}</td>
             `;
             body.appendChild(tr);
         });
@@ -157,10 +206,10 @@ export async function renderBookings(container, session) {
         try {
             allBookings = await api.get("/bookings") || [];
 
-            const pending     = allBookings.filter(b => b.status === 'PENDING').length;
-            const checkedIn   = allBookings.filter(b => b.status === 'CHECKED_IN').length;
+            const pending     = allBookings.filter(b => String(b.status || '').toLowerCase() === 'pending').length;
+            const checkedIn   = allBookings.filter(b => String(b.status || '').toLowerCase() === 'checked_in').length;
             const totalRevenue = allBookings
-                .filter(b => b.status !== 'CANCELLED')
+                .filter(b => String(b.status || '').toLowerCase() !== 'cancelled')
                 .reduce((s, b) => s + Number(b.totalPrice || 0), 0);
 
             const summaryBar = document.getElementById("staff-bookings-summary");
@@ -195,10 +244,11 @@ export async function renderBookings(container, session) {
                 </div>
             `;
             lucide.createIcons();
+            allBookings.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
             renderTable(allBookings);
         } catch (e) {
             document.getElementById("staff-bookings-body").innerHTML =
-                `<tr><td colspan="7" style="color:var(--danger);padding:20px;">${e.message}</td></tr>`;
+                `<tr><td colspan="8" style="color:var(--danger);padding:20px;">${e.message}</td></tr>`;
         }
     };
     loadBookings();
@@ -209,5 +259,31 @@ export async function renderBookings(container, session) {
         document.getElementById("staff-bookings-search").value = "";
         document.getElementById("staff-bookings-status").value = "";
         loadBookings();
+    });
+
+    document.getElementById("staff-bookings-body").addEventListener("click", async (event) => {
+        const button = event.target.closest("button[data-booking-action]");
+        if (!button) return;
+        const action = button.dataset.bookingAction;
+        const bookingId = encodeURIComponent(button.dataset.bookingId);
+        if (action === 'checkout') { window.location.href = 'portal.html?view=checkout'; return; }
+        const checkIn = action === 'checkin';
+        const target = action === 'confirmed' ? 'confirmed' : 'cancelled';
+        const message = checkIn ? 'Xác nhận nhận phòng cho đơn này?' : target === 'confirmed' ? 'Xác nhận đơn đặt phòng này?' : 'Hủy đơn này? Chỉ đơn chưa đến ngày nhận phòng và chưa phát sinh thanh toán hoặc hóa đơn mới được hủy.';
+        const accepted = await window.showCustomConfirm(message, { title: checkIn ? 'Nhận phòng' : target === 'confirmed' ? 'Xác nhận đơn' : 'Hủy đơn', confirmLabel: checkIn ? 'Nhận phòng' : target === 'confirmed' ? 'Xác nhận' : 'Hủy đơn', kind: checkIn || target === 'confirmed' ? 'primary' : 'danger' });
+        if (!accepted) return;
+        button.disabled = true;
+        try {
+            if (checkIn) await api.put(`/bookings/checkin/${bookingId}`, {});
+            else await api.put(`/bookings/${bookingId}/reception-status`, { status: target });
+            await loadBookings();
+            await window.showCustomAlert?.(
+                checkIn ? 'Đã ghi nhận khách nhận phòng.' : target === 'confirmed' ? 'Đơn đặt phòng đã được xác nhận.' : 'Đơn đặt phòng đã được hủy.',
+                { title: 'Thành công', kind: 'success' }
+            );
+        } catch (error) {
+            await window.showCustomAlert?.(error.message, { title: 'Không thể cập nhật đơn' });
+            button.disabled = false;
+        }
     });
 }

@@ -23,7 +23,6 @@ public class CustomerForm extends JPanel {
 
     private JTextField txtSearch;
     private JTextField txtName, txtPhone, txtCard, txtLoyaltyLevel, txtLoyaltyPoints;
-    private JTextField txtDob=new JTextField(),txtAddress=new JTextField();
     private JButton btnSave, btnReset, btnDelete, btnRefresh, btnViewHistory;
     private JLabel lblFormTitle, lblStatus;
 
@@ -126,12 +125,6 @@ public class CustomerForm extends JPanel {
         txtCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         form.add(txtCard);
         form.add(Box.createVerticalStrut(12));
-        JButton aiScan=new JButton("AI · Quét CCCD & đối chiếu");
-        aiScan.addActionListener(event->new quanlykhachsan.frontend.view.AiCheckinDialog(SwingUtilities.getWindowAncestor(this),data->{
-            txtName.setText(data.get("full_name").getAsString());txtCard.setText(data.get("id_card").getAsString());
-            txtDob.setText(data.get("dob").getAsString());txtAddress.setText(data.get("address").getAsString());
-        }).setVisible(true));
-        form.add(aiScan);form.add(createFieldLabel("Ngày sinh (yyyy-MM-dd)"));form.add(txtDob);form.add(createFieldLabel("Địa chỉ"));form.add(txtAddress);
 
         // Loyalty Info (Read-only)
         form.add(createFieldLabel("Hạng Thành Viên"));
@@ -394,7 +387,6 @@ public class CustomerForm extends JPanel {
             txtName.setText(selected.getFullName());
             txtPhone.setText(selected.getPhone());
             txtCard.setText(selected.getIdentityCard());
-            txtDob.setText(selected.getDateOfBirth());txtAddress.setText(selected.getAddress());
             txtLoyaltyLevel.setText(selected.getLoyaltyLevel() != null ? selected.getLoyaltyLevel() : "Silver");
             txtLoyaltyPoints.setText(String.valueOf(selected.getLoyaltyPoints()));
             
@@ -419,8 +411,6 @@ public class CustomerForm extends JPanel {
         String name  = txtName.getText().trim();
         String phone = txtPhone.getText().replaceAll("\\s+", "").trim();
         String card  = txtCard.getText().trim();
-        String dateOfBirth=txtDob.getText().trim(),address=txtAddress.getText().trim();
-        if(!dateOfBirth.isEmpty())try{java.time.LocalDate.parse(dateOfBirth);}catch(java.time.DateTimeException ex){showWarn("Ngày sinh phải có dạng yyyy-MM-dd.");return;}
 
         if (name.isEmpty() || phone.isEmpty() || card.isEmpty()) {
             showWarn("Vui lòng nhập đầy đủ thông tin!"); return;
@@ -442,7 +432,6 @@ public class CustomerForm extends JPanel {
                 c.setFullName(name);
                 c.setPhone(phone);
                 c.setIdentityCard(card);
-                c.setDateOfBirth(dateOfBirth);c.setAddress(address);
                 
                 if (editingId != -1) {
                     c.setId(editingId);
@@ -546,7 +535,6 @@ public class CustomerForm extends JPanel {
         txtName.setText("");
         txtPhone.setText("");
         txtCard.setText("");
-        txtDob.setText("");txtAddress.setText("");
         txtLoyaltyLevel.setText("Member");
         txtLoyaltyPoints.setText("0");
         lblFormTitle.setText("Thêm Khách Hàng Mới");

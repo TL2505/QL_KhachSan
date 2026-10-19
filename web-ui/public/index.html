@@ -9,11 +9,11 @@
   <meta name="description"
     content="Khám phá Aurelia Grand Palace - Tuyệt tác nghỉ dưỡng 5 sao quốc tế bên bờ Vịnh Ngọc. Dịch vụ quản gia 24/7, ẩm thực thượng hạng và hồ bơi vô cực chân mây.">
 
-  <!-- Google Fonts: Playfair Display (Serif Luxury) & Plus Jakarta Sans (Modern Clean Body) -->
+  <!-- Google Fonts: Playfair Display headings & Inter body (Vietnamese supported) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
   <!-- Tailwind CSS Stylesheet & CDN Engine -->
@@ -368,6 +368,15 @@
         </div>
       </div>
     </div>
+    <section id="room-statistics" class="room-statistics relative z-20" aria-label="Thống kê tình trạng phòng">
+      <dl class="room-statistics-grid">
+        <div class="room-statistic room-statistic--available"><dt><span aria-hidden="true"><i data-lucide="bed-double"></i></span> Phòng trống</dt><dd data-room-count="available">—</dd></div>
+        <div class="room-statistic room-statistic--reserved"><dt><span aria-hidden="true"><i data-lucide="calendar-check"></i></span> Phòng đã đặt</dt><dd data-room-count="reserved">—</dd></div>
+        <div class="room-statistic room-statistic--occupied"><dt><span aria-hidden="true"><i data-lucide="key-round"></i></span> Phòng đang sử dụng</dt><dd data-room-count="occupied">—</dd></div>
+        <div class="room-statistic room-statistic--maintenance"><dt><span aria-hidden="true"><i data-lucide="settings"></i></span> Phòng đang bảo trì</dt><dd data-room-count="maintenance">—</dd></div>
+      </dl>
+      <p id="room-statistics-note" role="status">Đang tải thống kê theo ngày nhận/trả phòng…</p>
+    </section>
   </section>
 
 
