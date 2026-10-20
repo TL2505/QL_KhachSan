@@ -310,33 +310,21 @@ const getFilters = () => {
             const summaryBar = document.getElementById("admin-invoices-summary");
             if (summaryBar) {
                 summaryBar.innerHTML = `
-                    <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--warning);">
-                        <i data-lucide="file-text" style="width:18px;height:18px;color:var(--warning);"></i>
-                        <div>
-                            <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);">${totalInvoices}</div>
-                            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Tổng Hóa Đơn</div>
-                        </div>
+                    <div class="card stat-card">
+                        <div class="stat-title">Tổng hóa đơn</div>
+                        <div class="stat-value">${totalInvoices}</div>
                     </div>
-                    <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--success);">
-                        <i data-lucide="banknote" style="width:18px;height:18px;color:var(--success);"></i>
-                        <div>
-                            <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);">${formatCurrency(totalRevenue)}</div>
-                            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Tổng Thu</div>
-                        </div>
+                    <div class="card stat-card">
+                        <div class="stat-title">Tổng thu</div>
+                        <div class="stat-value">${formatCurrency(totalRevenue)}</div>
                     </div>
-                    <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--primary);">
-                        <i data-lucide="coins" style="width:18px;height:18px;color:var(--primary);"></i>
-                        <div>
-                            <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);">${formatCurrency(cashTotal)}</div>
-                            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Tiền Mặt</div>
-                        </div>
+                    <div class="card stat-card">
+                        <div class="stat-title">Tiền mặt</div>
+                        <div class="stat-value">${formatCurrency(cashTotal)}</div>
                     </div>
-                    <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--info);">
-                        <i data-lucide="credit-card" style="width:18px;height:18px;color:var(--info);"></i>
-                        <div>
-                            <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);">${formatCurrency(transferTotal)}</div>
-                            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Thẻ / CK</div>
-                        </div>
+                    <div class="card stat-card">
+                        <div class="stat-title">Thẻ / CK</div>
+                        <div class="stat-value">${formatCurrency(transferTotal)}</div>
                     </div>
                 `;
                 if(window.lucide) lucide.createIcons();

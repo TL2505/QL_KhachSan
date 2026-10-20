@@ -120,3 +120,85 @@ html[data-theme="light"] .portal-theme-toggle {
     margin-left: auto;
   }
 }
+
+/* Customer surfaces use the membership tier as their accent palette. */
+html[data-theme="dark"] body.customer-portal[data-customer-tier="gold"] {
+  --portal-gold: #f2c96d;
+  --portal-soft: #ffe6a0;
+  --portal-border: #5d4a25;
+  --customer-surface: #211e16;
+  --customer-secondary-bg: #302918;
+  --customer-background-glow: rgba(242, 201, 109, .14);
+  --customer-nav-active-text: #ffe7ad;
+  --customer-nav-active-bg: #40351f;
+  --customer-nav-active-border: #735c2d;
+  --customer-input-border: #5b4a2b;
+  --customer-primary-bg: #8f6c21;
+}
+html[data-theme="light"] body.customer-portal[data-customer-tier="gold"] {
+  --portal-gold: #b17d12;
+  --portal-soft: #79550f;
+  --portal-border: #e8d7ac;
+  --customer-surface: #fffdf7;
+  --customer-secondary-bg: #f8f0dc;
+  --customer-background-glow: rgba(201, 157, 50, .16);
+  --customer-nav-active-text: #73500c;
+  --customer-nav-active-bg: #f7edcf;
+  --customer-nav-active-border: #e4ce91;
+  --customer-input-border: #dfcea4;
+  --customer-primary-bg: #b17d12;
+}
+
+html[data-theme="dark"] body.customer-portal[data-customer-tier="silver"] {
+  --portal-gold: #c4cbd4;
+  --portal-soft: #e3e7ec;
+  --portal-border: #454d59;
+  --customer-surface: #20242b;
+  --customer-secondary-bg: #2b3039;
+  --customer-background-glow: rgba(188, 198, 211, .13);
+  --customer-nav-active-text: #edf0f4;
+  --customer-nav-active-bg: #373e49;
+  --customer-nav-active-border: #596372;
+  --customer-input-border: #4b5461;
+  --customer-primary-bg: #626c79;
+}
+html[data-theme="light"] body.customer-portal[data-customer-tier="silver"] {
+  --portal-gold: #747d88;
+  --portal-soft: #4e5864;
+  --portal-border: #d8dde3;
+  --customer-surface: #fff;
+  --customer-secondary-bg: #f0f2f5;
+  --customer-background-glow: rgba(134, 146, 162, .15);
+  --customer-nav-active-text: #46505d;
+  --customer-nav-active-bg: #eaedf1;
+  --customer-nav-active-border: #cbd2db;
+  --customer-input-border: #d4dae2;
+  --customer-primary-bg: #747d88;
+}
+
+html[data-theme="dark"] body.customer-portal[data-customer-tier="vip"] {
+  --portal-gold: #c7a1ff;
+  --portal-soft: #e2cbff;
+  --portal-border: #54416f;
+  --customer-surface: #211b2b;
+  --customer-secondary-bg: #30253d;
+  --customer-background-glow: rgba(170, 122, 232, .16);
+  --customer-nav-active-text: #eadbff;
+  --customer-nav-active-bg: #403151;
+  --customer-nav-active-border: #684f88;
+  --customer-input-border: #514362;
+  --customer-primary-bg: #7650a1;
+}
+html[data-theme="light"] body.customer-portal[data-customer-tier="vip"] {
+  --portal-gold: #8055aa;
+  --portal-soft: #5b3c7b;
+  --portal-border: #e1d4ee;
+  --customer-surface: #fff;
+  --customer-secondary-bg: #f3edf8;
+  --customer-background-glow: rgba(153, 108, 194, .15);
+  --customer-nav-active-text: #68458a;
+  --customer-nav-active-bg: #f0e6f7;
+  --customer-nav-active-border: #d8c2e8;
+  --customer-input-border: #dacbe5;
+  --customer-primary-bg: #8055aa;
+}
