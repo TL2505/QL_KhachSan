@@ -308,6 +308,8 @@ test('Bookings module renders booking history table with required columns and fi
 // =============================================================================
 test('Profile module contains all required input IDs and btn-save-profile re-enables reliably in try...finally', async () => {
   const env = setupMockEnvironment();
+  const { api } = await loadModule('public/api.js');
+  const savedGet = api.get, savedPut = api.put;
   try {
     const { renderProfile } = await loadModule('public/js/customer/profile.js');
     const container = env.getOrCreate('view-container');
@@ -323,6 +325,9 @@ test('Profile module contains all required input IDs and btn-save-profile re-ena
       address: '123 Lê Lợi, Quận 1, TP.HCM'
     };
 
+    const profile = {...session, customerId:13, identitySaved:true};
+    api.get = async path => { assert.equal(path,'/customer-portal/profile'); return profile; };
+    api.put = async (path,body) => { assert.equal(path,'/customer-portal/profile'); return {...profile,...body}; };
     await renderProfile(container, session);
 
     // Verify all mandatory element IDs
@@ -350,7 +355,7 @@ test('Profile module contains all required input IDs and btn-save-profile re-ena
     assert.equal(fullname.value, 'Nguyễn Văn An');
     assert.equal(phone.value, '0901234567');
     assert.equal(email.value, 'an.nguyen@example.com');
-    assert.equal(idcard.value, '079090001234');
+    assert.equal(idcard.value, '', 'Stored identity numbers must not be loaded into the page');
     assert.equal(dob.value, '1990-05-15');
     assert.equal(address.value, '123 Lê Lợi, Quận 1, TP.HCM');
 
@@ -364,8 +369,16 @@ test('Profile module contains all required input IDs and btn-save-profile re-ena
     // Button MUST NOT be stuck in disabled state
     assert.equal(btn.disabled, false, '#btn-save-profile must be re-enabled after submission');
     assert.equal(btn.getAttribute('aria-busy'), null, 'aria-busy must be cleared');
-    assert.match(statusBox.innerHTML, /thành công/i, 'Status box must display confirmation');
+    assert.match(statusBox.textContent, /thành công/i, 'Status box must display confirmation');
+    api.put = async () => { throw new Error('Synthetic save failure'); };
+    idcard.value = '000000000000';
+    await form.dispatchEvent({type:'submit',preventDefault(){}});
+    assert.match(statusBox.textContent,/Synthetic save failure/);
+    assert.equal(btn.disabled,false);
+    assert.equal(localStorage.getItem('aurelia_profile_13'),null,'Failed identity updates must never be cached');
+    assert.equal((localStorage.getItem('hotel_auth_session') || '').includes('000000000000'),false);
   } finally {
+    api.get = savedGet; api.put = savedPut;
     env.teardown();
   }
 });
@@ -444,11 +457,11 @@ test('portal-app.js configures 5 customer tabs and handles view routing cleanly'
   const portalAppSource = fs.readFileSync(path.join(webUiDir, 'portal-app.js'), 'utf-8');
 
   // Verify menus.CUSTOMER contains all 5 required modules
-  assert.match(portalAppSource, /\['dashboard',\s*'Tổng quan & Hạng thẻ'/);
-  assert.match(portalAppSource, /\['bookings',\s*'Lịch sử đặt phòng'/);
-  assert.match(portalAppSource, /\['concierge',\s*'Dịch vụ & Ví ưu đãi'/);
-  assert.match(portalAppSource, /\['profile',\s*'Thông tin cá nhân'/);
-  assert.match(portalAppSource, /\['security',\s*'Bảo mật & Mật khẩu'/);
+  assert.match(portalAppSource, /\['dashboard',\s*'Tổng quan'/);
+  assert.match(portalAppSource, /\['bookings',\s*'Đặt phòng'/);
+  assert.match(portalAppSource, /\['concierge',\s*'Dịch vụ & ưu đãi'/);
+  assert.match(portalAppSource, /\['profile',\s*'Hồ sơ'/);
+  assert.match(portalAppSource, /\['security',\s*'Bảo mật'/);
 
   // Verify Auth Guard logic
   assert.match(portalAppSource, /localStorage\.getItem\(['"]auth_token['"]\)/, 'Auth Guard must check auth_token');

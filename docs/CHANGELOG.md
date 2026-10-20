@@ -1,5 +1,20 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-20] — @codex — CCCD scanning in the customer's own profile
+
+- Removed the redundant shared title bar on the customer profile tab, retaining the profile form's own heading.
+- Placed the member account information card above the profile inputs on desktop and mobile.
+- Positioned the scanner after the personal information fields and before the save controls.
+- Added local QR-image decoding and QR-reader text input, review-before-apply, clearing scan data, and an optional customer OCR gateway using the existing internal vision service. Bundled jsQR 1.4.0 and its Apache-2.0 license for offline QR decoding.
+- Replaced profile access through browser-selected customer IDs and unconditional local success/cache with authenticated own-profile GET/PUT, transactional user/customer updates, encrypted identity writes, and honest API failure feedback. Profile reads expose only whether an identity is saved, and no longer claim identity verification.
+- Verified a synthetic QR image in the browser, review/application without automatic persistence, successful profile save, and honest degradation when OCR is not configured. Backend tests cover customer/staff isolation, input validation, ownership, vault encryption, preserving a blank identity and rollback on identity conflicts.
+
+## [2026-10-20] — @codex — Compact customer portal header
+
+- Consolidated the customer account controls into the main navbar, leaving one brand and one row of shorter navigation tabs. Removed duplicate sidebar branding, content eyebrow and repeated return/close links from the customer layout.
+- Retained the existing account/logout elements and restored their sidebar placement outside the customer portal. Added compact mobile controls and horizontal navigation scrolling.
+- Verified the customer portal using `customer_test` at desktop, 390px and 320px widths; checked that account controls remain within the header and the page does not overflow horizontally.
+
 ## [2026-10-20] — @codex — Browser verification of administrator login
 
 - Reproduced valid administrator sessions being cleared by customer-only notification HTTP 401 responses and static scripts being blocked by the shared unauthenticated API rate limit. Scoped lifecycle notifications to customers and excluded static handlers from that API budget while retaining API limits and security headers.

@@ -866,6 +866,13 @@ These routes support Phase 1 folio routing and the OOO-room manager override:
       "meta": { "timestamp": "2026-10-14T04:20:00Z" }
     }
     ```
+# Own profile and CCCD scanning (2026-10-20)
+
+- `GET /api/v1/customer-portal/profile` requires a CUSTOMER bearer token. Returns `customerId`, `fullName`, `phone`, `email`, `address`, `dateOfBirth` (ISO date or null), and `identitySaved`. It never returns decrypted identity numbers or document images. Responses use `Cache-Control: no-store`.
+- `PUT /api/v1/customer-portal/profile` accepts `fullName`, `phone`, `email`, optional `address`, `dateOfBirth`, and `identityCard`. The authenticated user selects the linked customer; body IDs are not used. A blank/null identity preserves the current vault value. A new value is encrypted through the existing identity vault, with old raw/face artifacts cleared. User/customer changes and vault writes commit together. Returns the same projection as GET after successful commit. Invalid data returns 400, duplicate email/identity returns 409, and unavailable persistence returns 503.
+- `POST /api/v1/customer-portal/identity/scan` is a CUSTOMER-only OCR gateway accepting `{ "image_base64": "<JPEG/PNG Base64>", "document_type": "VIETNAMESE_CCCD" }`, with a decoded maximum of 5 MB. It returns the existing OCR fields (`id_card`, `full_name`, `dob`, `address`), does not persist the image/result, and requires the existing configured internal AI transport. Unavailable OCR returns 504; it does not fabricate extracted fields. Staff-only `/ai/id-ocr` and face verification permissions are unchanged.
+- The profile page also decodes CCCD QR images locally using bundled jsQR 1.4.0, or accepts pipe-delimited output from a QR reader. Both QR and OCR results require review and explicit application before the normal save. Neither scanning nor saving marks the document as verified; physical verification remains a Front Desk workflow. The browser does not cache identity numbers, images or scan results in local/session storage.
+
 # Public room status labels (2026-10-16)
 
 `GET /api/v1/rooms/availability?check_in=YYYY-MM-DD&check_out=YYYY-MM-DD&include_status=true`

@@ -21,12 +21,17 @@ class AiCheckinControllerTest {
         });
         var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         var context=server.createContext("/api/v1/ai/",controller);context.getFilters().add(new JwtFilter());server.start();
+        server.createContext("/api/v1/customer-portal/identity/scan",controller).getFilters().add(new JwtFilter());
         try{
             String base="http://127.0.0.1:"+server.getAddress().getPort()+"/api/v1/ai/";
             var client=HttpClient.newHttpClient();
             String staff=JwtTokenUtil.issueToken(27,"synthetic-staff","front_desk"),guest=JwtTokenUtil.issueToken(28,"synthetic-guest","guest");
             byte[] png={(byte)137,80,78,71,13,10,26,10};String image=Base64.getEncoder().encodeToString(png);
             String ocr=new Gson().toJson(Map.of("image",image));
+            String profileUrl="http://127.0.0.1:"+server.getAddress().getPort()+"/api/v1/customer-portal/identity/scan";
+            String customer=JwtTokenUtil.issueToken(29,"synthetic-customer","CUSTOMER");
+            assertEquals(401,post(client,profileUrl,ocr,null).statusCode());
+            assertEquals(403,post(client,profileUrl,ocr,staff).statusCode());
             assertEquals(401,post(client,base+"id-ocr",ocr,null).statusCode());
             assertEquals(403,post(client,base+"id-ocr",ocr,guest).statusCode());
             assertEquals(0,calls.get());
@@ -40,6 +45,11 @@ class AiCheckinControllerTest {
             var offline=post(client,base+"face-verify",new Gson().toJson(Map.of("id_photo",image,"live_face",image)),staff);
             assertEquals(504,offline.statusCode());assertTrue(offline.body().contains(AiServiceClient.MANUAL_VERIFICATION));
             assertEquals(200,post(client,base+"id-ocr",ocr,staff).statusCode(),"Core request handling survives AI outage");
+            var ownScan=post(client,profileUrl,ocr,customer);
+            assertEquals(200,ownScan.statusCode());
+            assertEquals("no-store",ownScan.headers().firstValue("Cache-Control").orElseThrow());
+            assertEquals(400,post(client,profileUrl,"{\"image\":\"invalid\"}",customer).statusCode());
+            assertEquals(403,post(client,base+"face-verify",ocr,customer).statusCode());
         }finally{server.stop(0);}
     }
     private HttpResponse<String> post(HttpClient client,String uri,String body,String token) throws Exception {

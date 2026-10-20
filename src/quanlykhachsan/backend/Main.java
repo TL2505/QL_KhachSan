@@ -82,6 +82,7 @@ public class Main {
         registerContext(server, ipRateLimiter, "/api/v1/customer-portal", new quanlykhachsan.backend.customer.CustomerPortalController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
 
         var aiCheckin = new quanlykhachsan.backend.ai.AiCheckinController();
+        registerContext(server, ipRateLimiter, "/api/v1/customer-portal/identity/scan", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/ai/id-ocr", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/ai/face-verify", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
         var concierge = new quanlykhachsan.backend.ai.VirtualConciergeController();

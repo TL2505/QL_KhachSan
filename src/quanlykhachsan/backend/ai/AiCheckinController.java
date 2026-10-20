@@ -29,9 +29,15 @@ public final class AiCheckinController implements HttpHandler {
         }
     }
     @Override public void handle(HttpExchange exchange) throws IOException {
-        if(!SecurityUtil.hasPermission(exchange,1,2))return;
         String path=exchange.getRequestURI().getPath();
-        boolean ocr=path.equals("/api/v1/ai/id-ocr");
+        boolean profileOcr=path.equals("/api/v1/customer-portal/identity/scan");
+        if(profileOcr){
+            if(!"CUSTOMER".equalsIgnoreCase(String.valueOf(exchange.getAttribute("role")))){
+                ApiResponseUtil.sendError(exchange,403,"ERR_403_FORBIDDEN","Customer access required");return;
+            }
+        }else if(!SecurityUtil.hasPermission(exchange,1,2))return;
+        exchange.getResponseHeaders().set("Cache-Control","no-store");
+        boolean ocr=profileOcr||path.equals("/api/v1/ai/id-ocr");
         if(!ocr&&!path.equals("/api/v1/ai/face-verify")){ApiResponseUtil.sendError(exchange,404,"ERR_404_NOT_FOUND","Route not found");return;}
         if(!exchange.getRequestMethod().equals("POST")){ApiResponseUtil.sendError(exchange,405,"ERR_405_METHOD_NOT_ALLOWED","Method not allowed");return;}
         byte[] bytes=exchange.getRequestBody().readNBytes(14_000_001);

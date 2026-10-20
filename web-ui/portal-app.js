@@ -95,11 +95,11 @@ const menus = {
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   CUSTOMER: [
-    ['dashboard', 'Tổng quan & Hạng thẻ', 'layout-dashboard'],
-    ['bookings', 'Lịch sử đặt phòng', 'calendar-check'],
-    ['concierge', 'Dịch vụ & Ví ưu đãi', 'sparkles'],
-    ['profile', 'Thông tin cá nhân', 'user-cog'],
-    ['security', 'Bảo mật & Mật khẩu', 'shield-check']
+    ['dashboard', 'Tổng quan', 'layout-dashboard'],
+    ['bookings', 'Đặt phòng', 'calendar-check'],
+    ['concierge', 'Dịch vụ & ưu đãi', 'sparkles'],
+    ['profile', 'Hồ sơ', 'user-cog'],
+    ['security', 'Bảo mật', 'shield-check']
   ]
 };
 
@@ -255,8 +255,21 @@ export function setupAuthTabs() {
   setupAuthSwitching();
 }
 
+function placeAccountControls(isCustomer) {
+  const account = byId('portal-account');
+  const header = byId('customer-header-account');
+  const sidebar = byId('portal-sidebar');
+  if (!account || !header || !sidebar) return;
+  const destination = isCustomer ? header : sidebar;
+  if (account.parentElement !== destination && typeof destination.appendChild === 'function') {
+    destination.appendChild(account);
+  }
+  header.hidden = !isCustomer;
+}
+
 function showAuth(tab = 'login') {
   try {
+    placeAccountControls(false);
     if (typeof document !== 'undefined' && document.body) {
       document.body.classList.remove('customer-portal');
       document.body.classList.remove('admin-portal');
@@ -344,7 +357,9 @@ function openView(session, role, tab) {
     renderNav(session, tab);
 
     const heading = byId('portal-heading');
-    if (heading) heading.textContent = menus[role]?.find(([key]) => key === tab)?.[1] || titles[tab] || 'Tổng quan';
+    if (heading) heading.textContent = (role === 'CUSTOMER' ? titles[tab] : menus[role]?.find(([key]) => key === tab)?.[1]) || 'Tổng quan';
+    const contentBar = heading?.closest?.('.portal-content-bar');
+    if (contentBar) contentBar.style.display = role === 'CUSTOMER' && tab === 'profile' ? 'none' : '';
 
     const msg = byId('portal-message');
     if (msg) msg.hidden = true;
@@ -602,6 +617,7 @@ function enterPortal(session) {
     }
 
     const isCustomer = role === 'CUSTOMER';
+    placeAccountControls(isCustomer);
     if (typeof document !== 'undefined' && document.body) {
       document.body.classList.toggle('customer-portal', isCustomer);
       document.body.classList.toggle('admin-portal', role === 'ADMIN');

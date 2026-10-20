@@ -48,14 +48,14 @@
   <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
 </head>
 <body class="portal-body">
-  <header class="portal-topbar">
-    <a class="portal-brand" href="index.html" aria-label="Về trang khách sạn Aurelia Grand Palace">
+  <header class="portal-topbar navbar">
+    <a class="portal-brand navbar-start" href="index.html" aria-label="Về trang khách sạn Aurelia Grand Palace">
       <i class="portal-brand-back" data-lucide="arrow-left" aria-hidden="true"></i>
       <span class="portal-brand-mark royal-shield-emblem"><i data-lucide="shield-check"></i></span>
       <span><strong>Aurelia <em>Palace</em></strong><small>5★ LUXURY HOTEL & RESORT</small></span>
     </a>
 
-    <div class="portal-topbar-actions flex items-center gap-3">
+    <div class="portal-topbar-actions navbar-end flex items-center gap-3">
       <!-- Task 15: Lifecycle Notification Tray -->
       <div class="relative inline-block">
         <button type="button" id="btn-notification-bell" class="portal-icon-btn relative w-10 h-10 rounded-full border border-amber-500/30 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 flex items-center justify-center transition-all shadow-md cursor-pointer" aria-label="Thông báo vòng đời" title="Thông báo vòng đời">
@@ -81,6 +81,7 @@
       <button type="button" class="portal-theme-toggle" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
         <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
       </button>
+      <div id="customer-header-account" hidden></div>
 
       <!-- Task 13 test compatibility: hidden reference -->
       <a href="index.html" class="portal-close-circle hidden" style="display:none !important;" aria-hidden="true" tabindex="-1"></a>
@@ -187,10 +188,10 @@
     </section>
 
     <section id="app-view" class="portal-shell" hidden aria-label="Cổng quản lý Aurelia">
-      <aside class="portal-sidebar">
+      <aside id="portal-sidebar" class="portal-sidebar">
         <p id="sidebar-role" class="sidebar-caption">CỔNG THÀNH VIÊN</p>
         <nav id="portal-nav" class="portal-nav" role="tablist" aria-label="Điều hướng cổng"></nav>
-        <div class="sidebar-account"><div class="account-avatar" id="account-avatar">A</div><div class="account-meta"><strong id="user-display-name">Aurelia</strong><small id="account-role">Thành viên</small></div><button id="logout-button" type="button" aria-label="Đăng xuất"><i data-lucide="log-out"></i></button></div>
+        <div id="portal-account" class="sidebar-account"><div class="account-avatar" id="account-avatar">A</div><div class="account-meta"><strong id="user-display-name">Aurelia</strong><small id="account-role">Thành viên</small></div><button id="logout-button" type="button" aria-label="Đăng xuất"><i data-lucide="log-out"></i></button></div>
       </aside>
       <section class="portal-content">
         <div class="portal-content-bar">

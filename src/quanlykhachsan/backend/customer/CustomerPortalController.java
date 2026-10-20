@@ -18,11 +18,16 @@ import quanlykhachsan.backend.utils.PortalValidation;
 /** Customer portal API. Customer identity is resolved from the authenticated session. */
 public final class CustomerPortalController implements HttpHandler {
     @Override public void handle(HttpExchange exchange) throws IOException {
+        exchange.getResponseHeaders().set("Cache-Control", "no-store");
         if (!"CUSTOMER".equalsIgnoreCase(String.valueOf(exchange.getAttribute("role")))) {
             ApiResponseUtil.write(exchange, 403, ApiResponseUtil.error("Customer access required"));
             return;
         }
         String path = exchange.getRequestURI().getPath();
+        if ("PUT".equalsIgnoreCase(exchange.getRequestMethod()) && path.equals("/api/v1/customer-portal/profile")) {
+            updateProfile(exchange);
+            return;
+        }
         if ("POST".equalsIgnoreCase(exchange.getRequestMethod()) && path.equals("/api/v1/customer-portal/bookings")) {
             createBooking(exchange);
             return;
@@ -51,18 +56,25 @@ public final class CustomerPortalController implements HttpHandler {
     }
 
     private static JsonObject profile(Connection c, int userId) throws Exception {
-        try (PreparedStatement q = c.prepareStatement(
-                "SELECT COALESCE(NULLIF(u.full_name,''),c.full_name),COALESCE(NULLIF(u.phone,''),c.phone),COALESCE(NULLIF(u.email,''),c.email) "
-              + "FROM users u JOIN customers c ON c.id=u.customer_id WHERE u.id=?")) {
-            q.setInt(1, userId);
-            try (ResultSet r = q.executeQuery()) {
-                if (!r.next()) throw new IllegalStateException("Customer profile is not linked");
-                JsonObject result = new JsonObject();
-                result.addProperty("fullName", r.getString(1));
-                result.addProperty("phone", r.getString(2));
-                result.addProperty("email", r.getString(3));
-                return result;
+        return CustomerProfileService.read(c, userId);
+    }
+
+    private static void updateProfile(HttpExchange exchange) throws IOException {
+        Object userId = exchange.getAttribute("userId");
+        if (!(userId instanceof Number user)) { ApiResponseUtil.write(exchange,401,ApiResponseUtil.error("Invalid session")); return; }
+        try {
+            var update = CustomerProfileService.validate(PortalValidation.body(exchange));
+            try (var c = DatabaseConnection.getConnection()) {
+                var result = CustomerProfileService.save(c,user.intValue(),update,GuestIdentityVaultDao.configured());
+                ApiResponseUtil.write(exchange,200,ApiResponseUtil.successWithData(result));
             }
+        } catch (IllegalArgumentException ex) {
+            ApiResponseUtil.write(exchange,400,ApiResponseUtil.error("Thông tin hồ sơ không hợp lệ. Kiểm tra số điện thoại, email, CCCD và ngày sinh."));
+        } catch (java.sql.SQLException ex) {
+            boolean conflict = ex.getSQLState()!=null && ex.getSQLState().startsWith("23");
+            ApiResponseUtil.write(exchange,conflict?409:503,ApiResponseUtil.error(conflict?"Email hoặc số giấy tờ đã được sử dụng.":"Chưa thể lưu hồ sơ. Vui lòng thử lại."));
+        } catch (IllegalStateException ex) {
+            ApiResponseUtil.write(exchange,503,ApiResponseUtil.error("Chưa thể lưu hồ sơ. Vui lòng liên hệ lễ tân."));
         }
     }
 
