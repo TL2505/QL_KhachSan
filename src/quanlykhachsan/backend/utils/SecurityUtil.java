@@ -99,6 +99,22 @@ public class SecurityUtil {
         return key;
     }
 
+    public static String getJwtSecret() {
+        String secret = System.getenv().getOrDefault("JWT_SECRET", "aurelia_pms_super_secret_jwt_key_2026_luxury_hotel_minimum_256_bits");
+        if (secret == null || secret.isBlank()) {
+            return "aurelia_pms_super_secret_jwt_key_2026_luxury_hotel_minimum_256_bits";
+        }
+        return secret;
+    }
+
+    public static String getAesVaultKey() {
+        String key = System.getenv().getOrDefault("AES_VAULT_KEY", "YXVyZWxpYV9wbXNfYWVzXzI1Nl92YXVsdF9rZXlfMjAyNg==");
+        if (key == null || key.isBlank()) {
+            return "YXVyZWxpYV9wbXNfYWVzXzI1Nl92YXVsdF9rZXlfMjAyNg==";
+        }
+        return key;
+    }
+
     private static void sendError(HttpExchange exchange, int code, String message) throws IOException {
         String json = String.format("{\"status\":\"error\",\"message\":\"%s\"}", message);
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);

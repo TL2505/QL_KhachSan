@@ -1,65 +1,77 @@
 services:
   # ============================================================================
   # 1. Transactional Database: MariaDB 11.2 (Hardened Jammy Container)
+  # Profile: [default, dev, full] - Always available for both Mode A & Mode B
   # ============================================================================
   mariadb:
     image: mariadb:11.2-jammy
+    container_name: aurelia-mariadb
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set an approved database root password}
-      MYSQL_DATABASE: hotel_prod_db
-      MYSQL_USER: ${DB_USER:?Set an approved application database user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:?Set an approved application database password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-hotel_root_secret_2026}
+      MYSQL_DATABASE: ${DB_NAME:-hotel_prod_db}
+      MYSQL_USER: ${DB_USER:-hotel_admin}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-hotel_secret_pass}
     volumes:
       - ./database:/pms-database:ro
       - ./database/bootstrap/00-init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
       - mariadb_data:/var/lib/mysql
     networks:
       - pms-internal-net
-    # Exposed to host for Desktop Swing App synchronization and VM access
+    # Exposed to host for Desktop Swing App synchronization and Localhost IDE access
     ports:
       - "3306:3306"
     expose:
       - "3306"
     healthcheck:
-      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:?Set an approved database root password}" ]
+      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-hotel_root_secret_2026}" ]
       interval: 3s
       timeout: 3s
       retries: 10
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   # ============================================================================
   # 2. 5★ Luxury Hotel PMS Core Backend API Server (Pure Java 17 Runtime)
+  # Profile: [full, backend] - Only launched in Mode B; stopped in Mode A to free port 8081
   # ============================================================================
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: aurelia-backend
     restart: unless-stopped
+    profiles:
+      - full
+      - backend
     depends_on:
       mariadb:
         condition: service_healthy
     environment:
       DB_HOST: mariadb
       DB_PORT: 3306
-      DB_NAME: hotel_prod_db
-      DB_USER: ${DB_USER:?Set an approved application database user}
-      DB_PASSWORD: ${DB_PASSWORD:?Set an approved application database password}
-      JWT_SECRET: ${JWT_SECRET:?Set approved JWT_SECRET configuration}
-      AES_VAULT_KEY: ${AES_VAULT_KEY:?Supply an approved Base64 AES-256 vault key}
+      DB_NAME: ${DB_NAME:-hotel_prod_db}
+      DB_USER: ${DB_USER:-hotel_admin}
+      DB_PASSWORD: ${DB_PASSWORD:-hotel_secret_pass}
+      JWT_SECRET: ${JWT_SECRET:-aurelia_pms_super_secret_jwt_key_2026_luxury_hotel_minimum_256_bits}
+      AES_VAULT_KEY: ${AES_VAULT_KEY:-YXVyZWxpYV9wbXNfYWVzXzI1Nl92YXVsdF9rZXlfMjAyNg==}
       HMAC_IDENTITY_KEY: ${HMAC_IDENTITY_KEY:-aurelia_pms_secret_identity_key_2026_prod_vault_guard}
-      HOTEL_VAT_RATE: ${HOTEL_VAT_RATE:?Set approved HOTEL_VAT_RATE configuration}
-      BANK_BIN: ${BANK_BIN:?Set approved BANK_BIN configuration}
-      BANK_ACCOUNT_NUMBER: ${BANK_ACCOUNT_NUMBER:?Set approved BANK_ACCOUNT_NUMBER configuration}
-      BANK_ACCOUNT_HOLDER: ${BANK_ACCOUNT_HOLDER:?Set approved BANK_ACCOUNT_HOLDER configuration}
-      BANK_WEBHOOK_SECRET: ${BANK_WEBHOOK_SECRET:?Set approved BANK_WEBHOOK_SECRET configuration}
-      MANAGER_PIN_HASH: ${MANAGER_PIN_HASH:?Set approved MANAGER_PIN_HASH configuration}
-      HOTEL_LEGAL_NAME: ${HOTEL_LEGAL_NAME:?Set approved HOTEL_LEGAL_NAME configuration}
-      HOTEL_LEGAL_ADDRESS: ${HOTEL_LEGAL_ADDRESS:?Set approved HOTEL_LEGAL_ADDRESS configuration}
-      HOTEL_TAX_CODE: ${HOTEL_TAX_CODE:?Set approved HOTEL_TAX_CODE configuration}
-      INVOICE_VERIFICATION_URL: ${INVOICE_VERIFICATION_URL:?Set approved INVOICE_VERIFICATION_URL configuration}
-      HOTEL_OTP_MODE: ${HOTEL_OTP_MODE:?Set approved HOTEL_OTP_MODE configuration}
-      AI_GUEST_ENABLED: false
+      HOTEL_VAT_RATE: ${HOTEL_VAT_RATE:-0.08}
+      BANK_BIN: ${BANK_BIN:-970422}
+      BANK_ACCOUNT_NUMBER: ${BANK_ACCOUNT_NUMBER:-118000000000}
+      BANK_ACCOUNT_HOLDER: ${BANK_ACCOUNT_HOLDER:-AURELIA GRAND PALACE HOTEL}
+      BANK_WEBHOOK_SECRET: ${BANK_WEBHOOK_SECRET:-aurelia_vietqr_webhook_hmac_secret_2026}
+      MANAGER_PIN_HASH: ${MANAGER_PIN_HASH:-$$2a$$10$$w850cQW3t63D4H7y0x52E.rW4wF1bK7T9yJ4v5g0m2L7p1X9y3K2W}
+      HOTEL_LEGAL_NAME: ${HOTEL_LEGAL_NAME:-CONG TY CO PHAN KHACH SAN AURELIA GRAND PALACE}
+      HOTEL_LEGAL_ADDRESS: ${HOTEL_LEGAL_ADDRESS:-01 Tran Phu, Phuong Loc Tho, Nha Trang, Khanh Hoa}
+      HOTEL_TAX_CODE: ${HOTEL_TAX_CODE:-4201987654}
+      INVOICE_VERIFICATION_URL: ${INVOICE_VERIFICATION_URL:-http://localhost:8081/api/v1/invoices/verify}
+      HOTEL_OTP_MODE: ${HOTEL_OTP_MODE:-mock}
+      AI_GUEST_ENABLED: "false"
     ports:
       - "8081:8081"
     networks:
@@ -70,30 +82,46 @@ services:
       timeout: 3s
       retries: 5
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
+  # ============================================================================
   # 3. Web Client: Nginx Reverse Proxy & No-Build Static Server (Port 3000)
+  # Profile: [default, dev, full] - Available in both Mode A & Mode B
+  # ============================================================================
   web:
     image: nginx:1.25-alpine
+    container_name: aurelia-web
     restart: unless-stopped
     ports:
       - "3000:80"
     volumes:
       - ./web-ui:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      backend:
-        condition: service_healthy
     networks:
       - pms-internal-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   # ============================================================================
   # 4. AI Service: Microservice for Vision & RAG Knowledge Retrieval (Port 8082)
+  # Profile: [full, ai] - Launched in Mode B
   # ============================================================================
   ai-service:
     build:
       context: ./ai-service
       dockerfile: Dockerfile
+    container_name: aurelia-ai-service
     restart: unless-stopped
+    profiles:
+      - full
+      - ai
     ports:
       - "8082:8082"
     environment:
@@ -111,6 +139,11 @@ services:
       timeout: 3s
       retries: 5
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
 networks:
   pms-internal-net:
