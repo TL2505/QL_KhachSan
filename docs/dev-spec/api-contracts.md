@@ -229,6 +229,17 @@ curl -X POST http://localhost:8081/api/v1/customers \
 - **Auth:** Bearer JWT
 - **Response:** `data` contains the newest 50 matching customer profiles, with `id`, `full_name`, `identity_card`, `phone`, `email`, `address`, `loyalty_level`, and `created_at`. Optional contact fields may be `null`; clients must not infer that missing fields represent empty profiles. The collection uses snake_case field names.
 
+#### Staff membership directory (read-only)
+
+- `GET /api/v1/loyalty/members` returns `data.members` and `data.summary` for all customer records, independently of the customer-search endpoint's 50-row limit. The staff UI searches, filters and paginates this complete result locally; summary counts refer to the complete directory.
+- Access requires a verified administrator or front-desk/staff JWT (role IDs 1 or 2). `X-User-Role` cannot grant access. Customer and other departmental accounts cannot use these routes.
+- Member fields: `id`, `fullName`, `phone`, `loyaltyLevel`, `loyaltyPoints` (available balance), `totalLoyaltyPoints` (stored cumulative points), and `joinedAt` (the existing customer `created_at`). Nullable fields remain `null`. Tiers and balances are read from storage without recalculation, promotion, redemption or policy changes.
+- `data.summary` contains integer counts for `total`, `Silver`, `Gold`, `VIP`, and `other`. Known tier names are counted case-insensitively. Legacy values such as `Member` and missing ranks remain distinct in member rows and contribute to `other`, rather than being silently converted to Silver.
+- `GET /api/v1/loyalty/members/{customerId}/history` returns `data.member` and `data.history`. History is read from the existing `loyalty_histories` ledger, scoped by the bound customer ID, ordered by `created_at DESC, id DESC`. Fields are `id`, `pointsChange` (the stored signed `points` value), `type`, `description`, and `createdAt`. No transactions are reconstructed from point totals.
+- Stored timestamps are ISO local date-time strings in the hotel's database calendar, or `null`; missing dates must not be replaced with the current date.
+- An existing customer without ledger entries returns an empty `history`; an unknown customer returns 404. Invalid/out-of-range IDs return 400 or 404. Database failures return 503 instead of a successful empty directory/history. Non-GET methods return 405 with `Allow: GET`.
+- Existing `/loyalty/customers`, `/loyalty/history/{id}`, redemption, points-award and tier-calculation workflows are unchanged.
+
 ```bash
 curl -X GET "http://localhost:8081/api/v1/customers?search=Tran" \
   -H "Authorization: Bearer <TOKEN>"

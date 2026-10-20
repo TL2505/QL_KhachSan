@@ -1,5 +1,12 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-21] — @codex — Staff membership directory and point history
+
+- Added staff/admin-only read routes for the complete customer membership directory and each customer's existing `loyalty_histories` ledger, with explicit database-error responses. Stored tiers, point balances and join dates are returned without recalculation or fabricated events.
+- Added the staff membership table, name/phone search, tier filters, local pagination, full-directory tier counts and a detail dialog separating cumulative and available points. Legacy/unranked values remain visible separately from Silver/Gold/VIP.
+- Retained the existing Silver/Gold/VIP policy cards and all award/redemption/tier logic. Both served copies use the same staff layout, with scoped dark/light and mobile styles, loading/empty/error states and retry actions.
+- Added regression coverage for more than 50 members, stored-rank preservation, signed ledger entries, missing data, authorization against spoofed role headers, read-only methods and database failures.
+
 ## [2026-10-20] — @codex — Staff customer directory fields and summary alignment
 
 - Included existing email and address values in customer collection and keyword-search responses, retaining the current row limit, ordering and search parameters.
