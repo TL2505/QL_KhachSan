@@ -1,4 +1,8 @@
 import { api, getApiBaseUrl } from "../../api.js";
+import { escapeHtml } from "../shared/ui.js";
+
+const customerFullName = customer =>
+    [customer?.fullName, customer?.full_name].find(name => typeof name === 'string' && name.trim())?.trim();
 
 export async function renderCheckout(container, session) {
     container.innerHTML = `
@@ -77,14 +81,30 @@ export async function renderCheckout(container, session) {
                 api.get("/customers")
             ]);
             
-            // Only get checked_in bookings
-            activeBookings = response.filter(b => b.status === "checked_in").map(b => {
-                const r = rooms.find(room => room.id === b.roomId);
-                const c = customers.find(cust => cust.id === b.customerId);
+            const checkedInBookings = response.filter(b => String(b.status || '').toLowerCase() === 'checked_in');
+            const customersById = new Map(customers.map(customer => [String(customer.id), customer]));
+            // The collection contains only the 50 newest profiles. Retrieve older
+            // guests by the booking's customer ID instead of treating them as walk-ins.
+            const missingIds = [...new Set(checkedInBookings.map(b => String(b.customerId)))]
+                .filter(id => Number.isInteger(Number(id)) && Number(id) > 0 && !customerFullName(customersById.get(String(id))));
+            await Promise.all(missingIds.map(async id => {
+                try {
+                    const customer = await api.get(`/customers/${encodeURIComponent(id)}`);
+                    if (String(customer?.id) === String(id)) customersById.set(String(id), customer);
+                } catch (error) {
+                    if (error.status !== 404) throw error;
+                }
+            }));
+
+            activeBookings = checkedInBookings.map(b => {
+                const r = rooms.find(room => String(room.id) === String(b.roomId));
+                const c = customersById.get(String(b.customerId));
                 return {
                     ...b,
                     roomNumber: r ? r.roomNumber : 'N/A',
-                    customerName: c ? c.fullName : 'Khách vãng lai'
+                    customerName: customerFullName(c) || (Number(b.customerId) > 0
+                        ? `Chưa có thông tin khách hàng (KH #${b.customerId})`
+                        : 'Đơn đặt phòng thiếu thông tin khách hàng')
                 };
             });
             
@@ -106,11 +126,11 @@ export async function renderCheckout(container, session) {
                 card.className = "checkout-card";
                 card.innerHTML = `
                     <div class="card-header">
-                        <div class="room-badge">Phòng ${b.roomNumber || 'N/A'}</div>
+                        <div class="room-badge">Phòng ${escapeHtml(b.roomNumber || 'N/A')}</div>
                         <div class="booking-id">#${b.id}</div>
                     </div>
                     <div class="card-body">
-                        <p><span>Khách hàng</span> <strong>${b.customerName || 'Khách vãng lai'}</strong></p>
+                        <p><span>Khách hàng</span> <strong>${escapeHtml(b.customerName)}</strong></p>
                         <p><span>Nhận phòng</span> <strong>${formatDate(b.checkInDate)}</strong></p>
                         <p><span>Trả phòng</span> <strong>${formatDate(b.checkOutDate)}</strong></p>
                     </div>
@@ -130,7 +150,7 @@ export async function renderCheckout(container, session) {
 
         } catch (e) {
             console.error(e);
-            grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--danger);">Lỗi tải dữ liệu: ${e.message}</p>`;
+            grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--danger);">Lỗi tải dữ liệu: ${escapeHtml(e.message)}</p>`;
         }
     };
 
@@ -149,8 +169,8 @@ export async function renderCheckout(container, session) {
             </div>
             <div class="modal-body" id="modal-checkout-form" style="padding-top:10px;">
                 <div style="background: var(--bg-input); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p style="margin: 0 0 8px 0; color: var(--text-muted); font-size: 14px;">Phòng: <strong style="color: var(--text-color); font-size: 16px; float: right;">${b.roomNumber || 'N/A'}</strong></p>
-                    <p style="margin: 0; color: var(--text-muted); font-size: 14px;">Khách hàng: <strong style="color: var(--text-color); font-size: 16px; float: right;">${b.customerName || 'Khách vãng lai'}</strong></p>
+                    <p style="margin: 0 0 8px 0; color: var(--text-muted); font-size: 14px;">Phòng: <strong style="color: var(--text-color); font-size: 16px; float: right;">${escapeHtml(b.roomNumber || 'N/A')}</strong></p>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 14px;">Khách hàng: <strong style="color: var(--text-color); font-size: 16px; float: right;">${escapeHtml(b.customerName)}</strong></p>
                 </div>
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label style="display:block;margin-bottom:5px;font-size:14px;color:var(--text-muted);">Số tiền thu (VNĐ)</label>
@@ -261,5 +281,5 @@ export async function renderCheckout(container, session) {
         });
     };
 
-    loadData();
+    await loadData();
 }
