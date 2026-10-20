@@ -2674,7 +2674,11 @@ export function getStoredCustomerToken() {
       || null;
 }
 
+let headerAccountEvents = null;
+
 export function updateHeaderAuthStatus() {
+  headerAccountEvents?.abort();
+  headerAccountEvents = null;
   if (typeof document === 'undefined') return;
   const token = getStoredCustomerToken();
   let session = getAuthSession();
@@ -2699,29 +2703,52 @@ export function updateHeaderAuthStatus() {
     const safeRole = escapeHtml(rawRole);
     const initial = (rawName.trim()[0] || 'A').toUpperCase();
 
-    // Desktop Header: User Greeting, Member Portal button, and Logout button (Task 11)
+    // Keep account actions together; the booking CTA remains beside this disclosure.
     if (headerContainer) {
       headerContainer.innerHTML = `
-        <div class="flex items-center gap-2.5">
-          <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-amber-500/30 text-amber-200 text-xs font-medium">
-            <span class="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-[11px] shadow-sm">${initial}</span>
-            <span><span data-i18n="Xin chào,">Xin chào,</span> <strong data-user-content class="text-white">${safeName}</strong></span>
+        <details id="header-account-menu" class="header-account">
+          <summary id="header-account-trigger" class="header-account-trigger" aria-controls="header-account-panel">
+            <span class="header-account-avatar" aria-hidden="true">${escapeHtml(initial)}</span>
+            <span class="header-account-greeting"><span data-i18n="Xin chào,">Xin chào,</span> <strong data-user-content>${safeName}</strong></span>
+            <i data-lucide="chevron-down" class="header-account-chevron" aria-hidden="true"></i>
+          </summary>
+          <div id="header-account-panel" class="header-account-panel">
+            <div class="header-account-profile">
+              <strong data-user-content>${safeName}</strong>
+              <span>${safeRole}</span>
+            </div>
+            <a href="portal.html" id="header-member-portal-btn" class="header-account-action">
+              <i data-lucide="layout-dashboard" aria-hidden="true"></i>
+              <span data-i18n="Cổng thành viên">Cổng thành viên</span>
+            </a>
+            <a href="portal.html?view=dashboard" class="hidden" style="display:none !important;" aria-hidden="true"><span data-i18n="Lịch sử đặt phòng">Lịch sử đặt phòng</span></a>
+            <button type="button" id="btn-logout" class="header-account-action header-account-logout">
+              <i data-lucide="log-out" aria-hidden="true"></i>
+              <span data-i18n="Đăng xuất">Đăng xuất</span>
+            </button>
           </div>
-          <a href="portal.html" id="header-member-portal-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 hover:text-white transition-all text-xs font-semibold" aria-label="Cổng thành viên" data-i18n-aria-label="Cổng thành viên">
-            <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-amber-400"></i>
-            <span><span data-i18n="Cổng thành viên">Cổng thành viên</span></span>
-          </a>
-          <a href="portal.html?view=dashboard" class="hidden" style="display:none !important;" aria-hidden="true"><span data-i18n="Lịch sử đặt phòng">Lịch sử đặt phòng</span></a>
-          <button type="button" id="btn-logout" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 hover:text-rose-100 transition-all text-xs font-semibold cursor-pointer" aria-label="Đăng xuất" data-i18n-aria-label="Đăng xuất">
-            <i data-lucide="log-out" class="w-3.5 h-3.5 text-rose-400"></i>
-            <span><span data-i18n="Đăng xuất">Đăng xuất</span></span>
-          </button>
-        </div>
+        </details>
       `;
-      const logoutBtn = document.getElementById('btn-logout');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
+      const accountMenu = document.getElementById('header-account-menu');
+      if (accountMenu) {
+        // Replaced headers release their listeners, including on language changes.
+        headerAccountEvents = new AbortController();
+        const options = { signal: headerAccountEvents.signal };
+        document.addEventListener('pointerdown', event => {
+          if (!accountMenu.contains(event.target)) accountMenu.open = false;
+        }, options);
+        document.addEventListener('keydown', event => {
+          if (event.key === 'Escape' && accountMenu.open) {
+            accountMenu.open = false;
+            document.getElementById('header-account-trigger')?.focus();
+          }
+        }, options);
+        accountMenu.addEventListener('focusout', event => {
+          if (event.relatedTarget && !accountMenu.contains(event.relatedTarget)) accountMenu.open = false;
+        }, options);
       }
+      const logoutBtn = document.getElementById('btn-logout');
+      if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
     } else if (headerLoginBtn) {
       headerLoginBtn.innerHTML = `<i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i><span>${safeName}</span>`;
       headerLoginBtn.title = t('Mở Cổng Quản Lý / Thành Viên');
