@@ -1,5 +1,12 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-21] — @codex — Revert Staff sidebar collapse
+
+- Removed the Staff-only sidebar module, its mandatory portal import, state/storage handlers, tooltips, avatar insertion and layout overrides. Restored the pre-change portal stylesheet and sidebar layout; retained unrelated views, authentication and other roles.
+- Staff no longer renders the shared collapse control or restores the shared collapse preference. Existing Admin/customer controls are preserved. Portal asset versions were advanced to invalidate the affected cached entrypoint and stylesheet.
+- All 95 remaining web tests passed. Chromium verified fresh login/register tabs, login error/retry and success redirection, icons, theme controls, all eight Staff routes, full desktop width despite stale collapse preferences, reload, responsive layouts at 320–1600px, preserved Admin/customer controls and logout. Browser authentication responses were isolated fixtures; Windows/backend authentication was not verified.
+
+
 ## [2026-10-21] — @codex — Collapsible Staff sidebar
 
 - Enhanced the existing Staff sidebar with a keyboard-accessible toggle and a separate persisted collapse preference. Desktop width changes from the existing 248px to 80px; the active item, centered icons, employee avatar and logout remain visible. Vietnamese hover/focus tooltips are positioned outside scrolling navigation so they are not clipped.

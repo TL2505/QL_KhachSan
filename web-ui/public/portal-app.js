@@ -3,7 +3,6 @@ import { loadAdminView } from './js/view-admin.js';
 import { loadStaffView } from './js/view-staff.js';
 import { loadCustomerView } from './js/view-customer.js';
 import { loadProfileView } from './js/view-shared.js';
-import { configureStaffSidebar, refreshStaffSidebar } from './js/staff/sidebar.js';
 import './js/shared/theme.js';
 
 const closeGlobalModal = (modalId = 'global-modal') => {
@@ -270,7 +269,6 @@ function placeAccountControls(isCustomer) {
 
 function showAuth(tab = 'login') {
   try {
-    configureStaffSidebar(false);
     placeAccountControls(false);
     if (typeof document !== 'undefined' && document.body) {
       document.body.classList.remove('customer-portal');
@@ -330,6 +328,8 @@ function renderNav(session, activeTab) {
     if (accountRole) accountRole.textContent = roleNames[role] || 'Thành viên';
 
     const sidebarToggle = byId('admin-sidebar-toggle');
+    // Staff keeps its original full menu; collapse controls belong to other portals.
+    if (sidebarToggle && role === 'STAFF') sidebarToggle.remove?.();
     if (sidebarToggle && role !== 'STAFF') {
       const sidebar = byId('portal-sidebar');
       if (sidebar) {
@@ -380,7 +380,6 @@ function renderNav(session, activeTab) {
       });
     }
 
-    if (role === 'STAFF') refreshStaffSidebar();
     if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
   } catch (err) {
     console.error('Lỗi render thanh điều hướng:', err);
@@ -668,7 +667,6 @@ function enterPortal(session) {
       document.body.classList.toggle('admin-portal', role === 'ADMIN');
       document.body.classList.toggle('staff-portal', role === 'STAFF');
     }
-    configureStaffSidebar(role === 'STAFF');
 
     const appView = byId('app-view');
     const authView = byId('auth-view');
