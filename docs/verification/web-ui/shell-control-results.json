@@ -1,0 +1,134 @@
+[
+  {
+    "theme": "light",
+    "width": 1225,
+    "admin": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "none",
+      "logoutWidth": "40px",
+      "user": "none"
+    },
+    "staff": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "none",
+      "logoutWidth": "40px",
+      "user": "none"
+    }
+  },
+  {
+    "theme": "light",
+    "width": 768,
+    "admin": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "flex",
+      "logoutWidth": "40px",
+      "user": "flex"
+    },
+    "staff": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "flex",
+      "logoutWidth": "40px",
+      "user": "flex"
+    }
+  },
+  {
+    "theme": "light",
+    "width": 375,
+    "admin": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "flex",
+      "logoutWidth": "40px",
+      "user": "none"
+    },
+    "staff": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "flex",
+      "logoutWidth": "40px",
+      "user": "none"
+    }
+  },
+  {
+    "theme": "dark",
+    "width": 1225,
+    "admin": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "none",
+      "logoutWidth": "40px",
+      "user": "none"
+    },
+    "staff": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "none",
+      "logoutWidth": "40px",
+      "user": "none"
+    }
+  },
+  {
+    "theme": "dark",
+    "width": 768,
+    "admin": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "flex",
+      "logoutWidth": "40px",
+      "user": "flex"
+    },
+    "staff": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "flex",
+      "logoutWidth": "40px",
+      "user": "flex"
+    }
+  },
+  {
+    "theme": "dark",
+    "width": 375,
+    "admin": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "flex",
+      "logoutWidth": "40px",
+      "user": "none"
+    },
+    "staff": {
+      "toggleWidth": "34px",
+      "toggleHeight": "34px",
+      "toggleBorder": "9px",
+      "toggleBackground": "rgba(0, 0, 0, 0)",
+      "account": "flex",
+      "logoutWidth": "40px",
+      "user": "none"
+    }
+  }
+]

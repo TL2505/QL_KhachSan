@@ -1,5 +1,5 @@
 // Customer Views Module Coordinator
-import { renderDashboard } from "./customer/dashboard.js?v=3.6.5";
+import { renderDashboard } from "./customer/dashboard.js?v=3.6.18";
 import { renderBookings } from "./customer/bookings.js";
 import { renderProfile } from "./customer/profile.js";
 import { renderSecurity } from "./customer/security.js";
@@ -9,7 +9,7 @@ import { renderPromotions } from "./customer/promotions.js";
 import { renderChat } from "./customer/chat.js";
 import { renderConcierge } from "./customer/concierge.js";
 import { api } from "../api.js";
-import { getLegacyTierInfo } from "./customer/tier-helper.js";
+import { getLegacyTierInfo, summarizeLoyaltyHistory } from "./customer/tier-helper.js";
 
 export async function loadCustomerView(tab = "dashboard") {
   const container = document.getElementById("view-container");
@@ -37,10 +37,7 @@ export async function loadCustomerView(tab = "dashboard") {
     const customerId = session.customerId || session.userId || session.id || 1;
     try {
       const history = await api.get(`/loyalty/history/${customerId}`);
-      const points = Array.isArray(history) ? history.reduce((sum, item) => {
-        const amount = Number(item.pointsChanged || item.points || 0);
-        return sum + ((item.changeType === "earn" || item.type === "earn") ? amount : -amount);
-      }, 0) : 0;
+      const { totalPoints: points } = summarizeLoyaltyHistory(history);
       document.body.dataset.customerTier = getLegacyTierInfo(Math.max(0, points)).name.toLowerCase();
     } catch {
       // Keep the neutral member palette when loyalty data is unavailable.

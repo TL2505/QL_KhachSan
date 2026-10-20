@@ -1,7 +1,7 @@
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js';
 import { loadAdminView } from './js/view-admin.js?v=3.6.4';
 import { loadStaffView } from './js/view-staff.js';
-import { loadCustomerView } from './js/view-customer.js?v=3.6.5';
+import { loadCustomerView } from './js/view-customer.js?v=3.6.18';
 import { loadProfileView } from './js/view-shared.js';
 import './js/shared/theme.js';
 import './js/shared/pagination.js?v=3.6.4';
@@ -80,6 +80,7 @@ const menus = {
     ['bookings', 'Đặt phòng', 'calendar-check'],
     ['users', 'Tài khoản nhân viên', 'users'],
     ['customers', 'Khách hàng', 'contact-round'],
+    ['loyalty', 'Thành viên', 'award'],
     ['promotions', 'Khuyến mãi', 'ticket-percent'],
     ['reviews', 'Đánh giá', 'star'],
     ['invoices', 'Hóa đơn', 'receipt-text'],
@@ -256,21 +257,21 @@ export function setupAuthTabs() {
   setupAuthSwitching();
 }
 
-function placeAccountControls(isCustomer) {
+function placeAccountControls() {
   const account = byId('portal-account');
   const header = byId('customer-header-account');
   const sidebar = byId('portal-sidebar');
   if (!account || !header || !sidebar) return;
-  const destination = isCustomer ? header : sidebar;
+  const destination = sidebar;
   if (account.parentElement !== destination && typeof destination.appendChild === 'function') {
     destination.appendChild(account);
   }
-  header.hidden = !isCustomer;
+  header.hidden = true;
 }
 
 function showAuth(tab = 'login') {
   try {
-    placeAccountControls(false);
+    placeAccountControls();
     if (typeof document !== 'undefined' && document.body) {
       document.body.classList.remove('customer-portal');
       document.body.classList.remove('admin-portal');
@@ -547,7 +548,7 @@ export async function initNotificationTray(session) {
 
       if (notifs.length === 0) {
         listEl.innerHTML = `
-          <div class="p-6 text-center text-xs text-slate-400">
+          <div class="notification-empty p-6 text-center text-xs text-slate-400">
             <i data-lucide="bell-off" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
             <p>Quý khách chưa có thông báo mới.</p>
           </div>
@@ -565,20 +566,20 @@ export async function initNotificationTray(session) {
 
         return `
           <div class="notif-item p-3 rounded-xl transition-colors cursor-pointer ${isUnread ? 'bg-amber-500/5 border-l-2 border-amber-400' : 'bg-slate-950/40'}" data-id="${n.id}">
-            <div class="flex items-start justify-between gap-2 mb-1">
+            <div class="notification-item-heading flex items-start justify-between gap-2 mb-1">
               <h4 class="text-xs font-bold ${isUnread ? 'text-amber-300' : 'text-slate-200'}">${safeTitle}</h4>
-              <span class="text-[10px] text-slate-500 shrink-0 font-mono">${timeStr}</span>
+              <span class="notification-time text-[10px] text-slate-500 shrink-0 font-mono">${timeStr}</span>
             </div>
             <p class="text-[11px] text-slate-400 leading-relaxed mb-2">${safeMsg}</p>
             ${voucher ? `
-              <div class="p-2 rounded-lg bg-slate-900 border border-amber-500/20 flex items-center justify-between gap-2 mt-1.5">
+              <div class="notification-voucher p-2 rounded-lg bg-slate-900 border border-amber-500/20 flex items-center justify-between gap-2 mt-1.5">
                 <span class="font-mono text-xs font-bold text-amber-400 select-all">${voucher}</span>
                 <div class="flex items-center gap-1.5">
                   <button type="button" class="btn-copy-notif-voucher px-2 py-1 rounded bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-200 text-[10px] font-semibold transition-colors flex items-center gap-1" data-code="${voucher}">
                     <i data-lucide="copy" class="w-3 h-3"></i>
                     <span>Sao chép</span>
                   </button>
-                  <a href="${n.action_url || 'portal.html?view=concierge'}" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-semibold transition-colors flex items-center gap-1">
+                  <a href="${n.action_url || 'portal.html?view=concierge'}" class="notification-use-voucher px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-semibold transition-colors flex items-center gap-1">
                     <i data-lucide="sparkles" class="w-3 h-3"></i>
                     <span>Dùng ngay</span>
                   </a>
@@ -669,7 +670,7 @@ function enterPortal(session) {
     }
 
     const isCustomer = role === 'CUSTOMER';
-    placeAccountControls(isCustomer);
+    placeAccountControls();
     if (typeof document !== 'undefined' && document.body) {
       document.body.classList.remove('admin-sidebar-collapsed');
       document.body.classList.remove('portal-sidebar-collapsed');

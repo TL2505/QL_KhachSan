@@ -1,5 +1,15 @@
 # NHẬT KÝ THAY ĐỔI (CHANGELOG) — Tài liệu hệ thống PMS Khách sạn
 
+## [2026-10-21] — @codex — Giao diện staff/customer và tài liệu UI audit — Đồng bộ bố cục với admin
+
+- Đồng bộ header, sidebar, thu gọn, vị trí tài khoản và điều hướng responsive; bỏ tài khoản/đăng xuất lặp, căn brand về trái và ẩn nút dành cho phiên đăng nhập ở màn hình login. Hover/chọn tab customer dùng cùng hiệu ứng admin với màu riêng theo hạng.
+- Chuẩn hóa trang Khách hàng, Đặt phòng, Hóa đơn, Hồ sơ & bảo mật của staff; chỉnh spacing sơ đồ phòng. Làm lại thẻ nhận/trả phòng và hộp thư hỗ trợ với tìm kiếm, bản nháp, tự cập nhật, cuộn responsive và nút gửi căn giữa cạnh ô soạn. Sửa lỗi lịch sử chat rỗng khi tin mới nhất do staff gửi.
+- Thống nhất ngưỡng Member 0, Silver 500, Gold 1.000, VIP 5.000 theo tổng điểm đã tích lũy; đổi điểm không giảm hạng. Thêm màu thẻ theo hạng và tab Thành viên placeholder cho admin dưới Khách hàng.
+- Sửa dropdown thông báo bị nội dung che, màu sáng/tối, trạng thái rỗng/voucher và giới hạn kích thước theo viewport. Đồng bộ root/public và tăng phiên bản tài nguyên để tránh cache cũ.
+- Bổ sung test membership/chat, script Chromium, ảnh và kết quả giả lập trong `docs/verification/web-ui/`. Lượt xác minh thông báo/shell mới nhất đạt 40 tổ hợp hạng/theme/viewport và 16 test auth/theme/portal; các lượt xác minh staff/bảng/checkout/chat trước đó được ghi trong [UI audit](../../web-ui/MANUAL_UI_AUDIT.md).
+- Ghi rõ các lỗi customer còn mở: tương phản ở chế độ sáng, màu nhấn, tiêu đề trùng, bố cục thẻ/bảng và fallback thông báo. Kiểm tra trình duyệt dùng API giả lập, thiếu font/icon/utility CDN trong môi trường này; chưa nghiệm thu backend thật.
+- Xác minh trước khi push: toàn bộ bộ kiểm thử web UI đạt **69/69**, không thất bại hoặc bỏ qua. Các test HTTP được chạy ngoài sandbox hạn chế để kết nối được máy chủ localhost.
+
 ## [2026-10-20] — @codex — Báo cáo Phase 4, baseline và changelog — Ghi nhận triển khai và các điều kiện nghiệm thu còn thiếu
 
 - Bổ sung [danh sách triển khai](../PHASE_4_IMPLEMENTATION.md), [báo cáo triển khai](../PHASE_4_REPORT.md), [bằng chứng xác minh](../PHASE_4_VERIFICATION.md); liên kết từ baseline Phase 4 và cập nhật changelog gốc/của tài liệu. Giữ nguyên lịch sử.

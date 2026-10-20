@@ -1,138 +1,144 @@
 import { api, getApiBaseUrl } from "../../api.js";
+import { escapeHtml } from "../shared/ui.js";
+import { renderPaginationComponent } from "../shared/pagination.js";
 
 export async function renderCheckout(container, session) {
     container.innerHTML = `
-        <style>
-            .page-header { margin-bottom: 25px; }
-            .grid-cards {
-                display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;
-            }
-            .checkout-card {
-                background: var(--bg-card); border-radius: 12px; padding: 20px;
-                border: 1px solid var(--border-color);
-                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-                transition: transform 0.2s, box-shadow 0.2s;
-            }
-            .checkout-card:hover {
-                transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-                border-color: var(--primary-color);
-            }
-            .card-header {
-                display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;
-            }
-            .room-badge {
-                background: rgba(79, 70, 229, 0.1); color: var(--primary-color);
-                padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 1.1rem;
-            }
-            .booking-id { color: var(--text-muted); font-size: 0.85rem; font-weight: 600; }
-            
-            .card-body p { margin: 8px 0; font-size: 0.95rem; display: flex; justify-content: space-between; }
-            .card-body p span { color: var(--text-muted); }
-            
-            .card-footer {
-                margin-top: 20px; border-top: 1px dashed var(--border-color); padding-top: 15px;
-                display: flex; justify-content: space-between; align-items: center;
-            }
-            .total-price { font-size: 1.25rem; font-weight: 700; color: var(--success); }
-            
-            .btn-pay {
-                background: var(--primary-color); color: white; border: none; padding: 8px 16px;
-                border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s;
-            }
-            .btn-pay:hover { background: #4338ca; }
-
-        </style>
-        
-        <div class="page-header">
-            <h1>Thanh Toán & Trả Phòng</h1>
-            <p>Thực hiện quy trình checkout, thu tiền và xuất hóa đơn cho khách đang lưu trú.</p>
-        </div>
-
-        <div id="checkout-grid" class="grid-cards">
-            <!-- Cards will be injected here -->
+        <div class="checkout-view">
+            <div class="page-header">
+                <div>
+                    <h1>Thanh toán & trả phòng</h1>
+                    <p>Tra cứu khách đang lưu trú để thực hiện thanh toán và trả phòng.</p>
+                </div>
+                <span id="checkout-count" class="badge checkout-count" role="status">Đang tải danh sách</span>
+            </div>
+            <section class="card checkout-toolbar" aria-label="Tra cứu phòng đang lưu trú">
+                <div class="card-body">
+                    <div class="checkout-search-field">
+                        <label for="checkout-search">Tìm phòng hoặc khách hàng</label>
+                        <div class="checkout-search-input">
+                            <i data-lucide="search" aria-hidden="true"></i>
+                            <input id="checkout-search" class="input form-input" type="search" placeholder="Số phòng, tên khách, mã đặt phòng…" autocomplete="off">
+                        </div>
+                    </div>
+                    <button id="checkout-refresh" class="btn btn-secondary" type="button">
+                        <i data-lucide="refresh-cw" aria-hidden="true"></i><span>Làm mới</span>
+                    </button>
+                </div>
+            </section>
+            <div id="checkout-grid" class="checkout-grid" aria-label="Danh sách phòng đang lưu trú" aria-busy="true"></div>
+            <div id="pagination-checkout"></div>
         </div>
     `;
 
-    const grid = document.getElementById("checkout-grid");
-    
+    const grid = container.querySelector('#checkout-grid');
+    const search = container.querySelector('#checkout-search');
+    const refresh = container.querySelector('#checkout-refresh');
+    const count = container.querySelector('#checkout-count');
+    const pagination = container.querySelector('#pagination-checkout');
+    const refreshIcons = () => window.lucide?.createIcons?.();
     let activeBookings = [];
     let currentProcessBooking = null;
+    let currentPage = 1;
+    let itemsPerPage = 10;
 
     const formatCurrency = (amount) => {
         return amount != null ? Number(amount).toLocaleString('vi-VN') + ' đ' : '0 đ';
     };
-    
+
     const formatDate = (dateStr) => {
-        if (!dateStr) return 'N/A';
-        const d = new Date(dateStr);
-        return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+        const date = new Date(dateStr || '');
+        if (!Number.isFinite(date.getTime())) return 'Chưa có thông tin';
+        return date.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }) + ' · ' + date.toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hour12: false });
+    };
+
+    const renderCards = () => {
+        const q = search.value.trim().toLocaleLowerCase('vi-VN');
+        const filtered = activeBookings.filter(b => [b.roomNumber, b.customerName, b.id].some(value => String(value ?? '').toLocaleLowerCase('vi-VN').includes(q)));
+        count.textContent = q ? `${filtered.length} / ${activeBookings.length} phòng` : `${activeBookings.length} phòng đang lưu trú`;
+        grid.replaceChildren();
+        pagination.replaceChildren();
+        if (!filtered.length) {
+            grid.innerHTML = `
+                <section class="card checkout-empty">
+                    <div class="card-body">
+                        <i data-lucide="${q ? 'search-x' : 'door-open'}" aria-hidden="true"></i>
+                        <h2 class="card-title">${q ? 'Không tìm thấy phòng phù hợp' : 'Chưa có phòng đang lưu trú'}</h2>
+                        <p>${q ? 'Thử tìm theo số phòng, tên khách hoặc mã đặt phòng khác.' : 'Các phòng có khách đang ở sẽ xuất hiện tại đây.'}</p>
+                        ${q ? '<button class="btn btn-secondary" id="checkout-clear-search" type="button">Xóa tìm kiếm</button>' : ''}
+                    </div>
+                </section>`;
+            container.querySelector('#checkout-clear-search')?.addEventListener('click', () => { search.value = ''; currentPage = 1; renderCards(); search.focus(); });
+            refreshIcons();
+            return;
+        }
+        currentPage = Math.min(currentPage, Math.max(1, Math.ceil(filtered.length / itemsPerPage)));
+        filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).forEach(b => {
+            const card = document.createElement('article');
+            card.className = 'card checkout-card';
+            card.innerHTML = `
+                <div class="card-body">
+                    <div class="checkout-card-heading">
+                        <div class="checkout-room-heading">
+                            <span class="checkout-room-icon"><i data-lucide="door-open" aria-hidden="true"></i></span>
+                            <div><h2 class="card-title">Phòng ${escapeHtml(b.roomNumber || 'N/A')}</h2><span class="checkout-booking-id">Đặt phòng #${escapeHtml(b.id)}</span></div>
+                        </div>
+                        <span class="badge room-badge badge-occupied">Đang lưu trú</span>
+                    </div>
+                    <dl class="checkout-details">
+                        <div class="checkout-guest"><dt>Khách hàng</dt><dd>${escapeHtml(b.customerName || 'Khách vãng lai')}</dd></div>
+                        <div><dt>Nhận phòng</dt><dd>${formatDate(b.checkInDate)}</dd></div>
+                        <div><dt>Trả phòng dự kiến</dt><dd>${formatDate(b.checkOutDate)}</dd></div>
+                    </dl>
+                    <div class="card-actions checkout-card-actions">
+                        <div class="checkout-amount"><span>Giá trị đặt phòng</span><strong>${formatCurrency(b.totalPrice)}</strong></div>
+                        <button class="btn btn-primary btn-pay" type="button" data-id="${escapeHtml(b.id)}" aria-label="Thanh toán phòng ${escapeHtml(b.roomNumber || 'N/A')}, đơn ${escapeHtml(b.id)}">
+                            <span>Thanh toán</span><i data-lucide="arrow-right" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>`;
+            card.querySelector('.btn-pay').addEventListener('click', e => openModal(e.currentTarget.dataset.id));
+            grid.appendChild(card);
+        });
+        renderPaginationComponent('pagination-checkout', filtered.length, itemsPerPage, currentPage,
+            page => { currentPage = page; renderCards(); },
+            size => { itemsPerPage = size; currentPage = 1; renderCards(); });
+        refreshIcons();
     };
 
     const loadData = async () => {
-        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Đang tải danh sách phòng...</p>';
+        refresh.disabled = true;
+        search.disabled = true;
+        grid.setAttribute('aria-busy', 'true');
+        count.textContent = 'Đang tải danh sách';
+        pagination.replaceChildren();
+        grid.innerHTML = '<div class="checkout-loading" role="status"><span class="loading loading-spinner" aria-hidden="true"></span><span>Đang tải phòng đang lưu trú…</span></div>';
         try {
-            const [response, rooms, customers] = await Promise.all([
-                api.get("/bookings"),
-                api.get("/rooms"),
-                api.get("/customers")
-            ]);
-            
-            // Only get checked_in bookings
-            activeBookings = response.filter(b => b.status === "checked_in").map(b => {
-                const r = rooms.find(room => room.id === b.roomId);
-                const c = customers.find(cust => cust.id === b.customerId);
-                return {
-                    ...b,
-                    roomNumber: r ? r.roomNumber : 'N/A',
-                    customerName: c ? c.fullName : 'Khách vãng lai'
-                };
+            const [response, rooms, customers] = await Promise.all([api.get('/bookings'), api.get('/rooms'), api.get('/customers')]);
+            if (!grid.isConnected) return;
+            activeBookings = response.filter(b => b.status === 'checked_in').map(b => {
+                const room = rooms.find(r => r.id === b.roomId);
+                const customer = customers.find(c => c.id === b.customerId);
+                return { ...b, roomNumber: room?.roomNumber || 'N/A', customerName: customer?.fullName || 'Khách vãng lai' };
             });
-            
-            grid.innerHTML = "";
-            if (activeBookings.length === 0) {
-                grid.innerHTML = `
-                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--bg-card); border-radius: 12px;">
-                        <i data-lucide="check-circle" style="width: 48px; height: 48px; color: var(--success); margin-bottom: 15px;"></i>
-                        <h3>Tất cả đã hoàn tất</h3>
-                        <p style="color: var(--text-muted);">Hiện không có khách nào đang lưu trú cần thanh toán.</p>
-                    </div>
-                `;
-                if(window.lucide) lucide.createIcons();
-                return;
+            currentPage = 1;
+            renderCards();
+            search.disabled = false;
+        } catch (error) {
+            if (!grid.isConnected) return;
+            count.textContent = 'Chưa tải được danh sách';
+            grid.innerHTML = '<div class="alert alert-error checkout-load-error" role="alert"><div><strong>Không thể tải danh sách phòng</strong><p>Vui lòng kiểm tra kết nối và thử lại.</p></div><button class="btn btn-secondary" id="checkout-retry" type="button">Thử lại</button></div>';
+            container.querySelector('#checkout-retry').addEventListener('click', loadData);
+        } finally {
+            if (grid.isConnected) {
+                refresh.disabled = false;
+                grid.setAttribute('aria-busy', 'false');
             }
-
-            activeBookings.forEach(b => {
-                const card = document.createElement("div");
-                card.className = "checkout-card";
-                card.innerHTML = `
-                    <div class="card-header">
-                        <div class="room-badge">Phòng ${b.roomNumber || 'N/A'}</div>
-                        <div class="booking-id">#${b.id}</div>
-                    </div>
-                    <div class="card-body">
-                        <p><span>Khách hàng</span> <strong>${b.customerName || 'Khách vãng lai'}</strong></p>
-                        <p><span>Nhận phòng</span> <strong>${formatDate(b.checkInDate)}</strong></p>
-                        <p><span>Trả phòng</span> <strong>${formatDate(b.checkOutDate)}</strong></p>
-                    </div>
-                    <div class="card-footer">
-                        <div class="total-price">${formatCurrency(b.totalPrice)}</div>
-                        <button class="btn-pay" data-id="${b.id}">Thanh Toán</button>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-
-            document.querySelectorAll('.btn-pay').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    openModal(e.target.dataset.id);
-                });
-            });
-
-        } catch (e) {
-            console.error(e);
-            grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--danger);">Lỗi tải dữ liệu: ${e.message}</p>`;
         }
     };
+    search.addEventListener('input', () => { currentPage = 1; renderCards(); });
+    refresh.addEventListener('click', loadData);
+    refreshIcons();
 
     const openModal = (bookingId) => {
         const b = activeBookings.find(x => x.id == bookingId);

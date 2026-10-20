@@ -1,5 +1,15 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-21] — @codex — Staff/customer portal UI audit fixes
+
+- Aligned staff and customer headers, sidebar geometry, collapse controls, account placement and responsive navigation with admin. Fixed duplicate account/logout controls, left-aligned the brand, hid signed-in controls on login, and matched customer hover/selection animations while retaining tier colors.
+- Unified staff customer records, bookings, invoices, profile/security forms and pagination; corrected room-map spacing. Redesigned checkout cards and the support inbox with responsive scrolling, search, drafts, automatic updates and a composer with a vertically centered send action. Fixed missing chat history when the latest inbox message was sent by staff.
+- Standardized membership thresholds with the backend (Member 0, Silver 500, Gold 1,000, VIP 5,000 lifetime earned points); redemption no longer reduces tier progress. Added tier-colored membership cards and an admin membership placeholder below Customers.
+- Fixed customer notifications stacking behind content; themed the dropdown, list, empty state and voucher controls for light/dark palettes and constrained the panel to the viewport. Synchronized served source/public assets and bumped cache versions.
+- Added membership/chat regression tests and fixture-based browser verification scripts/results/screenshots under `docs/verification/web-ui/`. Latest notification/shell verification passed 40 tier/theme/viewport cases and 16 focused auth/theme/portal tests; earlier staff/table/checkout/support verification is recorded in [the UI audit](../web-ui/MANUAL_UI_AUDIT.md).
+- Kept remaining customer light-theme contrast, accent consistency, duplicate headings, card/table layout and notification fallback issues explicitly open in the audit. Browser checks use mocked APIs and lack CDN font/icon/utility rendering in this environment; they do not establish live-backend acceptance.
+- Pre-push verification: the complete web UI suite passed **69/69 tests**, with no failures or skips. HTTP integration tests required localhost networking outside the restricted sandbox.
+
 ## [2026-10-20] — @codex — `web-ui/portal-admin.css` — Keep customer content within the viewport
 
 - Matched the administrator layout on desktop: the customer portal uses a fixed viewport with independently scrollable content while the header and sidebar remain in place. Restored natural page scrolling on narrow screens.

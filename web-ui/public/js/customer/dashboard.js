@@ -1,5 +1,5 @@
 import { api } from "../../api.js";
-import { getLegacyTierInfo } from "./tier-helper.js";
+import { getLegacyTierInfo, summarizeLoyaltyHistory } from "./tier-helper.js";
 
 function refreshIcons() {
   if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -30,16 +30,16 @@ export async function renderDashboard(container, session) {
     <!-- Top Greeting Banner -->
     <div class="greeting-banner mb-6 p-6 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-950/90 border border-amber-500/20 flex items-center justify-between shadow-xl backdrop-blur-md">
       <div class="flex items-center gap-4">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 text-slate-950 font-bold flex items-center justify-center text-xl shadow-lg shrink-0">
+        <div class="greeting-avatar w-14 h-14 rounded-2xl font-bold flex items-center justify-center text-xl shadow-lg shrink-0">
           ${initials}
         </div>
-        <div>
+        <div class="greeting-text">
           <h2 class="text-xl md:text-2xl font-bold font-serif text-white tracking-wide">${greeting}, ${displayName}! 👋</h2>
           <p class="text-xs md:text-sm text-slate-400 mt-1">Cổng thành viên đặc quyền Aurelia Grand Palace. Chúc bạn có kỳ nghỉ trọn vẹn.</p>
         </div>
       </div>
       <div class="hidden sm:flex items-center gap-2">
-        <a href="index.html#rooms" class="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 hover:brightness-110 transition-all flex items-center gap-1.5 shadow-md">
+        <a href="index.html#rooms" class="btn btn-primary customer-booking-action">
           <i data-lucide="calendar" class="w-4 h-4"></i>
           <span>Đặt phòng mới</span>
         </a>
@@ -90,15 +90,8 @@ export async function renderDashboard(container, session) {
 
     const allBookings = Array.isArray(bookings) ? bookings : [];
 
-    // Calculate total net points
-    let currentPoints = 0;
-    if (Array.isArray(loyaltyHistory) && loyaltyHistory.length > 0) {
-      loyaltyHistory.forEach(log => {
-        if (log.changeType === 'earn' || log.type === 'earn') currentPoints += Number(log.pointsChanged || log.points || 0);
-        else currentPoints -= Number(log.pointsChanged || log.points || 0);
-      });
-    }
-    currentPoints = Math.max(0, currentPoints);
+    // Tier uses lifetime earnings; redemption only changes the available balance.
+    const { currentPoints, totalPoints } = summarizeLoyaltyHistory(loyaltyHistory);
 
     // Calculate total cumulative spending from completed/checked_in bookings
     let totalSpent = 0;
@@ -124,7 +117,7 @@ export async function renderDashboard(container, session) {
       totalSpent = currentPoints * 1000;
     }
 
-    const tier = getLegacyTierInfo(currentPoints, totalSpent);
+    const tier = getLegacyTierInfo(totalPoints, totalSpent);
     document.body.dataset.customerTier = tier.name.toLowerCase();
 
     // Render Digital Member Card (VIP luxury design)
@@ -200,7 +193,7 @@ export async function renderDashboard(container, session) {
                 <h3 class="text-base font-bold text-white">Tiến Độ Nâng Hạng Thẻ</h3>
               </div>
               <span class="text-xs font-bold text-amber-300 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30">
-                ${tier.nextTier ? `${currentPoints.toLocaleString('vi-VN')} / ${tier.nextMinPts.toLocaleString('vi-VN')} Điểm` : 'Hạng tối cao'}
+                ${tier.nextTier ? `${totalPoints.toLocaleString('vi-VN')} / ${tier.nextMinPts.toLocaleString('vi-VN')} Điểm` : 'Hạng tối cao'}
               </span>
             </div>
 
@@ -210,8 +203,8 @@ export async function renderDashboard(container, session) {
 
             <!-- Custom Progress Bar -->
             <div class="w-full bg-slate-950/80 rounded-full h-3.5 p-0.5 border border-slate-800 overflow-hidden mb-3">
-              <div class="h-full rounded-full transition-all duration-1000 ease-out"
-                   style="width: ${tier.progressPct}%; background: linear-gradient(90deg, #d97706, #f59e0b, #fde68a);"></div>
+              <div class="customer-tier-progress h-full rounded-full transition-all duration-1000 ease-out"
+                   style="width: ${tier.progressPct}%; background: var(--portal-gold);"></div>
             </div>
 
             <div class="flex items-center justify-between text-[11px] text-slate-400">

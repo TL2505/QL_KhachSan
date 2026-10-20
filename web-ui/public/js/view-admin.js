@@ -6,6 +6,7 @@ import { renderPromotions } from "./admin/promotions.js?v=3.6.4";
 import { renderReviews } from "./admin/reviews.js?v=3.6.4";
 import { renderInvoices } from "./admin/invoices.js?v=3.6.4";
 import { renderAdminCustomers } from "./admin/customers.js?v=3.6.4";
+import { renderMembershipPlaceholder } from "./admin/loyalty.js";
 
 export function loadAdminView(tab = "dashboard") {
     const container = document.getElementById("view-container");
@@ -19,6 +20,8 @@ export function loadAdminView(tab = "dashboard") {
         renderUsers(container, session);
     } else if (tab === "customers") {
         renderAdminCustomers(container, session);
+    } else if (tab === "loyalty") {
+        renderMembershipPlaceholder(container);
     } else if (tab === "promotions") {
         renderPromotions(container, session);
     } else if (tab === "reviews") {

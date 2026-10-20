@@ -1,7 +1,7 @@
 import { api } from "../../api.js";
 
 function avatarColor(str) {
-    const colors = ['#d97706','#10b981','#3b82f6','#8b5cf6','#06b6d4','#ef4444'];
+    const colors = ['#d97706','#10b981','#3b82f6','#8b5cf6','#06b6d4','#ef4444','#f59e0b'];
     let hash = 0;
     for (let c of (str || 'K')) hash = c.charCodeAt(0) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
@@ -22,6 +22,7 @@ function skeletonRows(count = 5, cols = 6) {
 
 export async function renderCustomers(container, session) {
     container.innerHTML = `
+        <div class="staff-customers-view">
         <div class="page-header flex-row justify-between">
             <div>
                 <h1>Hồ Sơ Khách Hàng</h1>
@@ -33,18 +34,18 @@ export async function renderCustomers(container, session) {
         </div>
 
         <!-- Summary bar -->
-        <div id="staff-cust-summary" style="display:flex;gap:16px;margin-bottom:24px;"></div>
+        <div id="staff-cust-summary" class="stats"></div>
 
         <!-- Search bar -->
-        <div class="card" style="padding:14px 20px;margin-bottom:0;">
-            <div style="display:flex;align-items:center;gap:10px;">
-                <div style="position:relative;flex:1;">
+        <div class="card customers-search-card">
+            <div class="customers-search-toolbar">
+                <div class="customers-search-field">
                     <i data-lucide="search" style="width:15px;height:15px;position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
                     <input id="staff-cust-search" class="form-input" type="text"
-                        placeholder="Tìm theo tên, CCCD, SĐT, email..."
+                        aria-label="Tìm khách hàng" placeholder="Tìm theo tên, CCCD, SĐT, email..."
                         style="padding-left:36px;margin:0;">
                 </div>
-                <button id="btn-refresh-cust" class="btn btn-secondary" style="padding:10px 14px;flex-shrink:0;" title="Làm mới">
+                <button id="btn-refresh-cust" class="btn btn-secondary" style="padding:10px 14px;flex-shrink:0;" title="Làm mới" aria-label="Làm mới danh sách khách hàng">
                     <i data-lucide="refresh-cw" style="width:15px;height:15px;"></i>
                 </button>
             </div>
@@ -55,9 +56,9 @@ export async function renderCustomers(container, session) {
                 <table class="table">
                     <thead>
                         <tr>
-                            <th style="width:52px;"></th>
+                            <th style="width:52px;">Avatar</th>
                             <th>Họ và tên</th>
-                            <th>Số CCCD/Passport</th>
+                            <th>Số CCCD/Hộ chiếu</th>
                             <th>Điện thoại</th>
                             <th>Email</th>
                             <th>Địa chỉ</th>
@@ -70,6 +71,7 @@ export async function renderCustomers(container, session) {
                 </table>
             </div>
             <div id="pagination-staff-customers"></div>
+        </div>
         </div>
     `;
     lucide.createIcons();
@@ -192,26 +194,17 @@ export async function renderCustomers(container, session) {
             allCustomers = await api.get("/customers") || [];
             const summaryBar = document.getElementById("staff-cust-summary");
             summaryBar.innerHTML = `
-                <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--info);">
-                    <i data-lucide="users" style="width:18px;height:18px;color:var(--info);"></i>
-                    <div>
-                        <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);">${allCustomers.length}</div>
-                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Tổng khách</div>
-                    </div>
+                <div class="card stat stat-card">
+                    <div class="stat-title">Tổng khách hàng</div>
+                    <div class="stat-value">${allCustomers.length}</div>
                 </div>
-                <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--success);">
-                    <i data-lucide="mail" style="width:18px;height:18px;color:var(--success);"></i>
-                    <div>
-                        <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);">${allCustomers.filter(c => c.email).length}</div>
-                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Có email</div>
-                    </div>
+                <div class="card stat stat-card">
+                    <div class="stat-title">Có email</div>
+                    <div class="stat-value">${allCustomers.filter(c => c.email).length}</div>
                 </div>
-                <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--primary);">
-                    <i data-lucide="phone" style="width:18px;height:18px;color:var(--primary);"></i>
-                    <div>
-                        <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);">${allCustomers.filter(c => c.phone).length}</div>
-                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Có SĐT</div>
-                    </div>
+                <div class="card stat stat-card">
+                    <div class="stat-title">Có SĐT</div>
+                    <div class="stat-value">${allCustomers.filter(c => c.phone).length}</div>
                 </div>
             `;
             lucide.createIcons();

@@ -12,6 +12,7 @@ const ROOM_STATUS = {
 
 export async function renderRoomMap(container, session) {
     container.innerHTML = `
+        <div class="room-map-view">
         <div class="page-header flex-row justify-between">
             <div>
                 <h1>Sơ Đồ Phòng Khách Sạn</h1>
@@ -31,6 +32,7 @@ export async function renderRoomMap(container, session) {
         </div>
 
         <div class="room-grid" id="staff-rooms-grid">Đang tải sơ đồ phòng...</div>
+        </div>
     `;
     lucide.createIcons();
 
@@ -46,7 +48,7 @@ export async function renderRoomMap(container, session) {
                 card.innerHTML = `
                     <div class="room-card-number">Phòng ${r.roomNumber}</div>
                     <div class="room-card-type">${r.typeName || 'Standard'}</div>
-                    <div style="margin-top: 10px;">
+                    <div class="room-card-status">
                         <span class="room-badge ${status.badge}">${status.label}</span>
                     </div>
                 `;

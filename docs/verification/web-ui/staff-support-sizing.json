@@ -1,0 +1,74 @@
+[
+  {
+    "width": 1225,
+    "height": 1350,
+    "panelBottom": 1320,
+    "panelHeight": 1130.90625,
+    "panelWidth": 903.5,
+    "availableWidth": 903.5,
+    "composerBottom": 1319,
+    "viewportHeight": 1350,
+    "outerScroll": 0,
+    "paddingBottom": 30
+  },
+  {
+    "width": 1225,
+    "height": 700,
+    "panelBottom": 670,
+    "panelHeight": 480.90625,
+    "panelWidth": 903.5,
+    "availableWidth": 903.5,
+    "composerBottom": 669,
+    "viewportHeight": 700,
+    "outerScroll": 0,
+    "paddingBottom": 30
+  },
+  {
+    "width": 768,
+    "height": 700,
+    "panelBottom": 678,
+    "panelHeight": 443.1875,
+    "panelWidth": 736,
+    "availableWidth": 736,
+    "composerBottom": 677,
+    "viewportHeight": 700,
+    "outerScroll": 0,
+    "paddingBottom": 22
+  },
+  {
+    "width": 375,
+    "height": 700,
+    "panelBottom": 682,
+    "panelHeight": 465.203125,
+    "panelWidth": 347,
+    "availableWidth": 347,
+    "composerBottom": 681,
+    "viewportHeight": 700,
+    "outerScroll": 0,
+    "paddingBottom": 18
+  },
+  {
+    "width": 375,
+    "height": 480,
+    "panelBottom": 462,
+    "panelHeight": 281.640625,
+    "panelWidth": 347,
+    "availableWidth": 347,
+    "composerBottom": 461,
+    "viewportHeight": 480,
+    "outerScroll": 0,
+    "paddingBottom": 18
+  },
+  {
+    "width": 320,
+    "height": 568,
+    "panelBottom": 550,
+    "panelHeight": 369.640625,
+    "panelWidth": 292,
+    "availableWidth": 292,
+    "composerBottom": 549,
+    "viewportHeight": 568,
+    "outerScroll": 0,
+    "paddingBottom": 18
+  }
+]

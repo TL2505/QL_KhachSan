@@ -1,4 +1,6 @@
 import { api } from "../../api.js";
+import { getLegacyTierInfo, normalizeLoyaltyHistory, summarizeLoyaltyHistory } from "./tier-helper.js";
+import { escapeHtml } from "../shared/ui.js";
 
 export async function renderLoyalty(container, session) {
     container.innerHTML = `
@@ -80,50 +82,31 @@ export async function renderLoyalty(container, session) {
     `;
     lucide.createIcons();
 
-    // Helper: tính tier từ điểm tích lũy ròng
-    const getTierInfo = (pts) => {
-        if (pts >= 1000) return { name: 'VIP',    cls: 'tier-vip',    icon: '👑', next: null,   nextPts: 0,    progress: 100 };
-        if (pts >= 300)  return { name: 'Gold',   cls: 'tier-gold',   icon: '⭐', next: 'VIP',  nextPts: 1000, progress: Math.round((pts - 300) / 700 * 100) };
-        return              { name: 'Silver', cls: 'tier-silver', icon: '🥈', next: 'Gold', nextPts: 300,  progress: Math.round(pts / 300 * 100) };
-    };
-
-    // Helper: màu avatar ngẫu nhiên theo hash
-    const avatarColors = ['#d97706','#10b981','#3b82f6','#8b5cf6','#06b6d4','#ef4444'];
-    const strColor = (str) => avatarColors[(str || 'U').charCodeAt(0) % avatarColors.length];
-
     const loadHistory = async () => {
         try {
-            const history = await api.get(`/loyalty/history/${session.customerId}`);
+            const history = normalizeLoyaltyHistory(await api.get(`/loyalty/history/${session.customerId}`));
             const body = document.getElementById("loyalty-history-body");
             body.innerHTML = "";
 
-            // Tính tổng điểm hiện tại
-            let totalPoints = 0;
-            if (history && history.length > 0) {
-                history.forEach(log => {
-                    if (log.changeType === 'earn') totalPoints += log.pointsChanged;
-                    else totalPoints -= log.pointsChanged;
-                });
-            }
-
-            // Render hero card
-            const tier = getTierInfo(Math.max(0, totalPoints));
+            const { currentPoints, totalPoints } = summarizeLoyaltyHistory(history);
+            const tier = getLegacyTierInfo(totalPoints);
+            document.body.dataset.customerTier = tier.name.toLowerCase();
             const heroWrap = document.getElementById("loyalty-hero-wrap");
             heroWrap.innerHTML = `
                 <div class="loyalty-hero">
                     <div class="loyalty-hero-label">Điểm tích lũy của bạn</div>
-                    <div class="loyalty-hero-points">${Math.max(0, totalPoints).toLocaleString('vi-VN')}<span>Điểm</span></div>
+                    <div class="loyalty-hero-points">${currentPoints.toLocaleString('vi-VN')}<span>Điểm</span></div>
                     <div>
-                        <span class="tier-badge ${tier.cls}">${tier.icon} Hạng ${tier.name}</span>
+                        <span class="tier-badge ${tier.cls}">Hạng ${tier.badge}</span>
                     </div>
-                    ${tier.next ? `
+                    ${tier.nextTier ? `
                     <div class="loyalty-progress-wrap">
                         <div class="loyalty-progress-info">
-                            <span>Tiến độ lên hạng ${tier.next}</span>
-                            <span>${Math.max(0, totalPoints).toLocaleString()} / ${tier.nextPts.toLocaleString()} điểm</span>
+                            <span>Tiến độ lên hạng ${tier.nextTier}</span>
+                            <span>${Math.max(0, totalPoints).toLocaleString()} / ${tier.nextMinPts.toLocaleString()} điểm</span>
                         </div>
                         <div class="loyalty-progress-bar">
-                            <div class="loyalty-progress-fill" style="width: 0%;" data-target="${tier.progress}"></div>
+                            <div class="loyalty-progress-fill" style="width: 0%;" data-target="${tier.progressPct}"></div>
                         </div>
                     </div>` : `<div class="loyalty-tier-complete">Bạn đã đạt hạng thành viên cao nhất!</div>`}
                 </div>
@@ -171,13 +154,13 @@ export async function renderLoyalty(container, session) {
                 tr.className = "history-row";
                 tr.style.animationDelay = `${i * 0.05}s`;
                 tr.innerHTML = `
-                    <td style="color: var(--text-muted); font-size: 13px;">${log.changeDate || 'N/A'}</td>
+                    <td style="color: var(--text-muted); font-size: 13px;">${escapeHtml(log.changeDate)}</td>
                     <td>
                         <div style="display:flex;align-items:center;gap:8px;">
                             <div style="width:28px;height:28px;border-radius:50%;background:${isEarn ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                                 <i data-lucide="${isEarn ? 'arrow-up' : 'arrow-down'}" style="width:14px;height:14px;color:${isEarn ? 'var(--success)' : 'var(--danger)'};"></i>
                             </div>
-                            <span style="font-size:14px;">${log.reason}</span>
+                            <span style="font-size:14px;">${escapeHtml(log.reason)}</span>
                         </div>
                     </td>
                     <td style="text-align: right;">
@@ -213,6 +196,7 @@ export async function renderLoyalty(container, session) {
         renderTable();
         } catch (e) {
             console.error(e);
+            document.getElementById("loyalty-history-body").innerHTML = '<tr><td colspan="3">Không thể tải lịch sử điểm. Vui lòng mở lại trang để thử lại.</td></tr>';
         }
     };
     loadHistory();
@@ -230,7 +214,7 @@ export async function renderLoyalty(container, session) {
             lucide.createIcons();
             loadHistory();
         } catch (e) {
-            msgDiv.innerHTML = `<span style="color:var(--danger);display:flex;align-items:center;gap:6px;"><i data-lucide="x-circle" style="width:14px;height:14px;"></i> ${e.message}</span>`;
+            msgDiv.innerHTML = `<span style="color:var(--danger);display:flex;align-items:center;gap:6px;"><i data-lucide="x-circle" style="width:14px;height:14px;"></i> ${escapeHtml(e.message)}</span>`;
             lucide.createIcons();
         }
     };

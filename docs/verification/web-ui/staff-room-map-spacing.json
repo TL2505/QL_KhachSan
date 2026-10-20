@@ -1,0 +1,58 @@
+[
+  {
+    "width": 1225,
+    "theme": "light",
+    "legendToGrid": 20,
+    "overflow": false,
+    "cards": 15
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "legendToGrid": 20,
+    "overflow": false,
+    "cards": 15
+  },
+  {
+    "width": 375,
+    "theme": "light",
+    "legendToGrid": 16,
+    "overflow": false,
+    "cards": 15
+  },
+  {
+    "width": 320,
+    "theme": "light",
+    "legendToGrid": 16,
+    "overflow": false,
+    "cards": 15
+  },
+  {
+    "width": 1225,
+    "theme": "dark",
+    "legendToGrid": 20,
+    "overflow": false,
+    "cards": 15
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "legendToGrid": 20,
+    "overflow": false,
+    "cards": 15
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "legendToGrid": 16,
+    "overflow": false,
+    "cards": 15
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "legendToGrid": 16,
+    "overflow": false,
+    "cards": 15
+  }
+]

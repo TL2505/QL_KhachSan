@@ -38,9 +38,9 @@
   <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
   <link rel="stylesheet" href="css/style.css?v=3.5.0">
   <link rel="stylesheet" href="portal.css?v=3.5.0">
-  <link rel="stylesheet" href="portal-customer.css?v=3.5.0">
-  <link rel="stylesheet" href="portal-admin.css?v=3.6.5">
-  <link rel="stylesheet" href="portal-theme.css?v=3.6.5">
+  <link rel="stylesheet" href="portal-customer.css?v=3.6.18">
+  <link rel="stylesheet" href="portal-admin.css?v=3.6.19">
+  <link rel="stylesheet" href="portal-theme.css?v=3.6.20">
   <link rel="stylesheet" href="css/page-transition.css?v=3.5.0">
   <script src="js/shared/page-transition.js?v=3.5.0"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -57,19 +57,19 @@
 
     <div class="portal-topbar-actions navbar-end flex items-center gap-3">
       <!-- Task 15: Lifecycle Notification Tray -->
-      <div class="relative inline-block">
+      <div class="portal-notifications relative inline-block">
         <button type="button" id="btn-notification-bell" class="portal-icon-btn relative w-10 h-10 rounded-full border border-amber-500/30 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 flex items-center justify-center transition-all shadow-md cursor-pointer" aria-label="Thông báo vòng đời" title="Thông báo vòng đời">
           <i data-lucide="bell" class="w-4 h-4"></i>
           <span id="notif-unread-badge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow">0</span>
         </button>
         <!-- Dropdown Tray -->
         <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-slate-900/95 border border-amber-500/30 shadow-2xl backdrop-blur-xl z-50 overflow-hidden text-left" role="dialog" aria-label="Trung tâm thông báo">
-          <div class="p-3.5 border-b border-slate-800 flex items-center justify-between">
+          <div class="notification-header p-3.5 border-b border-slate-800 flex items-center justify-between">
             <div class="flex items-center gap-2">
               <i data-lucide="bell" class="w-4 h-4 text-amber-400"></i>
-              <span class="text-xs font-bold text-white uppercase tracking-wider">Thông Báo Vòng Đời</span>
+              <span class="notification-title text-xs font-bold uppercase tracking-wider">Thông Báo Vòng Đời</span>
             </div>
-            <button type="button" id="btn-mark-all-read" class="text-[11px] text-amber-400 hover:text-amber-300 transition-colors cursor-pointer">Đọc tất cả</button>
+            <button type="button" id="btn-mark-all-read" class="btn btn-ghost btn-xs">Đọc tất cả</button>
           </div>
           <div id="notification-list" class="max-h-80 overflow-y-auto divide-y divide-slate-800/60 p-2 space-y-1">
             <div class="p-4 text-center text-xs text-slate-400">Đang tải thông báo...</div>
@@ -222,6 +222,6 @@
   <div id="global-modal" class="portal-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Hộp thoại thao tác">
     <div id="global-modal-content" class="modal-content" role="document"></div>
   </div>
-  <script type="module" src="portal-app.js?v=3.6.5"></script>
+  <script type="module" src="portal-app.js?v=3.6.20"></script>
 </body>
 </html>
