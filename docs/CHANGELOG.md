@@ -1,5 +1,12 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-21] — @codex — Booking identity persistence and stable list reloads
+
+- Fixed guest booking identity writes that conflicted with the existing `identity_card IS NULL` vault constraint: store through the encrypted vault in the existing transaction, retaining matching hashes and rejecting identity changes.
+- Retained the shared DAO's SQL `created_at DESC, id DESC` order, aligned the customer portal's independent query, removed Staff's frontend re-sort, and preserved API order through filters, pagination and reloads. Staff refresh returns to page one; Staff/Admin tab-return events reuse their existing loaders without polling or new push infrastructure.
+- Propagated booking-list SQL errors as API failures instead of successful empty lists. Added safe, correlated booking-failure diagnostics and `no-store` booking responses without changing authorization or reservation/folio/idempotency transaction logic.
+- Added seven backend and five frontend unit regressions, a read-only Windows API verifier and explicit database/browser/log verification instructions. The full 95-test web suite passed. Real Windows booking creation, database persistence and Staff/Admin first-row confirmation remain unverified pending operator execution; no application database was seeded or modified by these checks.
+
 ## [2026-10-21] — @codex — Staff membership directory and point history
 
 - Added staff/admin-only read routes for the complete customer membership directory and each customer's existing `loyalty_histories` ledger, with explicit database-error responses. Stored tiers, point balances and join dates are returned without recalculation or fabricated events.

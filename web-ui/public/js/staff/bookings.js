@@ -1,4 +1,5 @@
 import { api } from "../../api.js";
+import { refreshBookingListOnReturn } from "../shared/booking-list-refresh.js";
 
 const STATUS_LABEL = {
     pending:    { label: 'Chờ xác nhận', cls: 'badge-booked' },
@@ -201,10 +202,17 @@ export async function renderBookings(container, session) {
         }
     };
 
+    const bookingBody = document.getElementById("staff-bookings-body");
+    let loadSequence = 0;
     const loadBookings = async () => {
-        document.getElementById("staff-bookings-body").innerHTML = skeletonRows(6);
+        if (!bookingBody.isConnected) return;
+        const sequence = ++loadSequence;
+        bookingBody.innerHTML = skeletonRows(6);
         try {
-            allBookings = await api.get("/bookings") || [];
+            const loaded = await api.get("/bookings");
+            if (!bookingBody.isConnected || sequence !== loadSequence) return;
+            if (!Array.isArray(loaded)) throw new Error('Không thể tải danh sách đặt phòng. Vui lòng thử lại.');
+            allBookings = loaded;
 
             const pending     = allBookings.filter(b => String(b.status || '').toLowerCase() === 'pending').length;
             const checkedIn   = allBookings.filter(b => String(b.status || '').toLowerCase() === 'checked_in').length;
@@ -244,13 +252,15 @@ export async function renderBookings(container, session) {
                 </div>
             `;
             lucide.createIcons();
-            allBookings.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-            renderTable(allBookings);
+            // Preserve the API's created_at DESC, id DESC order before slicing pages.
+            applyFilter();
         } catch (e) {
-            document.getElementById("staff-bookings-body").innerHTML =
-                `<tr><td colspan="8" style="color:var(--danger);padding:20px;">${e.message}</td></tr>`;
+            if (!bookingBody.isConnected || sequence !== loadSequence) return;
+            bookingBody.innerHTML = `<tr><td colspan="8" style="color:var(--danger);padding:20px;"></td></tr>`;
+            bookingBody.querySelector('td').textContent = e.message;
         }
     };
+    refreshBookingListOnReturn(bookingBody, loadBookings);
     loadBookings();
 
     document.getElementById("staff-bookings-search").addEventListener("input", applyFilter);

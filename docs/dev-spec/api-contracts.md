@@ -252,6 +252,8 @@ curl -X GET "http://localhost:8081/api/v1/customers?search=Tran" \
 - **Route:** `/api/v1/bookings`
 - **Auth:** Bearer JWT
 
+**Creation order and failures:** The shared booking DAO returns `bookings.created_at DESC, bookings.id DESC`, using the actual database creation timestamp exposed as `createdAt`. Staff and Admin read this same ordered collection, including through `/api/bookings` and customer-specific list routes. Frontend filters and Staff page slices preserve that order; reloads start on page one. The customer portal's independent booking query uses the same creation-time/ID order. Booking responses use `Cache-Control: no-store`; failed database reads return 503 rather than a successful empty array. Permissions are unchanged. Existing refresh buttons and tab-return reloads use the same loaders; no polling/push channel was introduced.
+
 ```bash
 curl -X GET http://localhost:8081/api/v1/bookings \
   -H "Authorization: Bearer <TOKEN>"
@@ -458,6 +460,8 @@ These routes support Phase 1 folio routing and the OOO-room manager override:
 
 ### 2.2 Public Room Availability & Web Booking Engine
 * **Endpoint:** `POST /api/v1/bookings/public`
+
+**Identity persistence and diagnostics:** A supplied `identity_card` is stored through the existing encrypted identity vault in the guest-ingestion transaction, keeping `customers.identity_card` NULL as required by `chk_no_plain_identity`. A matching established identity is retained; a conflicting identity still requires Front Desk review (409). The reservation transaction commits before a 201 receipt is returned; errors are not converted into success. Booking persistence failures return 503 with an opaque `X-Booking-Error-Id`; the corresponding `[BookingFailure]` server log contains exception types, SQLState/vendor codes and source location, excluding exception messages, SQL text and personal/credential values. The existing Night Audit 503 freeze and authorization rules are unchanged. Operational verification: [booking-order.md](../verification/booking-order.md).
   * **Auth:** Public or Guest Bearer Token
   * **Headers:** `Idempotency-Key: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d` (Required)
   * **Request Body:**
