@@ -44,7 +44,7 @@
 
   <!-- Custom Native CSS3 Luxury Design Tokens -->
   <link rel="stylesheet" href="css/style.css?v=3.5.0">
-  <link rel="stylesheet" href="css/theme-overrides.css?v=3.5.3">
+  <link rel="stylesheet" href="css/theme-overrides.css?v=3.5.4">
   <link rel="stylesheet" href="css/page-transition.css?v=3.5.0">
   <script src="js/shared/page-transition.js?v=3.5.0" defer></script>
 
@@ -72,20 +72,20 @@
        1. HEADER & NAVIGATION (Thanh điều hướng sang trọng & Sticky CTA)
        ========================================================================= -->
   <header id="main-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-3 sm:py-4 px-3 sm:px-6 md:px-8">
-    <div class="max-w-screen-2xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+    <div class="header-inner max-w-screen-2xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
 
       <!-- Brand Logo & 5-Star Luxury Badge -->
-      <a href="#hero" class="flex shrink min-w-0 items-center gap-2 sm:gap-3 group">
+      <a href="#hero" class="header-brand flex shrink min-w-0 items-center gap-2 sm:gap-3 group">
         <div
-          class="w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-full border border-amber-400/40 bg-slate-900/80 flex items-center justify-center text-amber-300 shadow-md group-hover:border-amber-400 group-hover:scale-105 transition-all">
+          class="header-brand-mark w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-full border border-amber-400/40 bg-slate-900/80 flex items-center justify-center text-amber-300 shadow-md group-hover:border-amber-400 group-hover:scale-105 transition-all">
           <i data-lucide="crown" class="w-4 h-4 sm:w-5 sm:h-5 fill-amber-400 text-amber-400"></i>
         </div>
         <div class="flex flex-col min-w-0">
           <span
-            class="font-serif text-sm sm:text-base md:text-xl font-bold tracking-wider text-white group-hover:text-amber-200 transition-colors uppercase truncate">
+            class="header-brand-name font-serif text-sm sm:text-base md:text-xl font-bold tracking-wider text-white group-hover:text-amber-200 transition-colors uppercase truncate">
             Aurelia <span class="text-gold-gradient font-light">Palace</span>
           </span>
-          <span class="text-[8px] sm:text-[9px] tracking-widest uppercase font-semibold text-amber-400/90 flex items-center gap-1 truncate">
+          <span class="header-brand-tagline text-[8px] sm:text-[9px] tracking-widest uppercase font-semibold text-amber-400/90 flex items-center gap-1 truncate">
             <i data-lucide="sparkle" class="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0"></i> 5★ Luxury Hotel & Resort
           </span>
         </div>
@@ -107,9 +107,9 @@
       </nav>
 
       <!-- Right Actions: Locale, Theme, Account, Primary Booking CTA -->
-      <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+      <div class="header-actions flex shrink-0 items-center gap-1.5 sm:gap-2">
         <!-- Move VI/VN, VND into hidden md:flex for < 768px screens -->
-        <div class="hidden md:flex items-center gap-2 border-r border-amber-500/20 pr-3" role="group"
+        <div class="header-locale hidden md:flex items-center gap-2 border-r border-amber-500/20 pr-3" role="group"
           aria-label="Tùy chọn ngôn ngữ và tiền tệ" data-i18n-aria-label="Tùy chọn ngôn ngữ và tiền tệ">
           <div class="relative">
             <select id="lang-selector"
@@ -135,8 +135,8 @@
           <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
         </button>
 
-        <!-- Header Auth Cluster / User Dropdown Container -->
-        <div id="header-auth-container" class="relative hidden md:inline-flex items-center gap-3">
+        <!-- Direct account actions; visible on desktop and mobile -->
+        <div id="header-auth-container" class="relative inline-flex items-center gap-3">
           <!-- Login Button: redirects directly to member portal -->
           <a href="portal.html" id="header-login-btn" role="button"
             class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200 hover:text-white transition-colors cursor-pointer"
@@ -1230,7 +1230,7 @@
   <div id="toast-container"></div>
 
   <!-- Main ES Module Script -->
-  <script type="module" src="js/app.js?v=3.5.3"></script>
+  <script type="module" src="js/app.js?v=3.5.4"></script>
 
 </body>
 

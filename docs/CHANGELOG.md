@@ -1,5 +1,11 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-21] — @codex — Direct account icons and compact landing header
+
+- Replaced the signed-in greeting/dropdown with three equal-sized account, member-portal and logout icons, including escaped-name Vietnamese tooltips and keyboard labels. Account opens the existing profile tab; portal navigation and the logout handler retain their existing behavior. Signed-in actions remain directly visible on mobile rather than being duplicated in its navigation drawer.
+- Reused the existing scroll observer at a 100px threshold to reduce header spacing, logo size and slogan height. A border-box resize observer keeps anchor clearance and the existing mobile navigation drawer aligned with the changing header height. Included reduced-motion styles and retained dark/light themes.
+- Updated the existing login/logout regression for direct shortcuts. All 95 web tests passed. Chromium checks covered three actions, hover/focus tooltips, profile/portal navigation, logout/reload/storage clearing, escaped long names, language changes, expanded/compact transitions, anchor clearance and responsive layouts from 320px to 1920px without horizontal overflow. Browser API fixtures were isolated to verification; no backend/database files or application records changed.
+
 ## [2026-10-21] — @codex — Booking identity persistence and stable list reloads
 
 - Fixed guest booking identity writes that conflicted with the existing `identity_card IS NULL` vault constraint: store through the encrypted vault in the existing transaction, retaining matching hashes and rejecting identity changes.

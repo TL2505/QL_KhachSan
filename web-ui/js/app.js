@@ -1394,17 +1394,17 @@ function updateLightboxContent() {
 // ==========================================
 // SCROLL OBSERVERS & FLOATING CONTROLS
 // ==========================================
-function initScrollObservers() {
+export function initScrollObservers() {
   if (typeof window === 'undefined') return;
   const header = document.getElementById('main-header');
   const backToTopBtn = document.getElementById('back-to-top');
 
-  window.addEventListener('scroll', () => {
+  const updateScrollState = () => {
     const scrollY = window.scrollY;
 
     // Sticky Header Glassmorphic background
     if (header) {
-      if (scrollY > 80) {
+      if (scrollY >= 100) {
         header.classList.add('header-scrolled');
       } else {
         header.classList.remove('header-scrolled');
@@ -1421,7 +1421,18 @@ function initScrollObservers() {
         backToTopBtn.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
       }
     }
-  });
+  };
+  window.addEventListener('scroll', updateScrollState, { passive: true });
+  updateScrollState(); // Also handle restored scroll positions and direct hash navigation.
+
+  if (header) {
+    const measureHeader = () => {
+      document.documentElement.style.setProperty('--hotel-header-height', `${Math.ceil(header.getBoundingClientRect().height)}px`);
+    };
+    measureHeader();
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(measureHeader).observe(header, { box: 'border-box' });
+    else window.addEventListener('resize', measureHeader, { passive: true });
+  }
 
   if (backToTopBtn) {
     backToTopBtn.addEventListener('click', () => {
@@ -2674,11 +2685,7 @@ export function getStoredCustomerToken() {
       || null;
 }
 
-let headerAccountEvents = null;
-
 export function updateHeaderAuthStatus() {
-  headerAccountEvents?.abort();
-  headerAccountEvents = null;
   if (typeof document === 'undefined') return;
   const token = getStoredCustomerToken();
   let session = getAuthSession();
@@ -2699,104 +2706,35 @@ export function updateHeaderAuthStatus() {
   if (token && session) {
     const rawName = session.fullName || session.username || t('Quý Hội Viên');
     const safeName = escapeHtml(rawName);
-    const rawRole = session.role === 'ADMIN' ? t('Quản trị viên') : (session.role === 'STAFF' ? t('Nhân viên') : t('Thành viên Aurelia'));
-    const safeRole = escapeHtml(rawRole);
-    const initial = (rawName.trim()[0] || 'A').toUpperCase();
-
-    // Keep account actions together; the booking CTA remains beside this disclosure.
     if (headerContainer) {
       headerContainer.innerHTML = `
-        <details id="header-account-menu" class="header-account">
-          <summary id="header-account-trigger" class="header-account-trigger" aria-controls="header-account-panel">
-            <span class="header-account-avatar" aria-hidden="true">${escapeHtml(initial)}</span>
-            <span class="header-account-greeting"><span data-i18n="Xin chào,">Xin chào,</span> <strong data-user-content>${safeName}</strong></span>
-            <i data-lucide="chevron-down" class="header-account-chevron" aria-hidden="true"></i>
-          </summary>
-          <div id="header-account-panel" class="header-account-panel">
-            <div class="header-account-profile">
-              <strong data-user-content>${safeName}</strong>
-              <span>${safeRole}</span>
-            </div>
-            <a href="portal.html" id="header-member-portal-btn" class="header-account-action">
-              <i data-lucide="layout-dashboard" aria-hidden="true"></i>
-              <span data-i18n="Cổng thành viên">Cổng thành viên</span>
-            </a>
-            <a href="portal.html?view=dashboard" class="hidden" style="display:none !important;" aria-hidden="true"><span data-i18n="Lịch sử đặt phòng">Lịch sử đặt phòng</span></a>
-            <button type="button" id="btn-logout" class="header-account-action header-account-logout">
-              <i data-lucide="log-out" aria-hidden="true"></i>
-              <span data-i18n="Đăng xuất">Đăng xuất</span>
-            </button>
-          </div>
-        </details>
-      `;
-      const accountMenu = document.getElementById('header-account-menu');
-      if (accountMenu) {
-        // Replaced headers release their listeners, including on language changes.
-        headerAccountEvents = new AbortController();
-        const options = { signal: headerAccountEvents.signal };
-        document.addEventListener('pointerdown', event => {
-          if (!accountMenu.contains(event.target)) accountMenu.open = false;
-        }, options);
-        document.addEventListener('keydown', event => {
-          if (event.key === 'Escape' && accountMenu.open) {
-            accountMenu.open = false;
-            document.getElementById('header-account-trigger')?.focus();
-          }
-        }, options);
-        accountMenu.addEventListener('focusout', event => {
-          if (event.relatedTarget && !accountMenu.contains(event.relatedTarget)) accountMenu.open = false;
-        }, options);
-      }
-      const logoutBtn = document.getElementById('btn-logout');
-      if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
-    } else if (headerLoginBtn) {
-      headerLoginBtn.innerHTML = `<i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i><span>${safeName}</span>`;
-      headerLoginBtn.title = t('Mở Cổng Quản Lý / Thành Viên');
-      headerLoginBtn.setAttribute('aria-label', tx`Đã đăng nhập: ${safeName}`);
-    }
-
-    // Mobile Navigation: User Profile + Member Gateway + Booking History + Logout
-    if (mobileContainer) {
-      mobileContainer.innerHTML = `
-        <div class="p-3 rounded-xl bg-slate-900/80 border border-amber-500/20 mb-1">
-          <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-xs shadow-sm">${initial}</span>
-            <div class="min-w-0 flex-1">
-              <p class="text-xs font-semibold text-white truncate"><span data-i18n="Xin chào,">Xin chào,</span> ${safeName}</p>
-              <p class="text-[11px] text-amber-400 truncate">${safeRole}</p>
-            </div>
-          </div>
+        <div class="header-account-icons" role="group" aria-label="Tài khoản thành viên">
+          <a href="portal.html?view=profile" id="header-account-profile-btn" class="header-account-icon"
+            aria-label="Tài khoản" aria-describedby="header-account-profile-tip">
+            <i data-lucide="circle-user-round" aria-hidden="true"></i>
+            <span id="header-account-profile-tip" class="header-account-tooltip" role="tooltip">Tài khoản · <span data-user-content>${safeName}</span></span>
+          </a>
+          <a href="portal.html" id="header-member-portal-btn" class="header-account-icon"
+            aria-label="Cổng thành viên" aria-describedby="header-member-portal-tip">
+            <i data-lucide="layout-dashboard" aria-hidden="true"></i>
+            <span id="header-member-portal-tip" class="header-account-tooltip" role="tooltip">Cổng thành viên</span>
+          </a>
+          <button type="button" id="btn-logout" class="header-account-icon header-account-logout"
+            aria-label="Đăng xuất" aria-describedby="header-logout-tip">
+            <i data-lucide="log-out" aria-hidden="true"></i>
+            <span id="header-logout-tip" class="header-account-tooltip" role="tooltip">Đăng xuất</span>
+          </button>
         </div>
-        <a href="portal.html" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all text-sm uppercase tracking-wider font-semibold">
-          <span class="flex items-center gap-3">
-            <i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Cổng thành viên">Cổng thành viên</span>
-          </span>
-          <i data-lucide="chevron-right" class="w-4 h-4 text-amber-400"></i>
-        </a>
-        <a href="portal.html?view=dashboard" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider">
-          <span class="flex items-center gap-3">
-            <i data-lucide="calendar-check" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Lịch sử đặt phòng">Lịch sử đặt phòng</span>
-          </span>
-          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
-        </a>
-        <button type="button" id="mobile-btn-logout" class="w-full mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:text-rose-100 transition-all text-sm uppercase tracking-wider text-left cursor-pointer">
-          <span class="flex items-center gap-3">
-            <i data-lucide="log-out" class="w-4 h-4 text-rose-400"></i> <span data-i18n="Đăng xuất">Đăng xuất</span>
-          </span>
-        </button>
       `;
-      const mobileLogoutBtn = document.getElementById('mobile-btn-logout');
-      if (mobileLogoutBtn) {
-        mobileLogoutBtn.addEventListener('click', handleLogout);
-      }
-    } else if (mobileLoginBtn) {
-      mobileLoginBtn.innerHTML = `
-        <span class="flex items-center gap-3">
-          <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i> ${safeName} (<span data-i18n="Cổng thành viên">Cổng thành viên</span>)
-        </span>
-        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
-      `;
+      document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
+    } else if (headerLoginBtn) {
+      headerLoginBtn.href = 'portal.html?view=profile';
+      headerLoginBtn.innerHTML = '<i data-lucide="circle-user-round" class="w-4 h-4" aria-hidden="true"></i>';
+      headerLoginBtn.title = 'Tài khoản';
+      headerLoginBtn.setAttribute('aria-label', 'Tài khoản');
     }
+    // Signed-in actions live directly in the header at every viewport width.
+    if (mobileContainer) mobileContainer.innerHTML = '';
     refreshLucideIcons();
   } else {
     // Unauthenticated guest state
