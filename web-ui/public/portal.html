@@ -39,8 +39,8 @@
   <link rel="stylesheet" href="css/style.css?v=3.5.0">
   <link rel="stylesheet" href="portal.css?v=3.5.0">
   <link rel="stylesheet" href="portal-customer.css?v=3.5.0">
-  <link rel="stylesheet" href="portal-admin.css?v=3.5.1">
-  <link rel="stylesheet" href="portal-theme.css?v=3.5.0">
+  <link rel="stylesheet" href="portal-admin.css?v=3.6.5">
+  <link rel="stylesheet" href="portal-theme.css?v=3.6.5">
   <link rel="stylesheet" href="css/page-transition.css?v=3.5.0">
   <script src="js/shared/page-transition.js?v=3.5.0"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -81,6 +81,18 @@
       <button type="button" class="portal-theme-toggle" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
         <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
       </button>
+      <div class="portal-topbar-account">
+        <div id="topbar-user" class="portal-topbar-user" aria-label="Tài khoản đang đăng nhập">
+          <span class="portal-topbar-user-name" id="topbar-user-name"></span>
+          <span class="portal-topbar-avatar" id="topbar-avatar" aria-hidden="true">
+            <img id="topbar-avatar-image" alt="" hidden>
+            <span id="topbar-avatar-initial"></span>
+          </span>
+        </div>
+        <button type="button" id="topbar-logout-button" class="portal-topbar-logout" aria-label="Đăng xuất" title="Đăng xuất">
+          <i data-lucide="log-out" aria-hidden="true"></i>
+        </button>
+      </div>
       <div id="customer-header-account" hidden></div>
 
       <!-- Task 13 test compatibility: hidden reference -->
@@ -210,6 +222,6 @@
   <div id="global-modal" class="portal-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Hộp thoại thao tác">
     <div id="global-modal-content" class="modal-content" role="document"></div>
   </div>
-  <script type="module" src="portal-app.js?v=3.5.0"></script>
+  <script type="module" src="portal-app.js?v=3.6.5"></script>
 </body>
 </html>

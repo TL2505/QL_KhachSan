@@ -9,6 +9,7 @@ function refreshIcons() {
 
 export async function renderDashboard(container, session) {
   if (!container) return;
+  document.body.dataset.customerTier = "member";
   session = session || {};
   const displayName = session.fullName || session.username || 'Quý Khách';
   const customerId = session.customerId || session.userId || session.id || 1;
@@ -124,6 +125,7 @@ export async function renderDashboard(container, session) {
     }
 
     const tier = getLegacyTierInfo(currentPoints, totalSpent);
+    document.body.dataset.customerTier = tier.name.toLowerCase();
 
     // Render Digital Member Card (VIP luxury design)
     const cardWrapper = document.getElementById('member-card-wrapper');

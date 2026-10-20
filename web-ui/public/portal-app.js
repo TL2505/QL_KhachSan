@@ -1,9 +1,10 @@
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js';
-import { loadAdminView } from './js/view-admin.js';
+import { loadAdminView } from './js/view-admin.js?v=3.6.4';
 import { loadStaffView } from './js/view-staff.js';
-import { loadCustomerView } from './js/view-customer.js';
+import { loadCustomerView } from './js/view-customer.js?v=3.6.5';
 import { loadProfileView } from './js/view-shared.js';
 import './js/shared/theme.js';
+import './js/shared/pagination.js?v=3.6.4';
 
 const closeGlobalModal = (modalId = 'global-modal') => {
   const modal = document.getElementById(modalId);
@@ -322,7 +323,11 @@ function renderNav(session, activeTab) {
     if (sidebarRole) sidebarRole.textContent = (roleNames[role] || 'Thành viên').toUpperCase();
 
     const userDisplayName = byId('user-display-name');
-    if (userDisplayName) userDisplayName.textContent = session.fullName || session.username || 'Aurelia';
+    const displayName = session.fullName || session.username || 'Aurelia';
+    if (userDisplayName) userDisplayName.textContent = displayName;
+
+    const topbarUserName = byId('topbar-user-name');
+    if (topbarUserName) topbarUserName.textContent = displayName;
 
     const accountRole = byId('account-role');
     if (accountRole) accountRole.textContent = roleNames[role] || 'Thành viên';
@@ -354,8 +359,20 @@ function renderNav(session, activeTab) {
     }
 
     const accountAvatar = byId('account-avatar');
+    const avatarInitial = String(displayName).trim().charAt(0).toUpperCase() || 'A';
     if (accountAvatar) {
-      accountAvatar.textContent = String(session.fullName || session.username || 'A').trim().charAt(0).toUpperCase();
+      accountAvatar.textContent = avatarInitial;
+    }
+
+    const topbarAvatarInitial = byId('topbar-avatar-initial');
+    const topbarAvatarImage = byId('topbar-avatar-image');
+    if (topbarAvatarInitial) topbarAvatarInitial.textContent = avatarInitial;
+    if (topbarAvatarImage) {
+      const avatarUrl = session.avatarUrl || session.avatar_url || session.profileImage || session.profile_image || session.photoURL || session.picture || '';
+      topbarAvatarImage.hidden = !avatarUrl;
+      topbarAvatarImage.onerror = () => { topbarAvatarImage.hidden = true; };
+      if (avatarUrl) topbarAvatarImage.src = avatarUrl;
+      else topbarAvatarImage.removeAttribute('src');
     }
 
     const portalNav = byId('portal-nav');
@@ -729,6 +746,7 @@ export function completeLogin(result, defaultUsername) {
       userId: payload.userId ?? payload.id ?? payload.user_id ?? 1,
       username: payload.username || defaultUsername || payload.email || 'member',
       fullName: payload.fullName || payload.full_name || payload.name || payload.username || defaultUsername || 'Quý Hội Viên',
+      avatarUrl: payload.avatarUrl || payload.avatar_url || payload.profileImage || payload.profile_image || payload.photoURL || payload.picture || payload.user?.avatarUrl || payload.user?.avatar_url || '',
       role: role === 'STAFF' ? String(rawRole).toUpperCase() : role
     };
     localStorage.setItem('hotel_auth_session', JSON.stringify(user));
@@ -1112,6 +1130,7 @@ try {
       window.location.href = 'index.html#login';
     }
   });
+  byId('topbar-logout-button')?.addEventListener('click', () => byId('logout-button')?.click());
 } catch (e) {
   console.warn('Thiết lập sự kiện DOM:', e);
 }

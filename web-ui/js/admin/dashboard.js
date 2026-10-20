@@ -58,6 +58,24 @@ export async function renderDashboard(container, session) {
 function drawRevenueChart(data, canvas) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    const isLight = document.documentElement.dataset.theme === "light";
+    const axisColor = isLight ? "#8b8174" : "#374151";
+    const tickColor = isLight ? "#766b5e" : "#9ca3af";
+    const gridColor = isLight ? "rgba(120, 105, 88, 0.22)" : "rgba(55, 65, 81, 0.4)";
+    const valueColor = isLight ? "#382f25" : "#f9fafb";
+
+    if (canvas._themeObserver) canvas._themeObserver.disconnect();
+    if (typeof MutationObserver !== "undefined") {
+        canvas._themeObserver = new MutationObserver(() => {
+            if (!canvas.isConnected) {
+                canvas._themeObserver.disconnect();
+                delete canvas._themeObserver;
+                return;
+            }
+            drawRevenueChart(data, canvas);
+        });
+        canvas._themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    }
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -67,7 +85,7 @@ function drawRevenueChart(data, canvas) {
 
     const maxVal = Math.max(...data.map(d => Number(d.grossRevenue || 0)), 100000);
 
-    ctx.strokeStyle = "#374151";
+    ctx.strokeStyle = axisColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(margin.left, margin.top);
@@ -75,7 +93,7 @@ function drawRevenueChart(data, canvas) {
     ctx.lineTo(margin.left + width, margin.top + height);
     ctx.stroke();
 
-    ctx.fillStyle = "#9ca3af";
+    ctx.fillStyle = tickColor;
     ctx.font = "11px 'Plus Jakarta Sans', sans-serif";
     ctx.textAlign = "right";
     const divisions = 4;
@@ -86,7 +104,7 @@ function drawRevenueChart(data, canvas) {
         ctx.fillText(Number(val).toLocaleString('vi-VN', { notation: 'compact' }), margin.left - 8, y + 4);
         
         if (i > 0) {
-            ctx.strokeStyle = "rgba(55, 65, 81, 0.4)";
+            ctx.strokeStyle = gridColor;
             ctx.beginPath();
             ctx.moveTo(margin.left, y);
             ctx.lineTo(margin.left + width, y);
@@ -112,10 +130,10 @@ function drawRevenueChart(data, canvas) {
         ctx.roundRect(x - barWidth/2, y, barWidth, barHeight, [4, 4, 0, 0]);
         ctx.fill();
 
-        ctx.fillStyle = "#9ca3af";
+        ctx.fillStyle = tickColor;
         ctx.fillText(d.monthName || d.month, x, margin.top + height + 18);
         
-        ctx.fillStyle = "#f9fafb";
+        ctx.fillStyle = valueColor;
         ctx.fillText(Number(d.grossRevenue).toLocaleString('vi-VN', { notation: 'compact' }), x, y - 6);
     });
 }

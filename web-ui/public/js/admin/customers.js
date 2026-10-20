@@ -253,26 +253,17 @@ export async function renderAdminCustomers(container, session) {
             // Summary bar
             const summaryBar = document.getElementById("admin-customers-summary");
             summaryBar.innerHTML = `
-                <div class="card" style="margin:0;flex:1;padding:16px 20px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--info);">
-                    <i data-lucide="users" style="width:20px;height:20px;color:var(--info);"></i>
-                    <div>
-                        <div style="font-size:22px;font-weight:700;font-family:var(--font-heading);">${allCustomers.length}</div>
-                        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Tổng khách hàng</div>
-                    </div>
+                <div class="card stat-card">
+                    <div class="stat-title">Tổng khách hàng</div>
+                    <div class="stat-value">${allCustomers.length}</div>
                 </div>
-                <div class="card" style="margin:0;flex:1;padding:16px 20px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--success);">
-                    <i data-lucide="user-check" style="width:20px;height:20px;color:var(--success);"></i>
-                    <div>
-                        <div style="font-size:22px;font-weight:700;font-family:var(--font-heading);">${allCustomers.filter(c => c.email).length}</div>
-                        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Có email</div>
-                    </div>
+                <div class="card stat-card">
+                    <div class="stat-title">Có email</div>
+                    <div class="stat-value">${allCustomers.filter(c => c.email).length}</div>
                 </div>
-                <div class="card" style="margin:0;flex:1;padding:16px 20px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--primary);">
-                    <i data-lucide="phone" style="width:20px;height:20px;color:var(--primary);"></i>
-                    <div>
-                        <div style="font-size:22px;font-weight:700;font-family:var(--font-heading);">${allCustomers.filter(c => c.phone).length}</div>
-                        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Có SĐT</div>
-                    </div>
+                <div class="card stat-card">
+                    <div class="stat-title">Có SĐT</div>
+                    <div class="stat-value">${allCustomers.filter(c => c.phone).length}</div>
                 </div>
             `;
             lucide.createIcons();
