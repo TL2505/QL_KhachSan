@@ -4,12 +4,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Properties;
+import java.util.function.BiPredicate;
 
 /**
  * Centralized Connection and Environment Configuration for Desktop App (Java Swing).
- * Explicit environment or reviewed file configuration takes priority.
- * An unavailable configured host fails clearly; financial requests never switch ledgers.
+ * Explicit environment or reviewed file configuration takes priority. On Windows only,
+ * an unreachable configured database may use localhost after a TCP availability check.
  */
 public final class ApiConfig {
     public static final String DEFAULT_VM_IP = "192.168.56.102";
@@ -149,10 +152,61 @@ public final class ApiConfig {
      * 3. Reviewed file configuration or localhost default.
      */
     private static String resolveJdbcUrl() {
-        String env=getEnvJdbc();if(env!=null)return env;
-        String configured=PROPS.getProperty("db.url");
-        if(configured!=null&&!configured.isBlank())return configured.trim();
-        return "jdbc:mysql://"+getDbHost()+":"+getDbPort()+"/"+getDbName()+"?useSSL=false&serverTimezone=UTC";
+        String jdbcUrl = getEnvJdbc();
+        if (jdbcUrl == null) {
+            jdbcUrl = PROPS.getProperty("db.url");
+        }
+        if (jdbcUrl == null || jdbcUrl.isBlank()) {
+            jdbcUrl = "jdbc:mysql://" + getDbHost() + ":" + getDbPort() + "/" + getDbName()
+                + "?useSSL=false&serverTimezone=UTC";
+        }
+        return resolveWindowsDbFallback(
+            jdbcUrl.trim(), isWindows(), (host, port) -> isTcpReachable(host, port, 1000));
+    }
+
+    static String resolveWindowsDbFallback(String jdbcUrl, boolean windows,
+                                           BiPredicate<String, Integer> tcpProbe) {
+        if (!windows) return jdbcUrl;
+
+        URI jdbcUri = URI.create(jdbcUrl.substring("jdbc:".length()));
+        if (!"mysql".equalsIgnoreCase(jdbcUri.getScheme())) return jdbcUrl;
+
+        String host = jdbcUri.getHost();
+        if (host == null || isLocalHost(host)) return jdbcUrl;
+
+        int port = jdbcUri.getPort() > 0 ? jdbcUri.getPort() : DEFAULT_DB_PORT;
+        if (tcpProbe.test(host, port)) return jdbcUrl;
+
+        if (tcpProbe.test("localhost", port)) {
+            System.err.printf(
+                "[ApiConfig] DB host %s:%d is unreachable; using localhost:%d fallback.%n",
+                host, port, port);
+            return jdbcUrlWithHost(jdbcUri, "localhost");
+        }
+
+        System.err.printf(
+            "[ApiConfig] DB host %s:%d and localhost:%d are unreachable; keeping configured DB URL.%n",
+            host, port, port);
+        return jdbcUrl;
+    }
+
+    private static String jdbcUrlWithHost(URI jdbcUri, String host) {
+        try {
+            URI localUri = new URI(jdbcUri.getScheme(), jdbcUri.getUserInfo(), host,
+                jdbcUri.getPort(), jdbcUri.getPath(), jdbcUri.getQuery(), jdbcUri.getFragment());
+            return "jdbc:" + localUri;
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Could not build localhost JDBC fallback URL", e);
+        }
+    }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).startsWith("windows");
+    }
+
+    private static boolean isLocalHost(String host) {
+        return "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host)
+            || "::1".equals(host) || "[::1]".equals(host);
     }
 
     private static String getEnvJdbc() {

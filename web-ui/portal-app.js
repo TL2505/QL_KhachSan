@@ -344,7 +344,7 @@ function openView(session, role, tab) {
     renderNav(session, tab);
 
     const heading = byId('portal-heading');
-    if (heading) heading.textContent = titles[tab] || 'Tổng quan';
+    if (heading) heading.textContent = menus[role]?.find(([key]) => key === tab)?.[1] || titles[tab] || 'Tổng quan';
 
     const msg = byId('portal-message');
     if (msg) msg.hidden = true;
@@ -393,7 +393,7 @@ function openView(session, role, tab) {
 /**
  * Task 15: Lifecycle Notification Tray Center
  */
-async function initNotificationTray(session) {
+export async function initNotificationTray(session) {
   const bellBtn = byId('btn-notification-bell');
   const dropdown = byId('notification-dropdown');
   const badge = byId('notif-unread-badge');
@@ -401,6 +401,14 @@ async function initNotificationTray(session) {
   const markAllBtn = byId('btn-mark-all-read');
 
   if (!bellBtn || !dropdown) return;
+  // Lifecycle notifications belong to customer profiles, not staff/admin accounts.
+  const isCustomer = roleOf(session?.role) === 'CUSTOMER';
+  bellBtn.hidden = !isCustomer;
+  bellBtn.style.display = isCustomer ? '' : 'none';
+  if (!isCustomer) {
+    dropdown.classList.add('hidden');
+    return;
+  }
 
   // Toggle Dropdown
   bellBtn.addEventListener('click', (e) => {
@@ -596,6 +604,8 @@ function enterPortal(session) {
     const isCustomer = role === 'CUSTOMER';
     if (typeof document !== 'undefined' && document.body) {
       document.body.classList.toggle('customer-portal', isCustomer);
+      document.body.classList.toggle('admin-portal', role === 'ADMIN');
+      document.body.classList.toggle('staff-portal', role === 'STAFF');
     }
 
     const appView = byId('app-view');

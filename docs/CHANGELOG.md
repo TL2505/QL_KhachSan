@@ -1,5 +1,23 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-20] — @codex — Browser verification of administrator login
+
+- Reproduced valid administrator sessions being cleared by customer-only notification HTTP 401 responses and static scripts being blocked by the shared unauthenticated API rate limit. Scoped lifecycle notifications to customers and excluded static handlers from that API budget while retaining API limits and security headers.
+- Corrected the administrator login destination and role-specific page titles; guarded late dashboard responses after navigation; fixed portal JS/CSS asset paths and included the existing administrator stylesheet in the served public tree.
+- Verified `admin_main` login through the browser, populated dashboard/rooms/bookings, reload persistence, and no JavaScript console errors in the verified flow. Regression checks: 54 web tests passed; focused static-file and API-budget backend tests passed.
+
+## [2026-10-20] — @codex — Automatic sample import for the local demo
+
+- Updated the demo launcher to import `database/hotel.sql` into a newly generated local schema, excluding server-wide user/grant statements, then apply migrations and encrypt sample identities with persistent demo keys.
+- Added unique legacy promotion codes, retained the original sample accounts, and linked the additional demo guest login to an imported customer. Added automatic upgrade from the minimal demo and `-ReloadSample`; normal restarts reuse the saved schema.
+- Verified imported counts (15 rooms, 13 customers, 131 bookings, 13 encrypted identities with no plaintext identities) and successful administrator/guest authentication and rooms, services, bookings, customers, promotions, profile and guest-stays HTTP requests.
+
+## [2026-10-20] — @codex — Backend launcher correction
+
+- Added `scripts/start-demo.ps1` and a schema-only Java bootstrap for a separate localhost demo database with persistent keys and synthetic accounts/inventory. Verified live health, both pages, both account logins, and authenticated rooms/services requests.
+- Fixed Maven's hardcoded desktop main class so the backend launcher's `-Dexec.mainClass` override takes effect.
+- Documented required persistent identity vault keys and the checked-in VM database configuration; added early key validation to the launcher.
+
 ## [2026-10-20] — @codex — Phase 4 reports, baseline and changelogs — Implementation evidence and pending release acceptance
 
 - Added [implementation checklist](PHASE_4_IMPLEMENTATION.md), [implementation report](PHASE_4_REPORT.md), and [verification evidence](PHASE_4_VERIFICATION.md); linked current evidence from `PHASE_4_AND_BEYOND_BASELINE.md` and updated the root and Vietnamese documentation changelogs. Historical entries remain unchanged.

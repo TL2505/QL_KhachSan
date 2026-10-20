@@ -9,6 +9,8 @@
 
 2. Cấu hình database
    - Mở `config.properties` và đảm bảo `server.url=http://localhost:8081/api`.
+   - Trên Windows, backend thử DB được cấu hình trước; nếu host đó không truy cập được và `localhost` cùng cổng đang chạy MariaDB/MySQL, backend tự chuyển sang `localhost`. Fallback giữ nguyên tên database và các tham số JDBC; hãy đảm bảo DB local là DB phù hợp để chạy ứng dụng.
+   - Trên Linux/Docker, backend không tự chuyển host; Docker Compose dùng service `mariadb` trong network nội bộ.
    - Nếu MySQL không có mật khẩu cho root, cấu hình mặc định đã dùng `root` với mật khẩu rỗng.
    - Nếu dùng cấu hình khác, set biến môi trường:
      - `DB_HOST`
@@ -20,7 +22,7 @@
    - Concierge Phase 3 chuyển câu hỏi qua gateway Java tới RAG nội bộ tại `AI_RAG_URL` (mặc định `http://127.0.0.1:8082/rag/query`). Chỉ cấu hình endpoint HTTP trên loopback; RAG phải trả JSON có `reply` và `confidence_score` từ 0 đến 1; `citations` và `suggested_actions` không bắt buộc. Độ tin cậy dưới 0.80 sẽ tạo ticket cho Lễ tân. Nếu RAG chưa chạy/cấu hình, chatbot báo không khả dụng và không tự tạo câu trả lời.
 
 3. Build và chạy backend
-   - Chạy `build_project.bat` để biên dịch và tạo class.
+   - Trong PowerShell, chạy `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1` để biên dịch và khởi chạy backend. Cấu hình khóa vault theo `docs/run-project.md` trước khi chạy.
    - Khởi chạy backend bằng `Main`:
      - `quanlykhachsan.backend.Main`
    - Backend hiện đang lắng nghe trên cổng `8081`.

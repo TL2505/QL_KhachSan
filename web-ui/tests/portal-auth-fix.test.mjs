@@ -142,6 +142,35 @@ function setupMockEnvironment() {
 // =============================================================================
 // STATIC STRUCTURAL & LUXURY AUDIT
 // =============================================================================
+
+test('admin and staff never request customer-only notifications or expire their session', async () => {
+  const env = setupMockEnvironment();
+  try {
+    let requests = 0;
+    globalThis.fetch = async url => { if (String(url).includes('/notifications')) requests++; throw new Error('Synthetic unavailable endpoint'); };
+    const { initNotificationTray } = await loadModule('public/portal-app.js');
+    for (const role of ['ADMIN', 'STAFF', 'HOUSEKEEPING']) {
+      await initNotificationTray({ role, token: 'valid-test-token' });
+      assert.equal(env.getOrCreate('btn-notification-bell').hidden, true);
+    }
+    assert.equal(requests, 0);
+  } finally { env.teardown(); }
+});
+
+test('password login routes administrators to the dashboard', async () => {
+  const env = setupMockEnvironment();
+  const originalTimeout = globalThis.setTimeout;
+  try {
+    globalThis.fetch = async () => ({ ok: true, json: async () => ({ status: 'success', data: {token:'test-token', userId:1, role:'ADMIN'} }) });
+    globalThis.setTimeout = callback => { callback(); return 0; };
+    window.location.replace = destination => { window.location.href = destination; };
+    env.getOrCreate('login-username').value = 'admin_main';
+    env.getOrCreate('login-password').value = 'test-password';
+    const { handleLoginSubmit } = await loadModule('public/portal-app.js');
+    await handleLoginSubmit({preventDefault(){}});
+    assert.equal(window.location.href, 'portal.html?view=dashboard');
+  } finally { globalThis.setTimeout = originalTimeout; env.teardown(); }
+});
 test('portal.html: contains tab-login, tab-register, secure login/register forms, and social login scaffolding', () => {
   for (const file of ['portal.html', 'public/portal.html']) {
     const html = fs.readFileSync(path.join(webUiDir, file), 'utf-8');

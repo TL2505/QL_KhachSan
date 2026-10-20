@@ -154,8 +154,10 @@ public class Main {
         // Thiết lập cấu hình mặc định và chạy server
         var staticFiles = new quanlykhachsan.backend.utils.StaticFileHandler(
                 java.nio.file.Path.of("web-ui", "public"));
-        registerContext(server, ipRateLimiter, "/booking", staticFiles, exceptionFilter, corsFilter);
-        registerContext(server, ipRateLimiter, "/", staticFiles, exceptionFilter, corsFilter);
+        // A page loads dozens of scripts/styles without a bearer header. Static assets must
+        // not consume the shared unauthenticated API budget during login navigation.
+        registerContext(server, "/booking", staticFiles, exceptionFilter, corsFilter);
+        registerContext(server, "/", staticFiles, exceptionFilter, corsFilter);
         server.setExecutor(Executors.newFixedThreadPool(20));
 
         return server;

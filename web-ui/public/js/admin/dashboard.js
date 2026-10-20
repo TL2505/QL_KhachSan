@@ -31,26 +31,31 @@ export async function renderDashboard(container, session) {
     `;
 
     try {
+        const revenue = container.querySelector("#stat-revenue");
+        const occupied = container.querySelector("#stat-occupied");
+        const pending = container.querySelector("#stat-pending");
+        const canvas = container.querySelector("#revenue-chart");
         // Fetch Stats
         const stats = await api.get("/reports/today-stats");
+        // Navigation or session expiry can remove this view while the request is pending.
+        if (!revenue || !occupied || !pending || !container.contains(revenue)) return;
         if (stats) {
-            document.getElementById("stat-revenue").textContent = Number(stats.revenueToday || 0).toLocaleString('vi-VN') + " đ";
-            document.getElementById("stat-occupied").textContent = stats.occupiedRooms || 0;
-            document.getElementById("stat-pending").textContent = stats.pendingCheckIns || 0;
+            revenue.textContent = Number(stats.revenueToday || 0).toLocaleString('vi-VN') + " đ";
+            occupied.textContent = stats.occupiedRooms || 0;
+            pending.textContent = stats.pendingCheckIns || 0;
         }
 
         // Fetch monthly revenue and draw Canvas bar chart
         const monthly = await api.get("/reports/monthly-revenue");
-        if (monthly && monthly.length > 0) {
-            drawRevenueChart(monthly);
+        if (monthly && monthly.length > 0 && canvas && container.contains(canvas)) {
+            drawRevenueChart(monthly, canvas);
         }
     } catch (e) {
         console.error("Lỗi nạp báo cáo thống kê: ", e);
     }
 }
 
-function drawRevenueChart(data) {
-    const canvas = document.getElementById("revenue-chart");
+function drawRevenueChart(data, canvas) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     
