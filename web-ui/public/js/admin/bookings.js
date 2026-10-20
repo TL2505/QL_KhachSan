@@ -20,7 +20,7 @@ export async function renderAdminBookings(container) {
       <button type="button" id="admin-bookings-refresh" class="btn btn-secondary"><i data-lucide="refresh-cw"></i>Làm mới</button>
     </div>
     <div class="admin-bookings-toolbar card">
-      <label class="admin-bookings-search"><i data-lucide="search"></i><input id="admin-bookings-search" class="form-input" placeholder="Tìm mã đơn, phòng hoặc khách hàng"></label>
+      <label class="admin-bookings-search"><i data-lucide="search"></i><input id="admin-bookings-search" class="form-input" aria-label="Tìm đơn đặt phòng" placeholder="Tìm mã đơn, phòng hoặc khách hàng"></label>
       <select id="admin-bookings-filter" class="form-input" aria-label="Lọc theo trạng thái">
         <option value="">Tất cả trạng thái</option><option value="pending">Chờ xác nhận</option><option value="confirmed">Đã xác nhận</option><option value="checked_in">Đang lưu trú</option><option value="checked_out">Đã trả phòng</option><option value="cancelled">Đã hủy</option>
       </select>
@@ -49,7 +49,7 @@ export async function renderAdminBookings(container) {
         : state === "confirmed"
           ? `<button class="btn btn-danger btn-sm" data-action="cancelled" data-id="${b.id}">Hủy đơn</button>`
           : '<span class="admin-bookings-na">Không có thao tác</span>';
-      return `<tr><td><strong>#${esc(b.id)}</strong></td><td>Phòng ${esc(b.roomId)}</td><td>KH #${esc(b.customerId)}</td><td>${esc(dateText(b.checkInDate))}</td><td>${esc(dateText(b.checkOutDate))}</td><td class="admin-bookings-price">${Number(b.totalPrice || 0).toLocaleString("vi-VN")} đ</td><td><span class="room-badge ${info.cls}">${esc(info.label)}</span></td><td class="admin-bookings-actions">${actions}</td></tr>`;
+      return `<tr><td><strong>#${esc(b.id)}</strong></td><td>Phòng ${esc(b.roomId)}</td><td>KH #${esc(b.customerId)}</td><td>${esc(dateText(b.checkInDate))}</td><td>${esc(dateText(b.checkOutDate))}</td><td class="admin-bookings-price">${Number(b.totalPrice || 0).toLocaleString("vi-VN")} đ</td><td><span class="room-badge ${info.cls}">${esc(info.label)}</span></td><td><div class="admin-bookings-actions">${actions}</div></td></tr>`;
     }).join("");
   };
 

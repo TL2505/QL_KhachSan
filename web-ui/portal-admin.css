@@ -1294,3 +1294,202 @@ html[data-theme="light"] .admin-portal .portal-view .star-rating .empty { color:
 .admin-portal .admin-bookings-loading,.admin-portal .admin-bookings-empty,.admin-portal .admin-bookings-error { padding:32px !important; text-align:center; color:var(--portal-muted) !important; }.admin-portal .admin-bookings-error { color:#fda4af !important; }
 .admin-portal .admin-bookings-table .room-badge { display:inline-flex; align-items:center; min-height:27px; padding:4px 9px; border:1px solid transparent; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; }.admin-portal .admin-bookings-table .badge-available { color:#86efac; background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.28); }.admin-portal .admin-bookings-table .badge-cleaning { color:#fde68a; background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.3); }.admin-portal .admin-bookings-table .badge-occupied { color:#93c5fd; background:rgba(59,130,246,.12); border-color:rgba(59,130,246,.3); }.admin-portal .admin-bookings-table .badge-booked { color:#fdba74; background:rgba(249,115,22,.12); border-color:rgba(249,115,22,.3); }.admin-portal .admin-bookings-table .badge-maintenance { color:#fda4af; background:rgba(244,63,94,.12); border-color:rgba(244,63,94,.3); }
 @media (max-width:680px) { .admin-portal .admin-bookings-toolbar { grid-template-columns:1fr; border-radius:14px; }.admin-portal .admin-bookings-card { margin-top:14px !important; border-top:1px solid var(--portal-border); border-radius:14px; } }
+
+/* Consistent admin spacing and rounded controls, including the compact viewport. */
+body.admin-portal {
+  --admin-radius-card: 18px;
+  --admin-radius-control: 12px;
+}
+
+body.admin-portal .portal-sidebar {
+  padding: 24px 14px 18px;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+body.admin-portal .sidebar-caption {
+  padding: 0 14px;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+body.admin-portal .portal-nav {
+  display: grid;
+  gap: 8px;
+  margin-top: 0;
+}
+
+body.admin-portal .portal-nav button {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  justify-content: start;
+  justify-items: start;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  height: auto;
+  padding: 12px 14px;
+  border-radius: var(--admin-radius-control);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  transform: none;
+}
+
+body.admin-portal .portal-nav button :is(svg, i) {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  justify-self: center;
+  flex-shrink: 0;
+}
+
+body.admin-portal .portal-nav button span {
+  min-width: 0;
+  margin: 0;
+  text-align: left;
+}
+
+body.admin-portal .portal-content-bar {
+  min-height: 60px;
+  margin-bottom: 24px;
+  padding: 0 0 20px;
+}
+
+body.admin-portal .portal-content-bar h1 { margin: 0; }
+body.admin-portal .portal-content-bar::before { display: none; }
+body.admin-portal .sidebar-account { margin-top: auto; padding-top: 18px; }
+
+body.admin-portal .portal-view .card {
+  border-radius: var(--admin-radius-card);
+  border: 1px solid var(--admin-outline);
+  padding: clamp(18px, 2vw, 26px);
+}
+
+body.admin-portal .portal-view .page-header {
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+body.admin-portal .portal-view :is(.filters, .filter-bar, .rooms-filters) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  border-radius: var(--admin-radius-card);
+  padding: 18px;
+}
+
+body.admin-portal :is(.portal-view, [id="global-modal"]) :is(.form-input, input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-height: 44px;
+  border-radius: var(--admin-radius-control);
+  padding: 11px 14px;
+  border: 1px solid var(--admin-outline);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: none;
+}
+
+body.admin-portal :is(.portal-view, [id="global-modal"]) :is(.form-input, input, select, textarea):focus-visible {
+  outline: 2px solid var(--portal-gold);
+  outline-offset: 2px;
+}
+
+body.admin-portal :is(.portal-view, [id="global-modal"]) .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  height: auto;
+  padding: 10px 16px;
+  border-radius: var(--admin-radius-control);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+body.admin-portal :is(.portal-view, [id="global-modal"]) .btn svg { width: 17px; height: 17px; flex-shrink: 0; }
+body.admin-portal .portal-view .table-container { border-radius: 14px; overflow-x: auto; }
+body.admin-portal .portal-view :is(th, td) { padding: 14px 16px; vertical-align: middle; line-height: 1.6; }
+body.admin-portal .portal-view th { font-size: 12px; font-weight: 600; }
+body.admin-portal .portal-view td { font-size: 13px; }
+body.admin-portal .portal-view td .btn { min-height: 36px; padding: 8px 12px; border-radius: 10px; font-size: 12px; }
+body.admin-portal .portal-view td .btn + .btn { margin-inline-start: 6px; }
+body.admin-portal #global-modal .modal-content { border-radius: 22px; }
+
+body.admin-portal .admin-bookings-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 240px);
+  gap: 16px;
+  align-items: center;
+  padding: 18px !important;
+  margin-bottom: 18px !important;
+  border-radius: var(--admin-radius-card);
+}
+
+body.admin-portal .portal-view .admin-bookings-toolbar .form-input { width: 100%; height: 44px; min-height: 44px; margin: 0; border-radius: var(--admin-radius-control); }
+body.admin-portal .admin-bookings-search { min-width: 0; }
+body.admin-portal .portal-view .admin-bookings-search input.form-input { padding-inline-start: 44px; }
+body.admin-portal .admin-bookings-search svg { z-index: 1; left: 15px; width: 18px; height: 18px; }
+body.admin-portal .admin-bookings-card { border-top: 1px solid var(--admin-outline); border-radius: var(--admin-radius-card); }
+body.admin-portal .admin-bookings-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 190px; }
+body.admin-portal .admin-bookings-actions .btn + .btn { margin-inline-start: 0; }
+body.admin-portal .admin-bookings-table .room-badge { min-height: 30px; padding: 5px 10px; border-radius: 999px; }
+
+@media (max-width: 1000px) and (min-width: 821px) {
+  body.admin-portal .portal-shell { grid-template-columns: 220px minmax(0, 1fr); }
+  body.admin-portal .portal-sidebar { padding-inline: 10px; }
+  body.admin-portal .portal-nav button { gap: 10px; padding-inline: 12px; font-size: 12px; }
+}
+
+@media (max-width: 820px) {
+  body.admin-portal .portal-shell { grid-template-columns: minmax(0, 1fr); }
+  body.admin-portal .portal-sidebar { position: static; height: auto; padding: 14px; overflow: visible; }
+  body.admin-portal .sidebar-caption { margin-bottom: 10px; }
+  body.admin-portal .portal-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+  body.admin-portal .portal-nav button { width: auto; min-width: max-content; min-height: 44px; white-space: nowrap; }
+  body.admin-portal .portal-content { padding: 22px 16px; }
+}
+
+@media (max-width: 600px) {
+  body.admin-portal .admin-bookings-toolbar { grid-template-columns: minmax(0, 1fr); }
+  body.admin-portal .portal-view .page-header { align-items: flex-start; }
+  body.admin-portal .portal-view .page-header > .btn { width: 100%; }
+  body.admin-portal .portal-content-bar h1 { font-size: 25px; }
+}
+
+/* Keep essential header controls usable even before the utility CDN loads. */
+body.admin-portal .portal-topbar-actions { display: flex; align-items: center; gap: 12px; }
+body.admin-portal .portal-topbar-actions > .relative { position: relative; }
+body.admin-portal .portal-topbar-actions .hidden { display: none !important; }
+body.admin-portal .portal-icon-btn,
+body.admin-portal .portal-close-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--portal-border);
+  border-radius: 50%;
+  background: var(--portal-surface);
+  color: var(--portal-soft);
+  cursor: pointer;
+}
+body.admin-portal :is(.portal-icon-btn, .portal-close-circle) svg { width: 18px; height: 18px; }
+body.admin-portal .portal-view .page-header > h1 + p { flex-basis: 100%; margin-top: -8px; }
+
+html[data-theme="light"] body.admin-portal .portal-view th {
+  background: #f4f0e9;
+  color: #665442;
+}
