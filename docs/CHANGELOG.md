@@ -1,5 +1,12 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-21] — @codex — Collapsible Staff sidebar
+
+- Enhanced the existing Staff sidebar with a keyboard-accessible toggle and a separate persisted collapse preference. Desktop width changes from the existing 248px to 80px; the active item, centered icons, employee avatar and logout remain visible. Vietnamese hover/focus tooltips are positioned outside scrolling navigation so they are not clipped.
+- Scoped layout rules to Staff, including its content-specific grid overrides. The main workspace grows when collapsed and room cards fit the available width. Narrow screens retain the existing horizontal navigation, with compact icon items, a visible toggle and avatar/logout controls. Storage failures fall back to in-memory state.
+- Retained menu ordering, routing, role resolution and logout code. Staff-only controls/listeners are removed on cleanup; Admin/customer markup is not enhanced. Both deployment copies and portal asset cache versions were updated.
+- All 101 web tests passed. Chromium checks covered persistence, all eight Staff views, active states, centered icons, tooltips and keyboard activation, room-card sizing at 320–1920px, short viewports, same-page cleanup, blocked preference storage, dark/light themes and the existing logout flow. Admin layout geometry matched its pre-change baseline. Verification used isolated API fixtures with no application writes; no API or database code changed.
+
 ## [2026-10-21] — @codex — Direct account icons and compact landing header
 
 - Replaced the signed-in greeting/dropdown with three equal-sized account, member-portal and logout icons, including escaped-name Vietnamese tooltips and keyboard labels. Account opens the existing profile tab; portal navigation and the logout handler retain their existing behavior. Signed-in actions remain directly visible on mobile rather than being duplicated in its navigation drawer.
