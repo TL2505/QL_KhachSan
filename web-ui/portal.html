@@ -189,18 +189,18 @@
 
     <section id="app-view" class="portal-shell" hidden aria-label="Cổng quản lý Aurelia">
       <aside id="portal-sidebar" class="portal-sidebar">
-        <p id="sidebar-role" class="sidebar-caption">CỔNG THÀNH VIÊN</p>
+        <div class="admin-sidebar-heading">
+          <p id="sidebar-role" class="sidebar-caption">CỔNG THÀNH VIÊN</p>
+          <button type="button" id="admin-sidebar-toggle" class="btn btn-ghost admin-sidebar-toggle" aria-label="Thu gọn thanh điều hướng" aria-expanded="true" title="Thu gọn thanh điều hướng">
+            <i data-lucide="panel-left-close" aria-hidden="true"></i>
+          </button>
+        </div>
         <nav id="portal-nav" class="portal-nav" role="tablist" aria-label="Điều hướng cổng"></nav>
-        <div id="portal-account" class="sidebar-account"><div class="account-avatar" id="account-avatar">A</div><div class="account-meta"><strong id="user-display-name">Aurelia</strong><small id="account-role">Thành viên</small></div><button id="logout-button" type="button" aria-label="Đăng xuất"><i data-lucide="log-out"></i></button></div>
+        <div id="portal-account" class="sidebar-account"><div class="account-meta"><strong id="user-display-name">Aurelia</strong><small id="account-role">Thành viên</small></div><button id="logout-button" type="button" aria-label="Đăng xuất"><i data-lucide="log-out"></i></button></div>
       </aside>
       <section class="portal-content">
         <div class="portal-content-bar">
           <div><h1 id="portal-heading">Tổng quan & Hạng thẻ</h1></div>
-          <div class="flex items-center gap-3">
-            <a href="index.html" class="portal-close-circle w-9 h-9 rounded-full border border-amber-500/30 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 flex items-center justify-center transition-all shadow" title="Đóng cổng & Về trang chủ" aria-label="Đóng cổng">
-              <i data-lucide="x" class="w-4 h-4"></i>
-            </a>
-          </div>
         </div>
         <div id="portal-message" class="portal-message alert alert-error" role="status" aria-live="polite" hidden></div>
         <main id="view-container" class="portal-view" role="tabpanel" tabindex="0"></main>

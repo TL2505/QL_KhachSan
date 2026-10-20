@@ -1493,3 +1493,278 @@ html[data-theme="light"] body.admin-portal .portal-view th {
   background: #f4f0e9;
   color: #665442;
 }
+
+/* Keep the brand row intact as the admin navigation changes shape. */
+body.admin-portal .portal-topbar {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+body.admin-portal .portal-brand.navbar-start {
+  width: auto;
+  min-width: 0;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+body.admin-portal .portal-topbar-actions.navbar-end {
+  width: auto;
+  min-width: max-content;
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+
+body.admin-portal .admin-sidebar-heading { display: flex; align-items: center; gap: 10px; min-width: 0; margin-bottom: 16px; }
+body.admin-portal .admin-sidebar-heading .sidebar-caption { flex: 1; min-width: 0; margin: 0; padding: 0; }
+body.admin-portal .admin-sidebar-toggle { display: inline-grid; width: 34px; height: 34px; min-height: 34px; flex: 0 0 34px; place-items: center; padding: 0; border: 1px solid var(--portal-border); border-radius: 9px; color: var(--portal-muted); }
+body.admin-portal .admin-sidebar-toggle[hidden] { display: none !important; }
+body.admin-portal .admin-sidebar-toggle svg { width: 17px; height: 17px; }
+body.admin-portal .admin-sidebar-toggle:hover { color: var(--portal-soft); border-color: var(--portal-gold); background: var(--portal-surface); }
+body.admin-portal #portal-account { flex: 0 0 auto; }
+
+body.admin-portal.admin-sidebar-collapsed .portal-shell { grid-template-columns: 84px minmax(0, 1fr); }
+body.admin-portal.admin-sidebar-collapsed .portal-sidebar { padding-inline: 10px; }
+body.admin-portal.admin-sidebar-collapsed .admin-sidebar-heading { justify-content: center; flex-wrap: wrap; gap: 7px; }
+body.admin-portal.admin-sidebar-collapsed .admin-sidebar-heading .sidebar-caption { display: none; }
+body.admin-portal.admin-sidebar-collapsed .portal-nav button { display: grid; grid-template-columns: 1fr; justify-items: center; padding-inline: 8px; }
+body.admin-portal.admin-sidebar-collapsed .portal-nav button span,
+body.admin-portal.admin-sidebar-collapsed #portal-account .account-meta { display: none; }
+body.admin-portal.admin-sidebar-collapsed #portal-account { justify-content: center; gap: 6px; }
+body.admin-portal.admin-sidebar-collapsed #logout-button { width: 28px; padding: 4px; }
+
+@media (max-width: 1100px) and (min-width: 821px) {
+  body.admin-portal .portal-shell { grid-template-columns: 78px minmax(0, 1fr); }
+  body.admin-portal .portal-sidebar { position: sticky; top: 0; z-index: 20; display: flex; flex-direction: column; width: 78px; height: calc(100vh - 82px); padding: 14px 10px; overflow-x: hidden; overflow-y: auto; border-right: 1px solid var(--portal-border); border-bottom: 0; transition: width .2s ease, box-shadow .2s ease; }
+  body.admin-portal .admin-sidebar-heading { justify-content: center; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+  body.admin-portal .admin-sidebar-heading .sidebar-caption { display: none; }
+  body.admin-portal .portal-nav { display: grid; grid-template-columns: 1fr; flex: 1 1 auto; min-height: 0; gap: 8px; overflow-x: hidden; overflow-y: auto; padding: 0; }
+  body.admin-portal .portal-nav button { display: grid; grid-template-columns: 1fr; justify-items: center; width: 100%; min-width: 0; min-height: 48px; padding: 12px 8px; }
+  body.admin-portal .portal-nav button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  body.admin-portal #portal-account { display: flex; justify-content: center; gap: 6px; }
+  body.admin-portal #portal-account .account-meta { display: none; }
+  body.admin-portal #logout-button { width: 28px; padding: 4px; }
+  body.admin-portal .portal-content { min-width: 0; padding: 24px clamp(16px, 2.5vw, 30px); }
+  body.admin-portal.admin-sidebar-collapsed .portal-shell { grid-template-columns: 78px minmax(0, 1fr); }
+}
+
+@media (min-width: 821px) and (max-width: 1100px) and (hover: hover) {
+  body.admin-portal .portal-sidebar:hover,
+  body.admin-portal .portal-sidebar:focus-within {
+    width: 248px;
+    margin-inline-end: -170px;
+    padding-inline: 14px;
+    overflow-x: visible;
+    background: #101728;
+    box-shadow: 12px 8px 30px rgba(0, 0, 0, .38);
+  }
+  body.admin-portal .portal-sidebar:hover .admin-sidebar-heading,
+  body.admin-portal .portal-sidebar:focus-within .admin-sidebar-heading { justify-content: flex-start; flex-wrap: nowrap; }
+  body.admin-portal .portal-sidebar:hover .admin-sidebar-heading .sidebar-caption,
+  body.admin-portal .portal-sidebar:focus-within .admin-sidebar-heading .sidebar-caption { display: block; }
+  body.admin-portal .portal-sidebar:hover .portal-nav button,
+  body.admin-portal .portal-sidebar:focus-within .portal-nav button { grid-template-columns: 20px minmax(0, 1fr); justify-items: stretch; padding-inline: 12px; }
+  body.admin-portal .portal-sidebar:hover .portal-nav button span,
+  body.admin-portal .portal-sidebar:focus-within .portal-nav button span { display: inline; position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; }
+  body.admin-portal .portal-sidebar:hover #portal-account,
+  body.admin-portal .portal-sidebar:focus-within #portal-account { justify-content: space-between; }
+  body.admin-portal .portal-sidebar:hover #portal-account .account-meta,
+  body.admin-portal .portal-sidebar:focus-within #portal-account .account-meta { display: block; }
+  body.admin-portal .portal-sidebar:hover #logout-button,
+  body.admin-portal .portal-sidebar:focus-within #logout-button { width: auto; padding: 4px 8px; }
+
+  /* A deliberate collapse stays closed until the pointer leaves the rail. */
+  body.admin-portal .portal-sidebar.admin-sidebar-hover-suppressed { width: 78px; margin-inline-end: 0; padding-inline: 10px; overflow-x: hidden; background: #101728; box-shadow: none; }
+  body.admin-portal .portal-sidebar.admin-sidebar-hover-suppressed .admin-sidebar-heading { justify-content: center; flex-wrap: wrap; }
+  body.admin-portal .portal-sidebar.admin-sidebar-hover-suppressed .admin-sidebar-heading .sidebar-caption { display: none; }
+  body.admin-portal .portal-sidebar.admin-sidebar-hover-suppressed .portal-nav button { grid-template-columns: 1fr; justify-items: center; padding: 12px 8px; }
+  body.admin-portal .portal-sidebar.admin-sidebar-hover-suppressed .portal-nav button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  body.admin-portal .portal-sidebar.admin-sidebar-hover-suppressed #portal-account { justify-content: center; }
+  body.admin-portal .portal-sidebar.admin-sidebar-hover-suppressed #portal-account .account-meta { display: none; }
+}
+
+@media (max-width: 820px) {
+  body.admin-portal .portal-shell { grid-template-columns: minmax(0, 1fr); }
+  body.admin-portal.admin-sidebar-collapsed .portal-shell { grid-template-columns: minmax(0, 1fr); }
+  body.admin-portal .portal-sidebar { position: static; height: auto; min-width: 0; padding: 10px 14px; overflow: hidden; border: 0; border-bottom: 1px solid var(--portal-border); }
+  body.admin-portal .admin-sidebar-heading,
+  body.admin-portal .portal-sidebar #portal-account { display: none; }
+  body.admin-portal .portal-nav { display: flex; gap: 7px; overflow-x: auto; padding: 2px 0 6px; }
+  body.admin-portal .portal-nav button { position: relative; display: inline-grid; grid-template-columns: 1fr; width: 42px; min-width: 42px; height: 42px; min-height: 42px; flex: 0 0 42px; justify-items: center; padding: 9px; }
+  body.admin-portal .portal-nav button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* Show tab names as soon as the navigation switches to its horizontal layout. */
+@media (min-width: 601px) and (max-width: 820px) {
+  body.admin-portal .portal-nav button { display: inline-flex; width: auto; min-width: max-content; height: 42px; min-height: 42px; flex: 0 0 auto; gap: 8px; padding: 8px 12px; }
+  body.admin-portal .portal-nav button span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: nowrap; }
+}
+
+@media (max-width: 600px) {
+  body.admin-portal .portal-nav button { display: inline-grid; grid-template-columns: 1fr; width: 42px; min-width: 42px; height: 42px; min-height: 42px; flex: 0 0 42px; justify-items: center; padding: 9px; }
+  body.admin-portal .portal-nav button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+@media (max-width: 480px) {
+  body.admin-portal .portal-topbar { gap: 8px; padding-inline: 12px; }
+  body.admin-portal .portal-brand { gap: 7px; }
+  body.admin-portal .portal-brand strong { font-size: 14px; }
+  body.admin-portal .portal-brand small { display: none; }
+  body.admin-portal .portal-topbar-actions { gap: 7px; }
+}
+
+@media (min-width: 821px) {
+  body.admin-portal { height: 100vh; height: 100dvh; overflow: hidden; }
+  body.admin-portal .portal-shell { height: calc(100vh - 82px); height: calc(100dvh - 82px); min-height: 0; overflow: hidden; }
+  body.admin-portal .portal-sidebar { position: sticky; top: 0; height: 100%; max-height: 100%; }
+  body.admin-portal .portal-content { height: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+}
+
+/* Give staff and customer portals the same responsive navigation pattern. */
+@media (min-width: 821px) {
+  body.staff-portal .portal-shell,
+  body.customer-portal .portal-shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-width: 0; }
+  body.staff-portal .portal-sidebar,
+  body.customer-portal .portal-sidebar { position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; width: auto; height: calc(100vh - 82px); height: calc(100dvh - 82px); min-height: 0; padding: 24px 14px 18px; overflow-x: hidden; overflow-y: auto; border-right: 1px solid var(--portal-border); border-bottom: 0; background: #101728; box-shadow: 16px 0 38px rgba(0, 0, 0, .08); }
+  body.customer-portal .portal-sidebar { height: calc(100vh - 72px); height: calc(100dvh - 72px); }
+  body.staff-portal .admin-sidebar-heading,
+  body.customer-portal .admin-sidebar-heading { display: flex; align-items: center; justify-content: flex-start; gap: 10px; margin: 0 0 12px; }
+  body.staff-portal .admin-sidebar-heading .sidebar-caption,
+  body.customer-portal .admin-sidebar-heading .sidebar-caption { display: block; flex: 1; min-width: 0; margin: 0; padding: 0 8px; }
+  body.staff-portal .admin-sidebar-toggle,
+  body.customer-portal .admin-sidebar-toggle { display: inline-grid; }
+  body.staff-portal .portal-nav,
+  body.customer-portal .portal-nav { display: grid; grid-template-columns: 1fr; flex: 1 1 auto; min-height: 0; gap: 8px; margin: 0; overflow-x: hidden; overflow-y: auto; padding: 0; }
+  body.staff-portal .portal-nav button,
+  body.customer-portal .portal-nav button { position: relative; display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; justify-items: start; gap: 12px; width: 100%; min-width: 0; min-height: 48px; height: auto; padding: 12px 14px; text-align: left; white-space: normal; }
+  body.staff-portal .portal-nav button span,
+  body.customer-portal .portal-nav button span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; }
+  body.staff-portal #portal-account,
+  body.customer-portal #portal-account { display: flex; flex: 0 0 auto; margin-top: auto; }
+  body.staff-portal.portal-sidebar-collapsed .portal-shell,
+  body.customer-portal.portal-sidebar-collapsed .portal-shell { grid-template-columns: 84px minmax(0, 1fr); }
+  body.staff-portal.portal-sidebar-collapsed .portal-sidebar,
+  body.customer-portal.portal-sidebar-collapsed .portal-sidebar { padding-inline: 10px; }
+  body.staff-portal.portal-sidebar-collapsed .admin-sidebar-heading,
+  body.customer-portal.portal-sidebar-collapsed .admin-sidebar-heading { justify-content: center; flex-wrap: wrap; gap: 7px; }
+  body.staff-portal.portal-sidebar-collapsed .admin-sidebar-heading .sidebar-caption,
+  body.customer-portal.portal-sidebar-collapsed .admin-sidebar-heading .sidebar-caption,
+  body.staff-portal.portal-sidebar-collapsed .portal-nav button span,
+  body.customer-portal.portal-sidebar-collapsed .portal-nav button span,
+  body.staff-portal.portal-sidebar-collapsed #portal-account .account-meta,
+  body.customer-portal.portal-sidebar-collapsed #portal-account .account-meta { display: none; }
+  body.staff-portal.portal-sidebar-collapsed .portal-nav button,
+  body.customer-portal.portal-sidebar-collapsed .portal-nav button { grid-template-columns: 1fr; justify-items: center; padding-inline: 8px; }
+  body.staff-portal.portal-sidebar-collapsed #portal-account,
+  body.customer-portal.portal-sidebar-collapsed #portal-account { justify-content: center; }
+}
+
+@media (min-width: 821px) and (max-width: 1100px) {
+  body.staff-portal .portal-shell,
+  body.customer-portal .portal-shell { grid-template-columns: 78px minmax(0, 1fr); }
+  body.staff-portal .portal-sidebar,
+  body.customer-portal .portal-sidebar { width: 78px; padding: 14px 10px; transition: width .2s ease, box-shadow .2s ease; }
+  body.customer-portal .portal-sidebar { height: calc(100vh - 72px); height: calc(100dvh - 72px); }
+  body.staff-portal .admin-sidebar-heading,
+  body.customer-portal .admin-sidebar-heading { justify-content: center; flex-wrap: wrap; gap: 7px; }
+  body.staff-portal .admin-sidebar-heading .sidebar-caption,
+  body.customer-portal .admin-sidebar-heading .sidebar-caption,
+  body.staff-portal .portal-nav button span,
+  body.customer-portal .portal-nav button span,
+  body.staff-portal #portal-account .account-meta,
+  body.customer-portal #portal-account .account-meta { display: none; }
+  body.staff-portal .portal-nav button,
+  body.customer-portal .portal-nav button { grid-template-columns: 1fr; justify-items: center; padding: 12px 8px; }
+}
+
+@media (min-width: 821px) and (max-width: 1100px) and (hover: hover) {
+  body.staff-portal .portal-sidebar:hover,
+  body.staff-portal .portal-sidebar:focus-within,
+  body.customer-portal .portal-sidebar:hover,
+  body.customer-portal .portal-sidebar:focus-within { width: 248px; margin-inline-end: -170px; padding-inline: 14px; overflow-x: visible; background: #101728; box-shadow: 12px 8px 30px rgba(0, 0, 0, .38); }
+  body.staff-portal .portal-sidebar:hover .admin-sidebar-heading,
+  body.staff-portal .portal-sidebar:focus-within .admin-sidebar-heading,
+  body.customer-portal .portal-sidebar:hover .admin-sidebar-heading,
+  body.customer-portal .portal-sidebar:focus-within .admin-sidebar-heading { justify-content: flex-start; flex-wrap: nowrap; }
+  body.staff-portal .portal-sidebar:hover .admin-sidebar-heading .sidebar-caption,
+  body.staff-portal .portal-sidebar:focus-within .admin-sidebar-heading .sidebar-caption,
+  body.customer-portal .portal-sidebar:hover .admin-sidebar-heading .sidebar-caption,
+  body.customer-portal .portal-sidebar:focus-within .admin-sidebar-heading .sidebar-caption { display: block; }
+  body.staff-portal .portal-sidebar:hover .portal-nav button,
+  body.staff-portal .portal-sidebar:focus-within .portal-nav button,
+  body.customer-portal .portal-sidebar:hover .portal-nav button,
+  body.customer-portal .portal-sidebar:focus-within .portal-nav button { grid-template-columns: 20px minmax(0, 1fr); justify-items: stretch; padding-inline: 12px; }
+  body.staff-portal .portal-sidebar:hover .portal-nav button span,
+  body.staff-portal .portal-sidebar:focus-within .portal-nav button span,
+  body.customer-portal .portal-sidebar:hover .portal-nav button span,
+  body.customer-portal .portal-sidebar:focus-within .portal-nav button span { display: inline; }
+  body.staff-portal .portal-sidebar:hover #portal-account .account-meta,
+  body.staff-portal .portal-sidebar:focus-within #portal-account .account-meta,
+  body.customer-portal .portal-sidebar:hover #portal-account .account-meta,
+  body.customer-portal .portal-sidebar:focus-within #portal-account .account-meta { display: block; }
+  body.staff-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed,
+  body.customer-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed { width: 78px; margin-inline-end: 0; padding-inline: 10px; overflow-x: hidden; box-shadow: none; }
+  body.staff-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed .admin-sidebar-heading,
+  body.customer-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed .admin-sidebar-heading { justify-content: center; flex-wrap: wrap; }
+  body.staff-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed .admin-sidebar-heading .sidebar-caption,
+  body.staff-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed .portal-nav button span,
+  body.customer-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed .admin-sidebar-heading .sidebar-caption,
+  body.customer-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed .portal-nav button span { display: none; }
+  body.staff-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed .portal-nav button,
+  body.customer-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed .portal-nav button { grid-template-columns: 1fr; justify-items: center; padding: 12px 8px; }
+  body.staff-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed #portal-account .account-meta,
+  body.customer-portal.portal-sidebar-collapsed .portal-sidebar.admin-sidebar-hover-suppressed #portal-account .account-meta { display: none; }
+}
+
+@media (max-width: 820px) {
+  body.staff-portal .portal-shell,
+  body.customer-portal .portal-shell { display: grid; grid-template-columns: minmax(0, 1fr); }
+  body.staff-portal .portal-sidebar,
+  body.customer-portal .portal-sidebar { position: static; display: block; width: auto; height: auto; min-height: 0; padding: 10px 14px; overflow: hidden; border: 0; border-bottom: 1px solid var(--portal-border); }
+  body.staff-portal .admin-sidebar-heading,
+  body.customer-portal .admin-sidebar-heading,
+  body.staff-portal #portal-account { display: none; }
+  body.staff-portal .portal-nav,
+  body.customer-portal .portal-nav { display: flex; gap: 7px; overflow-x: auto; padding: 2px 0 6px; }
+  body.staff-portal .portal-nav button,
+  body.customer-portal .portal-nav button { display: inline-grid; grid-template-columns: 1fr; width: 42px; min-width: 42px; height: 42px; min-height: 42px; flex: 0 0 42px; justify-items: center; padding: 9px; }
+  body.staff-portal .portal-nav button span,
+  body.customer-portal .portal-nav button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+@media (min-width: 601px) and (max-width: 820px) {
+  body.staff-portal .portal-nav button,
+  body.customer-portal .portal-nav button { display: inline-flex; width: auto; min-width: max-content; height: 42px; min-height: 42px; flex: 0 0 auto; gap: 8px; padding: 8px 12px; }
+  body.staff-portal .portal-nav button span,
+  body.customer-portal .portal-nav button span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: nowrap; }
+}
+
+/* Keep customer navigation on its own warm theme while sharing admin behavior. */
+body.customer-portal .portal-sidebar { background: var(--customer-surface); border-color: var(--portal-border); box-shadow: var(--customer-sidebar-shadow); }
+body.customer-portal .portal-nav button { transform: none; }
+@media (min-width: 821px) and (max-width: 1100px) and (hover: hover) {
+  body.customer-portal .portal-sidebar:hover,
+  body.customer-portal .portal-sidebar:focus-within { background: var(--customer-surface); box-shadow: var(--customer-sidebar-shadow); }
+}
+
+@media (min-width: 821px) and (max-width: 1100px) and (hover: hover) {
+  body.staff-portal .portal-sidebar:hover,
+  body.staff-portal .portal-sidebar:focus-within,
+  body.customer-portal .portal-sidebar:hover,
+  body.customer-portal .portal-sidebar:focus-within { z-index: 30; margin-inline-end: -170px; }
+}
+
+/* Match the admin's fixed viewport with an independently scrollable content pane. */
+@media (min-width: 821px) {
+  body.customer-portal { height: 100vh; height: 100dvh; overflow: hidden; }
+  body.customer-portal .portal-shell { height: calc(100vh - 72px); height: calc(100dvh - 72px); min-height: 0; overflow: hidden; }
+  body.customer-portal .portal-sidebar { height: 100%; max-height: 100%; }
+  body.customer-portal .portal-content { height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+}
+
+@media (max-width: 820px) {
+  body.customer-portal { height: auto; overflow: auto; }
+  body.customer-portal .portal-shell { height: auto; min-height: calc(100vh - 72px); overflow: visible; }
+  body.customer-portal .portal-sidebar { height: auto; max-height: none; }
+  body.customer-portal .portal-content { height: auto; min-height: 0; overflow: visible; }
+}

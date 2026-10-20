@@ -274,6 +274,8 @@ function showAuth(tab = 'login') {
       document.body.classList.remove('customer-portal');
       document.body.classList.remove('admin-portal');
       document.body.classList.remove('staff-portal');
+      document.body.classList.remove('admin-sidebar-collapsed');
+      document.body.classList.remove('portal-sidebar-collapsed');
     }
     const authView = byId('auth-view');
     const appView = byId('app-view');
@@ -305,6 +307,12 @@ function showAuth(tab = 'login') {
   }
 }
 
+function syncPortalNavOrientation() {
+  if (!document.body?.matches?.('.customer-portal, .admin-portal')) return;
+  const compact = window.matchMedia?.('(max-width: 820px)').matches;
+  byId('portal-nav')?.setAttribute('aria-orientation', compact ? 'horizontal' : 'vertical');
+}
+
 function renderNav(session, activeTab) {
   try {
     const role = roleOf(session.role) || 'CUSTOMER';
@@ -319,6 +327,32 @@ function renderNav(session, activeTab) {
     const accountRole = byId('account-role');
     if (accountRole) accountRole.textContent = roleNames[role] || 'Thành viên';
 
+    const sidebarToggle = byId('admin-sidebar-toggle');
+    if (sidebarToggle) {
+      const sidebar = byId('portal-sidebar');
+      if (sidebar) {
+        sidebar.onpointerleave = () => sidebar.classList.remove('admin-sidebar-hover-suppressed');
+      }
+      const collapsedClass = role === 'ADMIN' ? 'admin-sidebar-collapsed' : 'portal-sidebar-collapsed';
+      const collapsed = document.body.classList.contains(collapsedClass);
+      sidebarToggle.hidden = false;
+      sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+      sidebarToggle.setAttribute('aria-label', collapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng');
+      sidebarToggle.title = collapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng';
+      sidebarToggle.onclick = () => {
+        const isCollapsed = document.body.classList.toggle(collapsedClass);
+        sidebar?.classList.toggle('admin-sidebar-hover-suppressed', isCollapsed);
+        sidebarToggle.setAttribute('aria-expanded', String(!isCollapsed));
+        sidebarToggle.setAttribute('aria-label', isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng');
+        sidebarToggle.title = isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng';
+        const icon = sidebarToggle.querySelector('[data-lucide]');
+        icon?.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+        window.lucide?.createIcons?.();
+        if (isCollapsed) sidebarToggle.blur();
+        try { localStorage.setItem(role === 'ADMIN' ? 'admin-sidebar-collapsed' : 'portal-sidebar-collapsed', String(isCollapsed)); } catch {}
+      };
+    }
+
     const accountAvatar = byId('account-avatar');
     if (accountAvatar) {
       accountAvatar.textContent = String(session.fullName || session.username || 'A').trim().charAt(0).toUpperCase();
@@ -328,10 +362,11 @@ function renderNav(session, activeTab) {
     if (portalNav) {
       portalNav.setAttribute('role', 'tablist');
       portalNav.setAttribute('aria-label', 'Điều hướng cổng');
+      syncPortalNavOrientation();
       portalNav.innerHTML = items.map(([key, label, icon]) => {
         const isCurrent = key === activeTab;
         return `
-          <button type="button" role="tab" id="tab-${key}" aria-controls="view-container" aria-selected="${isCurrent ? 'true' : 'false'}" data-view="${key}" class="btn btn-ghost ${isCurrent ? 'active tab-active' : ''}" aria-current="${isCurrent ? 'page' : 'false'}">
+          <button type="button" role="tab" id="tab-${key}" aria-controls="view-container" aria-label="${label}" title="${label}" aria-selected="${isCurrent ? 'true' : 'false'}" data-view="${key}" class="btn btn-ghost ${isCurrent ? 'active tab-active' : ''}" aria-current="${isCurrent ? 'page' : 'false'}">
             <i data-lucide="${icon}"></i>
             <span>${label}</span>
           </button>
@@ -619,6 +654,13 @@ function enterPortal(session) {
     const isCustomer = role === 'CUSTOMER';
     placeAccountControls(isCustomer);
     if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.remove('admin-sidebar-collapsed');
+      document.body.classList.remove('portal-sidebar-collapsed');
+      if (role === 'ADMIN') {
+        try { document.body.classList.toggle('admin-sidebar-collapsed', localStorage.getItem('admin-sidebar-collapsed') === 'true'); } catch {}
+      } else {
+        try { document.body.classList.toggle('portal-sidebar-collapsed', localStorage.getItem('portal-sidebar-collapsed') === 'true'); } catch {}
+      }
       document.body.classList.toggle('customer-portal', isCustomer);
       document.body.classList.toggle('admin-portal', role === 'ADMIN');
       document.body.classList.toggle('staff-portal', role === 'STAFF');
@@ -1143,6 +1185,7 @@ if (typeof window !== 'undefined') {
   // apiFetch clears an invalid JWT and dispatches this event. Return to the
   // existing login screen so protected views cannot remain in a loading state.
   if (typeof window.addEventListener === 'function') {
+    window.matchMedia?.('(max-width: 820px)').addEventListener?.('change', syncPortalNavOrientation);
     window.addEventListener('hotel:session-expired', () => {
       clearAuthSession();
       if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', 'portal.html');

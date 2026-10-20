@@ -1,5 +1,20 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-20] — @codex — `web-ui/portal-admin.css` — Keep customer content within the viewport
+
+- Matched the administrator layout on desktop: the customer portal uses a fixed viewport with independently scrollable content while the header and sidebar remain in place. Restored natural page scrolling on narrow screens.
+
+## [2026-10-20] — @codex — Responsive admin navigation controls
+
+- Kept the administrator brand and theme header in one row, added a persistent manual sidebar collapse, and automatically reduced the vertical navigation to labeled icons in a narrow desktop viewport. The mobile navigation remains horizontal and icon-only.
+- Removed the redundant hotel-home shortcut from the portal title bar.
+- Removed the shield mark and account avatar from the administrator sidebar while keeping the account details and logout action.
+
+## [2026-10-20] — @codex — Responsive customer navigation
+
+- Matched the administrator navigation breakpoint: vertical customer sidebar above 820px, horizontally scrolling tabs at 820px and below. Kept the single account header and synchronized tab orientation for assistive technology.
+- Verified desktop and phone layouts, switching to the profile tab, no horizontal page overflow, and nine portal regression checks.
+
 ## [2026-10-20] — @codex — CCCD scanning in the customer's own profile
 
 - Removed the redundant shared title bar on the customer profile tab, retaining the profile form's own heading.
