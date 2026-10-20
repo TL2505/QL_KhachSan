@@ -1,3 +1,4 @@
+import { t, tx, setLanguage, initTranslations, translateUI, setTranslatedText } from './shared/home-i18n.js';
 /**
  * ==========================================================================
  * AURELIA GRAND LUXURY HOTEL - 5★ NO-BUILD APPLICATION CONTROLLER
@@ -39,6 +40,12 @@ export function escapeHtml(value) {
   }[character]));
 }
 _global.escapeHtml = escapeHtml;
+
+// Localise presentation metadata without rebuilding forms or changing source data.
+function translatedLabel(source) {
+  return `<span data-i18n="${escapeHtml(source)}">${escapeHtml(t(source))}</span>`;
+}
+
 
 // Application State
 const state = {
@@ -146,53 +153,12 @@ const GALLERY_ITEMS = [
   }
 ];
 
-// Translations Dictionary (VI & EN)
-const I18N = {
-  vi: {
-    navHome: "Trang Chủ",
-    navRooms: "Hạng Phòng",
-    navServices: "Dịch Vụ & Tiện Ích",
-    navAbout: "Giới Thiệu",
-    navReviews: "Đánh Giá",
-    navGallery: "Bộ Sưu Tập",
-    navContact: "Liên Hệ",
-    btnBookNow: "Đặt Phòng",
-    searchBtn: "Kiểm Tra Phòng Trống",
-    perNight: "/ đêm",
-    viewDetails: "Xem Chi Tiết",
-    bookRoom: "Đặt Phòng Này",
-    checkIn: "Ngày Nhận Phòng",
-    checkOut: "Ngày Trả Phòng",
-    guests: "Số Khách",
-    rooms: "Số Phòng",
-    promoCode: "Mã Ưu Đãi"
-  },
-  en: {
-    navHome: "Home",
-    navRooms: "Rooms & Suites",
-    navServices: "Services & Amenities",
-    navAbout: "About Us",
-    navReviews: "Reviews",
-    navGallery: "Gallery",
-    navContact: "Contact",
-    btnBookNow: "Book Now",
-    searchBtn: "Check Availability",
-    perNight: "/ night",
-    viewDetails: "View Details",
-    bookRoom: "Book This Room",
-    checkIn: "Check-in Date",
-    checkOut: "Check-out Date",
-    guests: "Guests",
-    rooms: "Rooms",
-    promoCode: "Promo Code"
-  }
-};
-
 // ==========================================
 // INITIALIZATION
 // ==========================================
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
+    initTranslations(state.language);
     initDefaultDates();
     initEventListeners();
     updateHeaderAuthStatus();
@@ -295,7 +261,7 @@ function initDefaultDates() {
       const checkIn = parseLocalDate(checkInInput.value);
       const checkOut = parseLocalDate(checkOutInput.value);
       if (checkOut <= checkIn) {
-        showToast('Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 đêm!', 'warning');
+        showToast(t('Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 đêm!'), 'warning');
         const nextDay = new Date(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate() + 1, 12, 0, 0);
         checkOutInput.value = formatLocalDate(nextDay);
       }
@@ -308,6 +274,7 @@ function initDefaultDates() {
 // TOAST NOTIFICATIONS
 // ==========================================
 export function showToast(message, type = 'info', duration = 4000) {
+  message = t(message);
   const container = document.getElementById('toast-container');
   if (!container) return;
 
@@ -364,7 +331,7 @@ async function loadRooms(filterParams = {}) {
     grid.innerHTML = `
       <div class="col-span-full py-20 flex flex-col items-center justify-center text-center">
         <div class="w-12 h-12 rounded-full border-2 border-amber-500/20 border-t-amber-400 animate-spin mb-4"></div>
-        <p class="text-amber-200/80 font-sans tracking-widest text-sm uppercase">Đang nạp dữ liệu phòng 5★...</p>
+        <p class="text-amber-200/80 font-sans tracking-widest text-sm uppercase"><span data-i18n="Đang nạp dữ liệu phòng 5★...">Đang nạp dữ liệu phòng 5★...</span></p>
       </div>
     `;
   }
@@ -398,8 +365,8 @@ async function loadRooms(filterParams = {}) {
     state.rooms = [];
     state.roomsAreLive = false;
     state.roomsSearchedFor = null;
-    if (err.statusCode) showToast(`Không thể tải danh sách phòng (HTTP ${err.statusCode}). Vui lòng thử lại.`, 'error', 7000);
-    else showToast('Không thể xác minh giá và tình trạng phòng từ máy chủ. Vui lòng thử lại hoặc liên hệ Lễ tân.', 'error', 7000);
+    if (err.statusCode) showToast(tx`Không thể tải danh sách phòng (HTTP ${err.statusCode}). Vui lòng thử lại.`, 'error', 7000);
+    else showToast(t('Không thể xác minh giá và tình trạng phòng từ máy chủ. Vui lòng thử lại hoặc liên hệ Lễ tân.'), 'error', 7000);
     filterAndRenderRooms();
   }
   if (filterParams.checkIn && filterParams.checkOut) {
@@ -426,10 +393,10 @@ function renderRoomStatistics(rows = null, checkIn = '', checkOut = '') {
   });
   const note = document.getElementById('room-statistics-note');
   if (note) {
-    note.textContent = rows === null
+    const source = rows === null
       ? 'Chưa có dữ liệu thống kê. Vui lòng kiểm tra phòng hoặc thử lại.'
-      : `Ngày ${checkIn.split('-').reverse().join('/')} – ${checkOut.split('-').reverse().join('/')} · Tổng ${unique.size} phòng`
-        + (other ? ` · ${other} phòng thuộc trạng thái khác/chưa đủ điều kiện nhận khách, chưa tính vào 4 nhóm trên.` : '');
+      : 'Ngày {0} – {1} · Tổng {2} phòng' + (other ? ' · {3} phòng thuộc trạng thái khác/chưa đủ điều kiện nhận khách, chưa tính vào 4 nhóm trên.' : '');
+    setTranslatedText(note, source, [checkIn.split('-').reverse().join('/'), checkOut.split('-').reverse().join('/'), unique.size, other]);
   }
 }
 
@@ -448,8 +415,8 @@ function filterAndRenderRooms() {
     grid.innerHTML = `
       <div class="col-span-full py-16 text-center text-slate-400 glass-card rounded-2xl p-8">
         <i data-lucide="bed-double" class="w-12 h-12 text-amber-500/50 mx-auto mb-3"></i>
-        <h4 class="text-lg font-serif text-white">Không tìm thấy phòng phù hợp</h4>
-        <p class="text-sm mt-1">Quý khách vui lòng thử thay đổi khoảng ngày lưu trú hoặc danh mục lọc.</p>
+        <h4 class="text-lg font-serif text-white"><span data-i18n="Không tìm thấy phòng phù hợp">Không tìm thấy phòng phù hợp</span></h4>
+        <p class="text-sm mt-1"><span data-i18n="Quý khách vui lòng thử thay đổi khoảng ngày lưu trú hoặc danh mục lọc.">Quý khách vui lòng thử thay đổi khoảng ngày lưu trú hoặc danh mục lọc.</span></p>
       </div>
     `;
     refreshLucideIcons();
@@ -460,11 +427,11 @@ function filterAndRenderRooms() {
     const formattedPrice = formatCurrency(room.price, state.currency);
     const primaryAmenities = room.amenities.slice(0, 3);
     const labels = {
-      available: ['🟢 Còn phòng', 'available'], reserved: ['🟠 Đã đặt', 'reserved'],
-      occupied: ['🔴 Đang sử dụng', 'occupied'], maintenance: ['⚙️ Đang bảo trì', 'maintenance'],
-      not_ready: ['🟢 Còn phòng', 'available']
+      available: [t('🟢 Còn phòng'), 'available'], reserved: [t('🟠 Đã đặt'), 'reserved'],
+      occupied: [t('🔴 Đang sử dụng'), 'occupied'], maintenance: [t('⚙️ Đang bảo trì'), 'maintenance'],
+      not_ready: [t('🟢 Còn phòng'), 'available']
     };
-    const [statusLabel, statusColor] = labels[room.availabilityStatus] || ['Chưa xác định', 'unknown'];
+    const [statusLabel, statusColor] = labels[room.availabilityStatus] || [t('Chưa xác định'), 'unknown'];
 
     return `
       <div class="room-card glass-card rounded-2xl overflow-hidden flex flex-col group" data-room-id="${room.id}">
@@ -476,7 +443,7 @@ function filterAndRenderRooms() {
           <!-- Badge -->
           ${room.badge ? `
             <div class="absolute top-4 left-4 bg-amber-500/90 text-slate-950 font-sans font-bold text-xs uppercase tracking-wider px-3 py-1 rounded-full backdrop-blur-md shadow-lg">
-              ${room.badge}
+              ${translatedLabel(room.badge)}
             </div>
           ` : ''}
 
@@ -490,7 +457,7 @@ function filterAndRenderRooms() {
           <!-- Bottom View Badge -->
           <div class="absolute bottom-3 left-4 text-xs font-medium text-amber-200/90 flex items-center gap-1.5 drop-shadow">
             <i data-lucide="compass" class="w-3.5 h-3.5 text-amber-400"></i>
-            <span>${room.view}</span>
+            <span>${translatedLabel(room.view)}</span>
           </div>
         </div>
 
@@ -502,24 +469,24 @@ function filterAndRenderRooms() {
               <span>${room.category} Class${room.isDemoCatalog ? ' · Demo' : ''}</span>
               <span class="text-slate-400">#${room.roomNumber}</span>
             </div>
-            <div class="room-availability room-availability--${statusColor}" title="Theo ngày nhận/trả phòng đã kiểm tra: ${room.statusDates || 'chưa có dữ liệu'}" role="status">${statusLabel}</div>
+            <div class="room-availability room-availability--${statusColor}" title="${t('Theo ngày nhận/trả phòng đã kiểm tra:')} ${room.statusDates || t('chưa có dữ liệu')}" role="status">${statusLabel}</div>
             <h3 class="font-serif text-xl text-white font-medium group-hover:text-amber-200 transition-colors line-clamp-1 mb-3">
               ${room.name}
             </h3>
 
             <!-- Room Specs -->
             <div class="grid grid-cols-3 gap-2 py-3 border-y border-amber-500/10 text-xs text-slate-300 mb-4 font-sans">
-              <div class="flex items-center gap-1.5" title="Diện tích">
+              <div class="flex items-center gap-1.5" title="Diện tích" data-i18n-title="Diện tích">
                 <i data-lucide="maximize" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
                 <span>${room.area} m²</span>
               </div>
-              <div class="flex items-center gap-1.5" title="Sức chứa">
+              <div class="flex items-center gap-1.5" title="Sức chứa" data-i18n-title="Sức chứa">
                 <i data-lucide="users" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
-                <span>${room.capacity} Khách</span>
+                <span>${room.capacity} <span data-i18n="Khách">Khách</span></span>
               </div>
-              <div class="flex items-center gap-1.5 truncate" title="${room.bedType}">
+              <div class="flex items-center gap-1.5 truncate" title="${t(room.bedType)}">
                 <i data-lucide="bed" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
-                <span class="truncate">${room.bedType.split(' ')[1] || 'King'}</span>
+                <span class="truncate">${translatedLabel(room.bedType)}</span>
               </div>
             </div>
 
@@ -528,7 +495,7 @@ function filterAndRenderRooms() {
               ${primaryAmenities.map(am => `
                 <span class="text-[11px] bg-slate-800/80 text-slate-300 border border-slate-700/60 px-2.5 py-0.5 rounded-md flex items-center gap-1">
                   <i data-lucide="sparkles" class="w-2.5 h-2.5 text-amber-400"></i>
-                  ${am}
+                  ${translatedLabel(am)}
                 </span>
               `).join('')}
             </div>
@@ -537,17 +504,17 @@ function filterAndRenderRooms() {
           <!-- Price & Actions Footer -->
           <div class="pt-4 border-t border-amber-500/15 flex items-end justify-between gap-3">
             <div>
-              <div class="text-[11px] uppercase tracking-wider text-slate-400">Giá nghỉ đêm từ</div>
+              <div class="text-[11px] uppercase tracking-wider text-slate-400"><span data-i18n="Giá nghỉ đêm từ">Giá nghỉ đêm từ</span></div>
               <div class="text-xl font-serif font-bold text-gold-gradient">${formattedPrice}</div>
             </div>
             <div class="flex items-center gap-2">
               <button type="button" class="btn-detail btn-outline-gold px-3.5 py-2 rounded-xl text-xs font-medium flex items-center gap-1" data-id="${room.id}">
                 <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                <span class="hidden sm:inline">Chi Tiết</span>
+                <span class="hidden sm:inline"><span data-i18n="Chi Tiết">Chi Tiết</span></span>
               </button>
               <button type="button" class="btn-book btn-gold px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-md" data-id="${room.id}">
                 <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
-                <span>Đặt Phòng</span>
+                <span><span data-i18n="Đặt Phòng">Đặt Phòng</span></span>
               </button>
             </div>
           </div>
@@ -599,42 +566,42 @@ function openRoomDetailModal(roomId) {
       <div class="absolute bottom-4 left-6 right-6 flex items-end justify-between">
         <div>
           <span class="text-xs font-semibold tracking-widest text-amber-400 uppercase bg-slate-900/80 px-3 py-1 rounded-full border border-amber-500/30">
-            ${room.category} - Phòng #${room.roomNumber}
+            ${room.category} - <span data-i18n="Phòng">Phòng</span> #${room.roomNumber}
           </span>
           <h2 class="text-2xl md:text-3xl font-serif text-white font-medium mt-2">${room.name}</h2>
           <p class="text-sm text-amber-200/90 flex items-center gap-1.5 mt-1">
-            <i data-lucide="compass" class="w-4 h-4 text-amber-400"></i> ${room.view}
+            <i data-lucide="compass" class="w-4 h-4 text-amber-400"></i> ${translatedLabel(room.view)}
           </p>
         </div>
         <div class="text-right hidden sm:block">
-          <div class="text-xs text-slate-400">Đơn giá tiêu chuẩn</div>
-          <div class="text-2xl font-serif font-bold text-gold-gradient">${formattedPrice} <span class="text-xs font-sans text-slate-400">/đêm</span></div>
+          <div class="text-xs text-slate-400"><span data-i18n="Đơn giá tiêu chuẩn">Đơn giá tiêu chuẩn</span></div>
+          <div class="text-2xl font-serif font-bold text-gold-gradient">${formattedPrice} <span class="text-xs font-sans text-slate-400"><span data-i18n="/đêm">/đêm</span></span></div>
         </div>
       </div>
     </div>
 
     <!-- Description -->
     <div class="mb-6">
-      <h4 class="text-sm uppercase tracking-widest font-semibold text-amber-400 mb-2">Mô tả tổng quan</h4>
-      <p class="text-slate-300 font-sans text-sm leading-relaxed">${room.description}</p>
+      <h4 class="text-sm uppercase tracking-widest font-semibold text-amber-400 mb-2"><span data-i18n="Mô tả tổng quan">Mô tả tổng quan</span></h4>
+      <p class="text-slate-300 font-sans text-sm leading-relaxed">${translatedLabel(room.description)}</p>
     </div>
 
     <!-- Technical Specs Grid -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl bg-slate-900/60 border border-amber-500/20 mb-6 text-sm">
       <div>
-        <div class="text-xs text-slate-400">Diện tích</div>
+        <div class="text-xs text-slate-400"><span data-i18n="Diện tích">Diện tích</span></div>
         <div class="font-semibold text-white mt-0.5">${room.area} m²</div>
       </div>
       <div>
-        <div class="text-xs text-slate-400">Sức chứa</div>
-        <div class="font-semibold text-white mt-0.5">${room.capacity} Người lớn ${room.childrenCapacity ? `+ ${room.childrenCapacity} Bé` : ''}</div>
+        <div class="text-xs text-slate-400"><span data-i18n="Sức chứa">Sức chứa</span></div>
+        <div class="font-semibold text-white mt-0.5">${room.capacity} <span data-i18n="Người lớn">Người lớn</span> ${room.childrenCapacity ? tx`+ ${room.childrenCapacity} Bé` : ''}</div>
       </div>
       <div>
-        <div class="text-xs text-slate-400">Loại giường</div>
-        <div class="font-semibold text-white mt-0.5">${room.bedType}</div>
+        <div class="text-xs text-slate-400"><span data-i18n="Loại giường">Loại giường</span></div>
+        <div class="font-semibold text-white mt-0.5">${translatedLabel(room.bedType)}</div>
       </div>
       <div>
-        <div class="text-xs text-slate-400">Đánh giá khách hàng</div>
+        <div class="text-xs text-slate-400"><span data-i18n="Đánh giá khách hàng">Đánh giá khách hàng</span></div>
         <div class="font-semibold text-amber-300 mt-0.5 flex items-center gap-1">
           <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
           ${room.rating} / 5.0
@@ -644,12 +611,12 @@ function openRoomDetailModal(roomId) {
 
     <!-- Amenities Grid -->
     <div class="mb-6">
-      <h4 class="text-sm uppercase tracking-widest font-semibold text-amber-400 mb-3">Tiện ích thượng hạng trong phòng</h4>
+      <h4 class="text-sm uppercase tracking-widest font-semibold text-amber-400 mb-3"><span data-i18n="Tiện ích thượng hạng trong phòng">Tiện ích thượng hạng trong phòng</span></h4>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         ${room.amenities.map(am => `
           <div class="flex items-center gap-2 text-sm text-slate-300 bg-slate-800/40 p-2.5 rounded-lg border border-slate-700/40">
             <i data-lucide="check-circle-2" class="w-4 h-4 text-amber-400 shrink-0"></i>
-            <span>${am}</span>
+            <span>${translatedLabel(am)}</span>
           </div>
         `).join('')}
       </div>
@@ -658,16 +625,16 @@ function openRoomDetailModal(roomId) {
     <!-- Booking CTA Footer -->
     <div class="pt-4 border-t border-amber-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="w-full sm:w-auto text-left">
-        <span class="text-xs text-slate-400">Tổng quan đơn giá</span>
-        <div class="text-2xl font-serif font-bold text-gold-gradient">${formattedPrice} <span class="text-xs text-slate-400">/đêm</span></div>
+        <span class="text-xs text-slate-400"><span data-i18n="Tổng quan đơn giá">Tổng quan đơn giá</span></span>
+        <div class="text-2xl font-serif font-bold text-gold-gradient">${formattedPrice} <span class="text-xs text-slate-400"><span data-i18n="/đêm">/đêm</span></span></div>
       </div>
       <div class="flex items-center gap-3 w-full sm:w-auto">
         <button type="button" class="btn-outline-gold px-5 py-2.5 rounded-xl text-sm flex-1 sm:flex-none justify-center" onclick="closeRoomDetailModal()">
-          Đóng
+          <span data-i18n="Đóng">Đóng</span>
         </button>
         <button type="button" class="btn-gold px-6 py-2.5 rounded-xl text-sm font-semibold flex-1 sm:flex-none justify-center flex items-center gap-2 shadow-lg" onclick="proceedToBookingFromDetail()">
           <i data-lucide="calendar-check" class="w-4 h-4"></i>
-          Đặt Phòng Ngay
+          <span data-i18n="Đặt Phòng Ngay">Đặt Phòng Ngay</span>
         </button>
       </div>
     </div>
@@ -707,7 +674,7 @@ export async function openBookingModal(roomId = null) {
   } catch (error) {
     _global.closeBookingModal();
     if (error.status === 401 || error.status === 403) showBookingLoginPrompt(roomId);
-    else showToast('Chưa thể xác minh phiên đăng nhập. Vui lòng thử lại.', 'warning');
+    else showToast(t('Chưa thể xác minh phiên đăng nhập. Vui lòng thử lại.'), 'warning');
     return;
   }
   if (getAuthSession()?.token !== token) {
@@ -724,7 +691,7 @@ export async function openBookingModal(roomId = null) {
     targetRoom = state.rooms[0];
   }
   if (!targetRoom) {
-    showToast('Chưa xác minh được phòng từ máy chủ. Vui lòng tải lại danh sách phòng.', 'error', 6000);
+    showToast(t('Chưa xác minh được phòng từ máy chủ. Vui lòng tải lại danh sách phòng.'), 'error', 6000);
     return;
   }
 
@@ -783,11 +750,11 @@ function showBookingLoginPrompt(roomId) {
     dialog.setAttribute('aria-describedby', 'booking-login-message');
     dialog.innerHTML = `
       <div class="booking-login-symbol" aria-hidden="true">✦</div>
-      <h2 id="booking-login-heading">Đặt phòng tại Aurelia</h2>
-      <p id="booking-login-message">Vui lòng đăng nhập để thực hiện đặt phòng.</p>
+      <h2 id="booking-login-heading"><span data-i18n="Đặt phòng tại Aurelia">Đặt phòng tại Aurelia</span></h2>
+      <p id="booking-login-message"><span data-i18n="Vui lòng đăng nhập để thực hiện đặt phòng.">Vui lòng đăng nhập để thực hiện đặt phòng.</span></p>
       <div class="booking-login-actions">
-        <button type="button" class="btn-outline-gold" data-dismiss>Quay lại</button>
-        <a class="btn-gold" data-login>Đăng nhập</a>
+        <button type="button" class="btn-outline-gold" data-dismiss><span data-i18n="Quay lại">Quay lại</span></button>
+        <a class="btn-gold" data-login><span data-i18n="Đăng nhập">Đăng nhập</span></a>
       </div>`;
     dialog.querySelector('[data-dismiss]').addEventListener('click', () => dialog.close());
     dialog.addEventListener('click', event => { if (event.target === dialog) {
@@ -819,7 +786,7 @@ function calculateBookingPricing() {
   const b = state.booking;
   if (!b.room) return;
 
-  if (!state.roomsAreLive) { showToast('Vui lòng tải lại tình trạng phòng từ máy chủ.', 'error', 5000); return; }
+  if (!state.roomsAreLive) { showToast(t('Vui lòng tải lại tình trạng phòng từ máy chủ.'), 'error', 5000); return; }
 
   const checkIn = parseLocalDate(state.search.checkIn);
   const checkOut = parseLocalDate(state.search.checkOut);
@@ -868,7 +835,7 @@ function renderBookingModalContent() {
           ${currentStep > 1 ? '<i data-lucide="check" class="w-4 h-4"></i>' : '1'}
         </span>
         <span class="text-xs md:text-sm font-medium ${currentStep === 1 ? 'text-amber-300 font-semibold' : 'text-slate-400'}">
-          1. Lịch Trình & Chi Phí
+          <span data-i18n="1. Lịch Trình &amp; Chi Phí">1. Lịch Trình &amp; Chi Phí</span>
         </span>
       </div>
       <div class="h-0.5 flex-1 mx-3 bg-slate-800">
@@ -879,7 +846,7 @@ function renderBookingModalContent() {
           ${currentStep > 2 ? '<i data-lucide="check" class="w-4 h-4"></i>' : '2'}
         </span>
         <span class="text-xs md:text-sm font-medium ${currentStep === 2 ? 'text-amber-300 font-semibold' : 'text-slate-400'}">
-          2. Thông Tin Khách Hàng
+          <span data-i18n="2. Thông Tin Khách Hàng">2. Thông Tin Khách Hàng</span>
         </span>
       </div>
       <div class="h-0.5 flex-1 mx-3 bg-slate-800">
@@ -890,7 +857,7 @@ function renderBookingModalContent() {
           3
         </span>
         <span class="text-xs md:text-sm font-medium ${currentStep === 3 ? 'text-amber-300 font-semibold' : 'text-slate-400'}">
-          3. Thanh Toán VietQR
+          <span data-i18n="3. Thanh Toán VietQR">3. Thanh Toán VietQR</span>
         </span>
       </div>
     </div>
@@ -913,29 +880,29 @@ function renderBookingModalContent() {
         <div class="flex-1 w-full text-left">
           <div class="flex items-center justify-between">
             <span class="text-xs text-amber-400 font-bold tracking-wider uppercase">${b.room.category} - #${b.room.roomNumber}</span>
-            <span class="text-xs text-slate-400">${b.room.area} m² | ${b.room.capacity} Khách</span>
+            <span class="text-xs text-slate-400">${b.room.area} m² | ${b.room.capacity} <span data-i18n="Khách">Khách</span></span>
           </div>
           <h3 class="font-serif text-lg text-white font-medium my-1">${b.room.name}</h3>
-          <p class="text-xs text-slate-400">${b.room.bedType} • ${b.room.view}</p>
+          <p class="text-xs text-slate-400">${translatedLabel(b.room.bedType)} • ${translatedLabel(b.room.view)}</p>
         </div>
       </div>
 
       <!-- Stay Dates & Promo Code Configuration -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Ngày nhận phòng</label>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5"><span data-i18n="Ngày nhận phòng">Ngày nhận phòng</span></label>
           <input type="date" id="booking-checkin" min="${formatLocalDate(new Date())}" value="${state.search.checkIn}" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Ngày trả phòng</label>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5"><span data-i18n="Ngày trả phòng">Ngày trả phòng</span></label>
           <input type="date" id="booking-checkout" min="${state.search.checkIn}" value="${state.search.checkOut}" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
         </div>
         <div class="sm:col-span-2">
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Mã ưu đãi (Promo Code)</label>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5"><span data-i18n="Mã ưu đãi (Promo Code)">Mã ưu đãi (Promo Code)</span></label>
           <div class="flex gap-2">
-            <input type="text" id="booking-promo" value="${state.search.promoCode}" placeholder="Nhập mã ví dụ: LUXURY2026 hoặc VIP5STAR" class="flex-1 uppercase bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+            <input type="text" id="booking-promo" value="${state.search.promoCode}" placeholder="Nhập mã ví dụ: LUXURY2026 hoặc VIP5STAR" data-i18n-placeholder="Nhập mã ví dụ: LUXURY2026 hoặc VIP5STAR" class="flex-1 uppercase bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
             <button type="button" id="btn-apply-promo" class="btn-outline-gold px-4 py-2.5 rounded-xl text-xs font-semibold">
-              Áp Dụng
+              <span data-i18n="Áp Dụng">Áp Dụng</span>
             </button>
           </div>
         </div>
@@ -944,7 +911,7 @@ function renderBookingModalContent() {
       <!-- Price Breakdown Table -->
       <div class="rounded-xl bg-slate-900/60 p-4 border border-amber-500/15 mb-6 text-sm">
         <div class="flex justify-between py-1.5 text-slate-300">
-          <span>Tiền phòng (${formatCurrency(b.room.price, state.currency)} × ${b.nights} đêm):</span>
+          <span><span data-i18n="Tiền phòng">Tiền phòng</span> (${formatCurrency(b.room.price, state.currency)} × ${b.nights} <span data-i18n="đêm" data-i18n-count="${b.nights}">đêm</span>):</span>
           <span class="font-medium text-white">${formattedSubtotal}</span>
         </div>
         ${b.discountAmount > 0 ? `
@@ -954,15 +921,15 @@ function renderBookingModalContent() {
           </div>
         ` : ''}
         <div class="flex justify-between py-1.5 text-slate-400 text-xs">
-          <span>Thuế giá trị gia tăng (VAT 8%):</span>
+          <span><span data-i18n="Thuế giá trị gia tăng (VAT 8%):">Thuế giá trị gia tăng (VAT 8%):</span></span>
           <span>${formattedVat}</span>
         </div>
         <div class="flex justify-between py-1.5 text-slate-400 text-xs">
-          <span>Phí phục vụ khách sạn 5★ (5%):</span>
+          <span><span data-i18n="Phí phục vụ khách sạn 5★ (5%):">Phí phục vụ khách sạn 5★ (5%):</span></span>
           <span>${formattedService}</span>
         </div>
         <div class="flex justify-between pt-3 mt-2 border-t border-amber-500/20 text-base font-serif">
-          <span class="text-amber-200 font-bold">Tổng thanh toán dự kiến:</span>
+          <span class="text-amber-200 font-bold"><span data-i18n="Tổng thanh toán dự kiến:">Tổng thanh toán dự kiến:</span></span>
           <span class="font-bold text-xl text-gold-gradient">${formattedTotal}</span>
         </div>
       </div>
@@ -970,10 +937,10 @@ function renderBookingModalContent() {
       <!-- Actions -->
       <div class="flex items-center justify-between pt-2">
         <button type="button" class="btn-outline-gold px-5 py-2.5 rounded-xl text-sm" onclick="closeBookingModal()">
-          Hủy Bỏ
+          <span data-i18n="Hủy Bỏ">Hủy Bỏ</span>
         </button>
         <button type="button" id="btn-step1-next" class="btn-gold px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg">
-          Tiếp Tục Nhập Thông Tin
+          <span data-i18n="Tiếp Tục Nhập Thông Tin">Tiếp Tục Nhập Thông Tin</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
       </div>
@@ -985,7 +952,7 @@ function renderBookingModalContent() {
     if (dateIn && dateOut) {
       dateIn.addEventListener('change', () => {
         if (!dateIn.value || dateIn.value < formatLocalDate(new Date()) || dateIn.value >= dateOut.value) {
-          showToast('Vui lòng chọn ngày nhận phòng hợp lệ trước ngày trả phòng.', 'warning');
+          showToast(t('Vui lòng chọn ngày nhận phòng hợp lệ trước ngày trả phòng.'), 'warning');
           dateIn.value = state.search.checkIn;
           return;
         }
@@ -997,7 +964,7 @@ function renderBookingModalContent() {
       });
       dateOut.addEventListener('change', () => {
         if (!dateOut.value || dateOut.value <= dateIn.value) {
-          showToast('Ngày trả phòng phải sau ngày nhận phòng.', 'warning');
+          showToast(t('Ngày trả phòng phải sau ngày nhận phòng.'), 'warning');
           dateOut.value = state.search.checkOut;
           return;
         }
@@ -1015,9 +982,9 @@ function renderBookingModalContent() {
         state.search.promoCode = promoVal;
         calculateBookingPricing();
         if (state.booking.discountAmount > 0) {
-          showToast(`Đã áp dụng mã ưu đãi ${promoVal.toUpperCase()}!`, 'success');
+          showToast(tx`Đã áp dụng mã ưu đãi ${promoVal.toUpperCase()}!`, 'success');
         } else if (promoVal) {
-          showToast('Mã ưu đãi không hợp lệ hoặc đã hết hạn!', 'warning');
+          showToast(t('Mã ưu đãi không hợp lệ hoặc đã hết hạn!'), 'warning');
         }
         renderBookingModalContent();
       });
@@ -1029,7 +996,7 @@ function renderBookingModalContent() {
         const checkIn = document.getElementById('booking-checkin')?.value;
         const checkOut = document.getElementById('booking-checkout')?.value;
         if (!checkIn || !checkOut || checkIn < formatLocalDate(new Date()) || checkOut <= checkIn) {
-          showToast('Vui lòng chọn ngày nhận phòng từ hôm nay và ngày trả phòng sau ngày nhận phòng.', 'warning');
+          showToast(t('Vui lòng chọn ngày nhận phòng từ hôm nay và ngày trả phòng sau ngày nhận phòng.'), 'warning');
           return;
         }
         state.search.checkIn = checkIn;
@@ -1049,62 +1016,62 @@ function renderBookingModalContent() {
       ${stepHeader}
 
       <div class="mb-4">
-        <h4 class="text-sm font-serif text-white font-medium">Thông tin định danh khách lưu trú</h4>
-        <p class="text-xs text-slate-400 mt-0.5">Vui lòng cung cấp chính xác để hệ thống gửi vé phòng điện tử và hóa đơn.</p>
+        <h4 class="text-sm font-serif text-white font-medium"><span data-i18n="Thông tin định danh khách lưu trú">Thông tin định danh khách lưu trú</span></h4>
+        <p class="text-xs text-slate-400 mt-0.5"><span data-i18n="Vui lòng cung cấp chính xác để hệ thống gửi vé phòng điện tử và hóa đơn.">Vui lòng cung cấp chính xác để hệ thống gửi vé phòng điện tử và hóa đơn.</span></p>
       </div>
 
       <form id="guest-booking-form" class="space-y-4 mb-6">
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-            Họ và tên quý khách <span class="text-rose-400">*</span>
+            <span data-i18n="Họ và tên quý khách">Họ và tên quý khách</span> <span class="text-rose-400">*</span>
           </label>
-          <input type="text" id="guest-name" required value="${b.guest.fullName}" placeholder="Ví dụ: Nguyễn Văn An" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+          <input type="text" id="guest-name" required value="${b.guest.fullName}" placeholder="Ví dụ: Nguyễn Văn An" data-i18n-placeholder="Ví dụ: Nguyễn Văn An" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Số điện thoại <span class="text-rose-400">*</span>
+              <span data-i18n="Số điện thoại">Số điện thoại</span> <span class="text-rose-400">*</span>
             </label>
-            <input type="tel" id="guest-phone" required value="${b.guest.phone}" placeholder="Ví dụ: 0901234567" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+            <input type="tel" id="guest-phone" required value="${b.guest.phone}" placeholder="Ví dụ: 0901234567" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none" data-i18n-placeholder="Ví dụ: 0901234567">
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Địa chỉ Email <span class="text-rose-400">*</span>
+              <span data-i18n="Địa chỉ Email">Địa chỉ Email</span> <span class="text-rose-400">*</span>
             </label>
-            <input type="email" id="guest-email" required value="${b.guest.email}" placeholder="Ví dụ: an.nguyen@gmail.com" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+            <input type="email" id="guest-email" required value="${b.guest.email}" placeholder="Ví dụ: an.nguyen@gmail.com" data-i18n-placeholder="Ví dụ: an.nguyen@gmail.com" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
           </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Số CCCD / Hộ chiếu <span class="text-rose-400">*</span>
+              <span data-i18n="Số CCCD / Hộ chiếu">Số CCCD / Hộ chiếu</span> <span class="text-rose-400">*</span>
             </label>
-            <input type="text" id="guest-identity" required value="${b.guest.identityCard}" placeholder="Ví dụ: 012345678901" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+            <input type="text" id="guest-identity" required value="${b.guest.identityCard}" placeholder="Ví dụ: 012345678901" data-i18n-placeholder="Ví dụ: 012345678901" class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Yêu cầu đặc biệt
+              <span data-i18n="Yêu cầu đặc biệt">Yêu cầu đặc biệt</span>
             </label>
-            <input type="text" id="guest-notes" value="${b.guest.notes}" placeholder="Tầng cao, phòng yên tĩnh, hoa tươi..." class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+            <input type="text" id="guest-notes" value="${b.guest.notes}" placeholder="Tầng cao, phòng yên tĩnh, hoa tươi..." data-i18n-placeholder="Tầng cao, phòng yên tĩnh, hoa tươi..." class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
           </div>
         </div>
       </form>
 
       <!-- Mini Price Reminder -->
       <div class="p-3.5 rounded-xl bg-slate-900/60 border border-amber-500/20 flex items-center justify-between text-xs text-slate-300 mb-6">
-        <span>Đặt phòng: <strong class="text-white">${b.room.name}</strong> (${b.nights} đêm)</span>
+        <span><span data-i18n="Đặt phòng:">Đặt phòng:</span> <strong class="text-white">${b.room.name}</strong> (${b.nights} <span data-i18n="đêm" data-i18n-count="${b.nights}">đêm</span>)</span>
         <span class="font-bold text-amber-300 text-sm">${formattedTotal}</span>
       </div>
 
       <!-- Actions -->
       <div class="flex items-center justify-between pt-2">
         <button type="button" class="btn-outline-gold px-5 py-2.5 rounded-xl text-sm flex items-center gap-1.5" onclick="goToStep(1)">
-          <i data-lucide="arrow-left" class="w-4 h-4"></i> Quay Lại
+          <i data-lucide="arrow-left" class="w-4 h-4"></i> <span data-i18n="Quay Lại">Quay Lại</span>
         </button>
         <button type="button" id="btn-submit-booking" class="btn-gold px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg">
-          <span id="btn-submit-text">Xác Nhận & Đặt Phòng</span>
+          <span id="btn-submit-text"><span data-i18n="Xác Nhận &amp; Đặt Phòng">Xác Nhận &amp; Đặt Phòng</span></span>
           <i data-lucide="shield-check" class="w-4 h-4"></i>
         </button>
       </div>
@@ -1130,7 +1097,7 @@ function renderBookingModalContent() {
         // UI Loading
         submitBtn.disabled = true;
         const textSpan = document.getElementById('btn-submit-text');
-        if (textSpan) textSpan.innerHTML = 'Đang xử lý đặt phòng...';
+        if (textSpan) textSpan.innerHTML = t('Đang xử lý đặt phòng...');
 
         try {
           b.requestKey ||= crypto.randomUUID();
@@ -1152,13 +1119,13 @@ function renderBookingModalContent() {
           b.bookingReference = res.bookingReference;
           if (res.totalAmount >= 0) b.totalAmount = Math.round(res.totalAmount);
           b.step = 3;
-          showToast('Đã ghi nhận yêu cầu đặt phòng. Chờ xác nhận thanh toán.', 'success', 7000);
+          showToast(t('Đã ghi nhận yêu cầu đặt phòng. Chờ xác nhận thanh toán.'), 'success', 7000);
           startBookingCountdown();
           renderBookingModalContent();
 
         } catch (err) {
           submitBtn.disabled = false;
-          if (textSpan) textSpan.innerHTML = 'Xác Nhận & Đặt Phòng';
+          if (textSpan) textSpan.innerHTML = t('Xác Nhận & Đặt Phòng');
           showToast(err.message, 'error', 6000);
         }
       });
@@ -1169,10 +1136,10 @@ function renderBookingModalContent() {
   else if (currentStep === 3) {
     const formattedTotal = formatCurrency(b.totalAmount, state.currency);
     const qrUrl = generateVietQRUrl(b.payment);
-    const bankAccount = b.payment?.account_number || 'Liên hệ Lễ tân';
-    const bankName = b.payment?.beneficiary_bank || 'Chưa có thông tin ngân hàng';
-    const accountName = b.payment?.account_holder || 'Liên hệ Lễ tân';
-    const transferContent = b.payment?.reference_code || 'Liên hệ Lễ tân';
+    const bankAccount = b.payment?.account_number || t('Liên hệ Lễ tân');
+    const bankName = b.payment?.beneficiary_bank || t('Chưa có thông tin ngân hàng');
+    const accountName = b.payment?.account_holder || t('Liên hệ Lễ tân');
+    const transferContent = b.payment?.reference_code || t('Liên hệ Lễ tân');
 
     body.innerHTML = `
       ${stepHeader}
@@ -1183,10 +1150,10 @@ function renderBookingModalContent() {
         <div class="w-14 h-14 rounded-full bg-emerald-500/20 border-2 border-emerald-400/50 flex items-center justify-center text-emerald-400 mx-auto mb-3 shadow-lg">
           <i data-lucide="check-check" class="w-7 h-7"></i>
         </div>
-        <span class="text-xs font-semibold uppercase tracking-widest text-amber-400">Yêu cầu đặt phòng đã được ghi nhận</span>
-        <h3 class="font-serif text-2xl text-white font-medium mt-1">Đơn Đặt Phòng ${b.bookingReference || `#${b.bookingId}`}</h3>
+        <span class="text-xs font-semibold uppercase tracking-widest text-amber-400"><span data-i18n="Yêu cầu đặt phòng đã được ghi nhận">Yêu cầu đặt phòng đã được ghi nhận</span></span>
+        <h3 class="font-serif text-2xl text-white font-medium mt-1"><span data-i18n="Đơn Đặt Phòng">Đơn Đặt Phòng</span> ${b.bookingReference || `#${b.bookingId}`}</h3>
         <p class="text-xs text-slate-300 mt-1">
-          Đặt phòng đang chờ xác nhận thanh toán từ khách sạn.
+          <span data-i18n="Đặt phòng đang chờ xác nhận thanh toán từ khách sạn.">Đặt phòng đang chờ xác nhận thanh toán từ khách sạn.</span>
         </p>
       </div>
 
@@ -1197,44 +1164,44 @@ function renderBookingModalContent() {
           <img src="${qrUrl}" alt="VietQR Thanh Toán" class="w-60 h-60 object-contain rounded-lg">
           <div class="mt-2 text-center text-slate-800 text-xs font-medium flex items-center gap-1.5">
             <i data-lucide="scan" class="w-4 h-4 text-emerald-600"></i>
-            <span>Quét bằng ứng dụng Ngân hàng bất kỳ</span>
+            <span><span data-i18n="Quét bằng ứng dụng Ngân hàng bất kỳ">Quét bằng ứng dụng Ngân hàng bất kỳ</span></span>
           </div>
         </div>
 
         <!-- Transfer Information Details -->
         <div class="text-left space-y-3 font-sans text-sm">
           <div>
-            <span class="text-xs text-slate-400 uppercase tracking-wider">Ngân hàng thụ hưởng</span>
+            <span class="text-xs text-slate-400 uppercase tracking-wider"><span data-i18n="Ngân hàng thụ hưởng">Ngân hàng thụ hưởng</span></span>
             <div class="text-white font-semibold">${bankName}</div>
           </div>
           <div>
-            <span class="text-xs text-slate-400 uppercase tracking-wider">Chủ tài khoản</span>
+            <span class="text-xs text-slate-400 uppercase tracking-wider"><span data-i18n="Chủ tài khoản">Chủ tài khoản</span></span>
             <div class="text-amber-200 font-semibold">${accountName}</div>
           </div>
           <div>
-            <span class="text-xs text-slate-400 uppercase tracking-wider">Số tài khoản</span>
+            <span class="text-xs text-slate-400 uppercase tracking-wider"><span data-i18n="Số tài khoản">Số tài khoản</span></span>
             <div class="flex items-center gap-2">
               <span class="text-lg font-mono font-bold text-white">${bankAccount}</span>
               <button type="button" class="text-xs text-amber-400 hover:text-white transition-colors bg-slate-800/80 px-2 py-1 rounded" onclick="copyToClipboard('${bankAccount}', 'Đã sao chép số tài khoản!')">
-                Sao chép
+                <span data-i18n="Sao chép">Sao chép</span>
               </button>
             </div>
           </div>
           <div>
-            <span class="text-xs text-slate-400 uppercase tracking-wider">Số tiền thanh toán</span>
+            <span class="text-xs text-slate-400 uppercase tracking-wider"><span data-i18n="Số tiền thanh toán">Số tiền thanh toán</span></span>
             <div class="flex items-center gap-2">
               <span class="text-xl font-serif font-bold text-gold-gradient">${formattedTotal}</span>
               <button type="button" class="text-xs text-amber-400 hover:text-white transition-colors bg-slate-800/80 px-2 py-1 rounded" onclick="copyToClipboard('${b.totalAmount}', 'Đã sao chép số tiền!')">
-                Sao chép
+                <span data-i18n="Sao chép">Sao chép</span>
               </button>
             </div>
           </div>
           <div>
-            <span class="text-xs text-slate-400 uppercase tracking-wider">Nội dung chuyển khoản</span>
+            <span class="text-xs text-slate-400 uppercase tracking-wider"><span data-i18n="Nội dung chuyển khoản">Nội dung chuyển khoản</span></span>
             <div class="flex items-center gap-2">
               <span class="text-sm font-mono font-bold text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/30">${transferContent}</span>
               <button type="button" class="text-xs text-amber-400 hover:text-white transition-colors bg-slate-800/80 px-2 py-1 rounded" onclick="copyToClipboard('${transferContent}', 'Đã sao chép nội dung!')">
-                Sao chép
+                <span data-i18n="Sao chép">Sao chép</span>
               </button>
             </div>
           </div>
@@ -1243,7 +1210,7 @@ function renderBookingModalContent() {
           <div class="pt-2">
             <div class="text-xs text-amber-300/80 flex items-center gap-1.5">
               <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400 animate-pulse"></i>
-              Thời gian giữ phòng còn lại: <strong id="booking-timer" class="font-mono text-white">15:00</strong>
+              <span data-i18n="Thời gian giữ phòng còn lại:">Thời gian giữ phòng còn lại:</span> <strong id="booking-timer" class="font-mono text-white">15:00</strong>
             </div>
           </div>
         </div>
@@ -1252,10 +1219,10 @@ function renderBookingModalContent() {
       <!-- Action Buttons -->
       <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
         <button type="button" class="btn-outline-gold px-5 py-2.5 rounded-xl text-sm w-full sm:w-auto flex items-center justify-center gap-2" onclick="window.print()">
-          <i data-lucide="printer" class="w-4 h-4"></i> In Giấy Xác Nhận
+          <i data-lucide="printer" class="w-4 h-4"></i> <span data-i18n="In Giấy Xác Nhận">In Giấy Xác Nhận</span>
         </button>
         <button type="button" class="btn-gold px-6 py-2.5 rounded-xl text-sm font-semibold w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg" onclick="closeBookingModal()">
-          <i data-lucide="check" class="w-4 h-4"></i> Hoàn Tất
+          <i data-lucide="check" class="w-4 h-4"></i> <span data-i18n="Hoàn Tất">Hoàn Tất</span>
         </button>
       </div>
     `;
@@ -1269,15 +1236,15 @@ _global.goToStep = function(stepNum) {
   renderBookingModalContent();
 };
 
-_global.copyToClipboard = function(text, successMsg = 'Đã sao chép!') {
+_global.copyToClipboard = function(text, successMsg = t('Đã sao chép!')) {
   if (typeof navigator !== 'undefined' && navigator.clipboard) {
     navigator.clipboard.writeText(text).then(() => {
       showToast(successMsg, 'success');
     }).catch(() => {
-      showToast(`Thông tin: ${text}`, 'info');
+      showToast(tx`Thông tin: ${text}`, 'info');
     });
   } else {
-    showToast(`Thông tin: ${text}`, 'info');
+    showToast(tx`Thông tin: ${text}`, 'info');
   }
 };
 
@@ -1298,7 +1265,7 @@ function startBookingCountdown() {
     if (state.booking.countdownSeconds <= 0) {
       clearInterval(state.booking.countdownTimer);
       state.booking.countdownTimer = null;
-      showToast('Hết thời gian giữ phòng, vui lòng thao tác lại nếu chưa thanh toán.', 'warning');
+      showToast(t('Hết thời gian giữ phòng, vui lòng thao tác lại nếu chưa thanh toán.'), 'warning');
     }
   }, 1000);
 }
@@ -1316,16 +1283,16 @@ function renderGallery() {
   }
 
   container.innerHTML = items.map((item, index) => `
-    <div class="gallery-card relative group rounded-2xl overflow-hidden cursor-pointer h-72 shadow-lg border border-amber-500/10" role="button" tabindex="0" aria-label="Mở ảnh: ${item.title}" data-index="${index}">
-      <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110">
+    <div class="gallery-card relative group rounded-2xl overflow-hidden cursor-pointer h-72 shadow-lg border border-amber-500/10" role="button" tabindex="0" aria-label="${t('Mở ảnh:')} ${t(item.title)}" data-index="${index}">
+      <img src="${item.image}" alt="${t(item.title)}" class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110">
       <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
       
       <div class="absolute bottom-4 left-4 right-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
         <span class="text-[11px] font-semibold uppercase tracking-widest text-amber-400 drop-shadow">
-          ${item.category}
+          ${t({rooms:'Phòng Nghỉ', dining:'Ẩm Thực', amenities:'Tiện Ích', views:'Cảnh Quan'}[item.category] || item.category)}
         </span>
-        <h4 class="font-serif text-lg text-white font-medium drop-shadow">${item.title}</h4>
-        <p class="text-xs text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-1">${item.subtitle}</p>
+        <h4 class="font-serif text-lg text-white font-medium drop-shadow">${translatedLabel(item.title)}</h4>
+        <p class="text-xs text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-1">${translatedLabel(item.subtitle)}</p>
       </div>
 
       <div class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-900/80 backdrop-blur-md border border-amber-500/30 text-amber-300 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
@@ -1406,8 +1373,8 @@ _global.toggleLightboxZoom = function() {
   if (!img || !button) return;
   const zoomed = img.classList.toggle('is-zoomed');
   button.setAttribute('aria-pressed', String(zoomed));
-  button.setAttribute('aria-label', zoomed ? 'Thu nhỏ ảnh' : 'Phóng to ảnh');
-  button.textContent = zoomed ? 'Thu nhỏ' : 'Phóng to';
+  button.setAttribute('aria-label', zoomed ? t('Thu nhỏ ảnh') : t('Phóng to ảnh'));
+  setTranslatedText(button, zoomed ? t('Thu nhỏ') : t('Phóng to'));
 };
 
 function updateLightboxContent() {
@@ -1600,7 +1567,7 @@ function initEventListeners() {
       state.language = e.target.value;
       localStorage.setItem('aurelia_lang', state.language);
       applyLanguage(state.language);
-      showToast(state.language === 'vi' ? 'Đã đổi ngôn ngữ sang Tiếng Việt' : 'Language switched to English', 'info');
+      showToast(state.language === 'vi' ? t('Đã đổi ngôn ngữ sang Tiếng Việt') : 'Language switched to English', 'info');
     });
   }
 
@@ -1613,7 +1580,7 @@ function initEventListeners() {
       localStorage.setItem('aurelia_currency', state.currency);
       updateCurrencyDisplay();
       filterAndRenderRooms();
-      showToast(`Đã chuyển đơn vị tiền tệ sang ${state.currency}`, 'info');
+      showToast(tx`Đã chuyển đơn vị tiền tệ sang ${state.currency}`, 'info');
     });
   }
 
@@ -1627,7 +1594,7 @@ function initEventListeners() {
 
       const today = formatLocalDate(new Date());
       if (!checkIn || !checkOut || checkIn < today || checkOut <= checkIn) {
-        showToast('Vui lòng chọn ngày nhận phòng từ hôm nay và ngày trả phòng sau ngày nhận phòng.', 'warning');
+        showToast(t('Vui lòng chọn ngày nhận phòng từ hôm nay và ngày trả phòng sau ngày nhận phòng.'), 'warning');
         return;
       }
 
@@ -1637,12 +1604,12 @@ function initEventListeners() {
       state.roomsAreLive = false;
       state.roomsSearchedFor = null;
 
-      showToast('Đang tìm kiếm phòng trống theo tiêu chuẩn của bạn...', 'info');
+      showToast(t('Đang tìm kiếm phòng trống theo tiêu chuẩn của bạn...'), 'info');
       await loadRooms({ checkIn, checkOut });
 
       if (state.roomsAreLive) {
         state.roomsSearchedFor = { checkIn, checkOut };
-        showToast(state.rooms.length ? `Tìm thấy ${state.rooms.length} phòng phù hợp.` : 'Không có phòng trống trong ngày đã chọn.', state.rooms.length ? 'success' : 'warning');
+        showToast(state.rooms.length ? tx`Tìm thấy ${state.rooms.length} phòng phù hợp.` : t('Không có phòng trống trong ngày đã chọn.'), state.rooms.length ? 'success' : 'warning');
       }
 
       const roomsSection = document.getElementById('rooms');
@@ -1719,7 +1686,7 @@ function initEventListeners() {
       e.preventDefault();
       const emailInput = document.getElementById('newsletter-email');
       if (emailInput && emailInput.value) {
-        showToast('Cảm ơn Quý khách đã đăng ký nhận tin thư ưu đãi độc quyền 5★!', 'success');
+        showToast(t('Cảm ơn Quý khách đã đăng ký nhận tin thư ưu đãi độc quyền 5★!'), 'success');
         emailInput.value = '';
       }
     });
@@ -1729,7 +1696,7 @@ function initEventListeners() {
   const quickChatBtn = document.getElementById('quick-chat-btn');
   if (quickChatBtn) {
     quickChatBtn.addEventListener('click', () => {
-      showToast('Đang kết nối tới Quản gia Concierge AI của Aurelia...', 'info');
+      showToast(t('Đang kết nối tới Quản gia Concierge AI của Aurelia...'), 'info');
       setTimeout(() => {
         window.open('https://zalo.me', '_blank');
       }, 700);
@@ -1739,14 +1706,11 @@ function initEventListeners() {
 
 // Language Application Helper
 function applyLanguage(lang) {
-  const dict = I18N[lang] || I18N.vi;
-  
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.dataset.i18n;
-    if (dict[key]) {
-      el.textContent = dict[key];
-    }
-  });
+  state.language = setLanguage(lang);
+  updateHeaderAuthStatus();
+  filterAndRenderRooms();
+  renderGallery();
+  translateUI();
 }
 
 // Currency Display Helper
@@ -1789,7 +1753,7 @@ async function handleBookingLookup(e) {
   const btn = document.getElementById('btn-do-lookup');
 
   if (!code) {
-    showToast('Vui lòng nhập mã đặt phòng', 'warning');
+    showToast(t('Vui lòng nhập mã đặt phòng'), 'warning');
     return;
   }
 
@@ -1799,7 +1763,7 @@ async function handleBookingLookup(e) {
     resultBox.innerHTML = `
       <div class="py-6 text-center text-amber-200">
         <div class="w-8 h-8 rounded-full border-2 border-amber-500/20 border-t-amber-400 animate-spin mx-auto mb-2"></div>
-        <p class="text-xs">Đang tra cứu hệ thống khách sạn...</p>
+        <p class="text-xs"><span data-i18n="Đang tra cứu hệ thống khách sạn...">Đang tra cứu hệ thống khách sạn...</span></p>
       </div>
     `;
   }
@@ -1814,59 +1778,59 @@ async function handleBookingLookup(e) {
       resultBox.innerHTML = `
         <div class="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/40 text-left space-y-3">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Chi Tiết Đặt Phòng</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-400"><span data-i18n="Chi Tiết Đặt Phòng">Chi Tiết Đặt Phòng</span></span>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${b.status === 'CONFIRMED' || b.paymentStatus === 'PAID' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'}">
-              ${b.status || 'ĐÃ XÁC NHẬN'}
+              ${b.status || t('ĐÃ XÁC NHẬN')}
             </span>
           </div>
           <div class="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span class="text-slate-400 block">Mã đặt phòng:</span>
+              <span class="text-slate-400 block"><span data-i18n="Mã đặt phòng:">Mã đặt phòng:</span></span>
               <strong class="text-white font-mono text-sm">${b.bookingReference || b.bookingId}</strong>
             </div>
             <div>
-              <span class="text-slate-400 block">Khách hàng:</span>
-              <strong class="text-amber-200">${b.customerName || 'Quý khách'}</strong>
+              <span class="text-slate-400 block"><span data-i18n="Khách hàng:">Khách hàng:</span></span>
+              <strong class="text-amber-200">${b.customerName || t('Quý khách')}</strong>
             </div>
             <div>
-              <span class="text-slate-400 block">Số điện thoại:</span>
+              <span class="text-slate-400 block"><span data-i18n="Số điện thoại:">Số điện thoại:</span></span>
               <span class="text-white font-mono">${b.phone || '---'}</span>
             </div>
             <div>
-              <span class="text-slate-400 block">Số phòng / Hạng:</span>
+              <span class="text-slate-400 block"><span data-i18n="Số phòng / Hạng:">Số phòng / Hạng:</span></span>
               <span class="text-white font-semibold">${b.roomNumber || '101'}</span>
             </div>
             <div>
-              <span class="text-slate-400 block">Nhận phòng:</span>
+              <span class="text-slate-400 block"><span data-i18n="Nhận phòng:">Nhận phòng:</span></span>
               <span class="text-white">${b.checkInDate || '---'}</span>
             </div>
             <div>
-              <span class="text-slate-400 block">Trả phòng:</span>
+              <span class="text-slate-400 block"><span data-i18n="Trả phòng:">Trả phòng:</span></span>
               <span class="text-white">${b.checkOutDate || '---'}</span>
             </div>
           </div>
           <div class="pt-2 border-t border-slate-800 flex items-center justify-between">
-            <span class="text-xs text-slate-400">Tổng thanh toán:</span>
+            <span class="text-xs text-slate-400"><span data-i18n="Tổng thanh toán:">Tổng thanh toán:</span></span>
             <span class="text-base font-bold text-gold-gradient font-serif">${formattedTotal}</span>
           </div>
           <div class="text-[11px] text-emerald-400/90 flex items-center gap-1.5 pt-1">
             <i data-lucide="check-circle" class="w-3.5 h-3.5 shrink-0"></i>
-            <span>Trạng thái thanh toán: <strong>${b.paymentStatus === 'PAID' ? 'Đã Thanh Toán (VietQR)' : 'Chờ Thanh Toán'}</strong></span>
+            <span><span data-i18n="Trạng thái thanh toán:">Trạng thái thanh toán:</span> <strong>${b.paymentStatus === 'PAID' ? t('Đã Thanh Toán (VietQR)') : t('Chờ Thanh Toán')}</strong></span>
           </div>
         </div>
       `;
       refreshLucideIcons();
-      showToast('Đã tìm thấy thông tin đặt phòng!', 'success');
+      showToast(t('Đã tìm thấy thông tin đặt phòng!'), 'success');
     } else {
       resultBox.innerHTML = `
         <div class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs text-center">
           <i data-lucide="alert-circle" class="w-6 h-6 text-rose-400 mx-auto mb-1"></i>
-          <p class="font-semibold">Không tìm thấy thông tin đặt phòng</p>
+          <p class="font-semibold"><span data-i18n="Không tìm thấy thông tin đặt phòng">Không tìm thấy thông tin đặt phòng</span></p>
           <p class="text-slate-400 mt-1">Vui lòng kiểm tra lại mã đặt phòng (${code}) hoặc số điện thoại.</p>
         </div>
       `;
       refreshLucideIcons();
-      showToast('Không tìm thấy thông tin đặt phòng', 'warning');
+      showToast(t('Không tìm thấy thông tin đặt phòng'), 'warning');
     }
   } catch (err) {
     if (btn) btn.disabled = false;
@@ -1875,7 +1839,7 @@ async function handleBookingLookup(e) {
         <p class="font-semibold">Lỗi tra cứu: ${err.message}</p>
       </div>
     `;
-    showToast(`Lỗi: ${err.message}`, 'error');
+    showToast(tx`Lỗi: ${err.message}`, 'error');
   }
 }
 
@@ -1897,20 +1861,20 @@ export function ensureLoginModal() {
     modal.className = 'modal-overlay fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto hidden';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-label', 'Đăng nhập tài khoản');
+    modal.setAttribute('aria-label', t('Đăng nhập tài khoản'));
     modal.tabIndex = -1;
     modal.innerHTML = `
       <div class="modal-content glass-panel rounded-3xl w-full max-w-md p-6 sm:p-8 relative max-h-[92vh] overflow-y-auto my-auto shadow-2xl border border-amber-500/30">
         <button type="button" id="close-login-modal" aria-label="Đóng cửa sổ"
           class="absolute top-5 right-5 z-10 w-9 h-9 rounded-full bg-slate-900/80 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700 transition-colors cursor-pointer"
-          onclick="closeLoginModal(event)">
+          onclick="closeLoginModal(event)" data-i18n-aria-label="Đóng cửa sổ">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
         <div class="text-center mb-5">
           <div class="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 mx-auto mb-3 shadow-md">
             <i data-lucide="shield-check" class="w-6 h-6"></i>
           </div>
-          <h3 id="auth-modal-title" class="font-serif text-2xl text-white font-bold">Cổng Thành Viên</h3>
+          <h3 id="auth-modal-title" class="font-serif text-2xl text-white font-bold"><span data-i18n="Cổng Thành Viên">Cổng Thành Viên</span></h3>
           <p id="auth-modal-subtitle" class="text-xs text-slate-400 mt-1">Aurelia Grand Palace Luxury Resort</p>
         </div>
         <div class="flex items-center rounded-xl bg-slate-900/90 p-1 border border-slate-800 mb-5" role="tablist">
@@ -1918,90 +1882,90 @@ export function ensureLoginModal() {
             class="flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all bg-amber-400 text-slate-950 shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
             onclick="switchAuthTab('login')">
             <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-            <span>Đăng Nhập</span>
+            <span><span data-i18n="Đăng Nhập">Đăng Nhập</span></span>
           </button>
           <button type="button" id="tab-register-btn" role="tab" aria-selected="false"
             class="flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all text-slate-400 hover:text-white bg-transparent flex items-center justify-center gap-1.5 cursor-pointer"
             onclick="switchAuthTab('register')">
             <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
-            <span>Đăng Ký</span>
+            <span><span data-i18n="Đăng Ký">Đăng Ký</span></span>
           </button>
         </div>
         <div id="login-status-box" class="hidden mb-4 p-3 rounded-xl text-xs text-center border" role="status" aria-live="polite"></div>
         <form id="login-form" class="space-y-4 mb-4">
           <div>
             <label for="login-username" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Tên đăng nhập <span class="text-rose-400">*</span>
+              <span data-i18n="Tên đăng nhập">Tên đăng nhập</span> <span class="text-rose-400">*</span>
             </label>
             <div class="relative">
               <input type="text" id="login-username" name="username" required autocomplete="username" maxlength="100"
                 placeholder="Nhập tên đăng nhập hoặc email"
-                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors" data-i18n-placeholder="Nhập tên đăng nhập hoặc email">
               <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
             </div>
           </div>
           <div>
             <label for="login-password" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Mật khẩu <span class="text-rose-400">*</span>
+              <span data-i18n="Mật khẩu">Mật khẩu</span> <span class="text-rose-400">*</span>
             </label>
             <div class="relative">
               <input type="password" id="login-password" name="password" required autocomplete="current-password" maxlength="200"
                 placeholder="Nhập mật khẩu"
-                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors" data-i18n-placeholder="Nhập mật khẩu">
               <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
             </div>
           </div>
           <button type="submit" id="btn-login-submit"
             class="btn-gold w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all">
             <i data-lucide="log-in" class="w-4 h-4"></i>
-            <span>Đăng Nhập An Toàn</span>
+            <span><span data-i18n="Đăng Nhập An Toàn">Đăng Nhập An Toàn</span></span>
           </button>
         </form>
         <form id="register-form" class="space-y-4 mb-4 hidden">
           <div id="register-status-box" class="hidden mb-4 p-3 rounded-xl text-xs text-center border" role="status" aria-live="polite"></div>
           <div>
             <label for="register-fullname" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Họ và tên <span class="text-rose-400">*</span>
+              <span data-i18n="Họ và tên">Họ và tên</span> <span class="text-rose-400">*</span>
             </label>
             <div class="relative">
               <input type="text" id="register-fullname" name="fullName" required maxlength="100"
                 placeholder="Nguyễn Văn A"
-                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors" data-i18n-placeholder="Nguyễn Văn A">
               <i data-lucide="user-check" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
             </div>
           </div>
           <div>
             <label for="register-username" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Số điện thoại / Tên tài khoản <span class="text-rose-400">*</span>
+              <span data-i18n="Số điện thoại / Tên tài khoản">Số điện thoại / Tên tài khoản</span> <span class="text-rose-400">*</span>
             </label>
             <div class="relative">
               <input type="text" id="register-username" name="username" required autocomplete="username" maxlength="50"
                 placeholder="0912345678 hoặc ten_dang_nhap"
-                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors" data-i18n-placeholder="0912345678 hoặc ten_dang_nhap">
               <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
             </div>
           </div>
           <div>
             <label for="register-password" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Mật khẩu <span class="text-rose-400">*</span>
+              <span data-i18n="Mật khẩu">Mật khẩu</span> <span class="text-rose-400">*</span>
             </label>
             <div class="relative">
               <input type="password" id="register-password" name="password" required autocomplete="new-password" maxlength="200"
                 placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
-                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+                class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors" data-i18n-placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)">
               <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
             </div>
           </div>
           <button type="submit" id="btn-register-submit"
             class="btn-gold w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all">
             <i data-lucide="user-plus" class="w-4 h-4"></i>
-            <span>Đăng Ký Tài Khoản</span>
+            <span><span data-i18n="Đăng Ký Tài Khoản">Đăng Ký Tài Khoản</span></span>
           </button>
         </form>
         <div class="pt-4 border-t border-slate-800/80 flex flex-col gap-2 text-center text-xs text-slate-400">
           <div id="auth-footer-prompt">
-            <span id="auth-footer-text">Chưa có tài khoản? </span>
-            <button type="button" id="auth-footer-btn" onclick="switchAuthTab('register')" class="text-amber-300 hover:text-white font-semibold transition-colors cursor-pointer">Đăng ký thành viên ngay ↗</button>
+            <span id="auth-footer-text"><span data-i18n="Chưa có tài khoản?">Chưa có tài khoản?</span> </span>
+            <button type="button" id="auth-footer-btn" onclick="switchAuthTab('register')" class="text-amber-300 hover:text-white font-semibold transition-colors cursor-pointer"><span data-i18n="Đăng ký thành viên ngay ↗">Đăng ký thành viên ngay ↗</span></button>
           </div>
         </div>
       </div>
@@ -2089,19 +2053,19 @@ export function switchAuthTab(tab = 'login') {
   }
 
   if (modalTitle) {
-    modalTitle.textContent = isRegister ? 'Đăng Ký Thành Viên' : 'Đăng Nhập';
+    setTranslatedText(modalTitle, isRegister ? t('Đăng Ký Thành Viên') : t('Đăng Nhập'));
   }
   if (modalSubtitle) {
-    modalSubtitle.textContent = isRegister
-      ? 'Gia nhập đặc quyền hội viên Aurelia Grand Palace'
-      : 'Cổng thành viên & nhân viên Aurelia Grand Palace';
+    setTranslatedText(modalSubtitle, isRegister
+      ? t('Gia nhập đặc quyền hội viên Aurelia Grand Palace')
+      : t('Cổng thành viên & nhân viên Aurelia Grand Palace'));
   }
 
   if (footerText) {
-    footerText.textContent = isRegister ? 'Đã có tài khoản? ' : 'Chưa có tài khoản? ';
+    setTranslatedText(footerText, isRegister ? t('Đã có tài khoản? ') : t('Chưa có tài khoản? '));
   }
   if (footerBtn) {
-    footerBtn.textContent = isRegister ? 'Đăng nhập ngay ↗' : 'Đăng ký thành viên ngay ↗';
+    setTranslatedText(footerBtn, isRegister ? t('Đăng nhập ngay ↗') : t('Đăng ký thành viên ngay ↗'));
     footerBtn.onclick = () => switchAuthTab(isRegister ? 'login' : 'register');
   }
 
@@ -2191,10 +2155,10 @@ export async function handleLoginSubmit(e) {
   if (!username || !password) {
     if (statusBox) {
       statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-rose-500/10 border-rose-500/30 text-rose-300';
-      statusBox.textContent = 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.';
+      setTranslatedText(statusBox, t('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.'));
       statusBox.classList.remove('hidden');
     }
-    showToast('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu', 'warning');
+    showToast(t('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu'), 'warning');
     return;
   }
 
@@ -2205,13 +2169,13 @@ export async function handleLoginSubmit(e) {
     btn.setAttribute('aria-busy', 'true');
     btn.innerHTML = `
       <div class="w-4 h-4 border-2 border-slate-950 border-t-amber-400 rounded-full animate-spin shrink-0"></div>
-      <span>Đang xác thực...</span>
+      <span><span data-i18n="Đang xác thực...">Đang xác thực...</span></span>
     `;
   }
 
   if (statusBox) {
     statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-amber-500/10 border-amber-500/30 text-amber-200';
-    statusBox.textContent = 'Đang xác thực tài khoản...';
+    setTranslatedText(statusBox, t('Đang xác thực tài khoản...'));
     statusBox.classList.remove('hidden');
   }
 
@@ -2219,7 +2183,7 @@ export async function handleLoginSubmit(e) {
     const result = await api.post('/auth/login', { username, password });
 
     if (!result || !result.token) {
-      throw new Error('Máy chủ không trả về quyền truy cập hợp lệ cho tài khoản này.');
+      throw new Error(t('Máy chủ không trả về quyền truy cập hợp lệ cho tài khoản này.'));
     }
 
     const roleRaw = result.role || 'CUSTOMER';
@@ -2243,11 +2207,11 @@ export async function handleLoginSubmit(e) {
 
     if (statusBox) {
       statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
-      statusBox.textContent = 'Đăng nhập thành công!';
+      setTranslatedText(statusBox, t('Đăng nhập thành công!'));
       statusBox.classList.remove('hidden');
     }
 
-    showToast('Đăng nhập thành công!', 'success');
+    showToast(t('Đăng nhập thành công!'), 'success');
     updateHeaderAuthStatus();
 
     setTimeout(() => {
@@ -2255,7 +2219,7 @@ export async function handleLoginSubmit(e) {
     }, 600);
 
   } catch (err) {
-    const errorMsg = err?.message || 'Không thể đăng nhập. Vui lòng kiểm tra kết nối mạng và thử lại.';
+    const errorMsg = err?.message || t('Không thể đăng nhập. Vui lòng kiểm tra kết nối mạng và thử lại.');
     if (statusBox) {
       statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-rose-500/10 border-rose-500/30 text-rose-300';
       statusBox.textContent = errorMsg;
@@ -2293,20 +2257,20 @@ export async function handleRegisterSubmit(e) {
   if (!fullName || !username || !password) {
     if (statusBox) {
       statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-rose-500/10 border-rose-500/30 text-rose-300';
-      statusBox.textContent = 'Vui lòng điền đầy đủ họ tên, tên đăng nhập/SĐT và mật khẩu.';
+      setTranslatedText(statusBox, t('Vui lòng điền đầy đủ họ tên, tên đăng nhập/SĐT và mật khẩu.'));
       statusBox.classList.remove('hidden');
     }
-    showToast('Vui lòng điền đầy đủ thông tin đăng ký', 'warning');
+    showToast(t('Vui lòng điền đầy đủ thông tin đăng ký'), 'warning');
     return;
   }
 
   if (password.length < 6) {
     if (statusBox) {
       statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-rose-500/10 border-rose-500/30 text-rose-300';
-      statusBox.textContent = 'Mật khẩu phải có độ dài tối thiểu 6 ký tự.';
+      setTranslatedText(statusBox, t('Mật khẩu phải có độ dài tối thiểu 6 ký tự.'));
       statusBox.classList.remove('hidden');
     }
-    showToast('Mật khẩu tối thiểu 6 ký tự', 'warning');
+    showToast(t('Mật khẩu tối thiểu 6 ký tự'), 'warning');
     return;
   }
 
@@ -2316,13 +2280,13 @@ export async function handleRegisterSubmit(e) {
     btn.setAttribute('aria-busy', 'true');
     btn.innerHTML = `
       <div class="w-4 h-4 border-2 border-slate-950 border-t-amber-400 rounded-full animate-spin shrink-0"></div>
-      <span>Đang đăng ký tài khoản...</span>
+      <span><span data-i18n="Đang đăng ký tài khoản...">Đang đăng ký tài khoản...</span></span>
     `;
   }
 
   if (statusBox) {
     statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-amber-500/10 border-amber-500/30 text-amber-200';
-    statusBox.textContent = 'Đang khởi tạo tài khoản thành viên...';
+    setTranslatedText(statusBox, t('Đang khởi tạo tài khoản thành viên...'));
     statusBox.classList.remove('hidden');
   }
 
@@ -2338,11 +2302,11 @@ export async function handleRegisterSubmit(e) {
 
     if (statusBox) {
       statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
-      statusBox.textContent = 'Đăng ký thành công! Đang chuyển sang màn hình đăng nhập...';
+      setTranslatedText(statusBox, t('Đăng ký thành công! Đang chuyển sang màn hình đăng nhập...'));
       statusBox.classList.remove('hidden');
     }
 
-    showToast('Đăng ký tài khoản thành công! Vui lòng đăng nhập.', 'success');
+    showToast(t('Đăng ký tài khoản thành công! Vui lòng đăng nhập.'), 'success');
 
     // Pre-fill login username
     const loginUserEl = document.getElementById('login-username');
@@ -2358,7 +2322,7 @@ export async function handleRegisterSubmit(e) {
     }, 1000);
 
   } catch (err) {
-    const errorMsg = err?.message || 'Không thể đăng ký tài khoản. Vui lòng thử lại sau.';
+    const errorMsg = err?.message || t('Không thể đăng ký tài khoản. Vui lòng thử lại sau.');
     if (statusBox) {
       statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-rose-500/10 border-rose-500/30 text-rose-300';
       statusBox.textContent = errorMsg;
@@ -2391,7 +2355,7 @@ export function handleLogout(e) {
     }
   } catch {}
   updateHeaderAuthStatus();
-  showToast('Đã đăng xuất thành công', 'info');
+  showToast(t('Đã đăng xuất thành công'), 'info');
   if (typeof window !== 'undefined' && window.location && typeof window.location.reload === 'function') {
     window.location.reload();
   }
@@ -2437,7 +2401,7 @@ export async function loadPublicReviewsWidget() {
       comment: 'Kỳ nghỉ vô cùng trọn vẹn tại Aurelia Palace! Tầm nhìn hướng biển ngoạn mục, nhà hàng phục vụ món bò Wagyu tuyệt hảo và đội ngũ quản gia luôn túc trực chu đáo.',
       created_at: '2026-10-18',
       management_response: {
-        responder_title: 'Tổng Quản Lý Khu Nghỉ Dưỡng (General Manager)',
+        responder_title: t('Tổng Quản Lý Khu Nghỉ Dưỡng (General Manager)'),
         content: 'Chân thành cảm ơn Ông Long và gia đình đã tin tưởng chọn Aurelia Palace. Đội ngũ khách sạn rất vinh hạnh được đón tiếp Quý khách trong những kỳ nghỉ tiếp theo!',
         responded_at: '2026-10-18'
       }
@@ -2454,7 +2418,7 @@ export async function loadPublicReviewsWidget() {
       comment: 'Hồ bơi tràn bờ riêng tư tuyệt đẹp, không gian tĩnh lặng và riêng tư tối đa. Bữa sáng nổi tại villa là trải nghiệm đẳng cấp thế giới.',
       created_at: '2026-10-17',
       management_response: {
-        responder_title: 'Giám Đốc Trải Nghiệm Khách Hàng (Director of Guest Experience)',
+        responder_title: t('Giám Đốc Trải Nghiệm Khách Hàng (Director of Guest Experience)'),
         content: 'Kính gửi Bà Mai, chúng tôi rất vui vì Quý khách đã có trải nghiệm trọn vẹn với dịch vụ bữa sáng nổi tại Royal Villa. Hẹn sớm gặp lại Quý khách!',
         responded_at: '2026-10-17'
       }
@@ -2471,7 +2435,7 @@ export async function loadPublicReviewsWidget() {
       comment: 'Thủ tục nhận phòng nhanh chóng, nhân viên lễ tân hỗ trợ nhiệt tình. Dịch vụ Spa thảo dược giúp phục hồi tinh thần sau những ngày làm việc bận rộn.',
       created_at: '2026-10-16',
       management_response: {
-        responder_title: 'Quản Lý Tiền Sảnh (Front Office Manager)',
+        responder_title: t('Quản Lý Tiền Sảnh (Front Office Manager)'),
         content: 'Aurelia Palace chân thành cảm ơn đánh giá của Ông Hoàng. Chúng tôi không ngừng hoàn thiện để mang đến dịch vụ hoàn hảo nhất.',
         responded_at: '2026-10-16'
       }
@@ -2493,10 +2457,10 @@ export async function loadPublicReviewsWidget() {
   const servicePct = Math.min(100, Math.max(0, (serviceAvg / 5) * 100));
   const cleanPct = Math.min(100, Math.max(0, (cleanlinessAvg / 5) * 100));
 
-  let scoreLabel = 'Tuyệt Hảo (Excellent)';
-  if (overallAvg >= 4.8) scoreLabel = 'Tuyệt Hảo (Excellent)';
-  else if (overallAvg >= 4.5) scoreLabel = 'Rất Tốt (Very Good)';
-  else if (overallAvg >= 4.0) scoreLabel = 'Tốt (Good)';
+  let scoreLabel = t('Tuyệt Hảo (Excellent)');
+  if (overallAvg >= 4.8) scoreLabel = t('Tuyệt Hảo (Excellent)');
+  else if (overallAvg >= 4.5) scoreLabel = t('Rất Tốt (Very Good)');
+  else if (overallAvg >= 4.0) scoreLabel = t('Tốt (Good)');
 
   if (summaryContainer) {
     summaryContainer.innerHTML = `
@@ -2507,7 +2471,7 @@ export async function loadPublicReviewsWidget() {
           <div class="lg:col-span-4 flex flex-col items-center lg:items-start text-center lg:text-left border-b lg:border-b-0 lg:border-r border-amber-500/20 pb-6 lg:pb-0 lg:pr-8">
             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold mb-3">
               <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i>
-              <span>Chỉ số danh tiếng thực tế</span>
+              <span><span data-i18n="Chỉ số danh tiếng thực tế">Chỉ số danh tiếng thực tế</span></span>
             </div>
             <div class="flex items-baseline gap-3 mb-2">
               <span class="text-5xl sm:text-6xl font-serif font-bold text-amber-300">${overallAvg}</span>
@@ -2520,11 +2484,11 @@ export async function loadPublicReviewsWidget() {
               <i data-lucide="star" class="w-5 h-5 fill-amber-400"></i>
               <i data-lucide="star" class="w-5 h-5 fill-amber-400"></i>
             </div>
-            <p class="text-base font-semibold text-white mb-1">${scoreLabel}</p>
-            <p class="text-xs text-slate-400">Dựa trên <strong class="text-amber-200">${totalCount}</strong> lượt đánh giá của khách lưu trú thực tế</p>
+            <p data-i18n="${escapeHtml(scoreLabel)}" class="text-base font-semibold text-white mb-1">${t(scoreLabel)}</p>
+            <p class="text-xs text-slate-400"><span data-i18n="Dựa trên">Dựa trên</span> <strong class="text-amber-200">${totalCount}</strong> <span data-i18n="lượt đánh giá của khách lưu trú thực tế">lượt đánh giá của khách lưu trú thực tế</span></p>
             <div class="mt-4 pt-4 border-t border-slate-800 w-full flex items-center justify-between text-xs">
-              <span class="text-slate-400">Tỷ lệ khuyên chọn:</span>
-              <span class="text-emerald-400 font-bold">${recPct}% Hài Lòng</span>
+              <span class="text-slate-400"><span data-i18n="Tỷ lệ khuyên chọn:">Tỷ lệ khuyên chọn:</span></span>
+              <span class="text-emerald-400 font-bold">${recPct}% <span data-i18n="Hài Lòng">Hài Lòng</span></span>
             </div>
           </div>
 
@@ -2536,7 +2500,7 @@ export async function loadPublicReviewsWidget() {
               <div class="flex justify-between items-center text-xs sm:text-sm font-medium mb-1.5">
                 <span class="text-slate-200 flex items-center gap-2">
                   <i data-lucide="bed-double" class="w-4 h-4 text-amber-400"></i>
-                  <span>Phòng Nghỉ & Tiện Nghi (Room)</span>
+                  <span><span data-i18n="Phòng Nghỉ &amp; Tiện Nghi (Room)">Phòng Nghỉ &amp; Tiện Nghi (Room)</span></span>
                 </span>
                 <span class="text-amber-300 font-bold font-mono">${roomAvg} <span class="text-slate-500 font-normal">/ 5.0</span></span>
               </div>
@@ -2550,7 +2514,7 @@ export async function loadPublicReviewsWidget() {
               <div class="flex justify-between items-center text-xs sm:text-sm font-medium mb-1.5">
                 <span class="text-slate-200 flex items-center gap-2">
                   <i data-lucide="utensils" class="w-4 h-4 text-amber-400"></i>
-                  <span>Ẩm Thực & Nhà Hàng (Dining)</span>
+                  <span><span data-i18n="Ẩm Thực &amp; Nhà Hàng (Dining)">Ẩm Thực &amp; Nhà Hàng (Dining)</span></span>
                 </span>
                 <span class="text-amber-300 font-bold font-mono">${fnbAvg} <span class="text-slate-500 font-normal">/ 5.0</span></span>
               </div>
@@ -2564,7 +2528,7 @@ export async function loadPublicReviewsWidget() {
               <div class="flex justify-between items-center text-xs sm:text-sm font-medium mb-1.5">
                 <span class="text-slate-200 flex items-center gap-2">
                   <i data-lucide="concierge-bell" class="w-4 h-4 text-amber-400"></i>
-                  <span>Chất Lượng Dịch Vụ & Quản Gia (Service)</span>
+                  <span><span data-i18n="Chất Lượng Dịch Vụ &amp; Quản Gia (Service)">Chất Lượng Dịch Vụ &amp; Quản Gia (Service)</span></span>
                 </span>
                 <span class="text-amber-300 font-bold font-mono">${serviceAvg} <span class="text-slate-500 font-normal">/ 5.0</span></span>
               </div>
@@ -2578,7 +2542,7 @@ export async function loadPublicReviewsWidget() {
               <div class="flex justify-between items-center text-xs sm:text-sm font-medium mb-1.5">
                 <span class="text-slate-200 flex items-center gap-2">
                   <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
-                  <span>Độ Sạch Sẽ & Không Gian (Cleanliness)</span>
+                  <span><span data-i18n="Độ Sạch Sẽ &amp; Không Gian (Cleanliness)">Độ Sạch Sẽ &amp; Không Gian (Cleanliness)</span></span>
                 </span>
                 <span class="text-amber-300 font-bold font-mono">${cleanlinessAvg} <span class="text-slate-500 font-normal">/ 5.0</span></span>
               </div>
@@ -2599,8 +2563,8 @@ export async function loadPublicReviewsWidget() {
 
   if (gridContainer) {
     gridContainer.innerHTML = reviewsList.map(item => {
-      const safeAuthor = escapeHtml(item.customer_display_name || 'Khách lưu trú');
-      const safeRoom = escapeHtml(item.room_type_name || 'Phòng nghỉ 5★');
+      const safeAuthor = escapeHtml(item.customer_display_name || t('Khách lưu trú'));
+      const safeRoom = escapeHtml(item.room_type_name || t('Phòng nghỉ 5★'));
       const safeComment = escapeHtml(item.comment || '');
       const rawRating = Number(item.rating_overall || 5.0);
       const starsCount = Math.round(rawRating);
@@ -2618,10 +2582,10 @@ export async function loadPublicReviewsWidget() {
         let respDate = '';
 
         if (typeof item.management_response === 'string') {
-          respTitle = 'Tổng Quản Lý Khu Nghỉ Dưỡng (General Manager)';
+          respTitle = t('Tổng Quản Lý Khu Nghỉ Dưỡng (General Manager)');
           respContent = item.management_response;
         } else if (typeof item.management_response === 'object') {
-          respTitle = item.management_response.responder_title || 'Tổng Quản Lý Khu Nghỉ Dưỡng (General Manager)';
+          respTitle = item.management_response.responder_title || t('Tổng Quản Lý Khu Nghỉ Dưỡng (General Manager)');
           respContent = item.management_response.content || '';
           respDate = String(item.management_response.responded_at || '').slice(0, 10);
         }
@@ -2638,11 +2602,11 @@ export async function loadPublicReviewsWidget() {
                   <i data-lucide="building" class="w-3.5 h-3.5"></i>
                 </div>
                 <div class="min-w-0 flex-1">
-                  <p class="text-xs font-bold text-amber-300 truncate">${safeRespTitle}</p>
+                  <p data-i18n="${safeRespTitle}" class="text-xs font-bold text-amber-300 truncate">${t(safeRespTitle)}</p>
                   ${safeRespDate ? `<p class="text-[10px] text-slate-400 font-mono">${safeRespDate}</p>` : ''}
                 </div>
               </div>
-              <p class="text-xs text-slate-300 leading-relaxed font-light italic">
+              <p data-user-content class="text-xs text-slate-300 leading-relaxed font-light italic">
                 "${safeRespContent}"
               </p>
             </div>
@@ -2659,7 +2623,7 @@ export async function loadPublicReviewsWidget() {
                 <h4 class="font-serif text-base font-semibold text-white group-hover:text-amber-200 transition-colors">${safeAuthor}</h4>
                 <p class="text-xs text-amber-400/80 font-medium">${safeRoom}</p>
               </div>
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold shrink-0" title="Đã xác thực hoàn tất kỳ nghỉ và thanh toán">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold shrink-0" title="Đã xác thực hoàn tất kỳ nghỉ và thanh toán" data-i18n-title="Đã xác thực hoàn tất kỳ nghỉ và thanh toán">
                 <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
                 <span>[Verified Guest]</span>
               </span>
@@ -2676,14 +2640,14 @@ export async function loadPublicReviewsWidget() {
 
             <!-- Sub scores: Room, Dining, Service, Cleanliness -->
             <div class="grid grid-cols-4 gap-1.5 py-2 px-2.5 rounded-lg bg-slate-950/40 border border-slate-800 text-[11px] text-slate-400 mb-4 text-center">
-              <div>Phòng: <strong class="text-amber-200">${item.rating_room ?? 5}★</strong></div>
-              <div>Ẩm thực: <strong class="text-amber-200">${item.rating_fnb ?? 5}★</strong></div>
-              <div>Dịch vụ: <strong class="text-amber-200">${item.rating_service ?? 5}★</strong></div>
-              <div>Vệ sinh: <strong class="text-amber-200">${item.rating_cleanliness ?? 5}★</strong></div>
+              <div><span data-i18n="Phòng:">Phòng:</span> <strong class="text-amber-200">${item.rating_room ?? 5}★</strong></div>
+              <div><span data-i18n="Ẩm thực:">Ẩm thực:</span> <strong class="text-amber-200">${item.rating_fnb ?? 5}★</strong></div>
+              <div><span data-i18n="Dịch vụ:">Dịch vụ:</span> <strong class="text-amber-200">${item.rating_service ?? 5}★</strong></div>
+              <div><span data-i18n="Vệ sinh:">Vệ sinh:</span> <strong class="text-amber-200">${item.rating_cleanliness ?? 5}★</strong></div>
             </div>
 
             <!-- Comment -->
-            <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
+            <p data-user-content class="text-slate-300 font-sans text-sm leading-relaxed font-light">
               "${safeComment}"
             </p>
           </div>
@@ -2719,7 +2683,7 @@ export function updateHeaderAuthStatus() {
       token: token,
       role: 'CUSTOMER',
       username: 'member',
-      fullName: 'Quý Hội Viên'
+      fullName: t('Quý Hội Viên')
     };
   }
 
@@ -2729,9 +2693,9 @@ export function updateHeaderAuthStatus() {
   const mobileLoginBtn = document.getElementById('mobile-login-btn');
 
   if (token && session) {
-    const rawName = session.fullName || session.username || 'Quý Hội Viên';
+    const rawName = session.fullName || session.username || t('Quý Hội Viên');
     const safeName = escapeHtml(rawName);
-    const rawRole = session.role === 'ADMIN' ? 'Quản trị viên' : (session.role === 'STAFF' ? 'Nhân viên' : 'Thành viên Aurelia');
+    const rawRole = session.role === 'ADMIN' ? t('Quản trị viên') : (session.role === 'STAFF' ? t('Nhân viên') : t('Thành viên Aurelia'));
     const safeRole = escapeHtml(rawRole);
     const initial = (rawName.trim()[0] || 'A').toUpperCase();
 
@@ -2741,16 +2705,16 @@ export function updateHeaderAuthStatus() {
         <div class="flex items-center gap-2.5">
           <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-amber-500/30 text-amber-200 text-xs font-medium">
             <span class="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-[11px] shadow-sm">${initial}</span>
-            <span>Xin chào, <strong class="text-white">${safeName}</strong></span>
+            <span><span data-i18n="Xin chào,">Xin chào,</span> <strong data-user-content class="text-white">${safeName}</strong></span>
           </div>
-          <a href="portal.html" id="header-member-portal-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 hover:text-white transition-all text-xs font-semibold" aria-label="Cổng thành viên">
+          <a href="portal.html" id="header-member-portal-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 hover:text-white transition-all text-xs font-semibold" aria-label="Cổng thành viên" data-i18n-aria-label="Cổng thành viên">
             <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-amber-400"></i>
-            <span>Cổng thành viên</span>
+            <span><span data-i18n="Cổng thành viên">Cổng thành viên</span></span>
           </a>
-          <a href="portal.html?view=dashboard" class="hidden" style="display:none !important;" aria-hidden="true">Lịch sử đặt phòng</a>
-          <button type="button" id="btn-logout" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 hover:text-rose-100 transition-all text-xs font-semibold cursor-pointer" aria-label="Đăng xuất">
+          <a href="portal.html?view=dashboard" class="hidden" style="display:none !important;" aria-hidden="true"><span data-i18n="Lịch sử đặt phòng">Lịch sử đặt phòng</span></a>
+          <button type="button" id="btn-logout" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 hover:text-rose-100 transition-all text-xs font-semibold cursor-pointer" aria-label="Đăng xuất" data-i18n-aria-label="Đăng xuất">
             <i data-lucide="log-out" class="w-3.5 h-3.5 text-rose-400"></i>
-            <span>Đăng xuất</span>
+            <span><span data-i18n="Đăng xuất">Đăng xuất</span></span>
           </button>
         </div>
       `;
@@ -2760,8 +2724,8 @@ export function updateHeaderAuthStatus() {
       }
     } else if (headerLoginBtn) {
       headerLoginBtn.innerHTML = `<i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i><span>${safeName}</span>`;
-      headerLoginBtn.title = 'Mở Cổng Quản Lý / Thành Viên';
-      headerLoginBtn.setAttribute('aria-label', `Đã đăng nhập: ${safeName}`);
+      headerLoginBtn.title = t('Mở Cổng Quản Lý / Thành Viên');
+      headerLoginBtn.setAttribute('aria-label', tx`Đã đăng nhập: ${safeName}`);
     }
 
     // Mobile Navigation: User Profile + Member Gateway + Booking History + Logout
@@ -2771,26 +2735,26 @@ export function updateHeaderAuthStatus() {
           <div class="flex items-center gap-3">
             <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-xs shadow-sm">${initial}</span>
             <div class="min-w-0 flex-1">
-              <p class="text-xs font-semibold text-white truncate">Xin chào, ${safeName}</p>
+              <p class="text-xs font-semibold text-white truncate"><span data-i18n="Xin chào,">Xin chào,</span> ${safeName}</p>
               <p class="text-[11px] text-amber-400 truncate">${safeRole}</p>
             </div>
           </div>
         </div>
         <a href="portal.html" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all text-sm uppercase tracking-wider font-semibold">
           <span class="flex items-center gap-3">
-            <i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-400"></i> Cổng thành viên
+            <i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Cổng thành viên">Cổng thành viên</span>
           </span>
           <i data-lucide="chevron-right" class="w-4 h-4 text-amber-400"></i>
         </a>
         <a href="portal.html?view=dashboard" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider">
           <span class="flex items-center gap-3">
-            <i data-lucide="calendar-check" class="w-4 h-4 text-amber-400"></i> Lịch sử đặt phòng
+            <i data-lucide="calendar-check" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Lịch sử đặt phòng">Lịch sử đặt phòng</span>
           </span>
           <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
         </a>
         <button type="button" id="mobile-btn-logout" class="w-full mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:text-rose-100 transition-all text-sm uppercase tracking-wider text-left cursor-pointer">
           <span class="flex items-center gap-3">
-            <i data-lucide="log-out" class="w-4 h-4 text-rose-400"></i> Đăng xuất
+            <i data-lucide="log-out" class="w-4 h-4 text-rose-400"></i> <span data-i18n="Đăng xuất">Đăng xuất</span>
           </span>
         </button>
       `;
@@ -2801,7 +2765,7 @@ export function updateHeaderAuthStatus() {
     } else if (mobileLoginBtn) {
       mobileLoginBtn.innerHTML = `
         <span class="flex items-center gap-3">
-          <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i> ${safeName} (Cổng thành viên)
+          <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i> ${safeName} (<span data-i18n="Cổng thành viên">Cổng thành viên</span>)
         </span>
         <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
       `;
@@ -2814,11 +2778,11 @@ export function updateHeaderAuthStatus() {
         <a href="portal.html" id="header-login-btn" role="button"
           class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200 hover:text-white transition-colors cursor-pointer"
           aria-label="Đăng nhập cổng khách hàng và nhân viên"
-          onclick="openLoginModal(event)"><i data-lucide="user-round" class="w-4 h-4"></i><span>Đăng nhập</span></a>
+          onclick="openLoginModal(event)" data-i18n-aria-label="Đăng nhập cổng khách hàng và nhân viên"><i data-lucide="user-round" class="w-4 h-4"></i><span><span data-i18n="Đăng nhập">Đăng nhập</span></span></a>
         <a href="#register" id="header-register-btn" role="button"
           class="hidden" style="display: none !important;"
           aria-label="Đăng ký tài khoản khách hàng"
-          onclick="openRegisterModal(event)"><i data-lucide="user-plus" class="w-4 h-4"></i><span>Đăng ký</span></a>
+          onclick="openRegisterModal(event)" data-i18n-aria-label="Đăng ký tài khoản khách hàng"><i data-lucide="user-plus" class="w-4 h-4"></i><span><span data-i18n="Đăng ký">Đăng ký</span></span></a>
       `;
     }
     if (mobileContainer) {
@@ -2827,7 +2791,7 @@ export function updateHeaderAuthStatus() {
           onclick="document.getElementById('mobile-menu-drawer')?.classList.add('hidden'); openLoginModal(event);"
           class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider cursor-pointer">
           <span class="flex items-center gap-3">
-            <i data-lucide="user-round" class="w-4 h-4 text-amber-400"></i> Đăng nhập
+            <i data-lucide="user-round" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Đăng nhập">Đăng nhập</span>
           </span>
           <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
         </a>
@@ -2836,7 +2800,7 @@ export function updateHeaderAuthStatus() {
           onclick="document.getElementById('mobile-menu-drawer')?.classList.add('hidden'); openRegisterModal(event);"
           class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider cursor-pointer">
           <span class="flex items-center gap-3">
-            <i data-lucide="user-plus" class="w-4 h-4 text-amber-400"></i> Đăng ký
+            <i data-lucide="user-plus" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Đăng ký">Đăng ký</span>
           </span>
           <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
         </a>

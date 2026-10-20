@@ -5,9 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b0f17">
-  <title>Aurelia Grand Palace | Khách Sạn Nghỉ Dưỡng 5★ Quốc Tế</title>
+  <title data-i18n="Aurelia Grand Palace | Khách Sạn Nghỉ Dưỡng 5★ Quốc Tế">Aurelia Grand Palace | Khách Sạn Nghỉ Dưỡng 5★ Quốc Tế</title>
   <meta name="description"
-    content="Khám phá Aurelia Grand Palace - Tuyệt tác nghỉ dưỡng 5 sao quốc tế bên bờ Vịnh Ngọc. Dịch vụ quản gia 24/7, ẩm thực thượng hạng và hồ bơi vô cực chân mây.">
+    content="Khám phá Aurelia Grand Palace - Tuyệt tác nghỉ dưỡng 5 sao quốc tế bên bờ Vịnh Ngọc. Dịch vụ quản gia 24/7, ẩm thực thượng hạng và hồ bơi vô cực chân mây." data-i18n-content="Khám phá Aurelia Grand Palace - Tuyệt tác nghỉ dưỡng 5 sao quốc tế bên bờ Vịnh Ngọc. Dịch vụ quản gia 24/7, ẩm thực thượng hạng và hồ bơi vô cực chân mây.">
 
   <!-- Google Fonts: Playfair Display headings & Inter body (Vietnamese supported) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,7 +44,7 @@
 
   <!-- Custom Native CSS3 Luxury Design Tokens -->
   <link rel="stylesheet" href="css/style.css?v=3.5.0">
-  <link rel="stylesheet" href="css/theme-overrides.css?v=3.5.0">
+  <link rel="stylesheet" href="css/theme-overrides.css?v=3.5.2">
   <link rel="stylesheet" href="css/page-transition.css?v=3.5.0">
   <script src="js/shared/page-transition.js?v=3.5.0" defer></script>
 
@@ -101,7 +101,7 @@
         <a href="#reviews" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navReviews">Đánh Giá</a>
         <a href="#gallery" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navGallery">Bộ Sưu Tập</a>
         <a href="javascript:void(0)" onclick="openBookingLookupModal()" class="whitespace-nowrap text-amber-300 hover:text-white transition-colors py-1 cursor-pointer flex items-center gap-1">
-          <i data-lucide="search" class="w-3.5 h-3.5"></i> Tra Cứu
+          <i data-lucide="search" class="w-3.5 h-3.5"></i> <span data-i18n="Tra Cứu">Tra Cứu</span>
         </a>
         <a href="#contact" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navContact">Liên Hệ</a>
       </nav>
@@ -110,7 +110,7 @@
       <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <!-- Move VI/VN, VND into hidden md:flex for < 768px screens -->
         <div class="hidden md:flex items-center gap-2 border-r border-amber-500/20 pr-3" role="group"
-          aria-label="Tùy chọn ngôn ngữ và tiền tệ">
+          aria-label="Tùy chọn ngôn ngữ và tiền tệ" data-i18n-aria-label="Tùy chọn ngôn ngữ và tiền tệ">
           <div class="relative">
             <select id="lang-selector"
               class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
@@ -141,13 +141,13 @@
           <a href="portal.html" id="header-login-btn" role="button"
             class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200 hover:text-white transition-colors cursor-pointer"
             aria-label="Đăng nhập cổng khách hàng và nhân viên"
-            onclick="openLoginModal(event)"><i data-lucide="user-round" class="w-4 h-4"></i><span>Đăng nhập</span></a>
+            onclick="openLoginModal(event)" data-i18n-aria-label="Đăng nhập cổng khách hàng và nhân viên"><i data-lucide="user-round" class="w-4 h-4"></i><span><span data-i18n="Đăng nhập">Đăng nhập</span></span></a>
 
           <!-- Register Button: completely hidden from Navbar as per Task 11, retained for test compatibility -->
           <a href="#register" id="header-register-btn" role="button"
             class="hidden" style="display: none !important;"
             aria-label="Đăng ký tài khoản khách hàng"
-            onclick="openRegisterModal(event)"><i data-lucide="user-plus" class="w-4 h-4"></i><span>Đăng ký</span></a>
+            onclick="openRegisterModal(event)" data-i18n-aria-label="Đăng ký tài khoản khách hàng"><i data-lucide="user-plus" class="w-4 h-4"></i><span><span data-i18n="Đăng ký">Đăng ký</span></span></a>
         </div>
 
         <!-- Book Now Button (Metallic Gold CTA) - Compact on mobile (text-xs px-2.5 py-1.5) -->
@@ -160,7 +160,7 @@
         <!-- Mobile Menu Trigger - Fixed with flex-shrink-0 to remain clearly visible at 320px - 434px -->
         <button type="button" id="mobile-menu-btn"
           class="xl:hidden flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900/80 border border-amber-500/30 flex items-center justify-center text-amber-400 hover:bg-slate-800 transition-colors"
-          aria-label="Mở menu điều hướng">
+          aria-label="Mở menu điều hướng" data-i18n-aria-label="Mở menu điều hướng">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
       </div>
@@ -176,7 +176,7 @@
           <i data-lucide="crown" class="w-5 h-5 fill-amber-400 text-amber-400"></i>
           <span class="font-serif text-base font-bold text-white uppercase">Aurelia Grand Palace</span>
         </div>
-        <button type="button" id="close-drawer-btn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center hover:text-white" aria-label="Đóng menu">
+        <button type="button" id="close-drawer-btn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center hover:text-white" aria-label="Đóng menu" data-i18n-aria-label="Đóng menu">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -185,25 +185,25 @@
       <nav class="flex flex-col gap-2 font-medium">
         <a href="#rooms" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-white hover:text-amber-300 hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider">
           <span class="flex items-center gap-3">
-            <i data-lucide="bed-double" class="w-4 h-4 text-amber-400"></i> Khám phá hạng phòng
+            <i data-lucide="bed-double" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Khám phá hạng phòng">Khám phá hạng phòng</span>
           </span>
           <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
         </a>
         <a href="#services" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-white hover:text-amber-300 hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider">
           <span class="flex items-center gap-3">
-            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> Dịch vụ & Tiện ích
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Dịch vụ &amp; Tiện ích">Dịch vụ &amp; Tiện ích</span>
           </span>
           <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
         </a>
         <a href="#reviews" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-white hover:text-amber-300 hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider">
           <span class="flex items-center gap-3">
-            <i data-lucide="star" class="w-4 h-4 text-amber-400"></i> Đánh giá khách hàng
+            <i data-lucide="star" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Đánh giá khách hàng">Đánh giá khách hàng</span>
           </span>
           <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
         </a>
         <a href="javascript:void(0)" onclick="openBookingLookupModal()" class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all text-sm uppercase tracking-wider font-semibold">
           <span class="flex items-center gap-3">
-            <i data-lucide="search" class="w-4 h-4 text-amber-400"></i> Tra cứu đặt phòng
+            <i data-lucide="search" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Tra cứu đặt phòng">Tra cứu đặt phòng</span>
           </span>
           <i data-lucide="chevron-right" class="w-4 h-4 text-amber-400"></i>
         </a>
@@ -213,7 +213,7 @@
             onclick="document.getElementById('mobile-menu-drawer')?.classList.add('hidden'); openLoginModal(event);"
             class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider cursor-pointer">
             <span class="flex items-center gap-3">
-              <i data-lucide="user-round" class="w-4 h-4 text-amber-400"></i> Đăng nhập
+              <i data-lucide="user-round" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Đăng nhập">Đăng nhập</span>
             </span>
             <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
           </a>
@@ -222,7 +222,7 @@
             onclick="document.getElementById('mobile-menu-drawer')?.classList.add('hidden'); openRegisterModal(event);"
             class="mobile-nav-link flex items-center justify-between py-3 px-4 rounded-xl bg-slate-900/60 border border-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/30 transition-all text-sm uppercase tracking-wider cursor-pointer">
             <span class="flex items-center gap-3">
-              <i data-lucide="user-plus" class="w-4 h-4 text-amber-400"></i> Đăng ký
+              <i data-lucide="user-plus" class="w-4 h-4 text-amber-400"></i> <span data-i18n="Đăng ký">Đăng ký</span>
             </span>
             <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
           </a>
@@ -232,11 +232,11 @@
       <!-- Secondary Controls for Mobile: Language, Currency -->
       <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-3 text-xs text-slate-300">
         <div class="flex items-center gap-2">
-          <span>Ngôn ngữ:</span>
+          <span><span data-i18n="Ngôn ngữ:">Ngôn ngữ:</span></span>
           <span class="text-amber-300 font-semibold">VI 🇻🇳</span>
         </div>
         <div class="flex items-center gap-2">
-          <span>Tiền tệ:</span>
+          <span><span data-i18n="Tiền tệ:">Tiền tệ:</span></span>
           <span class="text-amber-300 font-semibold">VND (₫)</span>
         </div>
       </div>
@@ -244,7 +244,7 @@
 
     <div class="pt-6">
       <button type="button" class="btn-gold w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg" onclick="document.getElementById('mobile-menu-drawer').classList.add('hidden'); openBookingModal();">
-        <i data-lucide="calendar" class="w-4 h-4"></i> Đặt Phòng Ngay
+        <i data-lucide="calendar" class="w-4 h-4"></i> <span data-i18n="Đặt Phòng Ngay">Đặt Phòng Ngay</span>
       </button>
     </div>
   </div>
@@ -278,24 +278,24 @@
 
       <h1
         class="text-4xl sm:text-6xl md:text-7xl font-serif text-white font-medium tracking-tight leading-tight sm:leading-tight mb-6">
-        Khẳng Định <span class="text-gold-gradient italic">Đẳng Cấp</span> Thượng Lưu
+        <span data-i18n="Khẳng Định">Khẳng Định</span> <span class="text-gold-gradient italic"><span data-i18n="Đẳng Cấp">Đẳng Cấp</span></span> <span data-i18n="Thượng Lưu">Thượng Lưu</span>
       </h1>
 
       <p
         class="text-base sm:text-lg md:text-xl font-sans text-slate-300 max-w-2xl mx-auto font-light leading-relaxed mb-10">
-        Nơi hội tụ tinh hoa kiến trúc tân cổ điển Indochine, dịch vụ quản gia vương giả 24/7 và trải nghiệm nghỉ dưỡng 5
-        sao đỉnh cao bên bờ vịnh di sản.
+        <span data-i18n="Nơi hội tụ tinh hoa kiến trúc tân cổ điển Indochine, dịch vụ quản gia vương giả 24/7 và trải nghiệm nghỉ dưỡng 5 sao đỉnh cao bên bờ vịnh di sản.">Nơi hội tụ tinh hoa kiến trúc tân cổ điển Indochine, dịch vụ quản gia vương giả 24/7 và trải nghiệm nghỉ dưỡng 5
+        sao đỉnh cao bên bờ vịnh di sản.</span>
       </p>
 
       <div class="flex flex-wrap items-center justify-center gap-4">
         <a href="#rooms"
           class="btn-gold px-8 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider flex items-center gap-2 shadow-xl">
-          <span>Khám Phá Hạng Phòng</span>
+          <span><span data-i18n="Khám Phá Hạng Phòng">Khám Phá Hạng Phòng</span></span>
           <i data-lucide="arrow-down" class="w-4 h-4"></i>
         </a>
         <a href="#about"
           class="btn-outline-gold px-7 py-3.5 rounded-xl font-semibold uppercase text-xs tracking-wider flex items-center gap-2">
-          <span>Di Sản Khách Sạn</span>
+          <span><span data-i18n="Di Sản Khách Sạn">Di Sản Khách Sạn</span></span>
           <i data-lucide="compass" class="w-4 h-4"></i>
         </a>
       </div>
@@ -337,11 +337,11 @@
             </label>
             <select id="search-guests"
               class="w-full bg-slate-900/90 border border-slate-700/80 text-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:border-amber-400 focus:outline-none transition-colors">
-              <option value="1">1 Người lớn</option>
-              <option value="2" selected>2 Người lớn (Tiêu chuẩn)</option>
-              <option value="3">3 Người lớn</option>
-              <option value="4">4 Người lớn (Gia đình)</option>
-              <option value="6">Nhóm 5 - 6 khách</option>
+              <option value="1" data-i18n="1 Người lớn">1 Người lớn</option>
+              <option value="2" selected data-i18n="2 Người lớn (Tiêu chuẩn)">2 Người lớn (Tiêu chuẩn)</option>
+              <option value="3" data-i18n="3 Người lớn">3 Người lớn</option>
+              <option value="4" data-i18n="4 Người lớn (Gia đình)">4 Người lớn (Gia đình)</option>
+              <option value="6" data-i18n="Nhóm 5 - 6 khách">Nhóm 5 - 6 khách</option>
             </select>
           </div>
 
@@ -368,14 +368,14 @@
         </div>
       </div>
     </div>
-    <section id="room-statistics" class="room-statistics relative z-20" aria-label="Thống kê tình trạng phòng">
+    <section id="room-statistics" class="room-statistics relative z-20" aria-label="Thống kê tình trạng phòng" data-i18n-aria-label="Thống kê tình trạng phòng">
       <dl class="room-statistics-grid">
-        <div class="room-statistic room-statistic--available"><dt><span aria-hidden="true"><i data-lucide="bed-double"></i></span> Phòng trống</dt><dd data-room-count="available">—</dd></div>
-        <div class="room-statistic room-statistic--reserved"><dt><span aria-hidden="true"><i data-lucide="calendar-check"></i></span> Phòng đã đặt</dt><dd data-room-count="reserved">—</dd></div>
-        <div class="room-statistic room-statistic--occupied"><dt><span aria-hidden="true"><i data-lucide="key-round"></i></span> Phòng đang sử dụng</dt><dd data-room-count="occupied">—</dd></div>
-        <div class="room-statistic room-statistic--maintenance"><dt><span aria-hidden="true"><i data-lucide="settings"></i></span> Phòng đang bảo trì</dt><dd data-room-count="maintenance">—</dd></div>
+        <div class="room-statistic room-statistic--available"><dt><span aria-hidden="true"><i data-lucide="bed-double"></i></span> <span data-i18n="Phòng trống">Phòng trống</span></dt><dd data-room-count="available">—</dd></div>
+        <div class="room-statistic room-statistic--reserved"><dt><span aria-hidden="true"><i data-lucide="calendar-check"></i></span> <span data-i18n="Phòng đã đặt">Phòng đã đặt</span></dt><dd data-room-count="reserved">—</dd></div>
+        <div class="room-statistic room-statistic--occupied"><dt><span aria-hidden="true"><i data-lucide="key-round"></i></span> <span data-i18n="Phòng đang sử dụng">Phòng đang sử dụng</span></dt><dd data-room-count="occupied">—</dd></div>
+        <div class="room-statistic room-statistic--maintenance"><dt><span aria-hidden="true"><i data-lucide="settings"></i></span> <span data-i18n="Phòng đang bảo trì">Phòng đang bảo trì</span></dt><dd data-room-count="maintenance">—</dd></div>
       </dl>
-      <p id="room-statistics-note" role="status">Đang tải thống kê theo ngày nhận/trả phòng…</p>
+      <p id="room-statistics-note" role="status"><span data-i18n="Đang tải thống kê theo ngày nhận/trả phòng…">Đang tải thống kê theo ngày nhận/trả phòng…</span></p>
     </section>
   </section>
 
@@ -391,26 +391,26 @@
         <div>
           <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-amber-400 mb-3">
             <i data-lucide="feather" class="w-4 h-4"></i>
-            <span>Di Sản & Triết Lý Nghỉ Dưỡng</span>
+            <span><span data-i18n="Di Sản &amp; Triết Lý Nghỉ Dưỡng">Di Sản &amp; Triết Lý Nghỉ Dưỡng</span></span>
           </div>
           <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium leading-tight mb-6">
-            Kiệt Tác Kiến Trúc Hoàng Gia <br class="hidden sm:inline">Giữa Lòng <span class="text-gold-gradient">Vịnh
-              Ngọc Di Sản</span>
+            <span data-i18n="Kiệt Tác Kiến Trúc Hoàng Gia">Kiệt Tác Kiến Trúc Hoàng Gia</span> <br class="hidden sm:inline"><span data-i18n="Giữa Lòng">Giữa Lòng</span> <span class="text-gold-gradient"><span data-i18n="Vịnh Ngọc Di Sản">Vịnh
+              Ngọc Di Sản</span></span>
           </h2>
           <p class="text-slate-300 font-sans text-sm sm:text-base leading-relaxed mb-6 font-light">
-            Khởi nguồn từ khao khát kiến tạo biểu tượng lưu trú xa hoa bậc nhất, Aurelia Grand Palace kết hợp hoàn hảo
-            giữa nét cổ kính tráng lệ của kiến trúc Pháp thế kỷ 19 và sự tinh tế, duy mỹ của văn hóa Á Đông.
+            <span data-i18n="Khởi nguồn từ khao khát kiến tạo biểu tượng lưu trú xa hoa bậc nhất, Aurelia Grand Palace kết hợp hoàn hảo giữa nét cổ kính tráng lệ của kiến trúc Pháp thế kỷ 19 và sự tinh tế, duy mỹ của văn hóa Á Đông.">Khởi nguồn từ khao khát kiến tạo biểu tượng lưu trú xa hoa bậc nhất, Aurelia Grand Palace kết hợp hoàn hảo
+            giữa nét cổ kính tráng lệ của kiến trúc Pháp thế kỷ 19 và sự tinh tế, duy mỹ của văn hóa Á Đông.</span>
           </p>
           <p class="text-slate-400 font-sans text-xs sm:text-sm leading-relaxed mb-8">
-            Mỗi căn phòng, mỗi sảnh đón tiếp đều là một bảo tàng nghệ thuật sống động. Chúng tôi tôn vinh sự riêng tư
+            <span data-i18n="Mỗi căn phòng, mỗi sảnh đón tiếp đều là một bảo tàng nghệ thuật sống động. Chúng tôi tôn vinh sự riêng tư tuyệt đối, cá nhân hóa đến từng chi tiết nhỏ nhất bởi đội ngũ quản gia hoàng gia được đào tạo theo tiêu chuẩn khắt khe từ Thụy Sĩ.">Mỗi căn phòng, mỗi sảnh đón tiếp đều là một bảo tàng nghệ thuật sống động. Chúng tôi tôn vinh sự riêng tư
             tuyệt đối, cá nhân hóa đến từng chi tiết nhỏ nhất bởi đội ngũ quản gia hoàng gia được đào tạo theo tiêu
-            chuẩn khắt khe từ Thụy Sĩ.
+            chuẩn khắt khe từ Thụy Sĩ.</span>
           </p>
 
           <div class="flex items-center gap-6 pt-4 border-t border-amber-500/15">
             <div>
               <div class="font-serif text-xl text-amber-300 font-bold">Jean-Pierre Laurent</div>
-              <div class="text-xs text-slate-400 uppercase tracking-widest">Tổng Giám Đốc Điều Hành</div>
+              <div class="text-xs text-slate-400 uppercase tracking-widest"><span data-i18n="Tổng Giám Đốc Điều Hành">Tổng Giám Đốc Điều Hành</span></div>
             </div>
             <div class="h-10 w-px bg-amber-500/20"></div>
             <div class="font-serif italic text-amber-200/70 text-lg">
@@ -432,8 +432,8 @@
               <i data-lucide="shield-check" class="w-6 h-6"></i>
             </div>
             <div>
-              <div class="text-xs font-bold text-white uppercase tracking-wider">Tiêu Chuẩn 5 Sao Toàn Cầu</div>
-              <div class="text-[11px] text-slate-300 mt-0.5">Xác nhận bởi Hiệp hội Khách sạn Hoàng Gia Quốc Tế</div>
+              <div class="text-xs font-bold text-white uppercase tracking-wider"><span data-i18n="Tiêu Chuẩn 5 Sao Toàn Cầu">Tiêu Chuẩn 5 Sao Toàn Cầu</span></div>
+              <div class="text-[11px] text-slate-300 mt-0.5"><span data-i18n="Xác nhận bởi Hiệp hội Khách sạn Hoàng Gia Quốc Tế">Xác nhận bởi Hiệp hội Khách sạn Hoàng Gia Quốc Tế</span></div>
             </div>
           </div>
         </div>
@@ -444,23 +444,23 @@
         class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-20 pt-12 border-t border-amber-500/15 text-center font-sans">
         <div class="glass-card p-6 rounded-2xl">
           <div class="text-3xl sm:text-4xl font-serif font-bold text-gold-gradient mb-1">200+</div>
-          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold">Phòng & Biệt Thự Hạng Sang</div>
-          <div class="text-[11px] text-slate-400 mt-1">100% hướng biển & vườn nhiệt đới</div>
+          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold"><span data-i18n="Phòng &amp; Biệt Thự Hạng Sang">Phòng &amp; Biệt Thự Hạng Sang</span></div>
+          <div class="text-[11px] text-slate-400 mt-1"><span data-i18n="100% hướng biển &amp; vườn nhiệt đới">100% hướng biển &amp; vườn nhiệt đới</span></div>
         </div>
         <div class="glass-card p-6 rounded-2xl">
           <div class="text-3xl sm:text-4xl font-serif font-bold text-gold-gradient mb-1">5★ Luxury</div>
-          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold">Tiêu Chuẩn Quốc Tế</div>
-          <div class="text-[11px] text-slate-400 mt-1">Chứng nhận xuất sắc toàn cầu 2026</div>
+          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold"><span data-i18n="Tiêu Chuẩn Quốc Tế">Tiêu Chuẩn Quốc Tế</span></div>
+          <div class="text-[11px] text-slate-400 mt-1"><span data-i18n="Chứng nhận xuất sắc toàn cầu 2026">Chứng nhận xuất sắc toàn cầu 2026</span></div>
         </div>
         <div class="glass-card p-6 rounded-2xl">
           <div class="text-3xl sm:text-4xl font-serif font-bold text-gold-gradient mb-1">Prime</div>
-          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold">Vị Trí Kim Cương</div>
-          <div class="text-[11px] text-slate-400 mt-1">Trực diện bờ biển Vịnh Ngọc</div>
+          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold"><span data-i18n="Vị Trí Kim Cương">Vị Trí Kim Cương</span></div>
+          <div class="text-[11px] text-slate-400 mt-1"><span data-i18n="Trực diện bờ biển Vịnh Ngọc">Trực diện bờ biển Vịnh Ngọc</span></div>
         </div>
         <div class="glass-card p-6 rounded-2xl">
           <div class="text-3xl sm:text-4xl font-serif font-bold text-gold-gradient mb-1">9.8 / 10</div>
-          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold">Độ Hài Lòng Tuyệt Đối</div>
-          <div class="text-[11px] text-slate-400 mt-1">Từ hơn 15,000 khách thượng lưu</div>
+          <div class="text-xs uppercase tracking-wider text-slate-300 font-semibold"><span data-i18n="Độ Hài Lòng Tuyệt Đối">Độ Hài Lòng Tuyệt Đối</span></div>
+          <div class="text-[11px] text-slate-400 mt-1"><span data-i18n="Từ hơn 15,000 khách thượng lưu">Từ hơn 15,000 khách thượng lưu</span></div>
         </div>
       </div>
 
@@ -479,10 +479,10 @@
         <div>
           <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-amber-400 mb-2">
             <i data-lucide="key" class="w-4 h-4"></i>
-            <span>Không Gian Nghỉ Dưỡng Vương Giả</span>
+            <span><span data-i18n="Không Gian Nghỉ Dưỡng Vương Giả">Không Gian Nghỉ Dưỡng Vương Giả</span></span>
           </div>
           <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium">
-            Bộ Sưu Tập <span class="text-gold-gradient">Hạng Phòng 5★</span>
+            <span data-i18n="Bộ Sưu Tập">Bộ Sưu Tập</span> <span class="text-gold-gradient"><span data-i18n="Hạng Phòng 5★">Hạng Phòng 5★</span></span>
           </h2>
         </div>
 
@@ -491,7 +491,7 @@
           <button type="button"
             class="room-filter-tab bg-amber-500 text-slate-950 font-bold px-4 py-2 rounded-xl transition-all"
             data-category="all">
-            Tất Cả
+            <span data-i18n="Tất Cả">Tất Cả</span>
           </button>
           <button type="button"
             class="room-filter-tab text-slate-400 hover:text-white px-4 py-2 rounded-xl transition-all"
@@ -539,14 +539,14 @@
       <div class="text-center max-w-3xl mx-auto mb-16">
         <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-amber-400 mb-2">
           <i data-lucide="gem" class="w-4 h-4"></i>
-          <span>Đặc Quyền Thượng Lưu</span>
+          <span><span data-i18n="Đặc Quyền Thượng Lưu">Đặc Quyền Thượng Lưu</span></span>
         </div>
         <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium mb-4">
-          Dịch Vụ & Tiện Ích <span class="text-gold-gradient">Đỉnh Cao</span>
+          <span data-i18n="Dịch Vụ &amp; Tiện Ích">Dịch Vụ &amp; Tiện Ích</span> <span class="text-gold-gradient"><span data-i18n="Đỉnh Cao">Đỉnh Cao</span></span>
         </h2>
         <p class="text-slate-300 font-sans text-sm sm:text-base font-light">
-          Hệ sinh thái tiện ích khép kín đáp ứng trọn vẹn mọi phong cách sống xa hoa, từ ẩm thực sao Michelin đến liệu
-          trình phục hồi sinh lực chuyên sâu.
+          <span data-i18n="Hệ sinh thái tiện ích khép kín đáp ứng trọn vẹn mọi phong cách sống xa hoa, từ ẩm thực sao Michelin đến liệu trình phục hồi sinh lực chuyên sâu.">Hệ sinh thái tiện ích khép kín đáp ứng trọn vẹn mọi phong cách sống xa hoa, từ ẩm thực sao Michelin đến liệu
+          trình phục hồi sinh lực chuyên sâu.</span>
         </p>
       </div>
 
@@ -561,16 +561,16 @@
               <i data-lucide="waves" class="w-7 h-7"></i>
             </div>
             <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
-              Hồ Bơi Vô Cực Chân Mây
+              <span data-i18n="Hồ Bơi Vô Cực Chân Mây">Hồ Bơi Vô Cực Chân Mây</span>
             </h3>
             <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
-              Tọa lạc trên đỉnh tháp tầng 32 với tầm nhìn 360 độ ôm trọn biển trời. Hệ thống lọc nước khoáng điện phân
-              muối biển và quầy pool bar sang trọng.
+              <span data-i18n="Tọa lạc trên đỉnh tháp tầng 32 với tầm nhìn 360 độ ôm trọn biển trời. Hệ thống lọc nước khoáng điện phân muối biển và quầy pool bar sang trọng.">Tọa lạc trên đỉnh tháp tầng 32 với tầm nhìn 360 độ ôm trọn biển trời. Hệ thống lọc nước khoáng điện phân
+              muối biển và quầy pool bar sang trọng.</span>
             </p>
           </div>
           <div
             class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
-            <span>Mở cửa 06:00 - 22:00</span>
+            <span><span data-i18n="Mở cửa 06:00 - 22:00">Mở cửa 06:00 - 22:00</span></span>
           </div>
         </div>
 
@@ -582,16 +582,16 @@
               <i data-lucide="utensils-crossed" class="w-7 h-7"></i>
             </div>
             <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
-              Nhà Hàng Ẩm Thực 5★ & Sky Bar
+              <span data-i18n="Nhà Hàng Ẩm Thực 5★ &amp; Sky Bar">Nhà Hàng Ẩm Thực 5★ &amp; Sky Bar</span>
             </h3>
             <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
-              Hành trình vị giác đỉnh cao với bếp trưởng chuẩn Michelin. Hầm rượu vang quý hiếm hơn 500 năm tuổi và quầy
-              Sky Bar ngắm hoàng hôn rực rỡ.
+              <span data-i18n="Hành trình vị giác đỉnh cao với bếp trưởng chuẩn Michelin. Hầm rượu vang quý hiếm hơn 500 năm tuổi và quầy Sky Bar ngắm hoàng hôn rực rỡ.">Hành trình vị giác đỉnh cao với bếp trưởng chuẩn Michelin. Hầm rượu vang quý hiếm hơn 500 năm tuổi và quầy
+              Sky Bar ngắm hoàng hôn rực rỡ.</span>
             </p>
           </div>
           <div
             class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
-            <span>Phục vụ 24/7 & Bếp Michelin</span>
+            <span><span data-i18n="Phục vụ 24/7 &amp; Bếp Michelin">Phục vụ 24/7 &amp; Bếp Michelin</span></span>
           </div>
         </div>
 
@@ -603,16 +603,16 @@
               <i data-lucide="flower2" class="w-7 h-7"></i>
             </div>
             <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
-              Aurelia Spa & Trị Liệu Trẻ Hóa
+              <span data-i18n="Aurelia Spa &amp; Trị Liệu Trẻ Hóa">Aurelia Spa &amp; Trị Liệu Trẻ Hóa</span>
             </h3>
             <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
-              Tái tạo năng lượng với tinh dầu hữu cơ Thụy Điển, massage đá nóng núi lửa, phòng tắm xông hơi tuyết lạnh
-              và bồn ngâm thủy lực thảo dược.
+              <span data-i18n="Tái tạo năng lượng với tinh dầu hữu cơ Thụy Điển, massage đá nóng núi lửa, phòng tắm xông hơi tuyết lạnh và bồn ngâm thủy lực thảo dược.">Tái tạo năng lượng với tinh dầu hữu cơ Thụy Điển, massage đá nóng núi lửa, phòng tắm xông hơi tuyết lạnh
+              và bồn ngâm thủy lực thảo dược.</span>
             </p>
           </div>
           <div
             class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
-            <span>Phòng VIP Đơn & Đôi Biệt Lập</span>
+            <span><span data-i18n="Phòng VIP Đơn &amp; Đôi Biệt Lập">Phòng VIP Đơn &amp; Đôi Biệt Lập</span></span>
           </div>
         </div>
 
@@ -624,16 +624,16 @@
               <i data-lucide="dumbbell" class="w-7 h-7"></i>
             </div>
             <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
-              Trung Tâm Thể Thao & Yoga 24/7
+              <span data-i18n="Trung Tâm Thể Thao &amp; Yoga 24/7">Trung Tâm Thể Thao &amp; Yoga 24/7</span>
             </h3>
             <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
-              Trang thiết bị cardio và tập cơ đỉnh cao từ Technogym Ý. Huấn luyện viên cá nhân 1-kèm-1 và các buổi Yoga
-              đón bình minh bên bờ cát trắng.
+              <span data-i18n="Trang thiết bị cardio và tập cơ đỉnh cao từ Technogym Ý. Huấn luyện viên cá nhân 1-kèm-1 và các buổi Yoga đón bình minh bên bờ cát trắng.">Trang thiết bị cardio và tập cơ đỉnh cao từ Technogym Ý. Huấn luyện viên cá nhân 1-kèm-1 và các buổi Yoga
+              đón bình minh bên bờ cát trắng.</span>
             </p>
           </div>
           <div
             class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
-            <span>Technogym Hiện Đại 24/7</span>
+            <span><span data-i18n="Technogym Hiện Đại 24/7">Technogym Hiện Đại 24/7</span></span>
           </div>
         </div>
 
@@ -645,16 +645,16 @@
               <i data-lucide="car" class="w-7 h-7"></i>
             </div>
             <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
-              Đưa Đón Sân Bay VIP Rolls-Royce
+              <span data-i18n="Đưa Đón Sân Bay VIP Rolls-Royce">Đưa Đón Sân Bay VIP Rolls-Royce</span>
             </h3>
             <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
-              Đoàn xe siêu sang Rolls-Royce Phantom và Maybach đưa đón tận cửa. Dịch vụ Fast-track thủ tục an ninh hàng
-              không và đón tiếp tại phòng chờ VIP.
+              <span data-i18n="Đoàn xe siêu sang Rolls-Royce Phantom và Maybach đưa đón tận cửa. Dịch vụ Fast-track thủ tục an ninh hàng không và đón tiếp tại phòng chờ VIP.">Đoàn xe siêu sang Rolls-Royce Phantom và Maybach đưa đón tận cửa. Dịch vụ Fast-track thủ tục an ninh hàng
+              không và đón tiếp tại phòng chờ VIP.</span>
             </p>
           </div>
           <div
             class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
-            <span>Fast-Track & Check-in Trên Xe</span>
+            <span><span data-i18n="Fast-Track &amp; Check-in Trên Xe">Fast-Track &amp; Check-in Trên Xe</span></span>
           </div>
         </div>
 
@@ -666,16 +666,16 @@
               <i data-lucide="building-2" class="w-7 h-7"></i>
             </div>
             <h3 class="font-serif text-xl text-white font-medium mb-3 group-hover:text-amber-200 transition-colors">
-              Trung Tâm Hội Nghị & Sự Kiện Quốc Tế
+              <span data-i18n="Trung Tâm Hội Nghị &amp; Sự Kiện Quốc Tế">Trung Tâm Hội Nghị &amp; Sự Kiện Quốc Tế</span>
             </h3>
             <p class="text-slate-300 font-sans text-sm leading-relaxed font-light">
-              Đại sảnh Grand Ballroom sức chứa 1,000 khách, trần cao 9m không cột. Hệ thống màn hình LED cong 4K và âm
-              thanh ánh sáng hội nghị thượng đỉnh quốc gia.
+              <span data-i18n="Đại sảnh Grand Ballroom sức chứa 1,000 khách, trần cao 9m không cột. Hệ thống màn hình LED cong 4K và âm thanh ánh sáng hội nghị thượng đỉnh quốc gia.">Đại sảnh Grand Ballroom sức chứa 1,000 khách, trần cao 9m không cột. Hệ thống màn hình LED cong 4K và âm
+              thanh ánh sáng hội nghị thượng đỉnh quốc gia.</span>
             </p>
           </div>
           <div
             class="pt-6 mt-6 border-t border-amber-500/15 text-xs text-amber-400 font-semibold tracking-wider uppercase flex items-center gap-1">
-            <span>Sức Chứa 1,000 Khách VIP</span>
+            <span><span data-i18n="Sức Chứa 1,000 Khách VIP">Sức Chứa 1,000 Khách VIP</span></span>
           </div>
         </div>
 
@@ -694,13 +694,13 @@
       <div class="text-center max-w-3xl mx-auto mb-16">
         <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-amber-400 mb-2">
           <i data-lucide="heart" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
-          <span>Cảm Nhận Từ Giới Tinh Hoa</span>
+          <span><span data-i18n="Cảm Nhận Từ Giới Tinh Hoa">Cảm Nhận Từ Giới Tinh Hoa</span></span>
         </div>
         <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium mb-4">
-          Khách Hàng Nói Về <span class="text-gold-gradient">Aurelia Palace</span>
+          <span data-i18n="Khách Hàng Nói Về">Khách Hàng Nói Về</span> <span class="text-gold-gradient">Aurelia Palace</span>
         </h2>
         <p class="text-slate-300 font-sans text-sm sm:text-base font-light">
-          Sự hài lòng tuyệt đối của những vị khách trân quý là thước đo danh giá nhất cho chuẩn mực 5 sao của chúng tôi.
+          <span data-i18n="Sự hài lòng tuyệt đối của những vị khách trân quý là thước đo danh giá nhất cho chuẩn mực 5 sao của chúng tôi.">Sự hài lòng tuyệt đối của những vị khách trân quý là thước đo danh giá nhất cho chuẩn mực 5 sao của chúng tôi.</span>
         </p>
       </div>
 
@@ -717,22 +717,22 @@
         <div class="p-3">
           <div class="font-serif text-lg font-bold text-amber-300">TripAdvisor</div>
           <div class="text-xs text-slate-300 font-semibold mt-0.5">Travellers' Choice 2026</div>
-          <div class="text-[10px] text-slate-400">Top 1% Khách Sạn Xa Xỉ Nhất</div>
+          <div class="text-[10px] text-slate-400"><span data-i18n="Top 1% Khách Sạn Xa Xỉ Nhất">Top 1% Khách Sạn Xa Xỉ Nhất</span></div>
         </div>
         <div class="p-3 border-l border-amber-500/15">
           <div class="font-serif text-lg font-bold text-amber-300">Booking.com</div>
           <div class="text-xs text-emerald-400 font-semibold mt-0.5">9.6 / 10 Exceptional</div>
-          <div class="text-[10px] text-slate-400">Từ 4,200+ đánh giá xác thực</div>
+          <div class="text-[10px] text-slate-400"><span data-i18n="Từ 4,200+ đánh giá xác thực">Từ 4,200+ đánh giá xác thực</span></div>
         </div>
         <div class="p-3 border-l border-amber-500/15">
           <div class="font-serif text-lg font-bold text-amber-300">Agoda</div>
           <div class="text-xs text-amber-300 font-semibold mt-0.5">Top Luxury Resort 2026</div>
-          <div class="text-[10px] text-slate-400">Dịch Vụ Khách Hàng Xuất Sắc</div>
+          <div class="text-[10px] text-slate-400"><span data-i18n="Dịch Vụ Khách Hàng Xuất Sắc">Dịch Vụ Khách Hàng Xuất Sắc</span></div>
         </div>
         <div class="p-3 border-l border-amber-500/15">
           <div class="font-serif text-lg font-bold text-amber-300">Google Reviews</div>
           <div class="text-xs text-amber-400 font-semibold mt-0.5">4.9 / 5.0 (2,800+ Votes)</div>
-          <div class="text-[10px] text-slate-400">Bảo Chứng Trải Nghiệm Thượng Lưu</div>
+          <div class="text-[10px] text-slate-400"><span data-i18n="Bảo Chứng Trải Nghiệm Thượng Lưu">Bảo Chứng Trải Nghiệm Thượng Lưu</span></div>
         </div>
       </div>
 
@@ -750,10 +750,10 @@
         <div>
           <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-amber-400 mb-2">
             <i data-lucide="image" class="w-4 h-4"></i>
-            <span>Không Gian Tráng Lệ</span>
+            <span><span data-i18n="Không Gian Tráng Lệ">Không Gian Tráng Lệ</span></span>
           </div>
           <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium">
-            Bộ Sưu Tập <span class="text-gold-gradient">Hình Ảnh</span>
+            <span data-i18n="Bộ Sưu Tập">Bộ Sưu Tập</span> <span class="text-gold-gradient"><span data-i18n="Hình Ảnh">Hình Ảnh</span></span>
           </h2>
         </div>
 
@@ -762,27 +762,27 @@
           <button type="button"
             class="gallery-tab pb-2 border-b-2 border-amber-400 text-amber-300 font-semibold transition-all"
             data-tab="all">
-            Tất Cả
+            <span data-i18n="Tất Cả">Tất Cả</span>
           </button>
           <button type="button"
             class="gallery-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-white transition-all"
             data-tab="rooms">
-            Phòng Nghỉ
+            <span data-i18n="Phòng Nghỉ">Phòng Nghỉ</span>
           </button>
           <button type="button"
             class="gallery-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-white transition-all"
             data-tab="dining">
-            Ẩm Thực & Bar
+            <span data-i18n="Ẩm Thực &amp; Bar">Ẩm Thực &amp; Bar</span>
           </button>
           <button type="button"
             class="gallery-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-white transition-all"
             data-tab="amenities">
-            Tiện Ích & Spa
+            <span data-i18n="Tiện Ích &amp; Spa">Tiện Ích &amp; Spa</span>
           </button>
           <button type="button"
             class="gallery-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-white transition-all"
             data-tab="views">
-            Cảnh Quan
+            <span data-i18n="Cảnh Quan">Cảnh Quan</span>
           </button>
         </div>
       </div>
@@ -817,25 +817,25 @@
             </span>
           </div>
           <p class="text-slate-400 text-xs leading-relaxed mb-4 font-light">
-            Tuyệt tác kiến trúc và dịch vụ hiếu khách thượng lưu 5 sao quốc tế. Nơi mỗi khoảnh khắc đều trở thành kỷ
-            niệm di sản vượt thời gian.
+            <span data-i18n="Tuyệt tác kiến trúc và dịch vụ hiếu khách thượng lưu 5 sao quốc tế. Nơi mỗi khoảnh khắc đều trở thành kỷ niệm di sản vượt thời gian.">Tuyệt tác kiến trúc và dịch vụ hiếu khách thượng lưu 5 sao quốc tế. Nơi mỗi khoảnh khắc đều trở thành kỷ
+            niệm di sản vượt thời gian.</span>
           </p>
           <div class="text-[11px] text-amber-300/80 space-y-1">
-            <div>Giấy phép kinh doanh lưu trú 5★:</div>
+            <div><span data-i18n="Giấy phép kinh doanh lưu trú 5★:">Giấy phép kinh doanh lưu trú 5★:</span></div>
             <div class="font-mono text-white">GP-0108868688/TCDL</div>
-            <div class="text-slate-400">Cấp bởi Tổng cục Du lịch Việt Nam</div>
+            <div class="text-slate-400"><span data-i18n="Cấp bởi Tổng cục Du lịch Việt Nam">Cấp bởi Tổng cục Du lịch Việt Nam</span></div>
           </div>
         </div>
 
         <!-- Column 2: 24/7 Contact -->
         <div>
           <h4 class="font-serif text-base text-white font-medium uppercase tracking-wider mb-4 text-amber-300">
-            Liên Hệ 24/7
+            <span data-i18n="Liên Hệ 24/7">Liên Hệ 24/7</span>
           </h4>
           <ul class="space-y-3 text-xs text-slate-300">
             <li class="flex items-start gap-2.5">
               <i data-lucide="map-pin" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
-              <span>Số 88 Đại Lộ Hoàng Gia (Aurelia Boulevard), Bãi biển Vịnh Ngọc, Việt Nam</span>
+              <span><span data-i18n="Số 88 Đại Lộ Hoàng Gia (Aurelia Boulevard), Bãi biển Vịnh Ngọc, Việt Nam">Số 88 Đại Lộ Hoàng Gia (Aurelia Boulevard), Bãi biển Vịnh Ngọc, Việt Nam</span></span>
             </li>
             <li class="flex items-center gap-2.5">
               <i data-lucide="phone-call" class="w-4 h-4 text-amber-400 shrink-0"></i>
@@ -849,7 +849,7 @@
             <li class="pt-2">
               <a href="https://maps.google.com" target="_blank"
                 class="btn-outline-gold inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs">
-                <i data-lucide="navigation" class="w-3.5 h-3.5"></i> Mở Google Maps
+                <i data-lucide="navigation" class="w-3.5 h-3.5"></i> <span data-i18n="Mở Google Maps">Mở Google Maps</span>
               </a>
             </li>
           </ul>
@@ -858,28 +858,28 @@
         <!-- Column 3: Transparent Policies -->
         <div>
           <h4 class="font-serif text-base text-white font-medium uppercase tracking-wider mb-4 text-amber-300">
-            Chính Sách Khách Sạn
+            <span data-i18n="Chính Sách Khách Sạn">Chính Sách Khách Sạn</span>
           </h4>
           <ul class="space-y-2.5 text-xs text-slate-300 font-light">
             <li class="flex items-center gap-2">
               <i data-lucide="check" class="w-3.5 h-3.5 text-amber-400"></i>
-              <span>Giờ nhận phòng: <strong>Từ 14:00</strong></span>
+              <span><span data-i18n="Giờ nhận phòng:">Giờ nhận phòng:</span> <strong><span data-i18n="Từ 14:00">Từ 14:00</span></strong></span>
             </li>
             <li class="flex items-center gap-2">
               <i data-lucide="check" class="w-3.5 h-3.5 text-amber-400"></i>
-              <span>Giờ trả phòng: <strong>Trước 12:00 trưa</strong></span>
+              <span><span data-i18n="Giờ trả phòng:">Giờ trả phòng:</span> <strong><span data-i18n="Trước 12:00 trưa">Trước 12:00 trưa</span></strong></span>
             </li>
             <li class="flex items-center gap-2">
               <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-400"></i>
-              <span>Miễn phí hủy phòng trước 48 giờ</span>
+              <span><span data-i18n="Miễn phí hủy phòng trước 48 giờ">Miễn phí hủy phòng trước 48 giờ</span></span>
             </li>
             <li class="flex items-center gap-2">
               <i data-lucide="credit-card" class="w-3.5 h-3.5 text-amber-400"></i>
-              <span>Hoàn cọc 100% trong 24 giờ làm việc</span>
+              <span><span data-i18n="Hoàn cọc 100% trong 24 giờ làm việc">Hoàn cọc 100% trong 24 giờ làm việc</span></span>
             </li>
             <li class="flex items-center gap-2">
               <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-400"></i>
-              <span>Bảo mật thông tin khách hàng (ISO 27001)</span>
+              <span><span data-i18n="Bảo mật thông tin khách hàng (ISO 27001)">Bảo mật thông tin khách hàng (ISO 27001)</span></span>
             </li>
           </ul>
         </div>
@@ -887,16 +887,16 @@
         <!-- Column 4: Newsletter & Socials -->
         <div>
           <h4 class="font-serif text-base text-white font-medium uppercase tracking-wider mb-4 text-amber-300">
-            Bản Tin Thượng Lưu
+            <span data-i18n="Bản Tin Thượng Lưu">Bản Tin Thượng Lưu</span>
           </h4>
           <p class="text-xs text-slate-400 mb-4 font-light">
-            Đăng ký để nhận thông tin ưu đãi độc quyền, dạ tiệc rượu vang và sự kiện văn hóa nghệ thuật định kỳ.
+            <span data-i18n="Đăng ký để nhận thông tin ưu đãi độc quyền, dạ tiệc rượu vang và sự kiện văn hóa nghệ thuật định kỳ.">Đăng ký để nhận thông tin ưu đãi độc quyền, dạ tiệc rượu vang và sự kiện văn hóa nghệ thuật định kỳ.</span>
           </p>
           <form id="newsletter-form" class="space-y-2 mb-6">
             <input type="email" id="newsletter-email" required placeholder="Nhập email của bạn..."
-              class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3.5 py-2 text-xs focus:border-amber-400 focus:outline-none">
+              class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3.5 py-2 text-xs focus:border-amber-400 focus:outline-none" data-i18n-placeholder="Nhập email của bạn...">
             <button type="submit" class="btn-gold w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
-              Đăng Ký Ưu Đãi VIP
+              <span data-i18n="Đăng Ký Ưu Đãi VIP">Đăng Ký Ưu Đãi VIP</span>
             </button>
           </form>
           <div class="flex items-center gap-3">
@@ -925,12 +925,12 @@
       <div
         class="pt-8 border-t border-amber-500/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-4">
         <div>
-          © 2026 Aurelia Grand Luxury Hotel & Resort PMS Platform. Toàn bộ quyền được bảo lưu.
+          <span data-i18n="© 2026 Aurelia Grand Luxury Hotel &amp; Resort PMS Platform. Toàn bộ quyền được bảo lưu.">© 2026 Aurelia Grand Luxury Hotel &amp; Resort PMS Platform. Toàn bộ quyền được bảo lưu.</span>
         </div>
         <div class="flex items-center gap-6">
-          <a href="#" class="hover:text-amber-300 transition-colors">Điều Khoản Dịch Vụ</a>
-          <a href="#" class="hover:text-amber-300 transition-colors">Chính Sách Bảo Mật</a>
-          <a href="#" class="hover:text-amber-300 transition-colors">Tiêu Chuẩn 5 Sao</a>
+          <a href="#" class="hover:text-amber-300 transition-colors"><span data-i18n="Điều Khoản Dịch Vụ">Điều Khoản Dịch Vụ</span></a>
+          <a href="#" class="hover:text-amber-300 transition-colors"><span data-i18n="Chính Sách Bảo Mật">Chính Sách Bảo Mật</span></a>
+          <a href="#" class="hover:text-amber-300 transition-colors"><span data-i18n="Tiêu Chuẩn 5 Sao">Tiêu Chuẩn 5 Sao</span></a>
         </div>
       </div>
 
@@ -946,7 +946,7 @@
   <div class="fixed bottom-6 left-6 z-40">
     <a href="tel:+842438889999"
       class="floating-widget radar-pulse relative w-13 h-13 sm:w-14 sm:h-14 rounded-full btn-gold flex items-center justify-center text-slate-950 shadow-2xl group"
-      title="Gọi Hotline 24/7">
+      title="Gọi Hotline 24/7" data-i18n-title="Gọi Hotline 24/7">
       <i data-lucide="phone" class="w-6 h-6 animate-[bounce_2s_infinite]"></i>
     </a>
   </div>
@@ -957,14 +957,14 @@
     <!-- Back to Top Button -->
     <button type="button" id="back-to-top"
       class="floating-widget opacity-0 pointer-events-none translate-y-4 transition-all duration-300 w-11 h-11 rounded-full bg-slate-900/90 border border-amber-500/30 text-amber-400 flex items-center justify-center shadow-xl hover:bg-amber-500 hover:text-slate-950"
-      title="Về đầu trang">
+      title="Về đầu trang" data-i18n-title="Về đầu trang">
       <i data-lucide="chevron-up" class="w-5 h-5"></i>
     </button>
 
     <!-- Quick Concierge LiveChat Button -->
     <button type="button" id="quick-chat-btn"
       class="floating-widget w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-slate-900/95 border border-amber-400 text-amber-300 flex items-center justify-center shadow-2xl hover:scale-105 transition-all group"
-      title="Nhắn tin với Quản gia AI">
+      title="Nhắn tin với Quản gia AI" data-i18n-title="Nhắn tin với Quản gia AI">
       <i data-lucide="message-square" class="w-6 h-6"></i>
     </button>
   </div>
@@ -977,14 +977,14 @@
   <!-- 3-Step Booking Modal -->
   <div id="booking-modal"
     class="modal-overlay fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
-    role="dialog" aria-modal="true" aria-label="Đặt phòng Aurelia Grand Palace" tabindex="-1">
+    role="dialog" aria-modal="true" aria-label="Đặt phòng Aurelia Grand Palace" tabindex="-1" data-i18n-aria-label="Đặt phòng Aurelia Grand Palace">
     <div
       class="modal-content glass-panel rounded-3xl w-full max-w-2xl p-6 sm:p-8 relative max-h-[92vh] overflow-y-auto my-auto shadow-2xl border border-amber-500/30">
 
       <!-- Close Button -->
       <button type="button" aria-label="Đóng đặt phòng"
         class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-800/80 text-slate-300 hover:text-white flex items-center justify-center"
-        onclick="closeBookingModal()">
+        onclick="closeBookingModal()" data-i18n-aria-label="Đóng đặt phòng">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
@@ -997,14 +997,14 @@
   <!-- Room Detail Modal -->
   <div id="room-detail-modal"
     class="modal-overlay fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
-    role="dialog" aria-modal="true" aria-label="Chi tiết hạng phòng" tabindex="-1">
+    role="dialog" aria-modal="true" aria-label="Chi tiết hạng phòng" tabindex="-1" data-i18n-aria-label="Chi tiết hạng phòng">
     <div
       class="modal-content glass-panel rounded-3xl w-full max-w-3xl p-6 sm:p-8 relative max-h-[92vh] overflow-y-auto my-auto shadow-2xl border border-amber-500/30">
 
       <!-- Close Button -->
       <button type="button" aria-label="Đóng chi tiết phòng"
         class="absolute top-5 right-5 z-10 w-9 h-9 rounded-full bg-slate-900/80 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700"
-        onclick="closeRoomDetailModal()">
+        onclick="closeRoomDetailModal()" data-i18n-aria-label="Đóng chi tiết phòng">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
@@ -1017,20 +1017,20 @@
   <!-- Vanilla JS Lightbox Modal -->
   <div id="lightbox-modal" hidden
     class="modal-overlay fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-4"
-    role="dialog" aria-modal="true" aria-label="Thư viện ảnh" tabindex="-1">
+    role="dialog" aria-modal="true" aria-label="Thư viện ảnh" tabindex="-1" data-i18n-aria-label="Thư viện ảnh">
     <button type="button" aria-label="Đóng ảnh"
       class="absolute top-6 right-6 w-11 h-11 rounded-full bg-slate-800/90 text-white flex items-center justify-center border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition-colors z-20"
-      onclick="closeLightbox()">
+      onclick="closeLightbox()" data-i18n-aria-label="Đóng ảnh">
       <i data-lucide="x" class="w-6 h-6"></i>
     </button>
     <button type="button" aria-label="Ảnh trước"
       class="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-slate-900/80 text-white flex items-center justify-center border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition-colors z-20"
-      onclick="prevLightboxImage()">
+      onclick="prevLightboxImage()" data-i18n-aria-label="Ảnh trước">
       <i data-lucide="chevron-left" class="w-6 h-6"></i>
     </button>
     <button type="button" aria-label="Ảnh tiếp theo"
       class="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-slate-900/80 text-white flex items-center justify-center border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition-colors z-20"
-      onclick="nextLightboxImage()">
+      onclick="nextLightboxImage()" data-i18n-aria-label="Ảnh tiếp theo">
       <i data-lucide="chevron-right" class="w-6 h-6"></i>
     </button>
 
@@ -1039,7 +1039,7 @@
         class="lightbox-img rounded-2xl object-contain shadow-2xl border border-amber-500/20">
       <button type="button" id="lightbox-zoom" aria-label="Phóng to ảnh" aria-pressed="false"
         class="mt-3 rounded-full border border-amber-500/30 bg-slate-900/90 px-4 py-2 text-sm text-amber-200"
-        onclick="toggleLightboxZoom()">Phóng to</button>
+        onclick="toggleLightboxZoom()" data-i18n-aria-label="Phóng to ảnh"><span data-i18n="Phóng to">Phóng to</span></button>
       <div id="lightbox-caption" class="mt-4 text-center"></div>
     </div>
   </div>
@@ -1047,14 +1047,14 @@
   <!-- Booking Lookup Modal -->
   <div id="booking-lookup-modal"
     class="modal-overlay fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto hidden"
-    role="dialog" aria-modal="true" aria-label="Tra cứu đặt phòng" tabindex="-1">
+    role="dialog" aria-modal="true" aria-label="Tra cứu đặt phòng" tabindex="-1" data-i18n-aria-label="Tra cứu đặt phòng">
     <div
       class="modal-content glass-panel rounded-3xl w-full max-w-lg p-6 sm:p-8 relative max-h-[92vh] overflow-y-auto my-auto shadow-2xl border border-amber-500/30">
 
       <!-- Close Button -->
       <button type="button" aria-label="Đóng tra cứu đặt phòng"
         class="absolute top-5 right-5 z-10 w-9 h-9 rounded-full bg-slate-900/80 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700"
-        onclick="closeBookingLookupModal()">
+        onclick="closeBookingLookupModal()" data-i18n-aria-label="Đóng tra cứu đặt phòng">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
@@ -1062,31 +1062,31 @@
         <div class="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 mx-auto mb-3 shadow-md">
           <i data-lucide="search" class="w-6 h-6"></i>
         </div>
-        <h3 class="font-serif text-2xl text-white font-bold">Tra Cứu Đặt Phòng</h3>
-        <p class="text-xs text-slate-400 mt-1">Nhập mã đặt phòng và số điện thoại để kiểm tra trạng thái vé phòng của quý khách.</p>
+        <h3 class="font-serif text-2xl text-white font-bold"><span data-i18n="Tra Cứu Đặt Phòng">Tra Cứu Đặt Phòng</span></h3>
+        <p class="text-xs text-slate-400 mt-1"><span data-i18n="Nhập mã đặt phòng và số điện thoại để kiểm tra trạng thái vé phòng của quý khách.">Nhập mã đặt phòng và số điện thoại để kiểm tra trạng thái vé phòng của quý khách.</span></p>
       </div>
 
       <form id="form-booking-lookup" class="space-y-4 mb-6">
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-            Mã Đặt Phòng (Booking Code) <span class="text-rose-400">*</span>
+            <span data-i18n="Mã Đặt Phòng (Booking Code)">Mã Đặt Phòng (Booking Code)</span> <span class="text-rose-400">*</span>
           </label>
           <input type="text" id="lookup-booking-code" required placeholder="Ví dụ: BKG-100123 hoặc 100123"
-            class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+            class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none" data-i18n-placeholder="Ví dụ: BKG-100123 hoặc 100123">
         </div>
 
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-            Số Điện Thoại Đăng Ký
+            <span data-i18n="Số Điện Thoại Đăng Ký">Số Điện Thoại Đăng Ký</span>
           </label>
           <input type="tel" id="lookup-phone" placeholder="Ví dụ: 0901234567"
-            class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+            class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none" data-i18n-placeholder="Ví dụ: 0901234567">
         </div>
 
         <button type="submit" id="btn-do-lookup"
           class="btn-gold w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg">
           <i data-lucide="search" class="w-4 h-4"></i>
-          <span>Kiểm Tra Trạng Thái</span>
+          <span><span data-i18n="Kiểm Tra Trạng Thái">Kiểm Tra Trạng Thái</span></span>
         </button>
       </form>
 
@@ -1098,14 +1098,14 @@
   <!-- Login Modal -->
   <div id="login-modal"
     class="modal-overlay fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto hidden"
-    role="dialog" aria-modal="true" aria-label="Đăng nhập tài khoản" tabindex="-1">
+    role="dialog" aria-modal="true" aria-label="Đăng nhập tài khoản" tabindex="-1" data-i18n-aria-label="Đăng nhập tài khoản">
     <div
       class="modal-content glass-panel rounded-3xl w-full max-w-md p-6 sm:p-8 relative max-h-[92vh] overflow-y-auto my-auto shadow-2xl border border-amber-500/30">
 
       <!-- Close Button -->
       <button type="button" id="close-login-modal" aria-label="Đóng cửa sổ"
         class="absolute top-5 right-5 z-10 w-9 h-9 rounded-full bg-slate-900/80 text-slate-300 hover:text-white flex items-center justify-center border border-slate-700 transition-colors cursor-pointer"
-        onclick="closeLoginModal(event)">
+        onclick="closeLoginModal(event)" data-i18n-aria-label="Đóng cửa sổ">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
@@ -1113,7 +1113,7 @@
         <div class="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 mx-auto mb-3 shadow-md">
           <i data-lucide="shield-check" class="w-6 h-6"></i>
         </div>
-        <h3 id="auth-modal-title" class="font-serif text-2xl text-white font-bold">Cổng Thành Viên</h3>
+        <h3 id="auth-modal-title" class="font-serif text-2xl text-white font-bold"><span data-i18n="Cổng Thành Viên">Cổng Thành Viên</span></h3>
         <p id="auth-modal-subtitle" class="text-xs text-slate-400 mt-1">Aurelia Grand Palace Luxury Resort</p>
       </div>
 
@@ -1123,13 +1123,13 @@
           class="flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all bg-amber-400 text-slate-950 shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
           onclick="switchAuthTab('login')">
           <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-          <span>Đăng Nhập</span>
+          <span><span data-i18n="Đăng Nhập">Đăng Nhập</span></span>
         </button>
         <button type="button" id="tab-register-btn" role="tab" aria-selected="false"
           class="flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all text-slate-400 hover:text-white bg-transparent flex items-center justify-center gap-1.5 cursor-pointer"
           onclick="switchAuthTab('register')">
           <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
-          <span>Đăng Ký</span>
+          <span><span data-i18n="Đăng Ký">Đăng Ký</span></span>
         </button>
       </div>
 
@@ -1140,24 +1140,24 @@
       <form id="login-form" class="space-y-4 mb-4">
         <div>
           <label for="login-username" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-            Tên đăng nhập <span class="text-rose-400">*</span>
+            <span data-i18n="Tên đăng nhập">Tên đăng nhập</span> <span class="text-rose-400">*</span>
           </label>
           <div class="relative">
             <input type="text" id="login-username" name="username" required autocomplete="username" maxlength="100"
               placeholder="Nhập tên đăng nhập hoặc email"
-              class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+              class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors" data-i18n-placeholder="Nhập tên đăng nhập hoặc email">
             <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
           </div>
         </div>
 
         <div>
           <label for="login-password" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-            Mật khẩu <span class="text-rose-400">*</span>
+            <span data-i18n="Mật khẩu">Mật khẩu</span> <span class="text-rose-400">*</span>
           </label>
           <div class="relative">
             <input type="password" id="login-password" name="password" required autocomplete="current-password" maxlength="200"
               placeholder="Nhập mật khẩu"
-              class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+              class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors" data-i18n-placeholder="Nhập mật khẩu">
             <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
           </div>
         </div>
@@ -1165,7 +1165,7 @@
         <button type="submit" id="btn-login-submit"
           class="btn-gold w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all">
           <i data-lucide="log-in" class="w-4 h-4"></i>
-          <span>Đăng Nhập An Toàn</span>
+          <span><span data-i18n="Đăng Nhập An Toàn">Đăng Nhập An Toàn</span></span>
         </button>
       </form>
 
@@ -1175,36 +1175,36 @@
 
         <div>
           <label for="register-fullname" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-            Họ và tên <span class="text-rose-400">*</span>
+            <span data-i18n="Họ và tên">Họ và tên</span> <span class="text-rose-400">*</span>
           </label>
           <div class="relative">
             <input type="text" id="register-fullname" name="fullName" required maxlength="100"
               placeholder="Nguyễn Văn A"
-              class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+              class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors" data-i18n-placeholder="Nguyễn Văn A">
             <i data-lucide="user-check" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
           </div>
         </div>
 
         <div>
           <label for="register-username" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-            Số điện thoại / Tên tài khoản <span class="text-rose-400">*</span>
+            <span data-i18n="Số điện thoại / Tên tài khoản">Số điện thoại / Tên tài khoản</span> <span class="text-rose-400">*</span>
           </label>
           <div class="relative">
             <input type="text" id="register-username" name="username" required autocomplete="username" maxlength="50"
               placeholder="0912345678 hoặc ten_dang_nhap"
-              class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+              class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors" data-i18n-placeholder="0912345678 hoặc ten_dang_nhap">
             <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
           </div>
         </div>
 
         <div>
           <label for="register-password" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-            Mật khẩu <span class="text-rose-400">*</span>
+            <span data-i18n="Mật khẩu">Mật khẩu</span> <span class="text-rose-400">*</span>
           </label>
           <div class="relative">
             <input type="password" id="register-password" name="password" required autocomplete="new-password" maxlength="200"
               placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
-              class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors">
+              class="w-full bg-slate-900/90 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none transition-colors" data-i18n-placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)">
             <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
           </div>
         </div>
@@ -1212,14 +1212,14 @@
         <button type="submit" id="btn-register-submit"
           class="btn-gold w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all">
           <i data-lucide="user-plus" class="w-4 h-4"></i>
-          <span>Đăng Ký Tài Khoản</span>
+          <span><span data-i18n="Đăng Ký Tài Khoản">Đăng Ký Tài Khoản</span></span>
         </button>
       </form>
 
       <div class="pt-4 border-t border-slate-800/80 flex flex-col gap-2 text-center text-xs text-slate-400">
         <div id="auth-footer-prompt">
-          <span id="auth-footer-text">Chưa có tài khoản? </span>
-          <button type="button" id="auth-footer-btn" onclick="switchAuthTab('register')" class="text-amber-300 hover:text-white font-semibold transition-colors cursor-pointer">Đăng ký thành viên ngay ↗</button>
+          <span id="auth-footer-text"><span data-i18n="Chưa có tài khoản?">Chưa có tài khoản?</span> </span>
+          <button type="button" id="auth-footer-btn" onclick="switchAuthTab('register')" class="text-amber-300 hover:text-white font-semibold transition-colors cursor-pointer"><span data-i18n="Đăng ký thành viên ngay ↗">Đăng ký thành viên ngay ↗</span></button>
         </div>
       </div>
 
@@ -1230,7 +1230,7 @@
   <div id="toast-container"></div>
 
   <!-- Main ES Module Script -->
-  <script type="module" src="js/app.js?v=3.5.0"></script>
+  <script type="module" src="js/app.js?v=3.5.2"></script>
 
 </body>
 

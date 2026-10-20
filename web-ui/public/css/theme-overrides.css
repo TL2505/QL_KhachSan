@@ -13,7 +13,7 @@
 .room-statistics-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .room-statistic { min-width: 0; padding: 20px; border: 1px solid rgba(212, 175, 55, .22); border-radius: 14px; background: rgba(15, 27, 47, .94); box-shadow: 0 8px 24px rgba(0, 0, 0, .1); }
 .room-statistic dt { display: flex; align-items: center; gap: 9px; color: #e2e8f0; font-size: 13px; line-height: 1.6; }
-.room-statistic dt span { display: inline-flex; justify-content: center; align-items: center; width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: rgba(255, 255, 255, .06); color: var(--stat-color); font-size: 21px; }
+.room-statistic dt > span[aria-hidden="true"] { display: inline-flex; justify-content: center; align-items: center; width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: rgba(255, 255, 255, .06); color: var(--stat-color); font-size: 21px; }
 .room-statistic dd { margin: 12px 0 0; color: var(--stat-color); font-size: 34px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .room-statistic dt svg { width: 18px; height: 18px; }
 .room-statistic--available { --stat-color: #6ee7b7; }
@@ -93,7 +93,7 @@ body, button, input, select, textarea, .font-sans {
 #room-detail-body .text-gold-gradient, #booking-modal-body .text-gold-gradient { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
 #rooms .room-filter-tab { min-height: 42px; white-space: nowrap; }
 :is(#main-header, #hero, #rooms) :is(button, a, input, select):focus-visible { outline: 2px solid #d4af37; outline-offset: 4px; }
-@media (min-width: 1280px) and (max-width: 1535px) {
+@media (min-width: 1280px) {
   #main-header > div { flex-wrap: wrap; gap: 12px 24px; }
   #main-header nav { order: 3; flex-basis: 100%; }
 }

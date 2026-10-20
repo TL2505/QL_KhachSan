@@ -261,3 +261,18 @@ html[data-theme="light"] footer#contact .btn-outline-gold {
   border-color: #d4af37;
   background-color: rgba(212, 175, 55, .08);
 }
+
+/* English navigation needs the same room as the signed-in account controls. */
+@media (min-width: 1280px) {
+  #main-header > div { flex-wrap: wrap; gap: 12px 24px; }
+  #main-header nav { order: 3; flex-basis: 100%; }
+}
+.room-statistic dt > span[data-i18n] {
+  min-width: 0;
+  width: auto;
+  height: auto;
+  flex: 1;
+  font-size: inherit;
+  color: inherit;
+  background: transparent;
+}

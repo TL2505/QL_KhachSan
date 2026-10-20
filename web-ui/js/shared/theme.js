@@ -65,8 +65,12 @@ export function initTheme({
       dark: 'tối'
     };
     for (const toggle of toggles) {
-      toggle.setAttribute('aria-label', `Giao diện hiện tại: ${labels[current]}. Bấm để chuyển sang ${labels[next]}.`);
-      toggle.setAttribute('title', `Giao diện: ${labels[current]}`);
+      const english = root.lang === 'en';
+      const englishLabels = { system: 'system', light: 'light', dark: 'dark' };
+      toggle.setAttribute('aria-label', english
+        ? `Current theme: ${englishLabels[current]}. Switch to ${englishLabels[next]} theme.`
+        : `Giao diện hiện tại: ${labels[current]}. Bấm để chuyển sang ${labels[next]}.`);
+      toggle.setAttribute('title', english ? `Theme: ${englishLabels[current]}` : `Giao diện: ${labels[current]}`);
       toggle.dataset.themePreference = current;
       const iconNode = toggle.querySelector('[data-theme-icon]');
       if (iconNode) iconNode.setAttribute('data-lucide', icon);
@@ -75,6 +79,7 @@ export function initTheme({
     globalThis.lucide?.createIcons();
   };
 
+  documentRef.addEventListener?.('aurelia:languagechange', () => update());
   const current = savedTheme(storage);
   applyTheme(current, { root, storage, media, persist: false });
   update(current);
