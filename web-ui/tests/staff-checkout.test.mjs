@@ -3,8 +3,12 @@ import assert from 'node:assert/strict';
 
 function mockDom() {
     const element = () => ({
-        innerHTML: '', children: [], style: {}, listeners: {}, value: '',
-        classList: { add() {} },
+        _html: '', children: [], style: {}, listeners: {}, value: '', attributes: {},
+        set innerHTML(value) { this._html = value; this.children = []; },
+        get innerHTML() { return this._html; },
+        classList: { add() {}, remove() {}, contains() { return true; } },
+        setAttribute(key, value) { this.attributes[key] = value; },
+        focus() {},
         addEventListener(event, handler) { this.listeners[event] = handler; },
         appendChild(child) { this.children.push(child); }
     });
@@ -31,7 +35,15 @@ const booking = (id = 11, customerId = 7) => ({
 
 for (const base of ['../', '../public/']) {
     const { api } = await import(`${base}api.js`);
-    const { renderCheckout } = await import(`${base}js/staff/checkout.js`);
+    const { renderCheckout, departureState } = await import(`${base}js/staff/checkout.js`);
+
+    test(`${base} departure labels use the hotel's calendar day without inferring a late charge`, () => {
+        const now = new Date('2026-10-19T18:00:00Z'); // 01:00 on October 20 in Vietnam
+        assert.equal(departureState({ checkOutDate: '2026-10-20T12:00:00+07:00' }, now).key, 'today');
+        assert.equal(departureState({ checkOutDate: '2026-10-19T12:00:00+07:00' }, now).key, 'overdue');
+        assert.equal(departureState({ checkOutDate: '2026-10-21T12:00:00+07:00' }, now).key, 'staying');
+        assert.equal(departureState({ checkOutDate: null }, now).key, 'unknown');
+    });
 
     test(`${base} staff checkout resolves customer identity in cards and payment confirmation`, async t => {
         const originalGet = api.get;
@@ -70,10 +82,12 @@ for (const base of ['../', '../public/']) {
                         assert.doesNotMatch(card.innerHTML, /Khách vãng lai|Nhân viên|<img src=x/);
                     }
                     const button = dom.buttons()[0];
-                    button.listeners.click({ target: button });
+                    await button.listeners.click({ target: button });
                     const content = dom.get('global-modal-content').innerHTML;
                     assert.ok(content.includes(scenario.expected), 'Payment confirms the same booking customer');
                     assert.doesNotMatch(content, /Khách vãng lai|<img src=x/);
+                    assert.ok(content.includes('value="2000000"'), 'The existing payment form retains the booking amount');
+                    assert.ok(content.includes('value="Chuyển khoản"'), 'The existing payment methods remain available');
                 });
             }
 
