@@ -16,7 +16,6 @@
         <exec.mainClass>quanlykhachsan.Quanlykhachsan</exec.mainClass>
     </properties>
     
-    
     <build>
         <!-- Giá»¯ nguyÃªn cáº¥u trÃºc thÆ° má»¥c src cÅ© cá»§a NetBeans Ä‘á»ƒ khÃ´ng pháº£i di chuyá»ƒn file -->
         <sourceDirectory>src</sourceDirectory>

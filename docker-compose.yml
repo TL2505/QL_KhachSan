@@ -58,7 +58,7 @@ services:
       DB_USER: ${DB_USER:-hotel_admin}
       DB_PASSWORD: ${DB_PASSWORD:-hotel_secret_pass}
       JWT_SECRET: ${JWT_SECRET:-aurelia_pms_super_secret_jwt_key_2026_luxury_hotel_minimum_256_bits}
-      AES_VAULT_KEY: ${AES_VAULT_KEY:-YXVyZWxpYV9wbXNfYWVzXzI1Nl92YXVsdF9rZXlfMjAyNg==}
+      AES_VAULT_KEY: ${AES_VAULT_KEY:-c2VjdXJlX2Flc18yNTZfdmF1bHRfa2V5X2F1cmVsaWE=}
       HMAC_IDENTITY_KEY: ${HMAC_IDENTITY_KEY:-aurelia_pms_secret_identity_key_2026_prod_vault_guard}
       HOTEL_VAT_RATE: ${HOTEL_VAT_RATE:-0.08}
       BANK_BIN: ${BANK_BIN:-970422}

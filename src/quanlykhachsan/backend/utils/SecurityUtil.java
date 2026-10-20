@@ -108,9 +108,9 @@ public class SecurityUtil {
     }
 
     public static String getAesVaultKey() {
-        String key = System.getenv().getOrDefault("AES_VAULT_KEY", "YXVyZWxpYV9wbXNfYWVzXzI1Nl92YXVsdF9rZXlfMjAyNg==");
+        String key = System.getenv().getOrDefault("AES_VAULT_KEY", "c2VjdXJlX2Flc18yNTZfdmF1bHRfa2V5X2F1cmVsaWE=");
         if (key == null || key.isBlank()) {
-            return "YXVyZWxpYV9wbXNfYWVzXzI1Nl92YXVsdF9rZXlfMjAyNg==";
+            return "c2VjdXJlX2Flc18yNTZfdmF1bHRfa2V5X2F1cmVsaWE=";
         }
         return key;
     }

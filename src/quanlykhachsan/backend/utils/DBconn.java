@@ -25,7 +25,8 @@ import javax.sql.DataSource;
  * Auto-detects runtime environment:
  * 1. Checks DB_HOST system environment variable.
  * 2. If empty, reads from .env in project root.
- * 3. If still empty, sequentially probes 127.0.0.1:3306 then 192.168.56.102:3306.
+ * 3. If still empty, sequentially probes 127.0.0.1:3306 then
+ * 192.168.56.102:3306.
  * 4. Provides zero-crash defaults for Localhost IDE & Full Docker Staging VM.
  * ==============================================================================
  */
@@ -40,10 +41,12 @@ public final class DBconn {
     private static volatile String activeJdbcUrl = null;
     private static volatile DataSource customTestDataSource = null;
 
-    private DBconn() { }
+    private DBconn() {
+    }
 
     /**
-     * Resolves the MariaDB host dynamically with sequential probe & zero-crash fallback:
+     * Resolves the MariaDB host dynamically with sequential probe & zero-crash
+     * fallback:
      * 1. System.getenv("DB_HOST") (validating reachability if loopback)
      * 2. .env file in root directory (validating reachability if loopback)
      * 3. TCP socket ping 127.0.0.1:3306 (1000ms)
@@ -55,7 +58,8 @@ public final class DBconn {
         try {
             String portStr = resolveConfigValue("DB_PORT", "3306");
             probePort = Integer.parseInt(portStr);
-        } catch (NumberFormatException ignored) {}
+        } catch (NumberFormatException ignored) {
+        }
 
         // 1. Check System Environment Variable
         String host = System.getenv("DB_HOST");
@@ -66,8 +70,8 @@ public final class DBconn {
                     LOGGER.info("[DBconn] Using DB_HOST from System Environment (reachable): " + clean);
                     return clean;
                 } else {
-                    LOGGER.warning("[DBconn] System DB_HOST is set to '" + clean + "', but port " + probePort + 
-                                   " is unreachable. Falling through to dynamic probe...");
+                    LOGGER.warning("[DBconn] System DB_HOST is set to '" + clean + "', but port " + probePort +
+                            " is unreachable. Falling through to dynamic probe...");
                 }
             } else {
                 LOGGER.info("[DBconn] Using DB_HOST from System Environment: " + clean);
@@ -84,8 +88,8 @@ public final class DBconn {
                     LOGGER.info("[DBconn] Using DB_HOST from .env file (reachable): " + clean);
                     return clean;
                 } else {
-                    LOGGER.warning("[DBconn] .env DB_HOST is set to '" + clean + "', but port " + probePort + 
-                                   " is unreachable. Falling through to dynamic probe...");
+                    LOGGER.warning("[DBconn] .env DB_HOST is set to '" + clean + "', but port " + probePort +
+                            " is unreachable. Falling through to dynamic probe...");
                 }
             } else {
                 LOGGER.info("[DBconn] Using DB_HOST from .env file: " + clean);
@@ -100,7 +104,8 @@ public final class DBconn {
             return "127.0.0.1";
         }
 
-        // 4. Sequential probe: Check Linux Virtual Machine Host-Only IP 192.168.56.102:3306
+        // 4. Sequential probe: Check Linux Virtual Machine Host-Only IP
+        // 192.168.56.102:3306
         LOGGER.info("[DBconn] Probing remote Linux VM at 192.168.56.102:" + probePort + "...");
         if (isPortReachable("192.168.56.102", probePort, 1000)) {
             LOGGER.info("[DBconn] 192.168.56.102:" + probePort + " is REACHABLE (Docker VM Staging Mode).");
@@ -122,10 +127,12 @@ public final class DBconn {
      */
     public static String resolveConfigValue(String key, String fallback) {
         String sysVal = System.getenv(key);
-        if (sysVal != null && !sysVal.isBlank()) return sysVal.trim();
+        if (sysVal != null && !sysVal.isBlank())
+            return sysVal.trim();
 
         String dotVal = DOT_ENV.get(key);
-        if (dotVal != null && !dotVal.isBlank()) return dotVal.trim();
+        if (dotVal != null && !dotVal.isBlank())
+            return dotVal.trim();
 
         return fallback;
     }
@@ -136,9 +143,9 @@ public final class DBconn {
     public static Map<String, String> loadDotEnv() {
         Map<String, String> map = new HashMap<>();
         File[] candidateFiles = new File[] {
-            new File(".env"),
-            new File("../.env"),
-            new File(System.getProperty("user.dir", "."), ".env")
+                new File(".env"),
+                new File("../.env"),
+                new File(System.getProperty("user.dir", "."), ".env")
         };
 
         for (File f : candidateFiles) {
@@ -147,7 +154,8 @@ public final class DBconn {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         line = line.trim();
-                        if (line.isEmpty() || line.startsWith("#")) continue;
+                        if (line.isEmpty() || line.startsWith("#"))
+                            continue;
                         int idx = line.indexOf('=');
                         if (idx > 0) {
                             String k = line.substring(0, idx).trim();
@@ -267,4 +275,7 @@ public final class DBconn {
         }
         return activeJdbcUrl;
     }
+
 }
+
+    

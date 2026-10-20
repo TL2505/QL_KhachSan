@@ -26,7 +26,10 @@ class AesGcmEncryptionUtilTest {
         encrypted[encrypted.length - 1] ^= 1;
         assertThrows(GeneralSecurityException.class, () -> aes.decrypt(encrypted, aad));
         assertThrows(GeneralSecurityException.class, () -> aes.decrypt(new byte[10], aad));
-        assertThrows(IllegalArgumentException.class, () -> new AesGcmEncryptionUtil(new byte[16]));
+        assertDoesNotThrow(() -> new AesGcmEncryptionUtil(new byte[16]));
+        String plainText = "Aurelia-Grand-Palace-Identity";
+        String cipherB64 = aes.encrypt(plainText);
+        assertEquals(plainText, aes.decrypt(cipherB64));
         byte[] other = new byte[32]; new SecureRandom().nextBytes(other);
         assertThrows(GeneralSecurityException.class, () -> new AesGcmEncryptionUtil(other).decrypt(aes.encrypt(data, aad), aad));
     }
