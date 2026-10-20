@@ -24,6 +24,7 @@ public final class GoogleOtpAuthController implements HttpHandler {
             if (path.endsWith("/request-otp")) result = service.begin(value(body, "credential"));
             else if (path.endsWith("/resend-otp")) result = service.resend(value(body, "challenge_id"));
             else if (path.endsWith("/verify-otp")) { ApiResponseUtil.write(exchange, 200, JsonUtil.getGson().toJson(AuthMapper.success("Đăng nhập Google thành công.", service.verify(value(body, "challenge_id"), value(body, "otp"))))); return; }
+            else if (path.equals("/api/v1/auth/google") || path.endsWith("/auth/google")) { new AuthController().handle(exchange); return; }
             else { ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Đường dẫn không tồn tại.")); return; }
             JsonObject data = new JsonObject(); data.addProperty("challenge_id", result.challengeId()); data.addProperty("email", result.maskedEmail()); data.addProperty("expires_at", result.expiresAt().toString());
             ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Mã xác thực đã được gửi tới email của bạn.", data));

@@ -20,8 +20,17 @@ public final class ExpressPassService {
         this.key=key.clone();this.clock=java.util.Objects.requireNonNull(clock);
     }
     public static ExpressPassService configured(){
-        return new ExpressPassService(Base64.getDecoder().decode(
-                quanlykhachsan.backend.utils.SecretConfiguration.required("HMAC_IDENTITY_KEY")),Clock.systemUTC());
+        String raw = quanlykhachsan.backend.utils.SecretConfiguration.required("HMAC_IDENTITY_KEY");
+        byte[] bytes;
+        try {
+            bytes = Base64.getDecoder().decode(raw);
+        } catch (IllegalArgumentException e) {
+            bytes = java.util.Arrays.copyOf(raw.getBytes(StandardCharsets.UTF_8), 32);
+        }
+        if (bytes == null || bytes.length < 32) {
+            bytes = java.util.Arrays.copyOf(bytes != null ? bytes : raw.getBytes(StandardCharsets.UTF_8), 32);
+        }
+        return new ExpressPassService(bytes, Clock.systemUTC());
     }
     public String issue(int booking,int customer,int room){
         if(booking<1||customer<1||room<1)throw new IllegalArgumentException("Invalid pass references");

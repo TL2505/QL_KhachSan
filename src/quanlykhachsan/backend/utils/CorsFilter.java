@@ -12,23 +12,36 @@ public class CorsFilter extends Filter {
     public static final String MAX_AGE = "86400";
 
     /**
-     * Resolves the allowed origin for CORS.
-     * Wildcard '*' ensures dual-environment parity across localhost:3000, 192.168.56.102:3000,
-     * and W3C/ADR-05 compliance for automated test suites.
+     * Resolves the allowed origin dynamically:
+     * Accepts localhost:* or virtual network IP range 192.168.56.*.
+     * Defaults to wildcard '*' for generic requests to maintain backward compatibility.
      */
     public static String resolveOrigin(HttpExchange exchange) {
+        if (exchange == null) return ALLOWED_ORIGIN;
+        String origin = exchange.getRequestHeaders().getFirst("Origin");
+        if (origin != null && !origin.isBlank()) {
+            origin = origin.trim();
+            if (origin.matches("https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?")
+                    || origin.matches("https?://192\\.168\\.56\\.[0-9]+(:[0-9]+)?")) {
+                return origin;
+            }
+        }
         return ALLOWED_ORIGIN;
     }
 
     @Override
     public String description() {
-        return "Global CORS filter to enable browser HTTP calls and VietQR webhooks";
+        return "Global CORS filter supporting dynamic origins for localhost and 192.168.56.*";
     }
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
         // Set standard CORS response headers
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+        String origin = resolveOrigin(exchange);
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", origin);
+        if (!ALLOWED_ORIGIN.equals(origin)) {
+            exchange.getResponseHeaders().set("Access-Control-Allow-Credentials", "true");
+        }
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", ALLOWED_METHODS);
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", ALLOWED_HEADERS);
         exchange.getResponseHeaders().set("Access-Control-Max-Age", MAX_AGE);

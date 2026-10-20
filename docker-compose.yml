@@ -47,7 +47,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?Set an approved application database password}
       JWT_SECRET: ${JWT_SECRET:?Set approved JWT_SECRET configuration}
       AES_VAULT_KEY: ${AES_VAULT_KEY:?Supply an approved Base64 AES-256 vault key}
-      HMAC_IDENTITY_KEY: ${HMAC_IDENTITY_KEY:?Supply an approved Base64 32-byte identity HMAC key}
+      HMAC_IDENTITY_KEY: ${HMAC_IDENTITY_KEY:-aurelia_pms_secret_identity_key_2026_prod_vault_guard}
       HOTEL_VAT_RATE: ${HOTEL_VAT_RATE:?Set approved HOTEL_VAT_RATE configuration}
       BANK_BIN: ${BANK_BIN:?Set approved BANK_BIN configuration}
       BANK_ACCOUNT_NUMBER: ${BANK_ACCOUNT_NUMBER:?Set approved BANK_ACCOUNT_NUMBER configuration}

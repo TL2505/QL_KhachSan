@@ -900,3 +900,13 @@ button, input, select, textarea {
   color: var(--portal-muted);
 }
 
+/* Task 2: Defensive close button suppression */
+header a:has(i[data-lucide="x"]),
+.auth-card button:has(i[data-lucide="x"]),
+.auth-card a:has(i[data-lucide="x"]),
+#btn-close-card,
+.auth-card-close {
+  display: none !important;
+}
+
+

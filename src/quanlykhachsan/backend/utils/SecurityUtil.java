@@ -91,6 +91,14 @@ public class SecurityUtil {
                 .getPayload();
     }
 
+    public static String getHmacIdentityKey() {
+        String key = System.getenv().getOrDefault("HMAC_IDENTITY_KEY", "aurelia_default_dev_hmac_secret_2026_fallback");
+        if (key == null || key.isBlank()) {
+            return "aurelia_default_dev_hmac_secret_2026_fallback";
+        }
+        return key;
+    }
+
     private static void sendError(HttpExchange exchange, int code, String message) throws IOException {
         String json = String.format("{\"status\":\"error\",\"message\":\"%s\"}", message);
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);

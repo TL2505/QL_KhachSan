@@ -55,7 +55,10 @@ public class JwtFilter extends Filter {
 
         boolean isPublic = PUBLIC_PATHS.contains(path)
                 || path.equals("/booking") || path.startsWith("/booking/")
-                || path.startsWith("/api/v1/auth/google/")
+                || path.startsWith("/api/v1/auth/google")
+                || path.startsWith("/api/v1/auth/facebook")
+                || path.endsWith("/auth/google")
+                || path.endsWith("/auth/facebook")
                 || path.equals("/api/v1/rooms")
                 || path.equals("/api/rooms")
                 || path.endsWith("/auth/login")

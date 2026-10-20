@@ -74,6 +74,7 @@ public class Main {
         // Route Đăng nhập và Đăng ký (Được skip JWT auth bên trong JwtFilter)
         registerContext(server, ipRateLimiter, "/api/v1/auth/login", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/auth/register", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/auth/facebook", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/auth/logout", new quanlykhachsan.backend.auth.LogoutController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/auth/change-password", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/auth/guest-otp", new quanlykhachsan.backend.auth.GuestAuthController(), exceptionFilter, corsFilter, jwtFilter);

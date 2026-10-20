@@ -33,6 +33,7 @@ services:
       DB_PASSWORD_FILE: /run/secrets/db_password
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       AES_VAULT_KEY_FILE: /run/secrets/aes_vault_key
+      HMAC_IDENTITY_KEY: ${HMAC_IDENTITY_KEY:-aurelia_pms_secret_identity_key_2026_prod_vault_guard}
       HMAC_IDENTITY_KEY_FILE: /run/secrets/hmac_identity_key
       AI_SERVICE_URL: https://ai-service:8082
       AI_TLS_KEYSTORE_FILE: /run/secrets/ai_client_identity

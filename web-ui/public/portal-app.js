@@ -645,27 +645,38 @@ function enterPortal(session) {
   }
 }
 
-function completeLogin(result) {
-  if (!result || !result.token || !roleOf(result.role)) throw new Error('Máy chủ không trả về quyền truy cập hợp lệ cho tài khoản này.');
-  const token = result.token;
+export function completeLogin(result, defaultUsername) {
+  const payload = result?.data || result || {};
+  const token = payload.token || payload.access_token || payload.jwt || result?.token;
+  const rawRole = payload.role || result?.role || 'CUSTOMER';
+  const role = roleOf(rawRole) || 'CUSTOMER';
+  if (!token) throw new Error('Máy chủ không trả về quyền truy cập hợp lệ cho tài khoản này.');
+
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem('customer_token', token);
     localStorage.setItem('auth_token', token);
     localStorage.setItem('token', token);
     const user = {
       token: token,
-      userId: result.userId ?? result.id,
-      username: result.username || '',
-      fullName: result.fullName || result.username || 'Quý Hội Viên',
-      role: roleOf(result.role) === 'STAFF' ? String(result.role).toUpperCase() : roleOf(result.role)
+      userId: payload.userId ?? payload.id ?? payload.user_id ?? 1,
+      username: payload.username || defaultUsername || payload.email || 'member',
+      fullName: payload.fullName || payload.full_name || payload.name || payload.username || defaultUsername || 'Quý Hội Viên',
+      role: role === 'STAFF' ? String(rawRole).toUpperCase() : role
     };
     localStorage.setItem('hotel_auth_session', JSON.stringify(user));
     setAuthSession(user);
   }
   const returnUrl = bookingReturnUrl();
-  if (returnUrl) { window.location.replace(returnUrl); return; }
-  const destination = roleOf(result.role) === 'STAFF' ? 'room-map' : 'dashboard';
-  window.location.replace(`portal.html?view=${encodeURIComponent(destination)}`);
+  if (returnUrl) {
+    if (typeof window !== 'undefined' && window.location?.replace) {
+      window.location.replace(returnUrl);
+    }
+    return;
+  }
+  const destination = role === 'STAFF' ? 'room-map' : 'dashboard';
+  if (typeof window !== 'undefined' && window.location?.replace) {
+    window.location.replace(`portal.html?view=${encodeURIComponent(destination)}`);
+  }
 }
 
 async function startGoogleOtp(googleResponse) {
@@ -744,39 +755,7 @@ export async function handleLoginSubmit(e) {
       return;
     }
 
-    const authData = (data && data.data) ? data.data : data;
-    const token = authData?.token;
-    if (!token) {
-      status('Máy chủ không trả về quyền truy cập hợp lệ cho tài khoản này.');
-      return;
-    }
-
-    // Session Harmonization: store across 3 keys
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('customer_token', token);
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('token', token);
-      const user = {
-        token: token,
-        userId: authData.userId || authData.id,
-        username: authData.username || username,
-        fullName: authData.fullName || authData.username || 'Quý Hội Viên',
-        role: authData.role || 'CUSTOMER'
-      };
-      localStorage.setItem('hotel_auth_session', JSON.stringify(user));
-      setAuthSession(user);
-    }
-
-    status('Đăng nhập thành công! Đang vào cổng thành viên...', 'success');
-
-    const role = String(authData.role || 'CUSTOMER').toUpperCase();
-    const destination = (role === 'STAFF' || role === 'ADMIN') ? 'room-map' : 'dashboard';
-
-    setTimeout(() => {
-      if (typeof window !== 'undefined' && window.location) {
-        window.location.href = `portal.html?view=${encodeURIComponent(destination)}`;
-      }
-    }, 350);
+    completeLogin(data, username);
 
   } catch (error) {
     console.error('Lỗi khi đăng nhập:', error);
@@ -939,12 +918,33 @@ export function initAuthEvents() {
     showAuth('login');
   });
 
-  // Social Auth Scaffolding handlers
+  // Social Auth handlers: Google Identity Services & Meta Facebook SDK
   const googleBtn = byId('google-signin-btn');
   if (googleBtn) {
     googleBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      status('Google GIS SDK: Sẵn sàng kết nối Google Client ID.', 'success');
+      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: window.AURELIA_GOOGLE_CLIENT_ID || '823901239123-placeholder.apps.googleusercontent.com',
+            callback: (response) => {
+              if (response && response.credential) {
+                sendGoogleCredential(response.credential);
+              }
+            }
+          });
+          window.google.accounts.id.prompt((notification) => {
+            if (notification && (notification.isNotDisplayed?.() || notification.isSkippedMoment?.())) {
+              status('Vui lòng cấp quyền truy cập tài khoản Google.');
+            }
+          });
+        } catch (err) {
+          console.warn('Lỗi khởi tạo Google GIS:', err);
+          status('Google GIS SDK: Sẵn sàng kết nối Google Client ID.', 'success');
+        }
+      } else {
+        status('Google Identity Services SDK đang sẵn sàng.', 'success');
+      }
     });
   }
 
@@ -952,8 +952,81 @@ export function initAuthEvents() {
   if (facebookBtn) {
     facebookBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      status('Facebook Login SDK: Sẵn sàng kết nối Facebook App ID.', 'success');
+      if (typeof window !== 'undefined' && window.FB) {
+        try {
+          window.FB.login((response) => {
+            if (response && response.authResponse && response.authResponse.accessToken) {
+              sendFacebookAccessToken(response.authResponse.accessToken);
+            } else {
+              status('Đăng nhập Facebook đã bị hủy hoặc không thành công.');
+            }
+          }, { scope: 'public_profile,email' });
+        } catch (err) {
+          console.warn('Lỗi gọi FB.login:', err);
+          status('Facebook Login SDK: Sẵn sàng kết nối Facebook App ID.', 'success');
+        }
+      } else {
+        status('Facebook Login SDK đang sẵn sàng.', 'success');
+      }
     });
+  }
+}
+
+export async function sendGoogleCredential(credential) {
+  if (!credential) {
+    status('Google không trả về thông tin xác thực. Vui lòng thử lại.');
+    return;
+  }
+  status('Đang xác thực bảo mật với Google...', 'success');
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/google`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ credential })
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
+      const errorMsg = data?.message || 'Xác thực Google không thành công. Vui lòng thử lại.';
+      status(errorMsg);
+      return;
+    }
+    status('Đăng nhập Google thành công!', 'success');
+    completeLogin(data, data?.data?.email || data?.email || 'google_user');
+  } catch (error) {
+    console.error('Lỗi khi đăng nhập Google:', error);
+    status('Không thể kết nối đến máy chủ xác thực Google. Vui lòng thử lại sau.');
+  }
+}
+
+export async function sendFacebookAccessToken(accessToken) {
+  if (!accessToken) {
+    status('Facebook không trả về mã truy cập. Vui lòng thử lại.');
+    return;
+  }
+  status('Đang xác thực bảo mật với Facebook...', 'success');
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/facebook`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ access_token: accessToken })
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
+      const errorMsg = data?.message || 'Xác thực Facebook không thành công. Vui lòng thử lại.';
+      status(errorMsg);
+      return;
+    }
+    status('Đăng nhập Facebook thành công!', 'success');
+    completeLogin(data, data?.data?.email || data?.email || 'facebook_user');
+  } catch (error) {
+    console.error('Lỗi khi đăng nhập Facebook:', error);
+    status('Không thể kết nối đến máy chủ xác thực Facebook. Vui lòng thử lại sau.');
   }
 }
 
@@ -966,6 +1039,7 @@ try {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('customer_token');
     localStorage.removeItem('token');
+    localStorage.removeItem('hotel_auth_session');
     if (typeof window !== 'undefined' && window.location) {
       window.location.href = 'index.html#login';
     }
@@ -1023,6 +1097,9 @@ try {
       if (!localStorage.getItem('token') && session.token) {
         localStorage.setItem('token', session.token);
       }
+      if (!localStorage.getItem('hotel_auth_session') && session.token) {
+        localStorage.setItem('hotel_auth_session', JSON.stringify(session));
+      }
     }
 
     enterPortal(session);
@@ -1054,6 +1131,9 @@ if (typeof window !== 'undefined') {
   window.handleRegisterSubmit = handleRegisterSubmit;
   window.setupAuthSwitching = setupAuthSwitching;
   window.setupAuthTabs = setupAuthTabs;
+  window.completeLogin = completeLogin;
+  window.sendGoogleCredential = sendGoogleCredential;
+  window.sendFacebookAccessToken = sendFacebookAccessToken;
 }
 
 try {

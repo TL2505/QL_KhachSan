@@ -55,6 +55,12 @@ public class UpdateDbUtility {
             ensureIndex(conn, "users", "uq_users_google_subject",
                     "UNIQUE INDEX uq_users_google_subject (google_subject)");
 
+            // Social Auth columns (Task 3: Google & Facebook OAuth 2.0)
+            ensureColumn(conn, "users", "auth_provider", "VARCHAR(20) NOT NULL DEFAULT 'LOCAL'");
+            ensureColumn(conn, "users", "provider_id", "VARCHAR(120) NULL");
+            ensureColumn(conn, "customers", "auth_provider", "VARCHAR(20) NOT NULL DEFAULT 'LOCAL'");
+            ensureColumn(conn, "customers", "provider_id", "VARCHAR(120) NULL");
+
             // ── TASK-B1.1: Cột version cho Optimistic Locking ────────────────
             ensureColumn(conn, "rooms", "version",
                     "INT NOT NULL DEFAULT 0");

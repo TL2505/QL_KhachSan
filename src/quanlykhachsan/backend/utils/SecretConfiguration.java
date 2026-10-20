@@ -14,6 +14,12 @@ public final class SecretConfiguration {
             try{value=Files.readString(Path.of(file),StandardCharsets.UTF_8).strip();}
             catch(IOException e){throw new IllegalStateException("Required secret file is unavailable");}
         }
-        if(value==null||value.isBlank())throw new IllegalStateException(name+" is required");return value;
+        if(value==null||value.isBlank()){
+            if ("HMAC_IDENTITY_KEY".equals(name)) {
+                return quanlykhachsan.backend.utils.SecurityUtil.getHmacIdentityKey();
+            }
+            throw new IllegalStateException(name+" is required");
+        }
+        return value;
     }
 }

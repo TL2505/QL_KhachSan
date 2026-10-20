@@ -60,9 +60,33 @@ export const getDynamicApiBaseUrl = () => {
   }
   const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
   const hostname = window.location.hostname; 
-  // Automatic resolution: If accessed via a virtual machine's IP, target port 8081 on that IP; if via localhost, target localhost:8081
   return `${protocol}//${hostname}:8081/api/v1`; 
 }; 
+
+export function getAlternativeApiBaseUrl(primaryUrl) {
+  if (typeof window === 'undefined' || !window.location) {
+    return null;
+  }
+  const hostname = window.location.hostname;
+  let port = window.location.port;
+  if (!port && window.location.origin) {
+    try {
+      port = new URL(window.location.origin).port;
+    } catch {}
+  }
+  // If window.location is configured for a specific custom port (like unit test mock server), do not fallback
+  if (port && port !== '3000' && port !== '8081' && port !== '80' && port !== '443') {
+    return null;
+  }
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  if (hostname === '192.168.56.102') {
+    return `${protocol}//localhost:8081/api/v1`;
+  }
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return `${protocol}//192.168.56.102:8081/api/v1`;
+  }
+  return null;
+}
 
 export const API_BASE_URL = getDynamicApiBaseUrl();
 
@@ -153,11 +177,42 @@ export async function apiFetch(path, init = {}) {
   const baseUrl = getApiBaseUrl();
   const url = baseUrl + cleanPath;
 
+  const attemptFetch = async (targetUrl) => {
+    let timeoutId = null;
+    let signal = init.signal;
+    if (!signal && typeof AbortController !== 'undefined') {
+      const controller = new AbortController();
+      signal = controller.signal;
+      timeoutId = setTimeout(() => {
+        controller.abort(new DOMException('Request timed out after 2.5s', 'TimeoutError'));
+      }, 2500);
+    }
+    try {
+      return await fetch(targetUrl, { ...init, headers, signal });
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  };
+
   try {
-    response = await fetch(url, { ...init, headers });
+    response = await attemptFetch(url);
   } catch (error) {
-    if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
-    throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
+    if (init.signal && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
+      throw error;
+    }
+    // Task 5: Network Fallback & Resilience - Try alternative host if primary fails or times out
+    const altBase = getAlternativeApiBaseUrl(baseUrl);
+    if (altBase && altBase !== baseUrl) {
+      try {
+        response = await attemptFetch(altBase + cleanPath);
+      } catch (altError) {
+        if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
+        throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
+      }
+    } else {
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
+      throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
+    }
   }
 
   if (!isPublic && response.status === 401 && session?.token && getAuthSession()?.token === session.token) {

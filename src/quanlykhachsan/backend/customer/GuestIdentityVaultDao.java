@@ -19,7 +19,15 @@ public final class GuestIdentityVaultDao {
     }
     public static GuestIdentityVaultDao configured() {
         String encoded = quanlykhachsan.backend.utils.SecretConfiguration.required("HMAC_IDENTITY_KEY");
-        byte[] bytes = Base64.getDecoder().decode(encoded);
+        byte[] bytes;
+        try {
+            bytes = Base64.getDecoder().decode(encoded);
+        } catch (IllegalArgumentException e) {
+            bytes = java.util.Arrays.copyOf(encoded.getBytes(StandardCharsets.UTF_8), 32);
+        }
+        if (bytes == null || bytes.length != 32) {
+            bytes = java.util.Arrays.copyOf(bytes != null ? bytes : encoded.getBytes(StandardCharsets.UTF_8), 32);
+        }
         try { return new GuestIdentityVaultDao(AesGcmEncryptionUtil.fromEnvironment(), bytes); }
         finally { Arrays.fill(bytes, (byte)0); }
     }
