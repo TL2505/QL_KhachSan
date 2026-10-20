@@ -129,7 +129,7 @@ public final class CustomerPortalController implements HttpHandler {
         } catch (OptimisticLockException | IllegalStateException ex) {
             ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error("Room or request data changed; please check availability again"));
         } catch (Exception ex) {
-            System.err.println("Customer booking failed: " + ex.getClass().getSimpleName());
+            exchange.getResponseHeaders().set("X-Booking-Error-Id", quanlykhachsan.backend.booking.BookingFailureLog.record("customer-booking", ex));
             ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("Booking is unavailable; please retry with the same Idempotency-Key or contact the Front Desk"));
         }
     }
@@ -265,7 +265,7 @@ public final class CustomerPortalController implements HttpHandler {
             + "(SELECT SUM(f.balance) FROM folios f WHERE f.booking_id=b.id),i.id "
             + ",EXISTS (SELECT 1 FROM reviews rv WHERE rv.customer_id=b.customer_id AND rv.room_id=b.room_id) "
             + "FROM bookings b JOIN rooms r ON r.id=b.room_id LEFT JOIN invoices i ON i.booking_id=b.id "
-            + "WHERE b.customer_id=? ORDER BY b.id DESC";
+            + "WHERE b.customer_id=? ORDER BY b.created_at DESC,b.id DESC";
         try(PreparedStatement q=c.prepareStatement(sql)){
             q.setInt(1,customerId);try(ResultSet r=q.executeQuery()){while(r.next()){
                 JsonObject x=new JsonObject();int id=r.getInt(1);

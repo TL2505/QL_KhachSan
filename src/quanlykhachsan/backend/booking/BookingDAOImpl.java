@@ -103,10 +103,20 @@ public class BookingDAOImpl implements BookingDAO {
 
     @Override
     public ArrayList<Booking> selectBooking() {
+        try (Connection con = DBconn.getConnection()) {
+            return selectBooking(con);
+        } catch (java.sql.SQLException e) {
+            // Never turn a failed database read into a successful empty booking list.
+            throw new RuntimeException("Unable to load bookings", e);
+        }
+    }
+
+    static ArrayList<Booking> selectBooking(Connection con) throws java.sql.SQLException {
         ArrayList<Booking> list = new ArrayList<>();
+        // Shared by Staff, Admin, customer/room filters and the desktop clients.
+        // Apply the stable order in SQL before any caller filters or paginates it.
         String query = "SELECT * FROM bookings ORDER BY created_at DESC, id DESC";
-        try (Connection con = DBconn.getConnection(); 
-             PreparedStatement ps = con.prepareStatement(query);
+        try (PreparedStatement ps = con.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Booking b = new Booking();
@@ -120,8 +130,6 @@ public class BookingDAOImpl implements BookingDAO {
                 b.setCreatedAt(rs.getTimestamp("created_at"));
                 list.add(b);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         return list;
     }

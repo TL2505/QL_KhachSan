@@ -14,6 +14,7 @@ import quanlykhachsan.backend.utils.SecurityUtil;
 
 public class LoyaltyController implements HttpHandler {
 
+    private final LoyaltyDirectoryController directoryController = new LoyaltyDirectoryController();
     private LoyaltyService loyaltyService = new LoyaltyService();
     private CustomerService customerService = new CustomerService();
 
@@ -21,6 +22,10 @@ public class LoyaltyController implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath().replaceFirst("^/api/v1/loyalty", "/api/loyalty");
+        if (path.equals("/api/loyalty/members") || path.startsWith("/api/loyalty/members/")) {
+            directoryController.handle(exchange);
+            return;
+        }
         Gson gson = JsonUtil.getGson();
 
         // Kiểm tra quyền cơ bản: phải đăng nhập (role 1, 2, hoặc 3)

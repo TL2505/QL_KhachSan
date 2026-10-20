@@ -1,4 +1,5 @@
 import { api } from "../../api.js";
+import { refreshBookingListOnReturn } from "../shared/booking-list-refresh.js";
 
 const STATUS = {
   pending: { label: "Chờ xác nhận", cls: "badge-booked" },
@@ -53,10 +54,21 @@ export async function renderAdminBookings(container) {
     }).join("");
   };
 
+  let loadSequence = 0;
   const load = async () => {
+    if (!body.isConnected) return;
+    const sequence = ++loadSequence;
     body.innerHTML = `<tr><td colspan="8" class="admin-bookings-loading">Đang tải đơn đặt phòng…</td></tr>`;
-    try { bookings = await api.get("/bookings") || []; renderRows(); }
-    catch (error) { body.innerHTML = `<tr><td colspan="8" class="admin-bookings-error">${esc(error.message)}</td></tr>`; }
+    try {
+      const loaded = await api.get("/bookings");
+      if (!body.isConnected || sequence !== loadSequence) return;
+      if (!Array.isArray(loaded)) throw new Error('Không thể tải danh sách đặt phòng. Vui lòng thử lại.');
+      bookings = loaded; // Keep the backend's created_at DESC, id DESC order through filtering.
+      renderRows();
+    } catch (error) {
+      if (!body.isConnected || sequence !== loadSequence) return;
+      body.innerHTML = `<tr><td colspan="8" class="admin-bookings-error">${esc(error.message)}</td></tr>`;
+    }
   };
   body.addEventListener("click", async event => {
     const button = event.target.closest("button[data-action]");
@@ -71,5 +83,6 @@ export async function renderAdminBookings(container) {
   document.getElementById("admin-bookings-search").addEventListener("input", renderRows);
   document.getElementById("admin-bookings-filter").addEventListener("change", renderRows);
   document.getElementById("admin-bookings-refresh").addEventListener("click", load);
+  refreshBookingListOnReturn(body, load);
   await load();
 }
