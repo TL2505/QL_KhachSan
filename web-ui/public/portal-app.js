@@ -333,7 +333,9 @@ function renderNav(session, activeTab) {
     if (accountRole) accountRole.textContent = roleNames[role] || 'Thành viên';
 
     const sidebarToggle = byId('admin-sidebar-toggle');
-    if (sidebarToggle) {
+    // Staff keeps its original full menu; collapse controls belong to other portals.
+    if (sidebarToggle && role === 'STAFF') sidebarToggle.remove?.();
+    if (sidebarToggle && role !== 'STAFF') {
       const sidebar = byId('portal-sidebar');
       if (sidebar) {
         sidebar.onpointerleave = () => sidebar.classList.remove('admin-sidebar-hover-suppressed');
@@ -675,7 +677,7 @@ function enterPortal(session) {
       document.body.classList.remove('portal-sidebar-collapsed');
       if (role === 'ADMIN') {
         try { document.body.classList.toggle('admin-sidebar-collapsed', localStorage.getItem('admin-sidebar-collapsed') === 'true'); } catch {}
-      } else {
+      } else if (role !== 'STAFF') {
         try { document.body.classList.toggle('portal-sidebar-collapsed', localStorage.getItem('portal-sidebar-collapsed') === 'true'); } catch {}
       }
       document.body.classList.toggle('customer-portal', isCustomer);

@@ -18,6 +18,12 @@ public final class SecretConfiguration {
             if ("HMAC_IDENTITY_KEY".equals(name)) {
                 return quanlykhachsan.backend.utils.SecurityUtil.getHmacIdentityKey();
             }
+            if ("JWT_SECRET".equals(name)) {
+                return quanlykhachsan.backend.utils.SecurityUtil.getJwtSecret();
+            }
+            if ("AES_VAULT_KEY".equals(name)) {
+                return quanlykhachsan.backend.utils.SecurityUtil.getAesVaultKey();
+            }
             throw new IllegalStateException(name+" is required");
         }
         return value;

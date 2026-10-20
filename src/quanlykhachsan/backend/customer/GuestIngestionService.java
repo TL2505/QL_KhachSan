@@ -20,15 +20,31 @@ public final class GuestIngestionService {
                 int id = ingest(c,name,phone,email);
                 if(identity!=null) {
                     if(!identity.matches("[A-Za-z0-9]{5,20}"))throw new IllegalArgumentException("Invalid identity");
-                    try(PreparedStatement q=c.prepareStatement("SELECT identity_card FROM customers WHERE id=? FOR UPDATE")) {
-                        q.setInt(1,id);try(ResultSet r=q.executeQuery()){r.next();String existing=r.getString(1);if(existing!=null && !existing.equals(identity))throw new IllegalStateException("Guest identity requires Front Desk review");}
-                    }
-                    try(PreparedStatement q=c.prepareStatement("UPDATE customers SET identity_card=? WHERE id=? AND identity_card IS NULL")){q.setString(1,identity);q.setInt(2,id);q.executeUpdate();}
+                    storeIdentity(c, id, identity, GuestIdentityVaultDao.configured());
                 }
                 c.commit(); return id;
             } catch (SQLException | RuntimeException ex) { c.rollback(); throw ex; }
             finally { c.setAutoCommit(true); lock(c, phone, false); }
         }
+    }
+
+    /** Respect the existing vault constraint; never replace an established identity during booking. */
+    static void storeIdentity(Connection c, int customer, String identity, GuestIdentityVaultDao vault) throws SQLException {
+        try (PreparedStatement q = c.prepareStatement("SELECT identity_hash,identity_card FROM customers WHERE id=? FOR UPDATE")) {
+            q.setInt(1, customer);
+            try (ResultSet r = q.executeQuery()) {
+                if (!r.next()) throw new SQLException("Customer not found during identity capture");
+                byte[] existingHash = r.getBytes("identity_hash");
+                String legacyIdentity = r.getString("identity_card");
+                if ((existingHash != null && !java.security.MessageDigest.isEqual(existingHash, vault.blindIndex(identity)))
+                        || (legacyIdentity != null && !legacyIdentity.strip().equalsIgnoreCase(identity.strip()))) {
+                    throw new IllegalStateException("Guest identity requires Front Desk review");
+                }
+                if (existingHash != null) return;
+            }
+        }
+        // The caller holds the phone/customer lock and commits or rolls back this encrypted write.
+        vault.save(c, customer, identity, null, null);
     }
 
     /** Caller must hold the phone lock through commit or rollback. */

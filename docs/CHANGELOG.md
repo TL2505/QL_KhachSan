@@ -1,5 +1,47 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-21] — @codex — Revert Staff sidebar collapse
+
+- Removed the Staff-only sidebar module, its mandatory portal import, state/storage handlers, tooltips, avatar insertion and layout overrides. Restored the pre-change portal stylesheet and sidebar layout; retained unrelated views, authentication and other roles.
+- Staff no longer renders the shared collapse control or restores the shared collapse preference. Existing Admin/customer controls are preserved. Portal asset versions were advanced to invalidate the affected cached entrypoint and stylesheet.
+- All 95 remaining web tests passed. Chromium verified fresh login/register tabs, login error/retry and success redirection, icons, theme controls, all eight Staff routes, full desktop width despite stale collapse preferences, reload, responsive layouts at 320–1600px, preserved Admin/customer controls and logout. Browser authentication responses were isolated fixtures; Windows/backend authentication was not verified.
+
+
+## [2026-10-21] — @codex — Collapsible Staff sidebar
+
+- Enhanced the existing Staff sidebar with a keyboard-accessible toggle and a separate persisted collapse preference. Desktop width changes from the existing 248px to 80px; the active item, centered icons, employee avatar and logout remain visible. Vietnamese hover/focus tooltips are positioned outside scrolling navigation so they are not clipped.
+- Scoped layout rules to Staff, including its content-specific grid overrides. The main workspace grows when collapsed and room cards fit the available width. Narrow screens retain the existing horizontal navigation, with compact icon items, a visible toggle and avatar/logout controls. Storage failures fall back to in-memory state.
+- Retained menu ordering, routing, role resolution and logout code. Staff-only controls/listeners are removed on cleanup; Admin/customer markup is not enhanced. Both deployment copies and portal asset cache versions were updated.
+- All 101 web tests passed. Chromium checks covered persistence, all eight Staff views, active states, centered icons, tooltips and keyboard activation, room-card sizing at 320–1920px, short viewports, same-page cleanup, blocked preference storage, dark/light themes and the existing logout flow. Admin layout geometry matched its pre-change baseline. Verification used isolated API fixtures with no application writes; no API or database code changed.
+
+## [2026-10-21] — @codex — Direct account icons and compact landing header
+
+- Replaced the signed-in greeting/dropdown with three equal-sized account, member-portal and logout icons, including escaped-name Vietnamese tooltips and keyboard labels. Account opens the existing profile tab; portal navigation and the logout handler retain their existing behavior. Signed-in actions remain directly visible on mobile rather than being duplicated in its navigation drawer.
+- Reused the existing scroll observer at a 100px threshold to reduce header spacing, logo size and slogan height. A border-box resize observer keeps anchor clearance and the existing mobile navigation drawer aligned with the changing header height. Included reduced-motion styles and retained dark/light themes.
+- Updated the existing login/logout regression for direct shortcuts. All 95 web tests passed. Chromium checks covered three actions, hover/focus tooltips, profile/portal navigation, logout/reload/storage clearing, escaped long names, language changes, expanded/compact transitions, anchor clearance and responsive layouts from 320px to 1920px without horizontal overflow. Browser API fixtures were isolated to verification; no backend/database files or application records changed.
+
+## [2026-10-21] — @codex — Booking identity persistence and stable list reloads
+
+- Fixed guest booking identity writes that conflicted with the existing `identity_card IS NULL` vault constraint: store through the encrypted vault in the existing transaction, retaining matching hashes and rejecting identity changes.
+- Retained the shared DAO's SQL `created_at DESC, id DESC` order, aligned the customer portal's independent query, removed Staff's frontend re-sort, and preserved API order through filters, pagination and reloads. Staff refresh returns to page one; Staff/Admin tab-return events reuse their existing loaders without polling or new push infrastructure.
+- Propagated booking-list SQL errors as API failures instead of successful empty lists. Added safe, correlated booking-failure diagnostics and `no-store` booking responses without changing authorization or reservation/folio/idempotency transaction logic.
+- Added seven backend and five frontend unit regressions, a read-only Windows API verifier and explicit database/browser/log verification instructions. The full 95-test web suite passed. Real Windows booking creation, database persistence and Staff/Admin first-row confirmation remain unverified pending operator execution; no application database was seeded or modified by these checks.
+
+## [2026-10-21] — @codex — Staff membership directory and point history
+
+- Added staff/admin-only read routes for the complete customer membership directory and each customer's existing `loyalty_histories` ledger, with explicit database-error responses. Stored tiers, point balances and join dates are returned without recalculation or fabricated events.
+- Added the staff membership table, name/phone search, tier filters, local pagination, full-directory tier counts and a detail dialog separating cumulative and available points. Legacy/unranked values remain visible separately from Silver/Gold/VIP.
+- Retained the existing Silver/Gold/VIP policy cards and all award/redemption/tier logic. Both served copies use the same staff layout, with scoped dark/light and mobile styles, loading/empty/error states and retry actions.
+- Added regression coverage for more than 50 members, stored-rank preservation, signed ledger entries, missing data, authorization against spoofed role headers, read-only methods and database failures.
+
+## [2026-10-20] — @codex — Staff customer directory fields and summary alignment
+
+- Included existing email and address values in customer collection and keyword-search responses, retaining the current row limit, ordering and search parameters.
+- Normalized snake_case/camelCase customer names and identity numbers in the staff directory so the table, detail dialog, search and contact summaries use the same values.
+- Aligned the three summary cards with matching icon columns, value baselines and label spacing. Scoped avatar and contact-cell styles to this staff view; long email/address values can wrap instead of being clipped.
+- Added DAO response-field checks and frontend regressions for data normalization, summary counts, searching and detail rendering.
+
+
 ## [2026-10-20] — @codex — `web-ui/portal-admin.css` — Keep customer content within the viewport
 
 - Matched the administrator layout on desktop: the customer portal uses a fixed viewport with independently scrollable content while the header and sidebar remain in place. Restored natural page scrolling on narrow screens.

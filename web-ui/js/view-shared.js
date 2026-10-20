@@ -1,11 +1,14 @@
 // Shared Views Module
 import { api, getAuthSession, setAuthSession } from "../api.js";
+import { staffProfileMarkup, bindStaffProfileUi } from "./staff/profile-ui.js";
 
 export function loadProfileView() {
     const container = document.getElementById("view-container");
     const session = getAuthSession();
 
-    container.innerHTML = `
+    const staffRole = String(session.role || '').trim().toUpperCase().replace(/[ -]/g, '_');
+    const isStaff = ['STAFF', 'FRONT_DESK', 'HOUSEKEEPING', 'MAINTENANCE', 'F&B', 'FB'].includes(staffRole);
+    container.innerHTML = isStaff ? staffProfileMarkup(session) : `
         <div class="page-header">
             <h1>Hồ Sơ & Bảo Mật</h1>
             <p>Quản lý thông tin tài khoản cá nhân và mật khẩu của bạn</p>
@@ -67,6 +70,8 @@ export function loadProfileView() {
             </div>
         </div>
     `;
+
+    if (isStaff) bindStaffProfileUi(container);
 
     // Add submit event listeners
     document.getElementById("form-update-profile").addEventListener("submit", async (e) => {
