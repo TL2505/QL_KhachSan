@@ -185,14 +185,21 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public List<Map<String, Object>> searchCustomers(String keyword) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            return searchCustomers(con, keyword);
+        } catch (Exception e) {
+            throw new RuntimeException("Error searching customers: " + e.getMessage(), e);
+        }
+    }
+
+    static List<Map<String, Object>> searchCustomers(Connection con, String keyword) throws SQLException {
         List<Map<String, Object>> list = new ArrayList<>();
         boolean hasKeyword = (keyword != null && !keyword.isBlank());
         String sql = hasKeyword
-                ? "SELECT id, full_name, phone, identity_card, loyalty_level, created_at FROM customers WHERE full_name LIKE ? OR phone LIKE ? OR identity_card LIKE ? ORDER BY id DESC LIMIT 50"
-                : "SELECT id, full_name, phone, identity_card, loyalty_level, created_at FROM customers ORDER BY id DESC LIMIT 50";
+                ? "SELECT id, full_name, phone, identity_card, email, address, loyalty_level, created_at FROM customers WHERE full_name LIKE ? OR phone LIKE ? OR identity_card LIKE ? ORDER BY id DESC LIMIT 50"
+                : "SELECT id, full_name, phone, identity_card, email, address, loyalty_level, created_at FROM customers ORDER BY id DESC LIMIT 50";
 
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             if (hasKeyword) {
                 String pattern = "%" + keyword.trim() + "%";
                 ps.setString(1, pattern);
@@ -206,13 +213,13 @@ public class CustomerDAOImpl implements CustomerDAO {
                     map.put("full_name", rs.getString("full_name"));
                     map.put("phone", rs.getString("phone"));
                     map.put("identity_card", rs.getString("identity_card"));
+                    map.put("email", rs.getString("email"));
+                    map.put("address", rs.getString("address"));
                     map.put("loyalty_level", rs.getString("loyalty_level"));
                     map.put("created_at", rs.getString("created_at"));
                     list.add(map);
                 }
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Error searching customers: " + e.getMessage(), e);
         }
         return list;
     }

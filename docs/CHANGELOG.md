@@ -1,5 +1,13 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-20] — @codex — Staff customer directory fields and summary alignment
+
+- Included existing email and address values in customer collection and keyword-search responses, retaining the current row limit, ordering and search parameters.
+- Normalized snake_case/camelCase customer names and identity numbers in the staff directory so the table, detail dialog, search and contact summaries use the same values.
+- Aligned the three summary cards with matching icon columns, value baselines and label spacing. Scoped avatar and contact-cell styles to this staff view; long email/address values can wrap instead of being clipped.
+- Added DAO response-field checks and frontend regressions for data normalization, summary counts, searching and detail rendering.
+
+
 ## [2026-10-20] — @codex — `web-ui/portal-admin.css` — Keep customer content within the viewport
 
 - Matched the administrator layout on desktop: the customer portal uses a fixed viewport with independently scrollable content while the header and sidebar remain in place. Restored natural page scrolling on narrow screens.

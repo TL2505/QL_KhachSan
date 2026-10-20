@@ -227,6 +227,7 @@ curl -X POST http://localhost:8081/api/v1/customers \
 - **Method:** `GET`
 - **Route:** `/api/v1/customers?search=Tran`
 - **Auth:** Bearer JWT
+- **Response:** `data` contains the newest 50 matching customer profiles, with `id`, `full_name`, `identity_card`, `phone`, `email`, `address`, `loyalty_level`, and `created_at`. Optional contact fields may be `null`; clients must not infer that missing fields represent empty profiles. The collection uses snake_case field names.
 
 ```bash
 curl -X GET "http://localhost:8081/api/v1/customers?search=Tran" \
