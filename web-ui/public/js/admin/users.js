@@ -90,26 +90,17 @@ export async function renderUsers(container, session) {
             const staff  = list.length - admins;
             const summaryBar = document.getElementById("users-summary-bar");
             summaryBar.innerHTML = `
-                <div class="card" style="margin:0;flex:1;padding:16px 20px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--primary);">
-                    <i data-lucide="users" style="width:20px;height:20px;color:var(--primary);"></i>
-                    <div>
-                        <div style="font-size:22px;font-weight:700;font-family:var(--font-heading);">${list.length}</div>
-                        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Tổng tài khoản</div>
-                    </div>
+                <div class="card stat-card">
+                    <div class="stat-title">Tổng tài khoản</div>
+                    <div class="stat-value">${list.length}</div>
                 </div>
-                <div class="card" style="margin:0;flex:1;padding:16px 20px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--warning);">
-                    <i data-lucide="shield" style="width:20px;height:20px;color:var(--warning);"></i>
-                    <div>
-                        <div style="font-size:22px;font-weight:700;font-family:var(--font-heading);">${admins}</div>
-                        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Admin</div>
-                    </div>
+                <div class="card stat-card">
+                    <div class="stat-title">Admin</div>
+                    <div class="stat-value">${admins}</div>
                 </div>
-                <div class="card" style="margin:0;flex:1;padding:16px 20px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--info);">
-                    <i data-lucide="user" style="width:20px;height:20px;color:var(--info);"></i>
-                    <div>
-                        <div style="font-size:22px;font-weight:700;font-family:var(--font-heading);">${staff}</div>
-                        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Nhân viên</div>
-                    </div>
+                <div class="card stat-card">
+                    <div class="stat-title">Nhân viên</div>
+                    <div class="stat-value">${staff}</div>
                 </div>
             `;
             lucide.createIcons();
