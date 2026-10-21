@@ -9,6 +9,7 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class VirtualConciergeControllerTest {
+    @org.junit.jupiter.api.io.TempDir java.nio.file.Path aiSettingsDirectory;
     private HttpServer server;
     private VirtualConciergeController controller;
     private AtomicInteger tickets;
@@ -17,7 +18,7 @@ class VirtualConciergeControllerTest {
         tickets=new AtomicInteger();
         controller=new VirtualConciergeController((session,category,correlation,owner,role)->{
             tickets.incrementAndGet();throw new SQLException("Synthetic queue outage");
-        },event->assertTrue(java.util.Set.of("BLOCKED","ESCALATED").contains(event.decision())));
+        },event->assertTrue(java.util.Set.of("BLOCKED","ESCALATED").contains(event.decision())),new AiProviderSettings(aiSettingsDirectory),new CloudAiClient(request->{throw new java.io.IOException("Cloud is disabled in this test");}));
         server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         server.createContext("/api/v1/ai/concierge",e->{
             e.setAttribute("role","customer");e.setAttribute("userId",123);

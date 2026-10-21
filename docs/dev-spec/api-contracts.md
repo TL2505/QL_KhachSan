@@ -880,3 +880,23 @@ is an optional read-only projection for all room cards. Without `include_status=
 Each item contains `id`, `availability_status` and `available`; no guest or booking identifiers are exposed.
 Statuses: `available`, `reserved` (overlapping pending/confirmed booking), `occupied` (overlapping checked-in booking), `maintenance` (out_of_order/out_of_service), `not_ready` (same-day room not clean/vacant without a matching booking).
 Maintenance takes precedence, followed by occupied and reserved. Overlap uses existing 14:00 check-in and 12:00 check-out boundaries. Historical, cancelled and non-overlapping stays do not block future dates. Maintenance remains blocked until released by the existing management workflow.
+
+# Cloud concierge configuration and chat (2026-10-21)
+
+All `/api/v1/admin/ai-settings` routes require an authenticated `admin` JWT and return `Cache-Control: no-store`. Spoofed role headers do not grant access. Credentials are encrypted on the server and never returned in metadata. Responses use the existing API success/error envelope.
+
+| Method and route | Contract |
+| --- | --- |
+| `GET /api/v1/admin/ai-settings` | Returns `provider`, `model`, `enabled`, `has_key`, `knowledge`, `workspace_id`, and read-only `project_context: {text, sources}`. |
+| `PUT /api/v1/admin/ai-settings` | Accepts `{provider, model, api_key, enabled, knowledge, workspace_id?}`. Providers: `openai`, `gemini`, `claude`, `groq`. A blank key retains the saved credential only for the same provider; switching provider requires a new key. Groq IDs may include `/`. Claude's optional workspace ID is validated. Model and credential must be present when saving. |
+| `POST /api/v1/admin/ai-settings/models` | Accepts `{provider, api_key?, workspace_id?}` without a model. A blank key may use the saved credential for the same provider. Calls a fixed HTTPS provider endpoint; does not save the draft. Returns `{provider, models: [{id,name}], more_available}`. Gemini discovery filters for `generateContent`. Discovery is not proof of text-generation access/quota. |
+| `POST /api/v1/admin/ai-settings/test` | Uses only the saved credential/model and makes a short generation request. Returns `{message, provider, model}` on success; returns 409 if no key has been saved. |
+| `DELETE /api/v1/admin/ai-settings` | Deletes the saved provider configuration/key and returns disabled/default metadata. |
+
+Invalid settings return 400, oversized bodies return 413, non-admin callers return 403, and storage/transport failures return 503. Upstream provider rejection or timeout returns application HTTP 422, with sanitized details; upstream credential errors must not be exposed as application HTTP 401. Gemini blocked/incomplete responses use `AI_RESPONSE_BLOCKED`/`AI_RESPONSE_INCOMPLETE` (422).
+
+`POST /api/v1/ai/concierge/chat` accepts `{session_id, message}` with an authenticated concierge-authorized role. When a saved cloud provider is enabled, it takes precedence over the internal RAG path even if `AI_GUEST_ENABLED=false`. Existing budget, prompt validation, escalation and audit rules remain in effect. Successful generated responses contain `{reply, provider, generated:true, citations:[], escalate:false}`. Cloud responses do not fabricate retrieval citations, bookings or human handoff confirmations.
+
+All cloud calls include packaged public project context and administrator supplemental notes. Gemini additionally receives prior successful user/model turns from the same authenticated actor and session. It preserves model content/signatures server-side while returning only answer text to the browser. Memory is process-local, capped at 1000 sessions, six pairs and 32,000 characters per session, with a 30-minute idle TTL cleaned on subsequent chat access. Failed generations are not committed. Model/key/knowledge changes reset context; browser reload/account changes create a new session. Concurrent sends in the same Gemini session return 409 `AI_CONVERSATION_BUSY` with `Retry-After: 2` before policy evaluation.
+
+See [the developer setup guide](../chatbot-ai-dev-setup.md) for independent demo credentials, local startup and verification.

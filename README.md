@@ -1,5 +1,9 @@
 # Quanlykhachsan
 
+## Chạy thử chatbot AI trên máy dev khác
+
+Xem [hướng dẫn cấu hình chatbot AI riêng cho máy dev](docs/chatbot-ai-dev-setup.md): tạo database/key demo riêng, chạy backend và web, nhập key trong admin, lấy model, kiểm thử hội thoại và xử lý lỗi. Nhánh tích hợp: `codex/ai-chatbot-dev-setup`.
+
 ## Hướng dẫn chạy dự án
 
 1. Chuẩn bị môi trường
@@ -19,7 +23,7 @@
      - `DB_USER`
      - `DB_PASSWORD`
    - Mức VAT được phê duyệt hiện tại là `HOTEL_VAT_RATE=0.08` (8%); cấu hình này được dùng khi báo giá, đặt phòng và lập hóa đơn. Nếu quy định áp dụng thay đổi, chỉ đổi sang `0.10` sau khi được phê duyệt. Booking không được tính giá nếu chưa có mức thuế hợp lệ.
-   - Concierge Phase 3 chuyển câu hỏi qua gateway Java tới RAG nội bộ tại `AI_RAG_URL` (mặc định `http://127.0.0.1:8082/rag/query`). Chỉ cấu hình endpoint HTTP trên loopback; RAG phải trả JSON có `reply` và `confidence_score` từ 0 đến 1; `citations` và `suggested_actions` không bắt buộc. Độ tin cậy dưới 0.80 sẽ tạo ticket cho Lễ tân. Nếu RAG chưa chạy/cấu hình, chatbot báo không khả dụng và không tự tạo câu trả lời.
+   - Chatbot trên trang chủ hỗ trợ nhà cung cấp cloud cấu hình tại **Admin > API key AI**: Gemini, Groq, Claude và OpenAI. Luồng này không cần chạy RAG/Python. Nếu dùng RAG nội bộ thay cho cloud, cấu hình `AI_SERVICE_URL` cùng mTLS theo `ai-service/README.md`; backend không chấp nhận HTTP ở cấu hình transport production hiện tại.
 
 3. Build và chạy backend
    - Trong PowerShell, chạy `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1` để biên dịch và khởi chạy backend. Cấu hình khóa vault theo `docs/run-project.md` trước khi chạy.

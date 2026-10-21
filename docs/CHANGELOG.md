@@ -1,5 +1,12 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-21] — @codex — Cloud concierge and independent developer setup
+
+- Replaced the floating chat link with an authenticated in-page AI concierge and added administrator-only encrypted provider settings for Gemini, Groq, Claude and OpenAI. Added discovery of model IDs before saving a configuration, saved-connection testing, credential deletion and persistent Docker volumes.
+- Added bounded Gemini conversation memory isolated by authenticated actor/session, explicit system instructions, safe provider errors and generation-status handling. Included public project knowledge for hotel hours, contact, amenities and website navigation, with a read-only admin preview and separate supplemental notes.
+- Added [a new-machine setup guide](chatbot-ai-dev-setup.md) for Windows devs: isolated demo database/keys, Java and web launchers, provider/model configuration, test commands, origin/session troubleshooting and credential-storage behavior. Linked it from both READMEs and corrected the root README's outdated HTTP RAG instructions.
+- Documented the new admin AI API and cloud chat behavior in `dev-spec/api-contracts.md`. Automated validation: 89 web tests and 38 focused backend tests passed. Live Gemini/browser checks returned the published check-in/check-out times and pool hours; provider availability and account quota remain external conditions.
+
 ## [2026-10-21] — @codex — Staff/customer portal UI audit fixes
 
 - Aligned staff and customer headers, sidebar geometry, collapse controls, account placement and responsive navigation with admin. Fixed duplicate account/logout controls, left-aligned the brand, hid signed-in controls on login, and matched customer hover/selection animations while retaining tier colors.

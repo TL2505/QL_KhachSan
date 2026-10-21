@@ -43,7 +43,7 @@ services:
       AI_GUEST_ENABLED: ${AI_GUEST_ENABLED:-false}
       TRUSTED_PROXY_IPS: ${PMS_PROXY_IP:?Supply the internal Nginx address}
     secrets: [db_password, jwt_secret, aes_vault_key, hmac_identity_key, ai_client_identity, ai_client_trust, ai_tls_password, ai_ca]
-    volumes: [pms_invoices:/app/invoices]
+    volumes: [pms_invoices:/app/invoices, pms_ai_settings:/app/.data/ai]
     tmpfs: [/tmp:size=64m]
     read_only: true
     security_opt: [no-new-privileges:true]
@@ -112,6 +112,7 @@ volumes:
   pms_database:
     name: ${PMS_DB_VOLUME:?Supply the approved persistent database volume name}
   pms_invoices:
+  pms_ai_settings:
 secrets:
   db_root_password: {file: '${PMS_DB_ROOT_PASSWORD_FILE:?Required secret file}'}
   db_password: {file: '${PMS_DB_PASSWORD_FILE:?Required secret file}'}

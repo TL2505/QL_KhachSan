@@ -60,6 +60,8 @@ services:
       INVOICE_VERIFICATION_URL: ${INVOICE_VERIFICATION_URL:?Set approved INVOICE_VERIFICATION_URL configuration}
       HOTEL_OTP_MODE: ${HOTEL_OTP_MODE:?Set approved HOTEL_OTP_MODE configuration}
       AI_GUEST_ENABLED: false
+    volumes:
+      - ai_settings_data:/app/.data/ai
     ports:
       - "8081:8081"
     networks:
@@ -118,3 +120,4 @@ networks:
 
 volumes:
   mariadb_data:
+  ai_settings_data:

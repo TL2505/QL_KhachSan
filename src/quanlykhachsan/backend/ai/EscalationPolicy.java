@@ -14,6 +14,8 @@ public final class EscalationPolicy {
     private static final Pattern FINANCIAL=Pattern.compile("\\b(price|rates?|availability|compensation|upgrade|currency|discount|freebie)\\b|bao nhieu tien|gia phong|con phong|boi thuong|mien phi");
     private static final class State {String fingerprint;boolean monitor;long updated;}
     private final Map<String,State> states=new HashMap<>();
+    /** A failed transport attempt must not turn an explicit retry into a repeated complaint. */
+    public synchronized void forget(String session){states.remove(session);}
     public synchronized Decision evaluate(String session,String message,long now){
         String language=language(message),text=fold(message),fingerprint=AiInteractionDao.hash(text);
         states.entrySet().removeIf(entry->now-entry.getValue().updated>3_600_000);

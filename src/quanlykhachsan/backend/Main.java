@@ -86,6 +86,7 @@ public class Main {
         registerContext(server, ipRateLimiter, "/api/v1/ai/id-ocr", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/ai/face-verify", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
         var concierge = new quanlykhachsan.backend.ai.VirtualConciergeController();
+        registerContext(server, ipRateLimiter, "/api/v1/admin/ai-settings", new quanlykhachsan.backend.ai.AiProviderSettingsController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
         BACKGROUND_SERVICES.put(server, concierge);
         Filter conciergeBudget = new Filter() {
             public String description() { return "Verified-token concierge budget before prompt validation"; }

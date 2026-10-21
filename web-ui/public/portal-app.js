@@ -1,5 +1,5 @@
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js';
-import { loadAdminView } from './js/view-admin.js?v=3.6.4';
+import { loadAdminView } from './js/view-admin.js?v=3.6.11';
 import { loadStaffView } from './js/view-staff.js';
 import { loadCustomerView } from './js/view-customer.js?v=3.6.18';
 import { loadProfileView } from './js/view-shared.js';
@@ -84,6 +84,7 @@ const menus = {
     ['promotions', 'Khuyến mãi', 'ticket-percent'],
     ['reviews', 'Đánh giá', 'star'],
     ['invoices', 'Hóa đơn', 'receipt-text'],
+    ['ai-settings', 'API key AI', 'key-round'],
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   STAFF: [
