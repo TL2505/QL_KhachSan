@@ -18,6 +18,8 @@ public class JwtFilter extends Filter {
         "/auth/login",
         "/api/v1/auth/register",
         "/auth/register",
+        "/api/v1/auth/oauth",
+        "/auth/oauth",
         "/api/v1/auth/oauth/google",
         "/auth/oauth/google",
         "/api/v1/auth/oauth/facebook",
