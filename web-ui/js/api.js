@@ -186,7 +186,7 @@ export async function apiFetch(path, init = {}) {
       signal = controller.signal;
       timeoutId = setTimeout(() => {
         controller.abort(new DOMException('Request timed out after 2.5s', 'TimeoutError'));
-      }, 2500);
+      }, 15000);
     }
     try {
       return await fetch(targetUrl, { ...init, headers, signal });
@@ -454,7 +454,7 @@ export function mapRoomCategory(roomTypeId, rawCategory, rawName) {
 
 export function formatCurrency(amount, currency = "VND") {
   if (currency === "USD") {
-    const usd = Math.round(amount / 25000);
+    const usd = Math.round(amount / 150000);
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(usd);
   }
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
