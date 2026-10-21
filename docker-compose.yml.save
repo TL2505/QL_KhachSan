@@ -1,0 +1,72 @@
+
+services:
+  # 1. Trung tâm Dữ liệu (MariaDB)
+  db:
+    image: mariadb:11
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: hotel_prod_db
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/hotel.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+      healthcheck:
+    test: ["CMD-SHELL", "mysql -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\" -e 'SELECT 1' > /dev/null 2>&1"]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+    start_period: 30s
+
+  # 2. Công cụ quản lý DB qua Web (Adminer)
+  adminer:
+    image: adminer
+    ports:
+      - "127.0.0.1:8082:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # 3. Backend API Server (Java HTTPServer)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=hotel_prod_db
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 4. Web UI (Nginx Web Server)
+  web:
+    image: nginx:alpine
+    volumes:
+      - ./web-ui/public:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db_data:
