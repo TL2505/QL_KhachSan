@@ -126,7 +126,7 @@ public final class CustomerPortalController implements HttpHandler {
             ApiResponseUtil.write(exchange, result.status(), result.body());
         } catch (IllegalArgumentException ex) {
             ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Invalid booking data or Idempotency-Key"));
-        } catch (OptimisticLockException | IllegalStateException ex) {
+        } catch (OptimisticLockException | PublicBookingService.ConflictException ex) {
             ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error("Room or request data changed; please check availability again"));
         } catch (Exception ex) {
             exchange.getResponseHeaders().set("X-Booking-Error-Id", quanlykhachsan.backend.booking.BookingFailureLog.record("customer-booking", ex));

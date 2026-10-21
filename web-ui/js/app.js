@@ -1100,11 +1100,10 @@ function renderBookingModalContent() {
         if (textSpan) textSpan.innerHTML = t('Đang xử lý đặt phòng...');
 
         try {
-          b.requestKey ||= crypto.randomUUID();
           const res = await submitBooking({
-            idempotencyKey: b.requestKey,
             roomId: b.room.id,
             roomVersion: b.room.version ?? 0,
+            guestCount: Number(state.search.adults || 1) + Number(state.search.children || 0),
             checkInDate: state.search.checkIn,
             checkOutDate: state.search.checkOut,
             fullName: b.guest.fullName,
@@ -2386,81 +2385,30 @@ export async function loadPublicReviewsWidget() {
   try {
     data = await api.get('/reviews/public?page=1&limit=6');
   } catch (err) {
-    console.warn('[ReviewWidget] API public reviews failed or offline, loading fallback presentation:', err);
+    console.warn('[ReviewWidget] Public reviews request failed:', err);
   }
 
-  const summary = data?.summary || {
-    total_reviews: 128,
-    overall_average: 4.9,
-    room_average: 4.9,
-    fnb_average: 4.8,
-    service_average: 5.0,
-    cleanliness_average: 4.9,
-    recommendation_percentage: 98.5
-  };
-
-  const reviewsList = Array.isArray(data?.reviews) && data.reviews.length > 0 ? data.reviews : [
-    {
-      id: 1,
-      customer_display_name: 'Trần H*** L***',
-      room_type_name: 'Executive Ocean Suite',
-      rating_overall: 5.0,
-      rating_room: 5,
-      rating_fnb: 5,
-      rating_service: 5,
-      rating_cleanliness: 5,
-      comment: 'Kỳ nghỉ vô cùng trọn vẹn tại Aurelia Palace! Tầm nhìn hướng biển ngoạn mục, nhà hàng phục vụ món bò Wagyu tuyệt hảo và đội ngũ quản gia luôn túc trực chu đáo.',
-      created_at: '2026-10-18',
-      management_response: {
-        responder_title: t('Tổng Quản Lý Khu Nghỉ Dưỡng (General Manager)'),
-        content: 'Chân thành cảm ơn Ông Long và gia đình đã tin tưởng chọn Aurelia Palace. Đội ngũ khách sạn rất vinh hạnh được đón tiếp Quý khách trong những kỳ nghỉ tiếp theo!',
-        responded_at: '2026-10-18'
-      }
-    },
-    {
-      id: 2,
-      customer_display_name: 'Nguyễn T*** M***',
-      room_type_name: 'Presidential Royal Villa',
-      rating_overall: 4.9,
-      rating_room: 5,
-      rating_fnb: 5,
-      rating_service: 5,
-      rating_cleanliness: 5,
-      comment: 'Hồ bơi tràn bờ riêng tư tuyệt đẹp, không gian tĩnh lặng và riêng tư tối đa. Bữa sáng nổi tại villa là trải nghiệm đẳng cấp thế giới.',
-      created_at: '2026-10-17',
-      management_response: {
-        responder_title: t('Giám Đốc Trải Nghiệm Khách Hàng (Director of Guest Experience)'),
-        content: 'Kính gửi Bà Mai, chúng tôi rất vui vì Quý khách đã có trải nghiệm trọn vẹn với dịch vụ bữa sáng nổi tại Royal Villa. Hẹn sớm gặp lại Quý khách!',
-        responded_at: '2026-10-17'
-      }
-    },
-    {
-      id: 3,
-      customer_display_name: 'Phạm V*** H***',
-      room_type_name: 'Premier Deluxe Garden View',
-      rating_overall: 4.8,
-      rating_room: 5,
-      rating_fnb: 4,
-      rating_service: 5,
-      rating_cleanliness: 5,
-      comment: 'Thủ tục nhận phòng nhanh chóng, nhân viên lễ tân hỗ trợ nhiệt tình. Dịch vụ Spa thảo dược giúp phục hồi tinh thần sau những ngày làm việc bận rộn.',
-      created_at: '2026-10-16',
-      management_response: {
-        responder_title: t('Quản Lý Tiền Sảnh (Front Office Manager)'),
-        content: 'Aurelia Palace chân thành cảm ơn đánh giá của Ông Hoàng. Chúng tôi không ngừng hoàn thiện để mang đến dịch vụ hoàn hảo nhất.',
-        responded_at: '2026-10-16'
-      }
-    }
-  ];
+  const summary = data?.summary;
+  const reviewsList = data?.reviews;
+  if (!summary || !Array.isArray(reviewsList) || !Number.isSafeInteger(summary.total_reviews) || summary.total_reviews < 0) {
+    summaryContainer.innerHTML = '<div class="glass-card p-6 rounded-2xl border border-amber-500/20"><p role="status">Chưa tải được đánh giá từ khách lưu trú. Vui lòng thử lại sau.</p></div>';
+    gridContainer.replaceChildren();
+    return;
+  }
+  if (summary.total_reviews === 0) {
+    summaryContainer.innerHTML = '<div class="glass-card p-6 rounded-2xl border border-amber-500/20"><p role="status">Chưa có đánh giá từ khách lưu trú.</p></div>';
+    gridContainer.replaceChildren();
+    return;
+  }
 
   // Format numbers safely
-  const overallAvg = Number(summary.overall_average || 5.0).toFixed(1);
-  const roomAvg = Number(summary.room_average || 5.0).toFixed(1);
-  const fnbAvg = Number(summary.fnb_average || 5.0).toFixed(1);
-  const serviceAvg = Number(summary.service_average || 5.0).toFixed(1);
-  const cleanlinessAvg = Number(summary.cleanliness_average || 5.0).toFixed(1);
-  const recPct = Number(summary.recommendation_percentage || 100.0).toFixed(1);
-  const totalCount = summary.total_reviews || reviewsList.length;
+  const overallAvg = Number(summary.overall_average ?? 0).toFixed(1);
+  const roomAvg = Number(summary.room_average ?? 0).toFixed(1);
+  const fnbAvg = Number(summary.fnb_average ?? 0).toFixed(1);
+  const serviceAvg = Number(summary.service_average ?? 0).toFixed(1);
+  const cleanlinessAvg = Number(summary.cleanliness_average ?? 0).toFixed(1);
+  const recPct = Number(summary.recommendation_percentage ?? 0).toFixed(1);
+  const totalCount = summary.total_reviews;
 
   // Percentage widths (scaled out of 5.0)
   const roomPct = Math.min(100, Math.max(0, (roomAvg / 5) * 100));

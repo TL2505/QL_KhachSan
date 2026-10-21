@@ -35,13 +35,22 @@ public class ReviewController implements HttpHandler {
         "admin", "staff", "front_desk", "manager", "gm", "ADMIN", "STAFF", "1", "2"
     );
 
-    private final ReviewService reviewService = new ReviewService();
+    private final ReviewService reviewService;
+    public ReviewController() { this(new ReviewService()); }
+    ReviewController(ReviewService reviewService) { this.reviewService = reviewService; }
     private final Gson gson = JsonUtil.getGson();
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
+        if (path.length() > 1 && path.endsWith("/")) path = path.substring(0, path.length() - 1);
+
+        if (path.endsWith("/public") && !"GET".equalsIgnoreCase(method) && !"OPTIONS".equalsIgnoreCase(method)) {
+            exchange.getResponseHeaders().set("Allow", "GET, OPTIONS");
+            ApiResponseUtil.sendError(exchange, 405, "ERR_405_METHOD_NOT_ALLOWED", "Public review summaries are read-only");
+            return;
+        }
 
         try {
             if ("OPTIONS".equalsIgnoreCase(method)) {

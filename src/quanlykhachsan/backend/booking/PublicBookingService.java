@@ -28,7 +28,7 @@ public final class PublicBookingService {
                 try(PreparedStatement q=c.prepareStatement("SELECT request_hash,response_body,status_code FROM idempotency_keys WHERE id=?")) {
                     q.setString(1,key);try(ResultSet r=q.executeQuery()){replay=r.next()?new FolioDao.PaymentReplay(r.getString(1),r.getString(2),r.getInt(3)):null;}
                 }
-                if(replay!=null){c.rollback();if(!replay.requestHash().equals(hash))throw new IllegalStateException("Idempotency-Key was reused with different data");return new Result(replay.statusCode(),replay.responseBody());}
+                if(replay!=null){c.rollback();if(!replay.requestHash().equals(hash))throw new ConflictException("Idempotency-Key was reused with different data");return new Result(replay.statusCode(),replay.responseBody());}
                 RoomAllocationService.reserveForStay(c,request.roomId(),request.version(),request.guestCount(),request.checkIn(),request.checkOut());
                 String roomNumber;int roomType;
                 try(PreparedStatement q=c.prepareStatement("SELECT room_number,room_type_id FROM rooms WHERE id=?")) {
@@ -42,7 +42,7 @@ public final class PublicBookingService {
                     quote=new DynamicPricingEngine.Quote(quote.room_type_id(),quote.base_price(),quote.nightly_rates(),discount.room_subtotal(),discount.service_charge(),discount.vat(),discount.total_amount());
                 }
                 if(request.expectedTotal()!=null && request.expectedTotal().compareTo(quote.total_amount())!=0)
-                    throw new IllegalStateException("Booking quote changed");
+                    throw new ConflictException("Booking quote changed");
                 if(quote.total_amount().compareTo(new BigDecimal("99999999.99"))>0)throw new IllegalArgumentException("Stay exceeds booking amount limit");
                 int bookingId;
                 try(PreparedStatement q=c.prepareStatement("INSERT INTO bookings(customer_id,room_id,check_in_date,check_out_date,total_price,status,customer_type) VALUES (?,?,?,?,?,?,?)",Statement.RETURN_GENERATED_KEYS)) {
@@ -82,4 +82,7 @@ public final class PublicBookingService {
         public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out,String voucherCode){this(name,phone,email,roomId,version,in,out,voucherCode,1,null);}
     }
     public record Result(int status,String body) { }
+    public static final class ConflictException extends IllegalStateException {
+        public ConflictException(String message) { super(message); }
+    }
 }

@@ -7,11 +7,12 @@
  */
 
 export class ApiError extends Error {
-  constructor(message, status = 500, retryAfter = null) {
+  constructor(message, status = 500, retryAfter = null, bookingErrorId = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.retryAfter = retryAfter;
+    this.bookingErrorId = bookingErrorId;
   }
 }
 
@@ -159,7 +160,9 @@ function messageFor(status) {
 export async function apiFetch(path, init = {}) {
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn yêu cầu không hợp lệ.');
   const cleanPath = path.startsWith('/') ? path : '/' + path;
-  const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/');
+  const requestPath = cleanPath.split('?')[0].replace(/\/$/, '');
+  const isPublicReview = (init.method || 'GET').toUpperCase() === 'GET' && requestPath === '/reviews/public';
+  const isPublic = isPublicReview || cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/');
   const session = getAuthSession();
   const token = (typeof session?.token === 'string' && session.token) ? session.token : getStoredCustomerToken();
   const headers = new Headers(init.headers || {});
@@ -234,7 +237,9 @@ export async function apiFetch(path, init = {}) {
 
   if (!response.ok) {
     const serverMessage = (response.status < 500 && result && typeof result.message === 'string') ? result.message.trim() : '';
-    throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'));
+    const reference = response.headers.get('X-Booking-Error-Id');
+    const bookingErrorId = /^[0-9a-f-]{36}$/i.test(reference || '') ? reference : null;
+    throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'), bookingErrorId);
   }
 
   if (result && typeof result === 'object' && 'status' in result) {
@@ -553,29 +558,64 @@ export async function getRooms(filterParams = {}) {
   }
 }
 
-export const TRANSACTION_UNCONFIRMED = 'Hệ thống máy chủ đang bận xử lý hoặc gián đoạn kết nối. Giao dịch chưa được ghi nhận vào sổ cái PMS, quý khách vui lòng thử lại hoặc liên hệ Lễ tân.';
+export const TRANSACTION_UNCONFIRMED = 'Chưa xác nhận được kết quả đặt phòng. Vui lòng thử lại cùng yêu cầu hoặc liên hệ Lễ tân để kiểm tra trước khi tạo đơn khác.';
+
+const BOOKING_ATTEMPT_KEY = 'aurelia_booking_attempt_v1';
+let pendingBookingAttempt = null;
+async function bookingAttempt(payload, body) {
+  let storage, hash;
+  try {
+    storage = globalThis.sessionStorage;
+    if (storage && globalThis.crypto?.subtle) {
+      const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body));
+      hash = Array.from(new Uint8Array(bytes), byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+  } catch { /* The in-memory draft remains usable when browser storage is blocked. */ }
+  let saved;
+  try { saved = hash && JSON.parse(storage.getItem(BOOKING_ATTEMPT_KEY)); } catch {}
+  const now = Date.now();
+  const recent = record => record && Number.isFinite(record.at) && now >= record.at && now - record.at < 86400000;
+  if (!payload.idempotencyKey && pendingBookingAttempt?.body === body && recent(pendingBookingAttempt)) payload.idempotencyKey = pendingBookingAttempt.key;
+  if (!payload.idempotencyKey && hash && saved?.hash === hash && recent(saved)
+      && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(saved.key)) payload.idempotencyKey = saved.key;
+  payload.idempotencyKey ||= generateUUID();
+  pendingBookingAttempt = { body, key: payload.idempotencyKey, at: now };
+  try { if (hash) storage.setItem(BOOKING_ATTEMPT_KEY, JSON.stringify({ hash, key: payload.idempotencyKey, at: now })); } catch {}
+  return payload.idempotencyKey;
+}
+
+function completeBookingAttempt(key) {
+  if (pendingBookingAttempt?.key === key) pendingBookingAttempt = null;
+  try {
+    const storage = globalThis.sessionStorage;
+    if (JSON.parse(storage?.getItem(BOOKING_ATTEMPT_KEY) || 'null')?.key === key) storage.removeItem(BOOKING_ATTEMPT_KEY);
+  } catch {}
+}
 
 export async function submitBooking(payload) {
-  // Retain this key on the caller's draft after an ambiguous network failure.
-  payload.idempotencyKey ||= generateUUID();
+  const body = JSON.stringify({ room_id: payload.roomId, room_version: payload.roomVersion ?? 0,
+    check_in_date: payload.checkInDate + ' 14:00:00', check_out_date: payload.checkOutDate + ' 12:00:00',
+    customer_name: payload.fullName, phone: payload.phone, email: payload.email,
+    identity_card: payload.identityCard || null, voucher_code: payload.promoCode || '', guest_count: payload.guestCount ?? 1 });
+  await bookingAttempt(payload, body);
   try {
     const data = await apiFetch('/bookings/public', {
       method: 'POST', headers: { 'Idempotency-Key': payload.idempotencyKey },
       signal: AbortSignal.timeout(10000),
-      body: JSON.stringify({ room_id: payload.roomId, room_version: payload.roomVersion ?? 0,
-        check_in_date: payload.checkInDate + ' 14:00:00', check_out_date: payload.checkOutDate + ' 12:00:00',
-        customer_name: payload.fullName, phone: payload.phone, email: payload.email,
-        identity_card: payload.identityCard || null, voucher_code: payload.promoCode || '' })
+      body
     });
     if (!Number.isSafeInteger(data?.booking_id) || data.booking_id <= 0 || !data.status ||
         !data.folio || !Number.isFinite(Number(data.folio.balance)) || Number(data.folio.balance) < 0) {
       throw new Error('Invalid booking receipt');
     }
+    completeBookingAttempt(payload.idempotencyKey);
     return { success: true, bookingId: data.booking_id, bookingReference: data.booking_code,
       totalAmount: Number(data.folio.balance), status: data.status, folio: data.folio,
       payment: data.payment || null };
   } catch (error) {
-    throw new ApiError(TRANSACTION_UNCONFIRMED, error.status || 503);
+    if (error instanceof ApiError && error.status >= 400 && error.status < 500) throw error;
+    const message = error.retryAfter ? 'Hệ thống đang khóa giao dịch tạm thời. Vui lòng chờ rồi thử lại cùng yêu cầu.' : TRANSACTION_UNCONFIRMED;
+    throw new ApiError(message + (error.bookingErrorId ? ` Mã hỗ trợ: ${error.bookingErrorId}.` : ''), error.status || 503, error.retryAfter, error.bookingErrorId);
   }
 }
 

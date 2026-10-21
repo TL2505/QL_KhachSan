@@ -6,18 +6,42 @@ import quanlykhachsan.backend.utils.PortalValidation;
 
 /** A database-scoped phone lock prevents duplicates across all backend workers. */
 public final class GuestIngestionService {
+    @FunctionalInterface interface Connections { Connection open() throws SQLException; }
+    private final Connections connections;
+    public GuestIngestionService() { this(DatabaseConnection::getConnection); }
+    GuestIngestionService(Connections connections) { this.connections = connections; }
     public int ingest(String name, String rawPhone, String email) throws SQLException {
         return ingest(name,rawPhone,email,null);
     }
     public int ingest(String name,String rawPhone,String email,String identity)throws SQLException {
+        return capture(null, name, rawPhone, email, identity);
+    }
+
+    /** Booking under a verified account must never select another profile by phone. */
+    public int ingestOwned(int customerId, String name, String rawPhone, String email, String identity) throws SQLException {
+        if (customerId < 1) throw new SecurityException();
+        return capture(customerId, name, rawPhone, email, identity);
+    }
+
+    private int capture(Integer owner, String name, String rawPhone, String email, String identity) throws SQLException {
         String phone = PortalValidation.phone(rawPhone);
         PortalValidation.email(email);
         if (name != null && (name.length() > 100 || name.chars().anyMatch(Character::isISOControl))) throw new IllegalArgumentException("Invalid name");
-        try (Connection c = DatabaseConnection.getConnection()) {
+        try (Connection c = connections.open()) {
             lock(c, phone, true);
             try {
                 c.setAutoCommit(false);
-                int id = ingest(c,name,phone,email);
+                int id;
+                if (owner == null) id = ingest(c,name,phone,email);
+                else {
+                    try (PreparedStatement q = c.prepareStatement("SELECT phone FROM customers WHERE id=? FOR UPDATE")) {
+                        q.setInt(1, owner);
+                        try (ResultSet row = q.executeQuery()) {
+                            if (!row.next() || !phone.equals(PortalValidation.phone(row.getString(1)))) throw new SecurityException();
+                        }
+                    }
+                    id = owner;
+                }
                 if(identity!=null) {
                     if(!identity.matches("[A-Za-z0-9]{5,20}"))throw new IllegalArgumentException("Invalid identity");
                     storeIdentity(c, id, identity, GuestIdentityVaultDao.configured());
@@ -38,13 +62,17 @@ public final class GuestIngestionService {
                 String legacyIdentity = r.getString("identity_card");
                 if ((existingHash != null && !java.security.MessageDigest.isEqual(existingHash, vault.blindIndex(identity)))
                         || (legacyIdentity != null && !legacyIdentity.strip().equalsIgnoreCase(identity.strip()))) {
-                    throw new IllegalStateException("Guest identity requires Front Desk review");
+                    throw new IdentityConflictException();
                 }
                 if (existingHash != null) return;
             }
         }
         // The caller holds the phone/customer lock and commits or rolls back this encrypted write.
         vault.save(c, customer, identity, null, null);
+    }
+
+    public static final class IdentityConflictException extends IllegalStateException {
+        public IdentityConflictException() { super("Guest identity requires Front Desk review"); }
     }
 
     /** Caller must hold the phone lock through commit or rollback. */

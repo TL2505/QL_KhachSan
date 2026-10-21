@@ -45,6 +45,7 @@ public class CorsFilter extends Filter {
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", ALLOWED_METHODS);
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", ALLOWED_HEADERS);
         exchange.getResponseHeaders().set("Access-Control-Max-Age", MAX_AGE);
+        exchange.getResponseHeaders().set("Access-Control-Expose-Headers", "X-Booking-Error-Id, Retry-After");
 
         // REQUIRED HTTP 204 No Content according to W3C / ADR-05 standards
         if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {

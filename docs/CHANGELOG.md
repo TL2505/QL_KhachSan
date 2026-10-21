@@ -1,5 +1,14 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-21] — @codex — Booking runtime diagnostics, owned-account booking and safe retries
+
+- Accept verified customer booking through a server-resolved owned profile/phone, and lock that specific profile during identity capture; preserve existing guest and staff workflows and encrypted identity constraints.
+- Separate business conflicts from runtime/configuration failures, retaining redacted 503 references and exposing only support/retry headers across origins. Preserve authoritative SQL creation-time ordering and the existing transactional booking/folio/idempotency write.
+- Retain pending booking UUIDs across retry/reload using a request hash without guest data, send the actual guest count, preserve actionable 4xx errors and report uncertain outcomes honestly. Public review GET no longer sends stale implicit credentials; unavailable/empty reviews do not become fabricated testimonials.
+- Add isolated HTTP/JWT, ownership and browser transport regressions, and a read-only Windows diagnostic script. Actual Windows startup is blocked by missing original AES configuration; the supplied launcher log is not the real POST exception. Windows database persistence and real Staff/Admin first-row verification remain unverified.
+- Validation: all 101 web tests and 17 focused backend tests passed. Chromium exercised the actual booking button, guest count/auth headers, 503 reference, reload-safe replay key/body, actionable 409, 201 receipt and honest review states using isolated HTTP fixtures with no application database writes.
+
+
 ## [2026-10-21] — @codex — Revert Staff sidebar collapse
 
 - Removed the Staff-only sidebar module, its mandatory portal import, state/storage handlers, tooltips, avatar insertion and layout overrides. Restored the pre-change portal stylesheet and sidebar layout; retained unrelated views, authentication and other roles.
