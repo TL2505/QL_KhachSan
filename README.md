@@ -2,7 +2,7 @@
 
 ## Chạy thử chatbot AI trên máy dev khác
 
-Xem [hướng dẫn cấu hình chatbot AI riêng cho máy dev](docs/chatbot-ai-dev-setup.md): tạo database/key demo riêng, chạy backend và web, nhập key trong admin, lấy model, kiểm thử hội thoại và xử lý lỗi. Nhánh tích hợp: `codex/ai-chatbot-dev-setup`.
+Xem [hướng dẫn cấu hình chatbot AI riêng cho máy dev](docs/chatbot-ai-dev-setup.md): tạo database/key demo riêng, chạy backend và web, nhập key trong admin, lấy model, kiểm thử hội thoại và xử lý lỗi. Nhánh tích hợp: `CHATBOT_IMP`.
 
 ## Hướng dẫn chạy dự án
 

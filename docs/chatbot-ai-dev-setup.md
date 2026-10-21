@@ -19,7 +19,7 @@ Các cổng local cần dùng: database `3306`, backend `8081`, web `3000`. Khô
 ## 2. Lấy đúng nhánh và cài web dependencies
 
 ```powershell
-git clone --branch codex/ai-chatbot-dev-setup https://github.com/TL2505/QL_KhachSan.git
+git clone --branch CHATBOT_IMP https://github.com/TL2505/QL_KhachSan.git
 Set-Location QL_KhachSan
 java -version
 Get-Command mvn.cmd -All
@@ -31,10 +31,10 @@ Nếu đã clone, commit hoặc cất các thay đổi riêng của bạn trư�
 
 ```powershell
 git fetch origin
-git switch --track origin/codex/ai-chatbot-dev-setup
+git switch --track origin/CHATBOT_IMP
 ```
 
-Nếu nhánh local đã tồn tại thì dùng `git switch codex/ai-chatbot-dev-setup`.
+Nếu nhánh local đã tồn tại thì dùng `git switch CHATBOT_IMP`.
 
 File `mvn.cmd` ở gốc repository là shortcut NetBeans cũ, có thể trỏ tới đường dẫn không tồn tại. Không dùng `./mvn.cmd` để build; launcher bên dưới tìm Maven đã cài riêng.
 
