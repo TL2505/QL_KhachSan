@@ -1,0 +1,41 @@
+AURELIA — NGỮ CẢNH MẶC ĐỊNH CỦA DỰ ÁN
+
+Phạm vi: thông tin đang công bố trên website và các chức năng đã có trong ứng dụng khách sạn. Đây không phải dữ liệu tồn phòng, báo giá hay xác nhận đặt dịch vụ theo thời gian thực.
+
+THƯƠNG HIỆU VÀ LIÊN HỆ
+- Website dùng thương hiệu Aurelia Palace / Aurelia Grand Palace, giới thiệu khách sạn và khu nghỉ dưỡng bên bờ Vịnh Ngọc.
+- Địa chỉ công bố trên website: Số 88 Đại Lộ Hoàng Gia (Aurelia Boulevard), Bãi biển Vịnh Ngọc, Việt Nam. Không tự suy ra tỉnh/thành phố khác từ địa chỉ này.
+- Lễ tân/liên hệ 24/7: +84 (0) 24 3888 9999; số gọi: +842438889999.
+- Email liên hệ: concierge@aureliahotel.com.
+- Nguồn: trang chủ, mục Liên Hệ 24/7 và Chính Sách Khách Sạn (index.html#contact).
+
+GIỜ NHẬN VÀ TRẢ PHÒNG
+- Nhận phòng (check-in): từ 14:00, theo giờ Việt Nam.
+- Trả phòng (check-out): trước 12:00 trưa, theo giờ Việt Nam.
+- Nhận sớm, trả muộn, phụ thu hoặc ngoại lệ cần lễ tân xác nhận; không tự cam kết hoặc tạo một mức phí.
+- Hai mốc giờ này đã được nêu trên website, không phải thông tin còn thiếu.
+- Nguồn: trang chủ, Chính Sách Khách Sạn (index.html#contact); đặc tả giao diện mục 8.
+
+DỊCH VỤ VÀ TIỆN ÍCH CÔNG BỐ
+- Hồ Bơi Vô Cực Chân Mây: tầng 32, giờ mở cửa công bố 06:00–22:00, có pool bar.
+- Nhà Hàng Ẩm Thực & Sky Bar: website giới thiệu phục vụ 24/7.
+- Aurelia Spa & Trị Liệu Trẻ Hóa: giới thiệu massage đá nóng, xông hơi và bồn ngâm thảo dược; không tự suy ra giá hoặc lịch hẹn.
+- Trung Tâm Thể Thao & Yoga: website giới thiệu phục vụ 24/7.
+- Website cũng giới thiệu dịch vụ Đưa Đón Sân Bay VIP và Trung Tâm Hội Nghị & Sự Kiện Quốc Tế. Lịch xe, giá, chỗ trống và yêu cầu tổ chức cần liên hệ lễ tân.
+- Nguồn: trang chủ, mục Dịch Vụ & Tiện Ích (index.html#services).
+- Tình trạng hoạt động hôm nay, suất trống và giá dịch vụ cụ thể cần kiểm tra danh mục dịch vụ hoặc xác nhận với lễ tân.
+
+HƯỚNG DẪN SỬ DỤNG WEBSITE
+- Tìm phòng: trên trang chủ, chọn ngày nhận phòng, ngày trả phòng, số khách và mã ưu đãi nếu có, sau đó bấm Kiểm tra phòng trống. Xem các hạng phòng ở mục Phòng nghỉ (index.html#rooms).
+- Đặt phòng: chọn phòng từ kết quả tìm kiếm và làm theo luồng đặt phòng trên website. Chỉ hệ thống đặt phòng mới xác nhận kết quả; câu trả lời chatbot không phải một đơn đặt phòng.
+- Khách đăng nhập mở cổng thành viên: Tổng quan, Đặt phòng/Lịch sử đặt phòng, Dịch vụ & Ví ưu đãi, Hồ sơ, Bảo mật.
+- Xem đơn của mình: cổng thành viên > Lịch sử đặt phòng (portal.html?view=bookings). Chatbot này không tự đọc hoặc tiết lộ đơn của bất kỳ khách nào.
+- Đặt dịch vụ: cổng thành viên > Dịch vụ & Ví ưu đãi (portal.html?view=concierge). Danh mục lấy từ máy chủ; việc đặt dịch vụ phụ thuộc kỳ lưu trú và điều kiện mà ứng dụng kiểm tra.
+- Xem/cập nhật hồ sơ tại cổng thành viên > Hồ sơ (portal.html?view=profile); đổi mật khẩu tại Bảo mật (portal.html?view=security).
+- Nếu cần hỗ trợ từ người thật, dùng nút Chuyển tới lễ tân khi giao diện hiển thị, hoặc gọi số lễ tân nêu trên. Không nói đã tạo ticket/chuyển người thật nếu máy chủ chưa xác nhận thao tác đó.
+- Nguồn: trang chủ; điều hướng cổng thành viên; các màn hình Lịch sử đặt phòng và Dịch vụ & Ví ưu đãi.
+
+GIỚI HẠN DỮ LIỆU
+- Không lấy giá, số lượng phòng, ưu đãi hoặc tiện nghi theo hạng phòng từ dữ liệu seed, ví dụ SQL hoặc ghi chú được đánh dấu là mẫu/chưa xác minh.
+- Giá hiện tại, phòng trống theo ngày, hiệu lực voucher, thanh toán, hủy/hoàn tiền và đặt dịch vụ phải dựa vào chức năng nghiệp vụ hoặc lễ tân. Không hứa hoàn tiền, hủy đơn, giảm giá hay đặt chỗ qua câu trả lời AI.
+- Không tự khẳng định giấy phép, chứng nhận, giải thưởng hoặc trạng thái pháp lý từ nội dung quảng bá.

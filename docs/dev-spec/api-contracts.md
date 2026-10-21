@@ -896,3 +896,38 @@ is an optional read-only projection for all room cards. Without `include_status=
 Each item contains `id`, `availability_status` and `available`; no guest or booking identifiers are exposed.
 Statuses: `available`, `reserved` (overlapping pending/confirmed booking), `occupied` (overlapping checked-in booking), `maintenance` (out_of_order/out_of_service), `not_ready` (same-day room not clean/vacant without a matching booking).
 Maintenance takes precedence, followed by occupied and reserved. Overlap uses existing 14:00 check-in and 12:00 check-out boundaries. Historical, cancelled and non-overlapping stays do not block future dates. Maintenance remains blocked until released by the existing management workflow.
+
+# Cloud concierge configuration and chat (2026-10-21)
+
+All `/api/v1/admin/ai-settings` routes require an authenticated `admin` JWT and return `Cache-Control: no-store`. Spoofed role headers do not grant access. Credentials are encrypted on the server and never returned in metadata. Responses use the existing API success/error envelope.
+
+| Method and route | Contract |
+| --- | --- |
+| `GET /api/v1/admin/ai-settings` | Returns `provider`, `model`, `enabled`, `has_key`, `knowledge`, `workspace_id`, and read-only `project_context: {text, sources}`. |
+| `PUT /api/v1/admin/ai-settings` | Accepts `{provider, model, api_key, enabled, knowledge, workspace_id?}`. Providers: `openai`, `gemini`, `claude`, `groq`. A blank key retains the saved credential only for the same provider; switching provider requires a new key. Groq IDs may include `/`. Claude's optional workspace ID is validated. Model and credential must be present when saving. |
+| `POST /api/v1/admin/ai-settings/models` | Accepts `{provider, api_key?, workspace_id?}` without a model. A blank key may use the saved credential for the same provider. Calls a fixed HTTPS provider endpoint; does not save the draft. Returns `{provider, models: [{id,name}], more_available}`. Gemini discovery filters for `generateContent`. Discovery is not proof of text-generation access/quota. |
+| `POST /api/v1/admin/ai-settings/test` | Uses only the saved credential/model and makes a short generation request. Returns `{message, provider, model}` on success; returns 409 if no key has been saved. |
+| `DELETE /api/v1/admin/ai-settings` | Deletes the saved provider configuration/key and returns disabled/default metadata. |
+
+Invalid settings return 400, oversized bodies return 413, non-admin callers return 403, and storage/transport failures return 503. Upstream provider rejection or timeout returns application HTTP 422, with sanitized details; upstream credential errors must not be exposed as application HTTP 401. Gemini blocked/incomplete responses use `AI_RESPONSE_BLOCKED`/`AI_RESPONSE_INCOMPLETE` (422).
+
+`POST /api/v1/ai/concierge/chat` accepts `{session_id, message}` with an authenticated concierge-authorized role. When a saved cloud provider is enabled, it takes precedence over the internal RAG path even if `AI_GUEST_ENABLED=false`. Existing budget, prompt validation, escalation and audit rules remain in effect. Successful generated responses contain `{reply, provider, generated:true, citations:[], escalate:false}`. Cloud responses do not fabricate retrieval citations, bookings or human handoff confirmations.
+
+All cloud calls include packaged public project context and administrator supplemental notes. Gemini additionally receives prior successful user/model turns from the same authenticated actor and session. It preserves model content/signatures server-side while returning only answer text to the browser. Memory is process-local, capped at 1000 sessions, six pairs and 32,000 characters per session, with a 30-minute idle TTL cleaned on subsequent chat access. Failed generations are not committed. Model/key/knowledge changes reset context; browser reload/account changes create a new session. Concurrent sends in the same Gemini session return 409 `AI_CONVERSATION_BUSY` with `Retry-After: 2` before policy evaluation.
+
+See [the developer setup guide](../chatbot-ai-dev-setup.md) for independent demo credentials, local startup and verification.
+
+### Google customer authentication — 2026-10-21
+
+These public routes use the standard success/error envelope. The portal uses one Google Identity Services button for sign-in/sign-up, with no Facebook SDK. Configuration requires `GOOGLE_CLIENT_ID` and SMTP email delivery; see [Google setup](../google-otp-setup.md).
+
+| Route | Behavior |
+| --- | --- |
+| `GET /api/v1/auth/google/config` | Returns `{enabled, client_id?}`. Client ID is included only when Google and SMTP are configured; no SMTP credentials or secrets are returned. |
+| `POST /api/v1/auth/google/request-otp` | Accepts `{credential}` from Google GIS. Backend validates with Google, checks audience/issuer/verified email/subject, then emails a four-digit OTP. Returns `{challenge_id, email, expires_at}` with a masked email; no hotel JWT yet. |
+| `POST /api/v1/auth/google/resend-otp` | Accepts `{challenge_id}`. Resends a new code and invalidates the old one. Up to two resends per challenge. |
+| `POST /api/v1/auth/google/verify-otp` | Accepts `{challenge_id, otp}`. Validates a five-minute, one-use code with at most five wrong attempts across resends. Creates a customer account on first use or selects the account by unique Google subject; returns the normal auth user projection including JWT and linked customer ID. An existing password account with the same email returns 409 rather than being auto-linked. A failed account/session creation does not consume the valid code. |
+| `POST /api/v1/auth/google` | Retired direct social login: returns 410. No mock token, unverified JWT decoding or email-based auto-provisioning fallback. |
+| `POST /api/v1/auth/facebook` | Removed login route: returns 410 and never creates an account/session. |
+
+Unavailable Google/SMTP configuration or transport returns 503. Invalid input/credentials or a wrong code return 400/401. An expired code returns 422 and can be resent within fifteen minutes of the most recent successful send. Missing, used or expired sessions return 410 and the portal restores the Google button. Exhausted attempts/resends return 429. Code validity starts after successful SMTP delivery; failed resend delivery preserves the previous code and resend budget. Challenges are process-local and do not survive a backend restart. Frontend stores only the final hotel session, including `customerId`; Google credentials remain transient.

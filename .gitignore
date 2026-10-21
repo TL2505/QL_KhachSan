@@ -10,3 +10,5 @@ target/
 
 # Local development process logs
 .run/
+node_modules/
+.data/

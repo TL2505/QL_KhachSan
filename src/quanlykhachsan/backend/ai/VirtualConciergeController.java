@@ -17,13 +17,17 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
     private final java.util.function.Consumer<AiInteractionDao.Event> eventSink;
     public VirtualConciergeController(){this(new EscalationTicketDao()::create);}
     VirtualConciergeController(TicketCreator ticketCreator){this(ticketCreator,null);}
-    VirtualConciergeController(TicketCreator ticketCreator,java.util.function.Consumer<AiInteractionDao.Event> eventSink){this.ticketCreator=Objects.requireNonNull(ticketCreator);this.eventSink=eventSink;}
+    VirtualConciergeController(TicketCreator ticketCreator,java.util.function.Consumer<AiInteractionDao.Event> eventSink){this(ticketCreator,eventSink,AiProviderSettings.instance(),new CloudAiClient());}
+    VirtualConciergeController(TicketCreator ticketCreator,java.util.function.Consumer<AiInteractionDao.Event> eventSink,AiProviderSettings cloudSettings,CloudAiClient cloudClient){this.ticketCreator=Objects.requireNonNull(ticketCreator);this.eventSink=eventSink;this.cloudSettings=Objects.requireNonNull(cloudSettings);this.cloudClient=Objects.requireNonNull(cloudClient);}
     private final AiInteractionDao audit=new AiInteractionDao();
     private final EscalationTicketDao tickets=new EscalationTicketDao();
     private final EscalationPolicy policy=new EscalationPolicy();
     private final SessionRateLimiter limiter=new SessionRateLimiter(Clock.systemUTC());
     private final AtomicBoolean guestEnabled=new AtomicBoolean("true".equalsIgnoreCase(System.getenv("AI_GUEST_ENABLED")));
     private volatile AiServiceClient client;
+    private final CloudAiClient cloudClient;
+    private final AiProviderSettings cloudSettings;
+    private final ConciergeConversationMemory conversations=new ConciergeConversationMemory();
     private record Strike(int count,long updated){}
     private final Map<String,Strike> strikes=new HashMap<>();
     public boolean checkChatBudget(HttpExchange e) throws IOException {
@@ -91,6 +95,7 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
             // Same supplied session ID under another authenticated identity gets a different database key.
             String bound=AiInteractionDao.hash(role+"|"+e.getAttribute("userId")+"|"+session);
             if(path.endsWith("/escalate")){
+                conversations.forget(bound);
                 String reason=field(body,"reason",2000);int id=ticket(e,bound,"STAFF_REQUEST",correlation);
                 new TicketChatDao().append(id,Integer.parseInt(String.valueOf(e.getAttribute("userId"))),role,reason);
                 record(bound,staff,reason,"ESCALATED",0,correlation);var response=new JsonObject();response.addProperty("ticket_id",id);response.addProperty("status","OPEN");response.add("room_number",JsonNull.INSTANCE);response.add("eta_minutes",JsonNull.INSTANCE);response.addProperty("message","Front Desk assistance requested");ApiResponseUtil.sendSuccess(e,response);return;
@@ -98,10 +103,44 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
             String message=field(body,"message",4000);
             // Defense in depth for alternate callers. The production chat context also has the pre-model filter.
             if(PromptGuardrailFilter.isBlocked(message)){record(bound,staff,message,"BLOCKED",0,correlation);error(e,400,"PROMPT_INJECTION_DETECTED","Yêu cầu không hợp lệ do vi phạm chính sách bảo mật.");return;}
+            AiProviderSettings.Configuration cloud;
+            try { cloud=cloudSettings.read(); }
+            catch (GeneralSecurityException | IllegalStateException | IOException ex) {
+                error(e,503,"AI_SETTINGS_UNAVAILABLE","Trợ lý AI tạm thời không khả dụng. Vui lòng liên hệ lễ tân.");return;
+            }
+            // Reserve before policy evaluation so concurrent duplicate sends cannot become complaints.
+            try(var conversation=cloud.enabled()&&cloud.provider().equals("gemini")?conversations.open(bound,cloud):null) {
             var decision=policy.evaluate(bound,message,System.currentTimeMillis());
-            if(decision.hard()||(!staff&&!guestEnabled.get())||audit.failures()>0){
+            if(decision.hard()||(!staff&&!guestEnabled.get()&&!cloud.enabled())||audit.failures()>0){
+                conversations.forget(bound);
                 escalate(e,bound,message,decision.hard()?decision.category():"STAFF_REQUEST",decision.language(),staff,correlation);return;
             }
+            if(cloud.enabled()) {
+                try {
+                    String reply;
+                    if(conversation!=null) {
+                        var generated=cloudClient.generate(cloud,message,false,conversation.previous());
+                        reply=generated.text();
+                        conversation.commit(message,reply,generated.modelContent());
+                    } else {
+                        conversations.forget(bound);
+                        reply=cloudClient.answer(cloud,message,false);
+                    }
+                    record(bound,staff,message,"ANSWER",0,correlation);
+                    ApiResponseUtil.sendSuccess(e,Map.of("reply",reply,"provider",cloud.provider(),"generated",true,"citations",List.of(),"escalate",false));
+                } catch(CloudAiClient.GenerationException ex) {
+                    policy.forget(bound);
+                    error(e,422,ex.code,ex.publicMessage());
+                } catch(CloudAiClient.ProviderException ex) {
+                    policy.forget(bound);
+                    error(e,422,"AI_PROVIDER_REJECTED",management?ex.publicMessage():"Trợ lý AI chưa sẵn sàng do lỗi kết nối với nhà cung cấp. Vui lòng liên hệ lễ tân.");
+                } catch(IOException ex) {
+                    policy.forget(bound);
+                    error(e,503,"AI_PROVIDER_UNAVAILABLE","Trợ lý AI tạm thời không khả dụng. Vui lòng thử lại hoặc liên hệ lễ tân.");
+                }
+                return;
+            }
+            conversations.forget(bound);
             JsonObject data;
             try{
                 JsonObject request=new JsonObject();request.addProperty("message",message);request.addProperty("audience",staff?"staff":"guest");request.addProperty("language",decision.language());
@@ -126,6 +165,10 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
                 escalate(e,bound,message,"LOW_CONFIDENCE",decision.language(),staff,correlation);return;
             }
             ApiResponseUtil.sendSuccess(e,200,data,Map.of("correlation_id",correlation));
+            } catch(ConciergeConversationMemory.Busy ex) {
+                e.getResponseHeaders().set("Retry-After","2");
+                error(e,409,"AI_CONVERSATION_BUSY","Câu hỏi trước đang được xử lý. Vui lòng đợi câu trả lời rồi gửi tiếp.");
+            }
         }catch(BodyTooLarge ex){error(e,413,"ERR_413_PAYLOAD_TOO_LARGE","Request too large");}
         catch(IllegalArgumentException | JsonParseException | IllegalStateException | NullPointerException ex){error(e,400,"ERR_400_BAD_REQUEST","Invalid concierge request");}
         catch(SQLException ex){error(e,503,"ERR_503_AI_UNAVAILABLE","Staff assistance could not be queued; contact the Front Desk directly");}
@@ -154,5 +197,5 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
     }
     private static void error(HttpExchange e,int status,String code,String message) throws IOException {ApiResponseUtil.sendError(e,status,code,message);}
     private static final class BodyTooLarge extends IOException{}
-    @Override public void close(){audit.close();}
+    @Override public void close(){conversations.clear();audit.close();}
 }

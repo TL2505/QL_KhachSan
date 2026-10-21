@@ -1,0 +1,112 @@
+[
+  {
+    "theme": "light",
+    "width": 1600,
+    "overflow": false,
+    "columns": 3,
+    "cardHeight": 274.5625,
+    "cards": 10,
+    "buttonHeight": 44,
+    "count": "13 phòng đang lưu trú",
+    "busy": "false"
+  },
+  {
+    "theme": "light",
+    "width": 1225,
+    "overflow": false,
+    "columns": 2,
+    "cardHeight": 272.5625,
+    "cards": 10,
+    "buttonHeight": 44,
+    "count": "13 phòng đang lưu trú",
+    "busy": "false"
+  },
+  {
+    "theme": "light",
+    "width": 768,
+    "overflow": false,
+    "columns": 2,
+    "cardHeight": 268.5625,
+    "cards": 10,
+    "buttonHeight": 44,
+    "count": "13 phòng đang lưu trú",
+    "busy": "false"
+  },
+  {
+    "theme": "light",
+    "width": 375,
+    "overflow": false,
+    "columns": 1,
+    "cardHeight": 316.5625,
+    "cards": 10,
+    "buttonHeight": 44,
+    "count": "13 phòng đang lưu trú",
+    "busy": "false"
+  },
+  {
+    "theme": "light",
+    "width": 320,
+    "overflow": false,
+    "columns": 1,
+    "cardHeight": 316.5625,
+    "cards": 10,
+    "buttonHeight": 44,
+    "count": "13 phòng đang lưu trú",
+    "busy": "false"
+  },
+  {
+    "theme": "dark",
+    "width": 1600,
+    "overflow": false,
+    "columns": 3,
+    "cardHeight": 274.5625,
+    "cards": 10,
+    "buttonHeight": 44,
+    "count": "13 phòng đang lưu trú",
+    "busy": "false"
+  },
+  {
+    "theme": "dark",
+    "width": 1225,
+    "overflow": false,
+    "columns": 2,
+    "cardHeight": 272.5625,
+    "cards": 10,
+    "buttonHeight": 44,
+    "count": "13 phòng đang lưu trú",
+    "busy": "false"
+  },
+  {
+    "theme": "dark",
+    "width": 768,
+    "overflow": false,
+    "columns": 2,
+    "cardHeight": 268.5625,
+    "cards": 10,
+    "buttonHeight": 44,
+    "count": "13 phòng đang lưu trú",
+    "busy": "false"
+  },
+  {
+    "theme": "dark",
+    "width": 375,
+    "overflow": false,
+    "columns": 1,
+    "cardHeight": 316.5625,
+    "cards": 10,
+    "buttonHeight": 44,
+    "count": "13 phòng đang lưu trú",
+    "busy": "false"
+  },
+  {
+    "theme": "dark",
+    "width": 320,
+    "overflow": false,
+    "columns": 1,
+    "cardHeight": 316.5625,
+    "cards": 10,
+    "buttonHeight": 44,
+    "count": "13 phòng đang lưu trú",
+    "busy": "false"
+  }
+]

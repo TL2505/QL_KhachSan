@@ -1,0 +1,162 @@
+[
+  {
+    "role": "staff",
+    "theme": "light",
+    "width": 1225,
+    "overflow": false,
+    "content": "rgb(246, 243, 237)",
+    "text": "rgb(41, 37, 31)",
+    "card": "rgb(255, 255, 255)"
+  },
+  {
+    "role": "staff",
+    "theme": "light",
+    "width": 768,
+    "overflow": false,
+    "content": "rgb(246, 243, 237)",
+    "text": "rgb(41, 37, 31)",
+    "card": "rgb(255, 255, 255)"
+  },
+  {
+    "role": "staff",
+    "theme": "light",
+    "width": 375,
+    "overflow": false,
+    "content": "rgb(246, 243, 237)",
+    "text": "rgb(41, 37, 31)",
+    "card": "rgb(255, 255, 255)"
+  },
+  {
+    "role": "staff",
+    "theme": "light",
+    "width": 320,
+    "overflow": false,
+    "content": "rgb(246, 243, 237)",
+    "text": "rgb(41, 37, 31)",
+    "card": "rgb(255, 255, 255)"
+  },
+  {
+    "role": "staff",
+    "theme": "dark",
+    "width": 1225,
+    "overflow": false,
+    "content": "rgb(9, 14, 24)",
+    "text": "rgb(248, 250, 252)",
+    "card": "rgba(0, 0, 0, 0)"
+  },
+  {
+    "role": "staff",
+    "theme": "dark",
+    "width": 768,
+    "overflow": false,
+    "content": "rgb(9, 14, 24)",
+    "text": "rgb(248, 250, 252)",
+    "card": "rgba(0, 0, 0, 0)"
+  },
+  {
+    "role": "staff",
+    "theme": "dark",
+    "width": 375,
+    "overflow": false,
+    "content": "rgb(9, 14, 24)",
+    "text": "rgb(248, 250, 252)",
+    "card": "rgba(0, 0, 0, 0)"
+  },
+  {
+    "role": "staff",
+    "theme": "dark",
+    "width": 320,
+    "overflow": false,
+    "content": "rgb(9, 14, 24)",
+    "text": "rgb(248, 250, 252)",
+    "card": "rgba(0, 0, 0, 0)"
+  },
+  {
+    "role": "customer",
+    "theme": "light",
+    "width": 1225,
+    "overflow": false,
+    "content": "rgba(0, 0, 0, 0)",
+    "text": "rgb(41, 37, 31)",
+    "card": "rgb(255, 253, 247)",
+    "tier": "gold",
+    "badge": "Hạng ⭐ Gold"
+  },
+  {
+    "role": "customer",
+    "theme": "light",
+    "width": 768,
+    "overflow": false,
+    "content": "rgba(0, 0, 0, 0)",
+    "text": "rgb(41, 37, 31)",
+    "card": "rgb(255, 253, 247)",
+    "tier": "gold",
+    "badge": "Hạng ⭐ Gold"
+  },
+  {
+    "role": "customer",
+    "theme": "light",
+    "width": 375,
+    "overflow": false,
+    "content": "rgba(0, 0, 0, 0)",
+    "text": "rgb(41, 37, 31)",
+    "card": "rgb(255, 253, 247)",
+    "tier": "gold",
+    "badge": "Hạng ⭐ Gold"
+  },
+  {
+    "role": "customer",
+    "theme": "light",
+    "width": 320,
+    "overflow": false,
+    "content": "rgba(0, 0, 0, 0)",
+    "text": "rgb(41, 37, 31)",
+    "card": "rgb(255, 253, 247)",
+    "tier": "gold",
+    "badge": "Hạng ⭐ Gold"
+  },
+  {
+    "role": "customer",
+    "theme": "dark",
+    "width": 1225,
+    "overflow": false,
+    "content": "rgba(0, 0, 0, 0)",
+    "text": "rgb(232, 237, 245)",
+    "card": "rgb(33, 30, 22)",
+    "tier": "gold",
+    "badge": "Hạng ⭐ Gold"
+  },
+  {
+    "role": "customer",
+    "theme": "dark",
+    "width": 768,
+    "overflow": false,
+    "content": "rgba(0, 0, 0, 0)",
+    "text": "rgb(232, 237, 245)",
+    "card": "rgb(33, 30, 22)",
+    "tier": "gold",
+    "badge": "Hạng ⭐ Gold"
+  },
+  {
+    "role": "customer",
+    "theme": "dark",
+    "width": 375,
+    "overflow": false,
+    "content": "rgba(0, 0, 0, 0)",
+    "text": "rgb(232, 237, 245)",
+    "card": "rgb(33, 30, 22)",
+    "tier": "gold",
+    "badge": "Hạng ⭐ Gold"
+  },
+  {
+    "role": "customer",
+    "theme": "dark",
+    "width": 320,
+    "overflow": false,
+    "content": "rgba(0, 0, 0, 0)",
+    "text": "rgb(232, 237, 245)",
+    "card": "rgb(33, 30, 22)",
+    "tier": "gold",
+    "badge": "Hạng ⭐ Gold"
+  }
+]

@@ -1,5 +1,72 @@
 # CHANGELOG — Hotel PMS Documentation
 
+
+## [2026-10-22] — @codex — Match the Google sign-in control to the portal
+
+- Added a rounded, theme-aware frame with the portal's surface/accent tokens and hover/focus treatment around the official Google control. Shortened the label to Sign in with Google and used the supported dark outline theme in dark mode, with the standard outline in light mode.
+- Removed the white iframe canvas caused by inherited dark color-scheme. Theme changes re-render the button without reinitializing Google authentication or losing the OTP challenge; medium sizing continues to suppress personal account details.
+- Validation: 23 focused web tests passed; live visual checks confirmed the light/dark appearance and restored the original dark preference. Synced source/public assets and refreshed cache versions.
+- Developer handoff: [Google/SMTP setup and OTP troubleshooting](google-otp-setup.md), [authentication API contracts](dev-spec/api-contracts.md#google-customer-authentication--2026-10-21) and [Vietnamese change summary](vi/CHANGELOG.md). The current portal assets use version `3.6.35`. Visual checks cover button rendering/theme changes; complete Google sign-in and OTP confirmation still require user acceptance with a real account.
+
+## [2026-10-22] — @codex — Keep Google account details off the login button
+
+- Set the official GIS button to the documented non-personalized medium size, preserving the full-width Google sign-in entry without exposing a returning user's name, email or avatar on the portal. Refreshed portal cache versions and updated the existing widget assertion.
+
+## [2026-10-22] — @codex — Recover expired Google OTP codes and resend feedback
+
+- Separated the five-minute OTP validity window from the Google challenge session, which expires fifteen minutes after the most recent successful send (at most two resends), starting code validity after SMTP delivery. Expired codes can be resent within that session; missing/consumed sessions return 410 and restore the Google button. Resend now shows progress, success and failure feedback.
+- Serialized verification/resend per challenge, preserved the previous code and resend budget when SMTP fails, retained the total five-attempt limit across resends and consumed successful OTPs only after account/session creation succeeds.
+- Fixed new Google customer creation against the non-null phone column by storing an empty missing phone value. Confirmed the running demo schema rejects NULL phones and accepts the new insert inside a transaction that was rolled back.
+- Validation: 104 web tests and 10 focused backend tests passed. Lifecycle tests cover slow SMTP, expired-code resend, database retry, failed email delivery, missing/expired sessions and attempt limits; they send no real emails.
+
+## [2026-10-22] — @codex — Preserve Google OTP responses and Vietnamese email text
+
+- Gave Google OTP creation, verification and resend requests a 45-second timeout and disabled automatic alternate-host replay for these requests. The previous 2.5-second deadline could discard the challenge response after SMTP had already delivered the email, leaving no OTP input visible. Added Vietnamese timeout feedback and refreshed portal asset versions.
+- Encoded the UTF-8 email body with MIME Base64 so the SMTP ASCII transport preserves Vietnamese accents. Existing emails cannot be repaired retroactively.
+- Validation: 102 web tests and 4 focused backend tests passed, including delayed OTP responses, input visibility/focus, no network replay and MIME decoding. Real Google selection and OTP completion remain a user acceptance step.
+
+## [2026-10-22] — @codex — Verify local Google/SMTP setup and unblock Google Identity
+
+- Verified the provided local `.env` contains the required Google/SMTP settings, is ignored by Git, and the running backend reports Google enabled with a healthy database. Confirmed Gmail TLS certificate validation and SMTP authentication succeed without sending an email or exposing credentials.
+- Fixed the static-page CSP that blocked the Google SDK: narrowly allowed Google's documented GIS script/style and connect/frame paths while preserving strict API CSP and the existing security headers. Added an HTTP regression test; it and the two Google authentication route tests pass.
+- Updated setup guides to reflect `.env` loading by the demo launcher, process-environment precedence and the required Google Identity CSP. Direct Java/non-demo launches still require exported environment variables.
+- Restarted with the existing demo schema/keys and confirmed the live page loads the official Google sign-in button with Google enabled. Three focused backend HTTP tests passed. Gmail SMTP authentication was checked without sending mail; the real Google account/OTP flow remains for the user to complete.
+
+## [2026-10-21] — @codex — Google sign-in/sign-up integration, remove Facebook
+
+- Added optional local demo Client ID loading from ignored `.run/demo/google-client-id.txt`, with environment override and format validation. Imported only the Web client ID from the developer-provided Google JSON; no Client Secret was copied. SMTP configuration remains separate. Validated launcher PowerShell syntax and Git exclusion.
+
+- Corrected the setup guide after checking current Google documentation: Sign in with Google/basic identity scopes do not require test-user allowlisting in Testing mode. A disabled Make internal control for personal Google accounts is expected; publishing the app is not required for this sign-in test.
+
+- Replaced the portal's placeholder Google click handler and fake Client ID with one Google Identity Services widget shared by sign-in and sign-up. It uses public backend config and the existing Google verification/email OTP endpoints; only verified OTP completion stores the hotel session. Preserved the linked `customerId` in that session.
+- Added truthful missing-config/SDK failure states, retry, duplicate-request protection and OTP resend/cancel. Removed the Facebook button, SDK and portal handlers.
+- Removed legacy social authentication helpers that accepted unverified/mock credentials; the old direct Google/Facebook routes return 410. Google customer creation remains keyed by verified Google subject and never auto-links password accounts by email.
+- Expanded [the Google setup guide](google-otp-setup.md) with first-time Client ID creation, localhost origins including 8081, SMTP setup, restart and troubleshooting. Updated API contracts. Validation: 98 web tests and 2 focused backend HTTP tests passed; live backend health/database remained UP/CONNECTED after restart and both legacy routes returned 410. Real Google account sign-in/sign-up awaits the developer's OAuth Client ID and SMTP configuration.
+
+## [2026-10-21] — @codex — Customer portal contrast and support placeholder
+
+- Added the customer Hỗ trợ tab directly below Dịch vụ & ưu đãi, with a themed “Sắp ra mắt” placeholder.
+- Switched dashboard, voucher/service cards and profile content to theme/tier colors, including nested surfaces, labels, form fields and warning text. Restyled the dashboard booking action, retained readable zero statistics, and made the digital member card follow light/dark mode.
+- Replaced the fixed VIP club caption with the actual Member/Silver/Gold/VIP tier, allowed cardholder names to wrap and escaped interpolated names. Corrected the Silver upgrade copy to use the tier policy's 5% room discount. Empty service catalogs now display an explanation.
+- Updated the customer audit, synchronized source/public files and refreshed asset versions. Validation: **91/91 web tests passed**, including all four club captions and name escaping. Live desktop checks on `localhost:8081` covered the Member dashboard, services/vouchers, profile and support placeholder in light/dark mode. Mobile and other tiers still require visual acceptance; no real profile/service/message submission was performed.
+
+## [2026-10-21] — @codex — Cloud concierge and independent developer setup
+
+- Replaced the floating chat link with an authenticated in-page AI concierge and added administrator-only encrypted provider settings for Gemini, Groq, Claude and OpenAI. Added discovery of model IDs before saving a configuration, saved-connection testing, credential deletion and persistent Docker volumes.
+- Added bounded Gemini conversation memory isolated by authenticated actor/session, explicit system instructions, safe provider errors and generation-status handling. Included public project knowledge for hotel hours, contact, amenities and website navigation, with a read-only admin preview and separate supplemental notes.
+- Added [a new-machine setup guide](chatbot-ai-dev-setup.md) for Windows devs: isolated demo database/keys, Java and web launchers, provider/model configuration, test commands, origin/session troubleshooting and credential-storage behavior. Published on branch `CHATBOT_IMP`. Linked it from both READMEs and corrected the root README's outdated HTTP RAG instructions.
+- Documented the new admin AI API and cloud chat behavior in `dev-spec/api-contracts.md`. Automated validation: 89 web tests and 38 focused backend tests passed. Live Gemini/browser checks returned the published check-in/check-out times and pool hours; provider availability and account quota remain external conditions.
+
+## [2026-10-21] — @codex — Staff/customer portal UI audit fixes
+
+- Aligned staff and customer headers, sidebar geometry, collapse controls, account placement and responsive navigation with admin. Fixed duplicate account/logout controls, left-aligned the brand, hid signed-in controls on login, and matched customer hover/selection animations while retaining tier colors.
+- Unified staff customer records, bookings, invoices, profile/security forms and pagination; corrected room-map spacing. Redesigned checkout cards and the support inbox with responsive scrolling, search, drafts, automatic updates and a composer with a vertically centered send action. Fixed missing chat history when the latest inbox message was sent by staff.
+- Standardized membership thresholds with the backend (Member 0, Silver 500, Gold 1,000, VIP 5,000 lifetime earned points); redemption no longer reduces tier progress. Added tier-colored membership cards and an admin membership placeholder below Customers.
+- Fixed customer notifications stacking behind content; themed the dropdown, list, empty state and voucher controls for light/dark palettes and constrained the panel to the viewport. Synchronized served source/public assets and bumped cache versions.
+- Added membership/chat regression tests and fixture-based browser verification scripts/results/screenshots under `docs/verification/web-ui/`. Latest notification/shell verification passed 40 tier/theme/viewport cases and 16 focused auth/theme/portal tests; earlier staff/table/checkout/support verification is recorded in [the UI audit](../web-ui/MANUAL_UI_AUDIT.md).
+- Kept remaining customer light-theme contrast, accent consistency, duplicate headings, card/table layout and notification fallback issues explicitly open in the audit. Browser checks use mocked APIs and lack CDN font/icon/utility rendering in this environment; they do not establish live-backend acceptance.
+- Pre-push verification: the complete web UI suite passed **69/69 tests**, with no failures or skips. HTTP integration tests required localhost networking outside the restricted sandbox.
+
 ## [2026-10-21] — @codex — Revert Staff sidebar collapse
 
 - Removed the Staff-only sidebar module, its mandatory portal import, state/storage handlers, tooltips, avatar insertion and layout overrides. Restored the pre-change portal stylesheet and sidebar layout; retained unrelated views, authentication and other roles.
@@ -40,6 +107,7 @@
 - Normalized snake_case/camelCase customer names and identity numbers in the staff directory so the table, detail dialog, search and contact summaries use the same values.
 - Aligned the three summary cards with matching icon columns, value baselines and label spacing. Scoped avatar and contact-cell styles to this staff view; long email/address values can wrap instead of being clipped.
 - Added DAO response-field checks and frontend regressions for data normalization, summary counts, searching and detail rendering.
+
 
 
 ## [2026-10-20] — @codex — `web-ui/portal-admin.css` — Keep customer content within the viewport

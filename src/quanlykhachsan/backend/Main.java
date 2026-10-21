@@ -57,7 +57,9 @@ public class Main {
 
     /** Configures the same production routes used by main, without starting jobs or migrating data. */
     public static HttpServer createServer(int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
+        String bindAddress = System.getenv().getOrDefault("HOTEL_BIND_ADDRESS", "127.0.0.1").trim();
+        if (bindAddress.isEmpty()) bindAddress = "127.0.0.1";
+        HttpServer server = HttpServer.create(new InetSocketAddress(bindAddress, port), 0);
         // Khởi tạo các Filter
         Filter corsFilter = new CorsFilter();
         Filter jwtFilter = new JwtFilter();
@@ -92,6 +94,7 @@ public class Main {
         registerContext(server, ipRateLimiter, "/api/v1/ai/id-ocr", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/ai/face-verify", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
         var concierge = new quanlykhachsan.backend.ai.VirtualConciergeController();
+        registerContext(server, ipRateLimiter, "/api/v1/admin/ai-settings", new quanlykhachsan.backend.ai.AiProviderSettingsController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
         BACKGROUND_SERVICES.put(server, concierge);
         Filter conciergeBudget = new Filter() {
             public String description() { return "Verified-token concierge budget before prompt validation"; }

@@ -1,5 +1,27 @@
 # NHẬT KÝ THAY ĐỔI (CHANGELOG) — Tài liệu hệ thống PMS Khách sạn
 
+## [2026-10-22] — @codex — Đăng nhập Google, OTP email và giao diện portal — Hoàn thiện xác thực và đồng bộ nút Google
+
+- Dùng chung nút Google cho đăng nhập và đăng ký; Gmail mới chỉ được tạo tài khoản khách hàng sau khi xác nhận OTP đúng. Giữ `customerId` trong phiên đăng nhập, liên kết bằng Google subject đã xác minh và không tự ghép tài khoản mật khẩu chỉ vì trùng email. Gỡ đăng nhập Facebook; các route social cũ trả `410`.
+- Cho launcher demo nạp cấu hình Google/SMTP từ `.env`, ưu tiên biến môi trường đã có; bổ sung CSP cho Google Identity Services. Kiểm tra backend, database và xác thực SMTP qua TLS; không đưa secret vào changelog hoặc repository.
+- Tăng thời gian chờ các yêu cầu OTP Google từ 2,5 lên 45 giây, ngăn tự phát lại yêu cầu sang host khác khi lỗi mạng. Khi nhận được phiên xác thực, giao diện mở và đặt con trỏ vào ô OTP.
+- Mã OTP có hiệu lực 5 phút sau khi gửi thành công; phiên xác thực được giữ 15 phút từ lần gửi thành công gần nhất. Giới hạn hai lần gửi lại và tổng cộng năm lần nhập sai. Mã hết hạn trả `422` để gửi lại; phiên mất/đã dùng/hết hạn trả `410` để trở về nút Google.
+- Nút gửi lại hiển thị trạng thái chờ và kết quả. Gửi thư lỗi giữ nguyên mã trước đó và số lượt gửi lại; lỗi tạo tài khoản không dùng mất mã đúng. Sửa tạo hồ sơ Google khi chưa có số điện thoại để tương thích cột `phone NOT NULL`.
+- Sửa email mất dấu tiếng Việt bằng nội dung UTF-8 truyền dưới dạng MIME Base64.
+- Thiết kế lại vùng nút Google với nền theo giao diện, khung bo góc, viền vàng nhẹ và hiệu ứng hover/focus. Dùng nhãn “Đăng nhập bằng Google”, tự đổi mẫu sáng/tối và loại bỏ dải nền trắng quanh iframe. Kích thước `medium` tránh hiển thị tên, email hoặc ảnh tài khoản trên nút; đổi giao diện không khởi tạo lại xác thực.
+- Đồng bộ tài nguyên `web-ui/` và `web-ui/public/`, cập nhật phiên bản cache portal lên `3.6.35`. Bổ sung [hướng dẫn Google/SMTP và xử lý lỗi OTP](../google-otp-setup.md), [hợp đồng API](../dev-spec/api-contracts.md#google-customer-authentication--2026-10-21) và [hướng dẫn máy dev](../chatbot-ai-dev-setup.md).
+- Xác minh đã thực hiện: bộ web đạt **104/104**, backend liên quan Google/OTP đạt **10/10**; sau lần chỉnh nút cuối cùng, **23/23** kiểm thử web liên quan đạt. Kiểm tra trực tiếp cả giao diện sáng/tối. Câu lệnh tạo hồ sơ được thử trong transaction đã rollback; kiểm thử OTP dùng Google/SMTP giả lập, không gửi thư thật. Luồng đăng nhập Google và nhập OTP thật vẫn cần người dùng nghiệm thu.
+
+## [2026-10-21] — @codex — Giao diện staff/customer và tài liệu UI audit — Đồng bộ bố cục với admin
+
+- Đồng bộ header, sidebar, thu gọn, vị trí tài khoản và điều hướng responsive; bỏ tài khoản/đăng xuất lặp, căn brand về trái và ẩn nút dành cho phiên đăng nhập ở màn hình login. Hover/chọn tab customer dùng cùng hiệu ứng admin với màu riêng theo hạng.
+- Chuẩn hóa trang Khách hàng, Đặt phòng, Hóa đơn, Hồ sơ & bảo mật của staff; chỉnh spacing sơ đồ phòng. Làm lại thẻ nhận/trả phòng và hộp thư hỗ trợ với tìm kiếm, bản nháp, tự cập nhật, cuộn responsive và nút gửi căn giữa cạnh ô soạn. Sửa lỗi lịch sử chat rỗng khi tin mới nhất do staff gửi.
+- Thống nhất ngưỡng Member 0, Silver 500, Gold 1.000, VIP 5.000 theo tổng điểm đã tích lũy; đổi điểm không giảm hạng. Thêm màu thẻ theo hạng và tab Thành viên placeholder cho admin dưới Khách hàng.
+- Sửa dropdown thông báo bị nội dung che, màu sáng/tối, trạng thái rỗng/voucher và giới hạn kích thước theo viewport. Đồng bộ root/public và tăng phiên bản tài nguyên để tránh cache cũ.
+- Bổ sung test membership/chat, script Chromium, ảnh và kết quả giả lập trong `docs/verification/web-ui/`. Lượt xác minh thông báo/shell mới nhất đạt 40 tổ hợp hạng/theme/viewport và 16 test auth/theme/portal; các lượt xác minh staff/bảng/checkout/chat trước đó được ghi trong [UI audit](../../web-ui/MANUAL_UI_AUDIT.md).
+- Ghi rõ các lỗi customer còn mở: tương phản ở chế độ sáng, màu nhấn, tiêu đề trùng, bố cục thẻ/bảng và fallback thông báo. Kiểm tra trình duyệt dùng API giả lập, thiếu font/icon/utility CDN trong môi trường này; chưa nghiệm thu backend thật.
+- Xác minh trước khi push: toàn bộ bộ kiểm thử web UI đạt **69/69**, không thất bại hoặc bỏ qua. Các test HTTP được chạy ngoài sandbox hạn chế để kết nối được máy chủ localhost.
+
 ## [2026-10-20] — @codex — Báo cáo Phase 4, baseline và changelog — Ghi nhận triển khai và các điều kiện nghiệm thu còn thiếu
 
 - Bổ sung [danh sách triển khai](../PHASE_4_IMPLEMENTATION.md), [báo cáo triển khai](../PHASE_4_REPORT.md), [bằng chứng xác minh](../PHASE_4_VERIFICATION.md); liên kết từ baseline Phase 4 và cập nhật changelog gốc/của tài liệu. Giữ nguyên lịch sử.

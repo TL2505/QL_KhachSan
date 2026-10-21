@@ -114,42 +114,9 @@ public class AuthController implements HttpHandler {
                         response = AuthMapper.error("Lỗi hệ thống: " + e.getMessage());
                     }
                 }
-            } else if (path.equals("/api/v1/auth/google") || path.endsWith("/auth/google")) {
-                String credential = reqObj != null && reqObj.has("credential") ? reqObj.get("credential").getAsString() : null;
-                if (credential == null && reqObj != null && reqObj.has("token")) {
-                    credential = reqObj.get("token").getAsString();
-                }
-                try {
-                    SocialProfile profile = verifyGoogleToken(credential);
-                    User user = autoProvisionSocialUser(profile);
-                    quanlykhachsan.backend.auth.dto.AuthUserInfo userInfo = AuthMapper.toUserInfo(user, "CUSTOMER");
-                    userInfo.setToken(quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(user.getId(), user.getUsername(), "CUSTOMER"));
-                    response = AuthMapper.success("Đăng nhập Google thành công", userInfo);
-                } catch (IllegalArgumentException e) {
-                    statusCode = 400;
-                    response = AuthMapper.error(e.getMessage());
-                } catch (Exception e) {
-                    statusCode = 500;
-                    response = AuthMapper.error("Lỗi xác thực Google: " + e.getMessage());
-                }
-            } else if (path.equals("/api/v1/auth/facebook") || path.endsWith("/auth/facebook")) {
-                String accessToken = reqObj != null && reqObj.has("access_token") ? reqObj.get("access_token").getAsString() : null;
-                if (accessToken == null && reqObj != null && reqObj.has("token")) {
-                    accessToken = reqObj.get("token").getAsString();
-                }
-                try {
-                    SocialProfile profile = verifyFacebookToken(accessToken);
-                    User user = autoProvisionSocialUser(profile);
-                    quanlykhachsan.backend.auth.dto.AuthUserInfo userInfo = AuthMapper.toUserInfo(user, "CUSTOMER");
-                    userInfo.setToken(quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(user.getId(), user.getUsername(), "CUSTOMER"));
-                    response = AuthMapper.success("Đăng nhập Facebook thành công", userInfo);
-                } catch (IllegalArgumentException e) {
-                    statusCode = 400;
-                    response = AuthMapper.error(e.getMessage());
-                } catch (Exception e) {
-                    statusCode = 500;
-                    response = AuthMapper.error("Lỗi xác thực Facebook: " + e.getMessage());
-                }
+            } else if (path.endsWith("/auth/google") || path.endsWith("/auth/facebook")) {
+                statusCode = 410;
+                response = AuthMapper.error("Luồng đăng nhập này đã ngừng hỗ trợ. Vui lòng dùng Google kèm OTP hoặc đăng nhập bằng mật khẩu.");
             } else {
                 statusCode = 404;
                 response = AuthMapper.error("Đường dẫn không tồn tại");
@@ -176,87 +143,5 @@ public class AuthController implements HttpHandler {
         }
     }
 
-    public record SocialProfile(String provider, String providerId, String email, String name) {}
-
-    public SocialProfile verifyGoogleToken(String idToken) throws Exception {
-        if (idToken == null || idToken.isBlank()) throw new IllegalArgumentException("Credential không được để trống");
-        // 1. Try Google upstream tokeninfo endpoint
-        try {
-            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                    .connectTimeout(java.time.Duration.ofSeconds(3))
-                    .build();
-            java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create("https://oauth2.googleapis.com/tokeninfo?id_token=" + java.net.URLEncoder.encode(idToken.trim(), StandardCharsets.UTF_8)))
-                    .timeout(java.time.Duration.ofSeconds(3))
-                    .GET()
-                    .build();
-            java.net.http.HttpResponse<String> resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() == 200) {
-                JsonObject json = JsonUtil.getGson().fromJson(resp.body(), JsonObject.class);
-                String sub = json.has("sub") ? json.get("sub").getAsString() : null;
-                String email = json.has("email") ? json.get("email").getAsString() : null;
-                String name = json.has("name") ? json.get("name").getAsString() : "Google Member";
-                if (email != null && !email.isBlank()) {
-                    return new SocialProfile("GOOGLE", sub != null ? sub : email, email, name);
-                }
-            }
-        } catch (Exception ignored) {}
-
-        // 2. Fallback: decode JWT payload directly for offline development or testing
-        try {
-            String[] parts = idToken.split("\\.");
-            if (parts.length >= 2) {
-                String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-                JsonObject json = JsonUtil.getGson().fromJson(payload, JsonObject.class);
-                String sub = json.has("sub") ? json.get("sub").getAsString() : ("goog-" + System.currentTimeMillis());
-                String email = json.has("email") ? json.get("email").getAsString() : (sub + "@gmail.com");
-                String name = json.has("name") ? json.get("name").getAsString() : "Google Member";
-                return new SocialProfile("GOOGLE", sub, email, name);
-            }
-        } catch (Exception ignored) {}
-
-        // 3. Simple mock token fallback for unit tests
-        if (idToken.startsWith("mock_") || idToken.length() >= 8) {
-            String mockId = "goog_" + Math.abs(idToken.hashCode());
-            return new SocialProfile("GOOGLE", mockId, mockId + "@gmail.com", "Google Member");
-        }
-        throw new IllegalArgumentException("Token Google không hợp lệ");
-    }
-
-    public SocialProfile verifyFacebookToken(String accessToken) throws Exception {
-        if (accessToken == null || accessToken.isBlank()) throw new IllegalArgumentException("Access token không được để trống");
-        // 1. Try Facebook Graph API upstream endpoint
-        try {
-            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                    .connectTimeout(java.time.Duration.ofSeconds(3))
-                    .build();
-            java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create("https://graph.facebook.com/me?fields=id,name,email&access_token=" + java.net.URLEncoder.encode(accessToken.trim(), StandardCharsets.UTF_8)))
-                    .timeout(java.time.Duration.ofSeconds(3))
-                    .GET()
-                    .build();
-            java.net.http.HttpResponse<String> resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() == 200) {
-                JsonObject json = JsonUtil.getGson().fromJson(resp.body(), JsonObject.class);
-                String id = json.has("id") ? json.get("id").getAsString() : null;
-                String name = json.has("name") ? json.get("name").getAsString() : "Facebook Member";
-                String email = (json.has("email") && !json.get("email").isJsonNull()) ? json.get("email").getAsString() : (id + "@facebook.com");
-                if (id != null) {
-                    return new SocialProfile("FACEBOOK", id, email, name);
-                }
-            }
-        } catch (Exception ignored) {}
-
-        // 2. Mock token fallback for offline development or testing
-        if (accessToken.startsWith("mock_") || accessToken.length() >= 8) {
-            String fakeId = "fb_" + Math.abs(accessToken.hashCode());
-            return new SocialProfile("FACEBOOK", fakeId, fakeId + "@facebook.com", "Facebook Member");
-        }
-        throw new IllegalArgumentException("Token Facebook không hợp lệ");
-    }
-
-    public User autoProvisionSocialUser(SocialProfile profile) throws Exception {
-        return authService.autoProvisionSocialUser(profile.provider(), profile.providerId(), profile.email(), profile.name());
-    }
 
 }

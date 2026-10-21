@@ -1,0 +1,202 @@
+[
+  {
+    "theme": "light",
+    "width": 1225,
+    "overflow": false,
+    "values": [
+      "13",
+      "0",
+      "13"
+    ],
+    "columns": 3,
+    "avatar": {
+      "width": "36px",
+      "height": "36px",
+      "radius": "50%"
+    },
+    "pagination": {
+      "display": "flex",
+      "direction": "row"
+    },
+    "action": {
+      "width": "34px",
+      "height": "34px"
+    },
+    "deleteButtons": 0
+  },
+  {
+    "theme": "light",
+    "width": 768,
+    "overflow": false,
+    "values": [
+      "13",
+      "0",
+      "13"
+    ],
+    "columns": 2,
+    "avatar": {
+      "width": "36px",
+      "height": "36px",
+      "radius": "50%"
+    },
+    "pagination": {
+      "display": "flex",
+      "direction": "row"
+    },
+    "action": {
+      "width": "34px",
+      "height": "34px"
+    },
+    "deleteButtons": 0
+  },
+  {
+    "theme": "light",
+    "width": 375,
+    "overflow": false,
+    "values": [
+      "13",
+      "0",
+      "13"
+    ],
+    "columns": 1,
+    "avatar": {
+      "width": "36px",
+      "height": "36px",
+      "radius": "50%"
+    },
+    "pagination": {
+      "display": "flex",
+      "direction": "column"
+    },
+    "action": {
+      "width": "34px",
+      "height": "34px"
+    },
+    "deleteButtons": 0
+  },
+  {
+    "theme": "light",
+    "width": 320,
+    "overflow": false,
+    "values": [
+      "13",
+      "0",
+      "13"
+    ],
+    "columns": 1,
+    "avatar": {
+      "width": "36px",
+      "height": "36px",
+      "radius": "50%"
+    },
+    "pagination": {
+      "display": "flex",
+      "direction": "column"
+    },
+    "action": {
+      "width": "34px",
+      "height": "34px"
+    },
+    "deleteButtons": 0
+  },
+  {
+    "theme": "dark",
+    "width": 1225,
+    "overflow": false,
+    "values": [
+      "13",
+      "0",
+      "13"
+    ],
+    "columns": 3,
+    "avatar": {
+      "width": "36px",
+      "height": "36px",
+      "radius": "50%"
+    },
+    "pagination": {
+      "display": "flex",
+      "direction": "row"
+    },
+    "action": {
+      "width": "34px",
+      "height": "34px"
+    },
+    "deleteButtons": 0
+  },
+  {
+    "theme": "dark",
+    "width": 768,
+    "overflow": false,
+    "values": [
+      "13",
+      "0",
+      "13"
+    ],
+    "columns": 2,
+    "avatar": {
+      "width": "36px",
+      "height": "36px",
+      "radius": "50%"
+    },
+    "pagination": {
+      "display": "flex",
+      "direction": "row"
+    },
+    "action": {
+      "width": "34px",
+      "height": "34px"
+    },
+    "deleteButtons": 0
+  },
+  {
+    "theme": "dark",
+    "width": 375,
+    "overflow": false,
+    "values": [
+      "13",
+      "0",
+      "13"
+    ],
+    "columns": 1,
+    "avatar": {
+      "width": "36px",
+      "height": "36px",
+      "radius": "50%"
+    },
+    "pagination": {
+      "display": "flex",
+      "direction": "column"
+    },
+    "action": {
+      "width": "34px",
+      "height": "34px"
+    },
+    "deleteButtons": 0
+  },
+  {
+    "theme": "dark",
+    "width": 320,
+    "overflow": false,
+    "values": [
+      "13",
+      "0",
+      "13"
+    ],
+    "columns": 1,
+    "avatar": {
+      "width": "36px",
+      "height": "36px",
+      "radius": "50%"
+    },
+    "pagination": {
+      "display": "flex",
+      "direction": "column"
+    },
+    "action": {
+      "width": "34px",
+      "height": "34px"
+    },
+    "deleteButtons": 0
+  }
+]

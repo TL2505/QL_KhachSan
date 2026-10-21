@@ -9,7 +9,7 @@ export function normalizeStaffCustomer(customer) {
 }
 
 function avatarColor(str) {
-    const colors = ['#d97706','#10b981','#3b82f6','#8b5cf6','#06b6d4','#ef4444'];
+    const colors = ['#d97706','#10b981','#3b82f6','#8b5cf6','#06b6d4','#ef4444','#f59e0b'];
     let hash = 0;
     for (let c of (str || 'K')) hash = c.charCodeAt(0) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
@@ -30,6 +30,9 @@ function skeletonRows(count = 5, cols = 6) {
 
 export async function renderCustomers(container, session) {
     container.innerHTML = `
+
+        <div class="staff-customers-view">
+
         <style>
             body.staff-portal:has(.staff-customers-view) .portal-shell { grid-template-columns:248px minmax(0,1fr); }
             body.staff-portal:has(.staff-customers-view) :is(.portal-sidebar,.portal-nav) { min-width:0; }
@@ -57,6 +60,7 @@ export async function renderCustomers(container, session) {
             @media(max-width:450px) { .staff-customer-detail .grid { grid-template-columns:minmax(0,1fr); } }
         </style>
         <section class="staff-customers-view">
+
         <div class="page-header flex-row justify-between">
             <div>
                 <h1>Hồ Sơ Khách Hàng</h1>
@@ -68,18 +72,20 @@ export async function renderCustomers(container, session) {
         </div>
 
         <!-- Summary bar -->
-        <div id="staff-cust-summary" aria-label="Thống kê khách hàng"></div>
+
+        <div id="staff-cust-summary" class="stats"></div>
 
         <!-- Search bar -->
-        <div class="card" style="padding:14px 20px;margin-bottom:0;">
-            <div style="display:flex;align-items:center;gap:10px;">
-                <div class="staff-customer-search" style="position:relative;flex:1;">
+        <div class="card customers-search-card">
+            <div class="customers-search-toolbar">
+                <div class="customers-search-field">
+
                     <i data-lucide="search" style="width:15px;height:15px;position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
                     <input id="staff-cust-search" class="form-input" type="text"
-                        placeholder="Tìm theo tên, CCCD, SĐT, email..."
+                        aria-label="Tìm khách hàng" placeholder="Tìm theo tên, CCCD, SĐT, email..."
                         style="padding-left:36px;margin:0;">
                 </div>
-                <button id="btn-refresh-cust" class="btn btn-secondary" style="padding:10px 14px;flex-shrink:0;" title="Làm mới">
+                <button id="btn-refresh-cust" class="btn btn-secondary" style="padding:10px 14px;flex-shrink:0;" title="Làm mới" aria-label="Làm mới danh sách khách hàng">
                     <i data-lucide="refresh-cw" style="width:15px;height:15px;"></i>
                 </button>
             </div>
@@ -90,9 +96,9 @@ export async function renderCustomers(container, session) {
                 <table class="table">
                     <thead>
                         <tr>
-                            <th style="width:52px;"></th>
+                            <th style="width:52px;">Avatar</th>
                             <th>Họ và tên</th>
-                            <th>Số CCCD/Passport</th>
+                            <th>Số CCCD/Hộ chiếu</th>
                             <th>Điện thoại</th>
                             <th>Email</th>
                             <th>Địa chỉ</th>
@@ -106,7 +112,9 @@ export async function renderCustomers(container, session) {
             </div>
             <div id="pagination-staff-customers"></div>
         </div>
-        </section>
+
+        </div>
+
     `;
     lucide.createIcons();
 
@@ -229,15 +237,22 @@ export async function renderCustomers(container, session) {
         try {
             allCustomers = (await api.get("/customers") || []).map(normalizeStaffCustomer);
             const summaryBar = document.getElementById("staff-cust-summary");
-            summaryBar.innerHTML = [
-                ['users', 'Tổng khách', allCustomers.length, '#60a5fa'],
-                ['mail', 'Có email', allCustomers.filter(c => c.email).length, '#34d399'],
-                ['phone', 'Có SĐT', allCustomers.filter(c => c.phone).length, 'var(--portal-gold)']
-            ].map(([icon, label, count, color]) => `
-                <div class="staff-customer-stat" style="--stat-color:${color}">
-                    <span class="staff-customer-stat-icon" aria-hidden="true"><i data-lucide="${icon}"></i></span>
-                    <div class="staff-customer-stat-info"><strong class="staff-customer-stat-value">${count}</strong><span class="staff-customer-stat-label">${label}</span></div>
-                </div>`).join('');
+
+            summaryBar.innerHTML = `
+                <div class="card stat stat-card">
+                    <div class="stat-title">Tổng khách hàng</div>
+                    <div class="stat-value">${allCustomers.length}</div>
+                </div>
+                <div class="card stat stat-card">
+                    <div class="stat-title">Có email</div>
+                    <div class="stat-value">${allCustomers.filter(c => c.email).length}</div>
+                </div>
+                <div class="card stat stat-card">
+                    <div class="stat-title">Có SĐT</div>
+                    <div class="stat-value">${allCustomers.filter(c => c.phone).length}</div>
+                </div>
+            `;
+
             lucide.createIcons();
             currentPage = 1;
             renderTable(allCustomers);

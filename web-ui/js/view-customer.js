@@ -1,19 +1,21 @@
 // Customer Views Module Coordinator
-import { renderDashboard } from "./customer/dashboard.js?v=3.6.5";
+import { renderDashboard } from "./customer/dashboard.js?v=3.6.20";
 import { renderBookings } from "./customer/bookings.js";
-import { renderProfile } from "./customer/profile.js";
+import { renderProfile } from "./customer/profile.js?v=3.6.20";
 import { renderSecurity } from "./customer/security.js";
 import { renderDiscovery } from "./customer/discovery.js";
 import { renderLoyalty } from "./customer/loyalty.js";
 import { renderPromotions } from "./customer/promotions.js";
 import { renderChat } from "./customer/chat.js";
-import { renderConcierge } from "./customer/concierge.js";
+import { renderConcierge } from "./customer/concierge.js?v=3.6.20";
+import { renderSupport } from "./customer/support.js";
 import { api } from "../api.js";
-import { getLegacyTierInfo } from "./customer/tier-helper.js";
+import { getLegacyTierInfo, summarizeLoyaltyHistory } from "./customer/tier-helper.js";
 
 export async function loadCustomerView(tab = "dashboard") {
   const container = document.getElementById("view-container");
   if (!container) return;
+  container.classList.remove('customer-dashboard-view', 'customer-services-view', 'customer-profile-view');
 
   let session = null;
   try {
@@ -37,10 +39,7 @@ export async function loadCustomerView(tab = "dashboard") {
     const customerId = session.customerId || session.userId || session.id || 1;
     try {
       const history = await api.get(`/loyalty/history/${customerId}`);
-      const points = Array.isArray(history) ? history.reduce((sum, item) => {
-        const amount = Number(item.pointsChanged || item.points || 0);
-        return sum + ((item.changeType === "earn" || item.type === "earn") ? amount : -amount);
-      }, 0) : 0;
+      const { totalPoints: points } = summarizeLoyaltyHistory(history);
       document.body.dataset.customerTier = getLegacyTierInfo(Math.max(0, points)).name.toLowerCase();
     } catch {
       // Keep the neutral member palette when loyalty data is unavailable.
@@ -54,6 +53,8 @@ export async function loadCustomerView(tab = "dashboard") {
       await renderBookings(container, session);
     } else if (tab === "concierge") {
       await renderConcierge(container, session);
+    } else if (tab === "support") {
+      renderSupport(container);
     } else if (tab === "profile") {
       await renderProfile(container, session);
     } else if (tab === "security") {

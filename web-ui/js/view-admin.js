@@ -6,12 +6,16 @@ import { renderPromotions } from "./admin/promotions.js?v=3.6.4";
 import { renderReviews } from "./admin/reviews.js?v=3.6.4";
 import { renderInvoices } from "./admin/invoices.js?v=3.6.4";
 import { renderAdminCustomers } from "./admin/customers.js?v=3.6.4";
+import { renderMembershipPlaceholder } from "./admin/loyalty.js";
+import { renderAiSettings } from "./admin/ai-settings.js?v=7";
 
 export function loadAdminView(tab = "dashboard") {
     const container = document.getElementById("view-container");
     const session = JSON.parse(localStorage.getItem("hotel_auth_session"));
     
-    if (tab === "dashboard") {
+    if (tab === "ai-settings") {
+        renderAiSettings(container, session);
+    } else if (tab === "dashboard") {
         renderDashboard(container, session);
     } else if (tab === "rooms") {
         renderRooms(container, session);
@@ -19,6 +23,8 @@ export function loadAdminView(tab = "dashboard") {
         renderUsers(container, session);
     } else if (tab === "customers") {
         renderAdminCustomers(container, session);
+    } else if (tab === "loyalty") {
+        renderMembershipPlaceholder(container);
     } else if (tab === "promotions") {
         renderPromotions(container, session);
     } else if (tab === "reviews") {

@@ -158,6 +158,8 @@ function messageFor(status) {
 }
 
 export async function apiFetch(path, init = {}) {
+  const { timeoutMs = 2500, retryOnNetworkError = true, ...fetchInit } = init;
+  const requestTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 2500;
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn yêu cầu không hợp lệ.');
   const cleanPath = path.startsWith('/') ? path : '/' + path;
   const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/');
@@ -185,11 +187,11 @@ export async function apiFetch(path, init = {}) {
       const controller = new AbortController();
       signal = controller.signal;
       timeoutId = setTimeout(() => {
-        controller.abort(new DOMException('Request timed out after 2.5s', 'TimeoutError'));
-      }, 2500);
+        controller.abort(new DOMException(`Request timed out after ${requestTimeoutMs / 1000}s`, 'TimeoutError'));
+      }, requestTimeoutMs);
     }
     try {
-      return await fetch(targetUrl, { ...init, headers, signal });
+      return await fetch(targetUrl, { ...fetchInit, headers, signal });
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
     }
@@ -200,6 +202,12 @@ export async function apiFetch(path, init = {}) {
   } catch (error) {
     if (init.signal && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
       throw error;
+    }
+    // OTP requests must never be replayed against another host: the first
+    // request may already have sent a code even if its response was lost.
+    if (!retryOnNetworkError) {
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
+      throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
     }
     // Task 5: Network Fallback & Resilience - Try alternative host if primary fails or times out
     const altBase = getAlternativeApiBaseUrl(baseUrl);

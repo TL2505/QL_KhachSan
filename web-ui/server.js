@@ -49,7 +49,8 @@ export function createWebServer({ publicDir = PUBLIC_DIR, backendOrigin = proces
         reply.pipe(res);
       });
 
-      upstream.setTimeout(30000, () => upstream.destroy(new Error('timeout')));
+      const aiRequest = pathname.startsWith('/api/v1/ai/concierge/') || pathname.startsWith('/api/v1/admin/ai-settings');
+      upstream.setTimeout(aiRequest ? 60000 : 30000, () => upstream.destroy(new Error('timeout')));
       upstream.on('error', () => {
         if (!res.headersSent) res.writeHead(502, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'error', message: 'Service temporarily unavailable' }));

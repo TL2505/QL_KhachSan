@@ -245,25 +245,6 @@ button, input, select, textarea {
   position: relative;
 }
 
-.btn-social-google {
-  transition: all 0.2s ease;
-}
-
-.btn-social-google:hover {
-  border-color: var(--portal-gold);
-  background: rgba(26, 35, 58, 0.95);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.btn-social-facebook {
-  transition: all 0.2s ease;
-}
-
-.btn-social-facebook:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 14px rgba(24, 119, 242, 0.35);
-}
-
 .auth-form {
   display: grid;
   gap: 10px;
@@ -889,6 +870,28 @@ button, input, select, textarea {
   gap: 12px;
   margin-top: 8px;
 }
+.google-login-area[hidden], .google-login-area [hidden] { display: none !important; }
+/* GIS owns its theme; avoid a white iframe canvas caused by the page's dark color-scheme. */
+#google-signin-button {
+  color-scheme: light;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+  background: var(--portal-bg);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--portal-soft) 7%, transparent);
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+#google-signin-button:hover,
+#google-signin-button:focus-within {
+  border-color: var(--portal-gold);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--portal-gold) 12%, transparent);
+}
+#google-signin-button[inert] { pointer-events: none; }
+.google-login-area #google-signin-status { margin: 0; max-width: 400px; color: var(--portal-muted); font-size: 12px; line-height: 1.7; text-align: center; }
+.google-login-area #google-signin-fallback { width: min(100%, 400px); opacity: .65; cursor: not-allowed; }
+.google-login-area [inert] { opacity: .6; }
 .google-login-area > span {
   width: 100%;
   display: flex;

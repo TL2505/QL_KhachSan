@@ -12,7 +12,8 @@ if (-not $MavenCommand) {
 if ([Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpListeners().Port -contains 8081) {
     throw 'Port 8081 is occupied. Stop the existing backend before starting the demo.'
 }
-$keys = @('DB_URL','JDBC_URL','DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASSWORD','DB_PASSWORD_FILE',
+$keys = @('GOOGLE_CLIENT_ID','SMTP_HOST','SMTP_PORT','SMTP_USERNAME','SMTP_APP_PASSWORD','SMTP_FROM','HOTEL_BIND_ADDRESS',
+    'DB_URL','JDBC_URL','DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASSWORD','DB_PASSWORD_FILE',
     'AES_VAULT_KEY','AES_VAULT_KEY_FILE','HMAC_IDENTITY_KEY','HMAC_IDENTITY_KEY_FILE',
     'JWT_SECRET','JWT_SECRET_FILE','HOTEL_VAT_RATE','HOTEL_OTP_MODE','AI_GUEST_ENABLED')
 $saved = @{}
@@ -20,6 +21,36 @@ foreach ($key in $keys) { $saved[$key] = [Environment]::GetEnvironmentVariable($
 Push-Location $projectRoot
 try {
     New-Item -ItemType Directory -Force -Path $demoRoot | Out-Null
+    $envFile = Join-Path $projectRoot '.env'
+    if (Test-Path -LiteralPath $envFile) {
+        $lineNumber = 0
+        foreach ($line in [IO.File]::ReadAllLines($envFile)) {
+            $lineNumber++
+            $entry = $line.Trim()
+            if (-not $entry -or $entry.StartsWith('#')) { continue }
+            $separator = $entry.IndexOf('=')
+            if ($separator -lt 1) { throw "Invalid .env entry on line $lineNumber. Expected NAME=VALUE." }
+            $name = $entry.Substring(0, $separator).Trim()
+            if ($name -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') { throw "Invalid variable name in .env on line $lineNumber." }
+            $value = $entry.Substring($separator + 1).Trim()
+            if ($value.Length -ge 2 -and (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'")))) {
+                $value = $value.Substring(1, $value.Length - 2)
+            }
+            if (-not [Environment]::GetEnvironmentVariable($name, 'Process') -and $value) {
+                [Environment]::SetEnvironmentVariable($name, $value, 'Process')
+            }
+        }
+        Write-Host 'Loaded local environment settings from .env (existing process variables take precedence).'
+    }
+    $googleClientFile = Join-Path $demoRoot 'google-client-id.txt'
+    if (-not $env:GOOGLE_CLIENT_ID -and (Test-Path -LiteralPath $googleClientFile)) {
+        $googleClientId = [IO.File]::ReadAllText($googleClientFile).Trim()
+        if ($googleClientId -notmatch '^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$') {
+            throw 'Invalid local Google OAuth client ID. Store only the Web client ID, not the downloaded JSON or Client Secret.'
+        }
+        $env:GOOGLE_CLIENT_ID = $googleClientId
+        Write-Host 'Google OAuth client ID loaded from local demo config; SMTP is configured separately.'
+    }
     $schemaFile = Join-Path $demoRoot 'database-name.txt'
     $readyFile = Join-Path $demoRoot 'ready'
     $seedVersionFile = Join-Path $demoRoot 'seed-version.txt'
@@ -53,6 +84,7 @@ try {
     $env:DB_USER = $DbUser; $env:DB_PASSWORD = $DbPassword
     $env:DB_PASSWORD_FILE = $null; $env:JDBC_URL = $null
     $env:DB_URL = "jdbc:mysql://127.0.0.1:3306/${schema}?useSSL=false&serverTimezone=UTC"
+    $env:HOTEL_BIND_ADDRESS = '127.0.0.1'
     $env:HOTEL_VAT_RATE = '0.08'; $env:HOTEL_OTP_MODE = 'mock'; $env:AI_GUEST_ENABLED = 'false'
     & $MavenCommand '-q' '-DskipTests' 'compile' 'dependency:build-classpath' '-Dmdep.outputFile=target/demo-classpath.txt'
     if ($LASTEXITCODE -ne 0) { throw 'Demo backend build failed.' }

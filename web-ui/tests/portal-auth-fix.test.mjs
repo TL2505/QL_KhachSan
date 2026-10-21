@@ -171,7 +171,20 @@ test('password login routes administrators to the dashboard', async () => {
     assert.equal(window.location.href, 'portal.html?view=dashboard');
   } finally { globalThis.setTimeout = originalTimeout; env.teardown(); }
 });
-test('portal.html: contains tab-login, tab-register, secure login/register forms, and social login scaffolding', () => {
+
+test('completed Google session keeps the linked customer ID independently of the user ID', async () => {
+  const env = setupMockEnvironment();
+  try {
+    window.location.replace = destination => { window.location.href = destination; };
+    const { completeLogin } = await loadModule('public/portal-app.js');
+    completeLogin({ token: 'synthetic-google-session', role: 'CUSTOMER', userId: 19, customerId: 12 });
+    const session = JSON.parse(localStorage.getItem('hotel_auth_session'));
+    assert.equal(session.userId, 19);
+    assert.equal(session.customerId, 12);
+    assert.equal(window.location.href, 'portal.html?view=dashboard');
+  } finally { env.teardown(); }
+});
+test('portal.html: contains secure login/register forms and one shared Google button without Facebook', () => {
   for (const file of ['portal.html', 'public/portal.html']) {
     const html = fs.readFileSync(path.join(webUiDir, file), 'utf-8');
 
@@ -195,11 +208,11 @@ test('portal.html: contains tab-login, tab-register, secure login/register forms
     assert.match(html, /id="reg-confirm-password"/, `${file} must contain #reg-confirm-password`);
     assert.match(html, /Register Membership/, `${file} submit button must be labeled 'Register Membership'`);
 
-    // 4. Social login scaffolding
-    assert.match(html, /Or continue with/i, `${file} must contain 'Or continue with' divider`);
-    assert.match(html, /id="google-signin-btn"/, `${file} must contain #google-signin-btn container`);
-    assert.match(html, /id="facebook-signin-btn"/, `${file} must contain #facebook-signin-btn button`);
-    assert.match(html, /#1877F2/, `${file} Facebook button must use brand color #1877F2`);
+    // Both tabs share the real Google GIS widget outside the password forms.
+    assert.match(html, /Hoặc tiếp tục với/, `${file} must contain the Google divider`);
+    assert.equal((html.match(/id="google-signin-button"/g) || []).length, 1);
+    assert.doesNotMatch(html, /facebook|connect\.facebook\.net/i);
+    assert.doesNotMatch(html, /id="google-signin-btn"/);
   }
 });
 

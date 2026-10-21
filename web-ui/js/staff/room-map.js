@@ -1,7 +1,18 @@
 import { api } from "../../api.js";
 
+const ROOM_STATUS = {
+    vacant_clean: { label: "Còn phòng", badge: "badge-available" },
+    vacant_dirty: { label: "Cần vệ sinh", badge: "badge-cleaning" },
+    reserved: { label: "Đã đặt", badge: "badge-booked" },
+    occupied_clean: { label: "Đang sử dụng", badge: "badge-occupied" },
+    occupied_dirty: { label: "Đang sử dụng", badge: "badge-occupied" },
+    out_of_order: { label: "Đang bảo trì", badge: "badge-maintenance" },
+    out_of_service: { label: "Ngừng phục vụ", badge: "badge-maintenance" }
+};
+
 export async function renderRoomMap(container, session) {
     container.innerHTML = `
+        <div class="room-map-view">
         <div class="page-header flex-row justify-between">
             <div>
                 <h1>Sơ Đồ Phòng Khách Sạn</h1>
@@ -12,14 +23,16 @@ export async function renderRoomMap(container, session) {
             </button>
         </div>
 
-        <div class="flex-row mb-4" style="gap: 20px;">
-            <div style="font-size: 13px;"><span class="room-badge badge-available">Available</span> Trống</div>
-            <div style="font-size: 13px;"><span class="room-badge badge-booked">Booked</span> Chờ nhận phòng</div>
-            <div style="font-size: 13px;"><span class="room-badge badge-occupied">Occupied</span> Đang ở</div>
-            <div style="font-size: 13px;"><span class="room-badge badge-cleaning">Cleaning</span> Đang dọn dẹp</div>
+        <div class="room-status-legend" aria-label="Chú thích trạng thái phòng">
+            <span><i class="room-badge badge-available">Còn phòng</i></span>
+            <span><i class="room-badge badge-booked">Đã đặt</i></span>
+            <span><i class="room-badge badge-occupied">Đang sử dụng</i></span>
+            <span><i class="room-badge badge-cleaning">Cần vệ sinh</i></span>
+            <span><i class="room-badge badge-maintenance">Bảo trì</i></span>
         </div>
 
         <div class="room-grid" id="staff-rooms-grid">Đang tải sơ đồ phòng...</div>
+        </div>
     `;
     lucide.createIcons();
 
@@ -30,12 +43,13 @@ export async function renderRoomMap(container, session) {
             grid.innerHTML = "";
             rooms.forEach(r => {
                 const card = document.createElement("div");
+                const status = ROOM_STATUS[r.status] || { label: "Chưa xác định", badge: "badge-maintenance" };
                 card.className = `room-card status-${r.status}`;
                 card.innerHTML = `
                     <div class="room-card-number">Phòng ${r.roomNumber}</div>
                     <div class="room-card-type">${r.typeName || 'Standard'}</div>
-                    <div style="margin-top: 10px;">
-                        <span class="room-badge badge-${r.status}">${r.status}</span>
+                    <div class="room-card-status">
+                        <span class="room-badge ${status.badge}">${status.label}</span>
                     </div>
                 `;
                 

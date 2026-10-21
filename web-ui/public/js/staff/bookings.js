@@ -1,5 +1,17 @@
 import { api } from "../../api.js";
-import { refreshBookingListOnReturn } from "../shared/booking-list-refresh.js";
+
+import { escapeHtml } from "../shared/ui.js";
+
+function formatBookingDate(value) {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return escapeHtml(value);
+    const options = { timeZone: 'Asia/Ho_Chi_Minh' };
+    const day = date.toLocaleDateString('vi-VN', { ...options, day: '2-digit', month: '2-digit', year: 'numeric' });
+    const time = date.toLocaleTimeString('vi-VN', { ...options, hour: '2-digit', minute: '2-digit', hour12: false });
+    return `<span>${day}</span><small>${time}</small>`;
+}
+
 
 const STATUS_LABEL = {
     pending:    { label: 'Chờ xác nhận', cls: 'badge-booked' },
@@ -46,6 +58,7 @@ function skeletonRows(count = 6) {
 
 export async function renderBookings(container, session) {
     container.innerHTML = `
+        <div class="staff-data-view staff-bookings-view">
         <div class="page-header flex-row justify-between">
             <div>
                 <h1>Đơn Đặt Phòng</h1>
@@ -54,18 +67,18 @@ export async function renderBookings(container, session) {
         </div>
 
         <!-- Summary bar -->
-        <div id="staff-bookings-summary" style="display:flex;gap:16px;margin-bottom:24px;"></div>
+        <div id="staff-bookings-summary" class="stats"></div>
 
         <!-- Search + filter -->
-        <div class="card" style="padding:14px 20px;margin-bottom:0;">
-            <div style="display:flex;align-items:center;gap:10px;">
-                <div style="position:relative;flex:1;">
+        <div class="card staff-filter-card">
+            <div class="staff-bookings-filters">
+                <div class="staff-filter-search">
                     <i data-lucide="search" style="width:15px;height:15px;position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
                     <input id="staff-bookings-search" class="form-input" type="text"
-                        placeholder="Tìm theo mã phòng, ID khách hàng, trạng thái..."
+                        aria-label="Tìm đơn đặt phòng" placeholder="Tìm mã đặt phòng, phòng, khách hàng..."
                         style="padding-left:36px;margin:0;">
                 </div>
-                <select id="staff-bookings-status" class="form-input" style="width:180px;margin:0;">
+                <select id="staff-bookings-status" class="form-input" aria-label="Trạng thái đặt phòng">
                     <option value="">Tất cả trạng thái</option>
                     <option value="PENDING">Chờ xác nhận</option>
                     <option value="CONFIRMED">Đã xác nhận</option>
@@ -73,13 +86,13 @@ export async function renderBookings(container, session) {
                     <option value="CHECKED_OUT">Đã trả phòng</option>
                     <option value="CANCELLED">Đã hủy</option>
                 </select>
-                <button id="btn-refresh-bookings" class="btn btn-secondary" style="padding:10px 14px;flex-shrink:0;" title="Làm mới">
+                <button id="btn-refresh-bookings" class="btn btn-secondary" style="padding:10px 14px;flex-shrink:0;" title="Làm mới" aria-label="Làm mới đơn đặt phòng">
                     <i data-lucide="refresh-cw" style="width:15px;height:15px;"></i>
                 </button>
             </div>
         </div>
 
-        <div class="card" style="margin-top:0;border-top:none;border-top-left-radius:0;border-top-right-radius:0;">
+        <div class="card">
             <div class="table-container">
                 <table class="table">
                     <thead>
@@ -100,6 +113,7 @@ export async function renderBookings(container, session) {
                 </table>
             </div>
             <div id="pagination-staff-bookings"></div>
+        </div>
         </div>
     `;
     lucide.createIcons();
@@ -173,11 +187,11 @@ export async function renderBookings(container, session) {
                 <td style="font-weight:700;color:var(--primary);">#${b.id}</td>
                 <td><strong>Phòng ${b.roomId}</strong></td>
                 <td style="color:var(--text-muted);">KH #${b.customerId}</td>
-                <td style="font-size:13px;">${b.checkInDate || '—'}</td>
-                <td style="font-size:13px;">${b.checkOutDate || '—'}</td>
+                <td class="booking-datetime">${formatBookingDate(b.checkInDate)}</td>
+                <td class="booking-datetime">${formatBookingDate(b.checkOutDate)}</td>
                 <td style="font-weight:600;color:var(--success);">${Number(b.totalPrice || 0).toLocaleString('vi-VN')} đ</td>
                 <td><span class="room-badge ${s.cls}" style="white-space:nowrap;">${s.label}</span></td>
-                <td class="staff-bookings-actions">${actions}</td>
+                <td><div class="staff-bookings-actions">${actions}</div></td>
             `;
             body.appendChild(tr);
         });
@@ -222,34 +236,10 @@ export async function renderBookings(container, session) {
 
             const summaryBar = document.getElementById("staff-bookings-summary");
             summaryBar.innerHTML = `
-                <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--info);">
-                    <i data-lucide="calendar-days" style="width:18px;height:18px;color:var(--info);"></i>
-                    <div>
-                        <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);">${allBookings.length}</div>
-                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Tổng đơn</div>
-                    </div>
-                </div>
-                <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--warning);">
-                    <i data-lucide="clock" style="width:18px;height:18px;color:var(--warning);"></i>
-                    <div>
-                        <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);">${pending}</div>
-                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Chờ xác nhận</div>
-                    </div>
-                </div>
-                <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--success);">
-                    <i data-lucide="door-open" style="width:18px;height:18px;color:var(--success);"></i>
-                    <div>
-                        <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);">${checkedIn}</div>
-                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Đang ở</div>
-                    </div>
-                </div>
-                <div class="card" style="margin:0;flex:1;padding:14px 18px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--primary);">
-                    <i data-lucide="banknote" style="width:18px;height:18px;color:var(--primary);"></i>
-                    <div>
-                        <div style="font-size:16px;font-weight:700;font-family:var(--font-heading);">${(totalRevenue/1e6).toFixed(1)}M đ</div>
-                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Doanh thu</div>
-                    </div>
-                </div>
+                <div class="card stat stat-card"><div class="stat-title">Tổng đơn</div><div class="stat-value">${allBookings.length}</div></div>
+                <div class="card stat stat-card"><div class="stat-title">Chờ xác nhận</div><div class="stat-value">${pending}</div></div>
+                <div class="card stat stat-card"><div class="stat-title">Đang ở</div><div class="stat-value">${checkedIn}</div></div>
+                <div class="card stat stat-card"><div class="stat-title">Doanh thu</div><div class="stat-value">${(totalRevenue/1e6).toFixed(1)}M đ</div></div>
             `;
             lucide.createIcons();
             // Preserve the API's created_at DESC, id DESC order before slicing pages.

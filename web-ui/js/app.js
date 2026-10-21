@@ -1703,16 +1703,7 @@ function initEventListeners() {
     });
   }
 
-  // Quick Chat Widget Trigger
-  const quickChatBtn = document.getElementById('quick-chat-btn');
-  if (quickChatBtn) {
-    quickChatBtn.addEventListener('click', () => {
-      showToast(t('Đang kết nối tới Quản gia Concierge AI của Aurelia...'), 'info');
-      setTimeout(() => {
-        window.open('https://zalo.me', '_blank');
-      }, 700);
-    });
-  }
+  // The independent concierge-chat module owns the floating AI chat button.
 }
 
 // Language Application Helper

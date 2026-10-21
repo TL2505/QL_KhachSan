@@ -1,0 +1,2242 @@
+[
+  {
+    "tier": "member",
+    "theme": "light",
+    "width": 1340,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 248,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 152,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 208,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 264,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 320,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 376,
+        "width": 219,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#1d4ed8",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 837,
+        "right": 1221,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "member",
+    "theme": "light",
+    "width": 1000,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 78,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 142,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 198,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 254,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 310,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 366,
+        "width": 57,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#1d4ed8",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 514,
+        "right": 898,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "member",
+    "theme": "light",
+    "width": 768,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 768,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 100,
+        "width": 92.828125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 92.125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 124.4375,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 65.8125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 79.21875,
+        "height": 40
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#1d4ed8",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 47.328125,
+        "right": 431.328125,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "member",
+    "theme": "light",
+    "width": 375,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 375,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#1d4ed8",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 363,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "member",
+    "theme": "light",
+    "width": 320,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 320,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#1d4ed8",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 308,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "member",
+    "theme": "dark",
+    "width": 1340,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 248,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 152,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 208,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 264,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 320,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 376,
+        "width": 219,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#93c5fd",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 837,
+        "right": 1221,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "member",
+    "theme": "dark",
+    "width": 1000,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 78,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 142,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 198,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 254,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 310,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 366,
+        "width": 57,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#93c5fd",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 514,
+        "right": 898,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "member",
+    "theme": "dark",
+    "width": 768,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 768,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 100,
+        "width": 92.828125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 92.125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 124.4375,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 65.8125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 79.21875,
+        "height": 40
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#93c5fd",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 47.328125,
+        "right": 431.328125,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "member",
+    "theme": "dark",
+    "width": 375,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 375,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#93c5fd",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 363,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "member",
+    "theme": "dark",
+    "width": 320,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 320,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#93c5fd",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 308,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "silver",
+    "theme": "light",
+    "width": 1340,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 248,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 152,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 208,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 264,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 320,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 376,
+        "width": 219,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#747d88",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 837,
+        "right": 1221,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "silver",
+    "theme": "light",
+    "width": 1000,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 78,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 142,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 198,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 254,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 310,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 366,
+        "width": 57,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#747d88",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 514,
+        "right": 898,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "silver",
+    "theme": "light",
+    "width": 768,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 768,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 100,
+        "width": 92.828125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 92.125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 124.4375,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 65.8125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 79.21875,
+        "height": 40
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#747d88",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 47.328125,
+        "right": 431.328125,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "silver",
+    "theme": "light",
+    "width": 375,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 375,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#747d88",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 363,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "silver",
+    "theme": "light",
+    "width": 320,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 320,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#747d88",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 308,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "silver",
+    "theme": "dark",
+    "width": 1340,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 248,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 152,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 208,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 264,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 320,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 376,
+        "width": 219,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#c4cbd4",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 837,
+        "right": 1221,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "silver",
+    "theme": "dark",
+    "width": 1000,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 78,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 142,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 198,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 254,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 310,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 366,
+        "width": 57,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#c4cbd4",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 514,
+        "right": 898,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "silver",
+    "theme": "dark",
+    "width": 768,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 768,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 100,
+        "width": 92.828125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 92.125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 124.4375,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 65.8125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 79.21875,
+        "height": 40
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#c4cbd4",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 47.328125,
+        "right": 431.328125,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "silver",
+    "theme": "dark",
+    "width": 375,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 375,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#c4cbd4",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 363,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "silver",
+    "theme": "dark",
+    "width": 320,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 320,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#c4cbd4",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 308,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "gold",
+    "theme": "light",
+    "width": 1340,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 248,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 152,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 208,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 264,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 320,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 376,
+        "width": 219,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#b17d12",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 837,
+        "right": 1221,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "gold",
+    "theme": "light",
+    "width": 1000,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 78,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 142,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 198,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 254,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 310,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 366,
+        "width": 57,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#b17d12",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 514,
+        "right": 898,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "gold",
+    "theme": "light",
+    "width": 768,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 768,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 100,
+        "width": 92.828125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 92.125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 124.4375,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 65.8125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 79.21875,
+        "height": 40
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#b17d12",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 47.328125,
+        "right": 431.328125,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "gold",
+    "theme": "light",
+    "width": 375,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 375,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#b17d12",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 363,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "gold",
+    "theme": "light",
+    "width": 320,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 320,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#b17d12",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 308,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "gold",
+    "theme": "dark",
+    "width": 1340,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 248,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 152,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 208,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 264,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 320,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 376,
+        "width": 219,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#f2c96d",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 837,
+        "right": 1221,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "gold",
+    "theme": "dark",
+    "width": 1000,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 78,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 142,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 198,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 254,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 310,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 366,
+        "width": 57,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#f2c96d",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 514,
+        "right": 898,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "gold",
+    "theme": "dark",
+    "width": 768,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 768,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 100,
+        "width": 92.828125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 92.125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 124.4375,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 65.8125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 79.21875,
+        "height": 40
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#f2c96d",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 47.328125,
+        "right": 431.328125,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "gold",
+    "theme": "dark",
+    "width": 375,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 375,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#f2c96d",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 363,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "gold",
+    "theme": "dark",
+    "width": 320,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 320,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#f2c96d",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 308,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "vip",
+    "theme": "light",
+    "width": 1340,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 248,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 152,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 208,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 264,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 320,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 376,
+        "width": 219,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#8055aa",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 837,
+        "right": 1221,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "vip",
+    "theme": "light",
+    "width": 1000,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 78,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 142,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 198,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 254,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 310,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 366,
+        "width": 57,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#8055aa",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 514,
+        "right": 898,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "vip",
+    "theme": "light",
+    "width": 768,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 768,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 100,
+        "width": 92.828125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 92.125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 124.4375,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 65.8125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 79.21875,
+        "height": 40
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#8055aa",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 47.328125,
+        "right": 431.328125,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "vip",
+    "theme": "light",
+    "width": 375,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 375,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#8055aa",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 363,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "vip",
+    "theme": "light",
+    "width": 320,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 320,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#8055aa",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 308,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "vip",
+    "theme": "dark",
+    "width": 1340,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 248,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 152,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 208,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 264,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 320,
+        "width": 219,
+        "height": 48
+      },
+      {
+        "top": 376,
+        "width": 219,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#c7a1ff",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 837,
+        "right": 1221,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "vip",
+    "theme": "dark",
+    "width": 1000,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "flex",
+    "sidebarWidth": 78,
+    "navDisplay": "grid",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 142,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 198,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 254,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 310,
+        "width": 57,
+        "height": 48
+      },
+      {
+        "top": 366,
+        "width": 57,
+        "height": 48
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "none",
+    "legacyHeader": 0,
+    "accent": "#c7a1ff",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 514,
+        "right": 898,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "vip",
+    "theme": "dark",
+    "width": 768,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 16,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 768,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 100,
+        "width": 92.828125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 92.125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 124.4375,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 65.8125,
+        "height": 40
+      },
+      {
+        "top": 100,
+        "width": 79.21875,
+        "height": 40
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#c7a1ff",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 47.328125,
+        "right": 431.328125,
+        "top": 70.5,
+        "bottom": 549.5
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "vip",
+    "theme": "dark",
+    "width": 375,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 375,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#c7a1ff",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 363,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  },
+  {
+    "tier": "vip",
+    "theme": "dark",
+    "width": 320,
+    "accountParent": "portal-sidebar",
+    "brandLeft": 12,
+    "sidebarDisplay": "block",
+    "sidebarWidth": 320,
+    "navDisplay": "flex",
+    "navFlow": "row",
+    "navDirection": "row",
+    "nav": [
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      },
+      {
+        "top": 82,
+        "width": 42,
+        "height": 42
+      }
+    ],
+    "visibleLogouts": 1,
+    "headerAccount": "flex",
+    "legacyHeader": 0,
+    "accent": "#c7a1ff",
+    "overflow": false,
+    "notification": {
+      "onTop": true,
+      "inViewport": true,
+      "bounds": {
+        "left": 12,
+        "right": 308,
+        "top": 75,
+        "bottom": 554
+      },
+      "themed": true,
+      "scrolls": true
+    }
+  }
+]

@@ -29,7 +29,7 @@ const VOUCHERS = [
     desc: "Áp dụng cho mọi món ăn & đồ uống In-room Dining trong suốt thời gian lưu trú.",
     minSpend: "Từ 200.000 đ",
     tag: "Ẩm thực F&B",
-    badgeCls: "bg-amber-500/20 text-amber-300 border-amber-500/30"
+    badgeCls: "bg-amber-500/20 customer-accent border-amber-500/30"
   },
   {
     code: "WELCOME_SPA20",
@@ -56,7 +56,7 @@ const VOUCHERS = [
     desc: "Áp dụng cho mọi hạng phòng khi đặt trực tuyến. Hạn dùng: 31/12/2026.",
     minSpend: "Không giới hạn",
     tag: "Phổ biến",
-    badgeCls: "bg-amber-500/20 text-amber-300 border-amber-500/30"
+    badgeCls: "bg-amber-500/20 customer-accent border-amber-500/30"
   },
   {
     code: "VIP5STAR",
@@ -100,29 +100,30 @@ export async function renderConcierge(container, session) {
   const activeRoom = activeStay?.roomNumber || activeStay?.room_number || activeStay?.roomId || '';
   const activeBookingId = activeStay?.id || activeStay?.booking_id || null;
 
+  container.classList.add('customer-services-view');
   container.innerHTML = `
     <div class="page-header mb-6">
-      <h1 class="text-2xl font-bold font-serif text-white tracking-wide">Dịch Vụ & Ví Ưu Đãi (Web Concierge)</h1>
-      <p class="text-xs md:text-sm text-slate-400 mt-1">Quản lý mã giảm giá của bạn và yêu cầu dịch vụ khách sạn 5 sao trực tuyến 24/7</p>
+      <h2 class="text-2xl font-bold font-serif customer-text tracking-wide">Dịch vụ cho kỳ nghỉ của bạn</h2>
+      <p class="text-xs md:text-sm customer-muted mt-1">Quản lý mã giảm giá của bạn và yêu cầu dịch vụ khách sạn 5 sao trực tuyến 24/7</p>
     </div>
 
     <!-- TASK 14: IN-STAY CONCIERGE STATUS BANNER -->
     ${isInStay ? `
       <div class="mb-8 p-5 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div class="flex items-center gap-3.5">
-          <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 customer-success flex items-center justify-center shrink-0">
             <i data-lucide="door-open" class="w-5 h-5"></i>
           </div>
           <div>
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span class="text-xs font-bold uppercase tracking-wider text-emerald-300">Quý Khách Đang Lưu Trú Tại Resort (In-Stay Active)</span>
+              <span class="text-xs font-bold uppercase tracking-wider customer-success">Quý Khách Đang Lưu Trú Tại Resort (In-Stay Active)</span>
             </div>
-            <h2 class="text-base font-bold text-white mt-0.5">Phòng #${escapeHtml(activeRoom)} · Mã Đặt Phòng #${activeBookingId}</h2>
+            <h2 class="text-base font-bold customer-text mt-0.5">Phòng #${escapeHtml(activeRoom)} · Mã Đặt Phòng #${activeBookingId}</h2>
           </div>
         </div>
         <div class="flex items-center gap-2 self-end sm:self-auto">
-          <span class="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
+          <span class="px-3 py-1 rounded-xl bg-emerald-500/20 customer-success text-xs font-bold border border-emerald-500/30">
             Đã kích hoạt Tự Phục Vụ
           </span>
         </div>
@@ -130,18 +131,18 @@ export async function renderConcierge(container, session) {
     ` : `
       <div class="mb-8 p-5 rounded-3xl bg-amber-500/10 border border-amber-500/30 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div class="flex items-start gap-3.5">
-          <div class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
+          <div class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 customer-accent flex items-center justify-center shrink-0">
             <i data-lucide="info" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-sm font-bold text-white mb-0.5">Dịch Vụ Phòng Trực Tuyến (In-Stay Room Service)</h3>
-            <p class="text-xs text-slate-300 leading-relaxed">
+            <h3 class="text-sm font-bold customer-text mb-0.5">Dịch Vụ Phòng Trực Tuyến (In-Stay Room Service)</h3>
+            <p class="text-xs customer-muted leading-relaxed">
               Tính năng gọi món và dịch vụ tại phòng áp dụng cho Quý khách đang có kỳ nghỉ lưu trú thực tế tại khách sạn (Status: Checked-in).
             </p>
           </div>
         </div>
         <div class="flex items-center gap-2.5 self-end sm:self-auto shrink-0">
-          <a href="portal.html?view=bookings" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-all">
+          <a href="portal.html?view=bookings" class="px-3.5 py-2 rounded-xl customer-secondary-surface hover:bg-slate-700 customer-text text-xs font-semibold transition-all">
             Tra cứu đặt phòng
           </a>
           <a href="index.html#rooms" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 text-xs font-bold hover:brightness-110 transition-all shadow">
@@ -152,47 +153,48 @@ export async function renderConcierge(container, session) {
     `}
 
     <!-- TASK 14: 3 CATEGORIZED SERVICE SECTIONS -->
-    <div class="mb-8 card p-6 rounded-3xl bg-slate-900/80 border border-amber-500/20 shadow-2xl">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+    <div class="mb-8 card p-6 rounded-3xl customer-secondary-surface border border-amber-500/20 shadow-2xl">
+      <div class="flex items-center justify-between border-b customer-border pb-4 mb-6">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 customer-accent flex items-center justify-center">
             <i data-lucide="concierge-bell" class="w-5 h-5"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-white">Thực Đơn & Dịch Vụ Phục Vụ Tại Phòng (Room Services)</h2>
-            <p class="text-xs text-slate-400">Gọi món ăn, dịch vụ spa thư giãn hoặc buồng phòng 24/7 giao tận cửa</p>
+            <h2 class="text-lg font-bold customer-text">Thực Đơn & Dịch Vụ Phục Vụ Tại Phòng (Room Services)</h2>
+            <p class="text-xs customer-muted">Gọi món ăn, dịch vụ spa thư giãn hoặc buồng phòng 24/7 giao tận cửa</p>
           </div>
         </div>
-        <span class="text-xs px-3 py-1 rounded-full bg-slate-800 text-amber-300 font-mono font-semibold border border-slate-700 hidden sm:inline-block">Phục vụ 24/7</span>
+        <span class="text-xs px-3 py-1 rounded-full customer-secondary-surface customer-accent font-mono font-semibold border customer-border hidden sm:inline-block">Phục vụ 24/7</span>
       </div>
 
       <!-- Service Filter Tabs -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-6 border-b border-slate-800/60" id="service-cat-filters">
+      <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-6 border-b customer-border" id="service-cat-filters">
         <button type="button" class="btn-filter-cat active px-4 py-2 rounded-full text-xs font-bold bg-amber-500 text-slate-950 transition-all" data-category="ALL">Tất cả dịch vụ</button>
-        <button type="button" class="btn-filter-cat px-4 py-2 rounded-full text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition-all" data-category="FNB">🍽️ Ẩm thực (F&B)</button>
-        <button type="button" class="btn-filter-cat px-4 py-2 rounded-full text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition-all" data-category="SPA">✨ Spa & Sức khỏe</button>
-        <button type="button" class="btn-filter-cat px-4 py-2 rounded-full text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition-all" data-category="HOUSEKEEPING">🛏️ Buồng phòng</button>
+        <button type="button" class="btn-filter-cat px-4 py-2 rounded-full text-xs font-bold customer-secondary-surface customer-muted hover:text-white transition-all" data-category="FNB">🍽️ Ẩm thực (F&B)</button>
+        <button type="button" class="btn-filter-cat px-4 py-2 rounded-full text-xs font-bold customer-secondary-surface customer-muted hover:text-white transition-all" data-category="SPA">✨ Spa & Sức khỏe</button>
+        <button type="button" class="btn-filter-cat px-4 py-2 rounded-full text-xs font-bold customer-secondary-surface customer-muted hover:text-white transition-all" data-category="HOUSEKEEPING">🛏️ Buồng phòng</button>
       </div>
 
       <!-- Service Cards Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="services-grid">
+        ${IN_STAY_SERVICES.length === 0 ? '<p class="customer-services-empty customer-muted">Danh mục dịch vụ đang được cập nhật. Vui lòng liên hệ lễ tân để được tư vấn.</p>' : ''}
         ${IN_STAY_SERVICES.map(svc => `
-          <div class="service-card p-5 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between" data-category="${svc.category}">
+          <div class="service-card card p-5 rounded-2xl customer-secondary-surface border customer-border hover:border-amber-500/40 transition-all flex flex-col justify-between" data-category="${svc.category}">
             <div>
               <div class="flex items-center justify-between mb-3">
-                <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border bg-amber-500/10 text-amber-300 border-amber-500/30">${svc.tag}</span>
-                <span class="text-xs font-bold font-serif text-amber-400">${svc.priceStr}</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border bg-amber-500/10 customer-accent border-amber-500/30">${svc.tag}</span>
+                <span class="text-xs font-bold font-serif customer-accent">${svc.priceStr}</span>
               </div>
               <div class="flex items-start gap-3 mb-2">
-                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/10 customer-accent flex items-center justify-center shrink-0">
                   <i data-lucide="${svc.icon}" class="w-4 h-4"></i>
                 </div>
-                <h3 class="text-sm font-bold text-white leading-snug">${escapeHtml(svc.name)}</h3>
+                <h3 class="text-sm font-bold customer-text leading-snug">${escapeHtml(svc.name)}</h3>
               </div>
-              <p class="text-xs text-slate-400 leading-relaxed mb-4">${escapeHtml(svc.desc)}</p>
+              <p class="text-xs customer-muted leading-relaxed mb-4">${escapeHtml(svc.desc)}</p>
             </div>
-            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-              <span class="text-[11px] text-slate-400 font-mono">${svc.categoryName}</span>
+            <div class="pt-3 border-t customer-border flex items-center justify-between gap-2">
+              <span class="text-[11px] customer-muted font-mono">${svc.categoryName}</span>
               <button type="button" class="btn-open-order-modal px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all flex items-center gap-1.5 shadow"
                 data-id="${svc.id}" data-category="${svc.category}" data-name="${escapeHtml(svc.name)}" data-price="${svc.price}" data-voucher="${svc.suggestedVoucher}">
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -205,15 +207,15 @@ export async function renderConcierge(container, session) {
     </div>
 
     <!-- 1. VÍ ƯU ĐÃI (VOUCHER WALLET) -->
-    <div class="card p-6 rounded-3xl bg-slate-900/80 border border-amber-500/20 shadow-2xl mb-8">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 border-b border-slate-800 pb-4">
+    <div class="card p-6 rounded-3xl customer-secondary-surface border border-amber-500/20 shadow-2xl mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 border-b customer-border pb-4">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 customer-accent flex items-center justify-center">
             <i data-lucide="wallet" class="w-5 h-5"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-white">Ví Voucher & Mã Giảm Giá</h2>
-            <p class="text-xs text-slate-400">Sao chép mã ưu đãi hoặc áp dụng trực tiếp khi đặt phòng / gọi dịch vụ phòng</p>
+            <h2 class="text-lg font-bold customer-text">Ví Voucher & Mã Giảm Giá</h2>
+            <p class="text-xs customer-muted">Sao chép mã ưu đãi hoặc áp dụng trực tiếp khi đặt phòng / gọi dịch vụ phòng</p>
           </div>
         </div>
         <a href="index.html#rooms" class="btn portal-primary text-xs px-4 py-2 rounded-xl font-bold flex items-center gap-2 self-start sm:self-auto">
@@ -225,20 +227,20 @@ export async function renderConcierge(container, session) {
       <!-- Voucher Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         ${VOUCHERS.map(v => `
-          <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between relative overflow-hidden group">
+          <div class="customer-voucher-card card p-4 rounded-2xl customer-secondary-surface border customer-border hover:border-amber-500/40 transition-all flex flex-col justify-between relative overflow-hidden group">
             <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-amber-500/5 rounded-full pointer-events-none group-hover:scale-150 transition-transform"></div>
             <div>
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${v.badgeCls}">${v.tag}</span>
-                <span class="text-xs text-slate-400">${v.minSpend}</span>
+                <span class="customer-voucher-tag badge badge-outline text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${v.badgeCls}">${v.tag}</span>
+                <span class="text-xs customer-muted">${v.minSpend}</span>
               </div>
-              <h3 class="text-sm font-bold text-white mb-1">${v.title}</h3>
-              <p class="text-xs text-amber-300 font-semibold mb-1">${v.discount}</p>
-              <p class="text-[11px] text-slate-400 leading-relaxed mb-4">${v.desc}</p>
+              <h3 class="text-sm font-bold customer-text mb-1">${v.title}</h3>
+              <p class="text-xs customer-accent font-semibold mb-1">${v.discount}</p>
+              <p class="text-[11px] customer-muted leading-relaxed mb-4">${v.desc}</p>
             </div>
-            <div class="flex items-center justify-between pt-3 border-t border-slate-800/80 gap-2">
-              <span class="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg select-all">${v.code}</span>
-              <button type="button" class="btn-copy-code px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer" data-code="${v.code}">
+            <div class="flex items-center justify-between pt-3 border-t customer-border gap-2">
+              <span class="font-mono text-xs font-bold customer-accent bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg select-all">${v.code}</span>
+              <button type="button" class="btn-copy-code px-3 py-1.5 rounded-lg customer-secondary-surface hover:bg-amber-400 hover:text-slate-950 customer-text text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer" data-code="${v.code}">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 <span>Sao chép mã</span>
               </button>
@@ -251,14 +253,14 @@ export async function renderConcierge(container, session) {
     <!-- 2. WEB CONCIERGE (ONLINE SERVICE REQUESTS) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Service Request Form -->
-      <div class="lg:col-span-2 card p-6 rounded-3xl bg-slate-900/80 border border-amber-500/20 shadow-2xl">
-        <div class="flex items-center gap-3 mb-6 border-b border-slate-800 pb-4">
-          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+      <div class="lg:col-span-2 card p-6 rounded-3xl customer-secondary-surface border border-amber-500/20 shadow-2xl">
+        <div class="flex items-center gap-3 mb-6 border-b customer-border pb-4">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 customer-accent flex items-center justify-center">
             <i data-lucide="sparkles" class="w-5 h-5"></i>
           </div>
           <div>
-            <h2 class="text-lg font-bold text-white">Yêu Cầu Dịch Vụ Trực Tuyến 24/7</h2>
-            <p class="text-xs text-slate-400">Đội ngũ Quản gia & Phục vụ phòng sẽ tiếp nhận và phản hồi tức thì</p>
+            <h2 class="text-lg font-bold customer-text">Yêu Cầu Dịch Vụ Trực Tuyến 24/7</h2>
+            <p class="text-xs customer-muted">Đội ngũ Quản gia & Phục vụ phòng sẽ tiếp nhận và phản hồi tức thì</p>
           </div>
         </div>
 
@@ -267,19 +269,19 @@ export async function renderConcierge(container, session) {
         <form id="concierge-form" class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label for="concierge-room" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label for="concierge-room" class="block text-xs font-semibold uppercase tracking-wider customer-muted mb-1">
                 Số Phòng Đang Lưu Trú <span class="text-rose-400">*</span>
               </label>
               <input type="text" id="concierge-room" required value="${isInStay ? escapeHtml(activeRoom) : ''}" placeholder="Ví dụ: 101, 205, Penthouse"
-                class="w-full bg-slate-950/80 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+                class="w-full customer-secondary-surface border customer-border customer-text rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
             </div>
 
             <div>
-              <label for="concierge-category" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label for="concierge-category" class="block text-xs font-semibold uppercase tracking-wider customer-muted mb-1">
                 Loại Dịch Vụ <span class="text-rose-400">*</span>
               </label>
               <select id="concierge-category" required
-                class="w-full bg-slate-950/80 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+                class="w-full customer-secondary-surface border customer-border customer-text rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
                 <option value="fnb">Đồ ăn & Thức uống tại phòng (F&B)</option>
                 <option value="spa">Spa & Massage Hoàng Gia</option>
                 <option value="housekeeping">Dọn phòng & Bổ sung khăn gối</option>
@@ -291,11 +293,11 @@ export async function renderConcierge(container, session) {
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label for="concierge-time" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label for="concierge-time" class="block text-xs font-semibold uppercase tracking-wider customer-muted mb-1">
                 Thời Gian Mong Muốn
               </label>
               <select id="concierge-time"
-                class="w-full bg-slate-950/80 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+                class="w-full customer-secondary-surface border customer-border customer-text rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
                 <option value="now">Ngay lập tức (Trong vòng 15-20 phút)</option>
                 <option value="30m">Sau 30 phút</option>
                 <option value="1h">Sau 1 giờ</option>
@@ -305,20 +307,20 @@ export async function renderConcierge(container, session) {
             </div>
 
             <div>
-              <label for="concierge-guest-name" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label for="concierge-guest-name" class="block text-xs font-semibold uppercase tracking-wider customer-muted mb-1">
                 Người Yêu Cầu
               </label>
               <input type="text" id="concierge-guest-name" value="${escapeHtml(session.fullName || session.username || 'Quý Hội Viên')}"
-                class="w-full bg-slate-950/80 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+                class="w-full customer-secondary-surface border customer-border customer-text rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
             </div>
           </div>
 
           <div>
-            <label for="concierge-notes" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+            <label for="concierge-notes" class="block text-xs font-semibold uppercase tracking-wider customer-muted mb-1">
               Chi Tiết Yêu Cầu & Ghi Chú Đặc Biệt <span class="text-rose-400">*</span>
             </label>
             <textarea id="concierge-notes" rows="3" required placeholder="Ví dụ: Xin thêm 2 bộ khăn tắm lớn và nước suối ion; hoặc đặt lịch massage toàn thân lúc 20:00..."
-              class="w-full bg-slate-950/80 border border-slate-700 text-white rounded-xl p-3 text-sm focus:border-amber-400 focus:outline-none"></textarea>
+              class="w-full customer-secondary-surface border customer-border customer-text rounded-xl p-3 text-sm focus:border-amber-400 focus:outline-none"></textarea>
           </div>
 
           <button type="submit" id="btn-submit-concierge"
@@ -330,34 +332,34 @@ export async function renderConcierge(container, session) {
       </div>
 
       <!-- Quick Concierge Guide / Hotline -->
-      <div class="card p-6 rounded-3xl bg-slate-900/80 border border-amber-500/20 shadow-2xl flex flex-col justify-between">
+      <div class="card p-6 rounded-3xl customer-secondary-surface border border-amber-500/20 shadow-2xl flex flex-col justify-between">
         <div>
-          <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2">
-            <i data-lucide="bell-ring" class="w-4 h-4 text-amber-400"></i>
+          <h3 class="text-base font-bold customer-text mb-3 flex items-center gap-2">
+            <i data-lucide="bell-ring" class="w-4 h-4 customer-accent"></i>
             Đường Dây Nóng 24/7
           </h3>
-          <p class="text-xs text-slate-400 leading-relaxed mb-6">
+          <p class="text-xs customer-muted leading-relaxed mb-6">
             Quý khách có thể liên hệ trực tiếp với bộ phận tiền sảnh hoặc quản gia riêng qua số máy nội bộ từ điện thoại bàn trong phòng:
           </p>
 
           <div class="space-y-3 text-xs mb-6">
-            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-              <span class="text-slate-300 flex items-center gap-2"><i data-lucide="concierge-bell" class="w-4 h-4 text-amber-400"></i> Quản gia / Lễ tân:</span>
-              <strong class="font-mono text-amber-300 text-sm">Phím '0'</strong>
+            <div class="flex items-center justify-between p-3 rounded-xl customer-secondary-surface border customer-border">
+              <span class="customer-muted flex items-center gap-2"><i data-lucide="concierge-bell" class="w-4 h-4 customer-accent"></i> Quản gia / Lễ tân:</span>
+              <strong class="font-mono customer-accent text-sm">Phím '0'</strong>
             </div>
-            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-              <span class="text-slate-300 flex items-center gap-2"><i data-lucide="utensils" class="w-4 h-4 text-amber-400"></i> Dịch vụ F&B / Ẩm thực:</span>
-              <strong class="font-mono text-amber-300 text-sm">Phím '1'</strong>
+            <div class="flex items-center justify-between p-3 rounded-xl customer-secondary-surface border customer-border">
+              <span class="customer-muted flex items-center gap-2"><i data-lucide="utensils" class="w-4 h-4 customer-accent"></i> Dịch vụ F&B / Ẩm thực:</span>
+              <strong class="font-mono customer-accent text-sm">Phím '1'</strong>
             </div>
-            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-              <span class="text-slate-300 flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> Royal Lotus Spa:</span>
-              <strong class="font-mono text-amber-300 text-sm">Phím '3'</strong>
+            <div class="flex items-center justify-between p-3 rounded-xl customer-secondary-surface border customer-border">
+              <span class="customer-muted flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 customer-accent"></i> Royal Lotus Spa:</span>
+              <strong class="font-mono customer-accent text-sm">Phím '3'</strong>
             </div>
           </div>
         </div>
 
-        <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300/90 leading-relaxed">
-          <i data-lucide="shield-check" class="w-4 h-4 inline mr-1 text-amber-400"></i>
+        <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs customer-accent leading-relaxed">
+          <i data-lucide="shield-check" class="w-4 h-4 inline mr-1 customer-accent"></i>
           Cam kết chuẩn mực 5 sao: Tất cả yêu cầu được nhân viên xác nhận trong vòng tối đa 3 phút.
         </div>
       </div>
@@ -365,16 +367,16 @@ export async function renderConcierge(container, session) {
 
     <!-- TASK 14: IN-STAY SERVICE ORDER MODAL -->
     <div id="service-order-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
-      <div class="bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 max-w-lg w-full relative shadow-2xl max-h-[90vh] overflow-y-auto text-left">
-        <button type="button" class="close-order-modal-btn absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">
+      <div class="customer-secondary-surface border border-amber-500/30 rounded-3xl p-6 sm:p-8 max-w-lg w-full relative shadow-2xl max-h-[90vh] overflow-y-auto text-left">
+        <button type="button" class="close-order-modal-btn absolute top-4 right-4 w-8 h-8 rounded-full customer-secondary-surface customer-muted hover:text-white flex items-center justify-center">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
-        <div class="text-center mb-6 border-b border-slate-800 pb-4">
-          <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-2">
+        <div class="text-center mb-6 border-b customer-border pb-4">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 customer-accent flex items-center justify-center mx-auto mb-2">
             <i data-lucide="concierge-bell" class="w-6 h-6"></i>
           </div>
-          <h3 class="font-serif text-xl font-bold text-white" id="modal-order-title">Đặt Dịch Vụ Phòng</h3>
-          <p class="text-xs text-amber-400 mt-0.5">Phòng: #${escapeHtml(activeRoom)} · Phục vụ tận phòng</p>
+          <h3 class="font-serif text-xl font-bold customer-text" id="modal-order-title">Đặt Dịch Vụ Phòng</h3>
+          <p class="text-xs customer-accent mt-0.5">Phòng: #${escapeHtml(activeRoom)} · Phục vụ tận phòng</p>
         </div>
 
         <form id="service-order-form" class="space-y-4">
@@ -382,33 +384,33 @@ export async function renderConcierge(container, session) {
           <input type="hidden" id="order-category" value="">
           <input type="hidden" id="order-unit-price" value="0">
 
-          <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+          <div class="p-3.5 rounded-2xl customer-secondary-surface border customer-border flex items-center justify-between">
             <div>
-              <p class="text-[11px] text-slate-400 uppercase tracking-wider">Món / Dịch vụ đã chọn</p>
-              <h4 class="text-sm font-bold text-white mt-0.5" id="modal-item-name">---</h4>
+              <p class="text-[11px] customer-muted uppercase tracking-wider">Món / Dịch vụ đã chọn</p>
+              <h4 class="text-sm font-bold customer-text mt-0.5" id="modal-item-name">---</h4>
             </div>
             <div class="text-right">
-              <span class="text-xs text-slate-400">Đơn giá:</span>
-              <p class="text-sm font-bold font-serif text-amber-400" id="modal-item-price">0 ₫</p>
+              <span class="text-xs customer-muted">Đơn giá:</span>
+              <p class="text-sm font-bold font-serif customer-accent" id="modal-item-price">0 ₫</p>
             </div>
           </div>
 
           <!-- Quantity Selector -->
-          <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
-            <span class="text-xs font-semibold text-slate-300">Số lượng:</span>
+          <div class="flex items-center justify-between p-3.5 rounded-2xl customer-secondary-surface border customer-border">
+            <span class="text-xs font-semibold customer-muted">Số lượng:</span>
             <div class="flex items-center gap-3">
-              <button type="button" id="btn-qty-minus" class="w-8 h-8 rounded-lg bg-slate-800 text-white font-bold hover:bg-slate-700 flex items-center justify-center">-</button>
-              <span id="order-qty-display" class="font-mono text-base font-bold text-amber-400 min-w-[24px] text-center">1</span>
-              <button type="button" id="btn-qty-plus" class="w-8 h-8 rounded-lg bg-slate-800 text-white font-bold hover:bg-slate-700 flex items-center justify-center">+</button>
+              <button type="button" id="btn-qty-minus" class="w-8 h-8 rounded-lg customer-secondary-surface customer-text font-bold hover:bg-slate-700 flex items-center justify-center">-</button>
+              <span id="order-qty-display" class="font-mono text-base font-bold customer-accent min-w-[24px] text-center">1</span>
+              <button type="button" id="btn-qty-plus" class="w-8 h-8 rounded-lg customer-secondary-surface customer-text font-bold hover:bg-slate-700 flex items-center justify-center">+</button>
             </div>
           </div>
 
           <!-- Scheduled Time -->
           <div>
-            <label for="order-scheduled-time" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+            <label for="order-scheduled-time" class="block text-xs font-semibold uppercase tracking-wider customer-muted mb-1">
               Thời Gian Phục Vụ
             </label>
-            <select id="order-scheduled-time" class="w-full bg-slate-950/80 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
+            <select id="order-scheduled-time" class="w-full customer-secondary-surface border customer-border customer-text rounded-xl px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none">
               <option value="now">Phục vụ ngay (Trong vòng 15-20 phút)</option>
               <option value="30m">Sau 30 phút</option>
               <option value="1h">Sau 1 giờ</option>
@@ -419,44 +421,44 @@ export async function renderConcierge(container, session) {
 
           <!-- Voucher Suggestion & Input -->
           <div>
-            <label for="order-voucher-code" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+            <label for="order-voucher-code" class="block text-xs font-semibold uppercase tracking-wider customer-muted mb-1">
               Mã Ưu Đãi / Voucher
             </label>
             <div class="flex gap-2">
-              <input type="text" id="order-voucher-code" placeholder="Ví dụ: AURELIA_DINE15" class="flex-1 bg-slate-950/80 border border-slate-700 text-white rounded-xl px-4 py-2 text-sm font-mono focus:border-amber-400 focus:outline-none uppercase">
-              <button type="button" id="btn-apply-voucher" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-white text-xs font-bold transition-all">Áp dụng</button>
+              <input type="text" id="order-voucher-code" placeholder="Ví dụ: AURELIA_DINE15" class="flex-1 customer-secondary-surface border customer-border customer-text rounded-xl px-4 py-2 text-sm font-mono focus:border-amber-400 focus:outline-none uppercase">
+              <button type="button" id="btn-apply-voucher" class="px-4 py-2 rounded-xl customer-secondary-surface hover:bg-amber-500 hover:text-slate-950 customer-text text-xs font-bold transition-all">Áp dụng</button>
             </div>
-            <div id="voucher-result-label" class="text-[11px] mt-1 text-slate-400"></div>
+            <div id="voucher-result-label" class="text-[11px] mt-1 customer-muted"></div>
           </div>
 
           <!-- Special Instructions -->
           <div>
-            <label for="order-special-instructions" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+            <label for="order-special-instructions" class="block text-xs font-semibold uppercase tracking-wider customer-muted mb-1">
               Ghi Chú Cho Bếp / Kỹ Thuật Viên
             </label>
-            <textarea id="order-special-instructions" rows="2" placeholder="Ví dụ: Chín vừa (Medium Rare), không tỏi, ớt riêng..." class="w-full bg-slate-950/80 border border-slate-700 text-white rounded-xl p-3 text-sm focus:border-amber-400 focus:outline-none"></textarea>
+            <textarea id="order-special-instructions" rows="2" placeholder="Ví dụ: Chín vừa (Medium Rare), không tỏi, ớt riêng..." class="w-full customer-secondary-surface border customer-border customer-text rounded-xl p-3 text-sm focus:border-amber-400 focus:outline-none"></textarea>
           </div>
 
           <!-- Price Summary -->
-          <div class="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1.5 text-xs text-slate-300">
+          <div class="p-3.5 rounded-2xl customer-secondary-surface border customer-border space-y-1.5 text-xs customer-muted">
             <div class="flex justify-between">
               <span>Tạm tính:</span>
               <span id="order-subtotal" class="font-medium">0 ₫</span>
             </div>
-            <div class="flex justify-between text-emerald-400">
+            <div class="flex justify-between customer-success">
               <span>Chiết khấu voucher:</span>
               <span id="order-discount">-0 ₫</span>
             </div>
-            <div class="flex justify-between text-sm font-bold text-white pt-2 border-t border-slate-800">
-              <span class="text-amber-300">Tổng thanh toán (ghi nợ Folio):</span>
-              <span id="order-total" class="font-serif text-base text-amber-400">0 ₫</span>
+            <div class="flex justify-between text-sm font-bold customer-text pt-2 border-t customer-border">
+              <span class="customer-accent">Tổng thanh toán (ghi nợ Folio):</span>
+              <span id="order-total" class="font-serif text-base customer-accent">0 ₫</span>
             </div>
           </div>
 
           <div id="order-status-msg" class="hidden p-3 rounded-xl text-xs text-center border"></div>
 
           <div class="flex items-center justify-between pt-2 gap-3">
-            <button type="button" class="close-order-modal-btn px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium">Đóng</button>
+            <button type="button" class="close-order-modal-btn px-4 py-2.5 rounded-xl customer-secondary-surface hover:bg-slate-700 customer-text text-xs font-medium">Đóng</button>
             <button type="submit" id="btn-submit-order" class="btn portal-primary flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg">
               <i data-lucide="check-circle" class="w-4 h-4"></i>
               <span>Xác Nhận Gọi Món</span>
@@ -479,7 +481,7 @@ export async function renderConcierge(container, session) {
           await navigator.clipboard.writeText(code);
         }
         const origHtml = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i><span class="text-emerald-400">Đã sao chép!</span>`;
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 customer-success"></i><span class="customer-success">Đã sao chép!</span>`;
         refreshIcons();
         setTimeout(() => {
           btn.innerHTML = origHtml;
@@ -498,10 +500,10 @@ export async function renderConcierge(container, session) {
     b.addEventListener('click', () => {
       filterBtns.forEach(x => {
         x.classList.remove('active', 'bg-amber-500', 'text-slate-950');
-        x.classList.add('bg-slate-800', 'text-slate-300');
+        x.classList.add('customer-secondary-surface', 'customer-muted');
       });
       b.classList.add('active', 'bg-amber-500', 'text-slate-950');
-      b.classList.remove('bg-slate-800', 'text-slate-300');
+      b.classList.remove('customer-secondary-surface', 'customer-muted');
 
       const cat = b.getAttribute('data-category');
       serviceCards.forEach(c => {
@@ -612,7 +614,7 @@ export async function renderConcierge(container, session) {
       currentDiscount = discAmount;
       updateOrderTotals();
       if (resultLabel) {
-        resultLabel.className = 'text-[11px] mt-1 text-emerald-400 font-semibold';
+        resultLabel.className = 'text-[11px] mt-1 customer-success font-semibold';
         resultLabel.textContent = `Áp dụng thành công! Đã giảm ${discAmount.toLocaleString('vi-VN')} ₫`;
       }
     } catch (err) {
@@ -669,7 +671,7 @@ export async function renderConcierge(container, session) {
         delete orderForm.dataset.requestKey;
 
         if (orderStatusMsg) {
-          orderStatusMsg.className = 'p-3 rounded-xl text-xs text-center border bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
+          orderStatusMsg.className = 'p-3 rounded-xl text-xs text-center border bg-emerald-500/10 border-emerald-500/30 customer-success';
           orderStatusMsg.textContent = 'Yêu cầu dịch vụ phòng đã được gửi thành công đến bộ phận F&B và Lễ tân!';
           orderStatusMsg.classList.remove('hidden');
         }
@@ -737,7 +739,7 @@ export async function renderConcierge(container, session) {
         });
 
         if (statusBox) {
-          statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
+          statusBox.className = 'mb-4 p-3 rounded-xl text-xs text-center border bg-emerald-500/10 border-emerald-500/30 customer-success';
           statusBox.innerHTML = `
             <strong>Yêu cầu dịch vụ đã được ghi nhận thành công!</strong><br>
             Quản gia khách sạn đã nhận thông tin cho phòng <strong>#${escapeHtml(room)}</strong> và đang tiến hành phục vụ.

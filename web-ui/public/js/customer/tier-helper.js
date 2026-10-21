@@ -5,11 +5,48 @@
  * Tiers: Member (<500 pts), Silver (500-999 pts), Gold (1000-4999 pts), VIP (>=5000 pts).
  */
 
+export const MEMBERSHIP_TIERS = Object.freeze([
+  Object.freeze({ name: 'Member', minPoints: 0 }),
+  Object.freeze({ name: 'Silver', minPoints: 500 }),
+  Object.freeze({ name: 'Gold', minPoints: 1000 }),
+  Object.freeze({ name: 'VIP', minPoints: 5000 })
+]);
+
+// Accept the current Java DTO and the older web history field names.
+export function normalizeLoyaltyHistory(history) {
+  return (Array.isArray(history) ? history : []).map(log => {
+    const raw = Number(log.pointsChange ?? log.pointsChanged ?? log.points ?? 0);
+    const amount = Number.isFinite(raw) ? Math.abs(raw) : 0;
+    const type = String(log.type ?? log.changeType ?? '').toLowerCase();
+    return {
+      ...log,
+      changeType: type || (raw < 0 ? 'redeem' : 'earn'),
+      pointsChanged: amount,
+      changeDate: log.createdAt ?? log.changeDate ?? 'N/A',
+      reason: log.description ?? log.reason ?? ''
+    };
+  });
+}
+
+export function summarizeLoyaltyHistory(history) {
+  let currentPoints = 0;
+  let totalPoints = 0;
+  for (const log of normalizeLoyaltyHistory(history)) {
+    if (log.changeType === 'earn') {
+      totalPoints += log.pointsChanged;
+      currentPoints += log.pointsChanged;
+    } else {
+      currentPoints -= log.pointsChanged;
+    }
+  }
+  return { currentPoints: Math.max(0, currentPoints), totalPoints };
+}
+
 export function getLegacyTierInfo(totalPoints = 0, customSpent = null) {
   const pts = Math.max(0, Number(totalPoints) || 0);
   const spent = customSpent != null ? Number(customSpent) : pts * 1000;
 
-  if (pts >= 5000) {
+  if (pts >= MEMBERSHIP_TIERS[3].minPoints) {
     return {
       tier: 'VIP',
       name: 'VIP',
@@ -31,8 +68,8 @@ export function getLegacyTierInfo(totalPoints = 0, customSpent = null) {
     };
   }
 
-  if (pts >= 1000) {
-    const nextPts = 5000;
+  if (pts >= MEMBERSHIP_TIERS[2].minPoints) {
+    const nextPts = MEMBERSHIP_TIERS[3].minPoints;
     const remaining = nextPts - pts;
     const progress = Math.min(100, Math.max(0, Math.round(((pts - 1000) / 4000) * 100)));
     return {
@@ -56,8 +93,8 @@ export function getLegacyTierInfo(totalPoints = 0, customSpent = null) {
     };
   }
 
-  if (pts >= 500) {
-    const nextPts = 1000;
+  if (pts >= MEMBERSHIP_TIERS[1].minPoints) {
+    const nextPts = MEMBERSHIP_TIERS[2].minPoints;
     const remaining = nextPts - pts;
     const progress = Math.min(100, Math.max(0, Math.round(((pts - 500) / 500) * 100)));
     return {
@@ -82,7 +119,7 @@ export function getLegacyTierInfo(totalPoints = 0, customSpent = null) {
   }
 
   // Member Tier (0 - 499 pts)
-  const nextPts = 500;
+  const nextPts = MEMBERSHIP_TIERS[1].minPoints;
   const remaining = nextPts - pts;
   const progress = Math.min(100, Math.max(0, Math.round((pts / 500) * 100)));
   return {
