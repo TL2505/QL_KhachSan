@@ -39,6 +39,42 @@ test('abort remains distinguishable from connection failure',async()=>{
  globalThis.fetch=async()=>{throw new DOMException('cancelled','AbortError');};await assert.rejects(apiFetch('/rooms'),error=>error.name==='AbortError');
  globalThis.fetch=async()=>{throw new DOMException('deadline exceeded','TimeoutError');};await assert.rejects(apiFetch('/rooms'),error=>error.name==='TimeoutError');
 });
+
+test('a slow OTP request can exceed 2.5 seconds and transport-only options never reach fetch', async t => {
+ t.mock.timers.enable({apis:['setTimeout']});
+ let calls=0;
+ globalThis.fetch=async (url,init)=>{
+  calls++;
+  assert.equal('timeoutMs' in init,false);
+  assert.equal('retryOnNetworkError' in init,false);
+  return new Promise((resolve,reject)=>{
+   init.signal.addEventListener('abort',()=>reject(init.signal.reason),{once:true});
+   setTimeout(()=>resolve(new Response(JSON.stringify({status:'success',data:{challenge_id:'synthetic-challenge'}}))),3000);
+  });
+ };
+ const pending=apiFetch('/auth/google/request-otp',{method:'POST',body:'{}',timeoutMs:45000,retryOnNetworkError:false});
+ t.mock.timers.tick(3000);
+ assert.deepEqual(await pending,{challenge_id:'synthetic-challenge'});
+ assert.equal(calls,1);
+});
+
+test('OTP failures are never replayed to an alternative host and the chosen deadline still aborts', async t => {
+ const previousLocation=window.location;
+ window.location={origin:'http://localhost:8081',hostname:'localhost',protocol:'http:',port:'8081'};
+ t.mock.timers.enable({apis:['setTimeout']});
+ try {
+  let calls=0;
+  globalThis.fetch=async()=>{calls++;throw new TypeError('synthetic connection lost after sending request');};
+  await assert.rejects(apiFetch('/auth/google/request-otp',{method:'POST',body:'{}',retryOnNetworkError:false}));
+  assert.equal(calls,1,'Do not resend a possibly delivered OTP request to the fallback host');
+  calls=0;
+  globalThis.fetch=async(url,init)=>{calls++;return new Promise((resolve,reject)=>init.signal.addEventListener('abort',()=>reject(init.signal.reason),{once:true}));};
+  const expired=assert.rejects(apiFetch('/auth/google/request-otp',{method:'POST',body:'{}',timeoutMs:45000,retryOnNetworkError:false}),error=>error.name==='TimeoutError');
+  t.mock.timers.tick(45000);
+  await expired;
+  assert.equal(calls,1);
+ } finally { window.location=previousLocation; }
+});
 test('freeze retains Retry-After and hides server internals',async()=>{
  globalThis.fetch=async()=>new Response(JSON.stringify({message:'PRIVATE_DATABASE_DETAILS'}),{status:503,headers:{'Retry-After':'300'}});
  await assert.rejects(apiFetch('/rooms'),error=>error.status===503&&error.retryAfter==='300'&&!error.message.includes('PRIVATE'));

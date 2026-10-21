@@ -26,6 +26,7 @@ services:
     env_file:
       - ${PMS_BACKEND_ENV_FILE:?Supply reviewed production PMS configuration}
     environment:
+      HOTEL_BIND_ADDRESS: 0.0.0.0
       DB_HOST: mariadb
       DB_PORT: 3306
       DB_NAME: ${PMS_DB_NAME:?Supply the pre-provisioned PMS schema}

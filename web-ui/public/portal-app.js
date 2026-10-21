@@ -1,7 +1,8 @@
-import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js';
+import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.35';
+import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.35';
 import { loadAdminView } from './js/view-admin.js?v=3.6.11';
 import { loadStaffView } from './js/view-staff.js';
-import { loadCustomerView } from './js/view-customer.js?v=3.6.18';
+import { loadCustomerView } from './js/view-customer.js?v=3.6.20';
 import { loadProfileView } from './js/view-shared.js';
 import './js/shared/theme.js';
 import './js/shared/pagination.js?v=3.6.4';
@@ -101,6 +102,7 @@ const menus = {
     ['dashboard', 'Tổng quan', 'layout-dashboard'],
     ['bookings', 'Đặt phòng', 'calendar-check'],
     ['concierge', 'Dịch vụ & ưu đãi', 'sparkles'],
+    ['support', 'Hỗ trợ', 'life-buoy'],
     ['profile', 'Hồ sơ', 'user-cog'],
     ['security', 'Bảo mật', 'shield-check']
   ]
@@ -146,7 +148,7 @@ export function getStoredCustomerToken() {
     || null;
 }
 
-let googleChallengeId = null;
+let googleSignIn = null;
 
 // Only return to known hotel pages on this origin, never an arbitrary redirect.
 function bookingReturnUrl() {
@@ -746,6 +748,7 @@ export function completeLogin(result, defaultUsername) {
     const user = {
       token: token,
       userId: payload.userId ?? payload.id ?? payload.user_id ?? 1,
+      customerId: payload.customerId ?? payload.customer_id,
       username: payload.username || defaultUsername || payload.email || 'member',
       fullName: payload.fullName || payload.full_name || payload.name || payload.username || defaultUsername || 'Quý Hội Viên',
       avatarUrl: payload.avatarUrl || payload.avatar_url || payload.profileImage || payload.profile_image || payload.photoURL || payload.picture || payload.user?.avatarUrl || payload.user?.avatar_url || '',
@@ -765,40 +768,6 @@ export function completeLogin(result, defaultUsername) {
   if (typeof window !== 'undefined' && window.location?.replace) {
     window.location.replace(`portal.html?view=${encodeURIComponent(destination)}`);
   }
-}
-
-async function startGoogleOtp(googleResponse) {
-  if (!googleResponse?.credential) { status('Google không trả về thông tin xác thực. Vui lòng thử lại.'); return; }
-  status('Đang xác thực tài khoản Google…', 'success');
-  try {
-    const data = await api.post('/auth/google/request-otp', { credential: googleResponse.credential });
-    googleChallengeId = data.challenge_id;
-    if (byId('login-form')) byId('login-form').hidden = true;
-    if (byId('register-form')) byId('register-form').hidden = true;
-    if (byId('google-otp-form')) {
-      byId('google-otp-form').hidden = false;
-      if (byId('google-otp-email')) byId('google-otp-email').textContent = data.email || 'email đã xác minh';
-      if (byId('google-otp-code')) {
-        byId('google-otp-code').value = '';
-        byId('google-otp-code').focus();
-      }
-    }
-    status('Mã xác thực đã được gửi. Mã có hiệu lực trong 5 phút.', 'success');
-  } catch (error) { status(error.message || 'Không thể bắt đầu xác thực Google. Vui lòng thử lại.'); }
-}
-
-async function initialiseGoogleLogin() {
-  try {
-    const config = await api.get('/auth/google/config');
-    if (!config?.enabled || !config.client_id) return;
-    for (let tries = 0; tries < 100 && !window.google?.accounts?.id; tries += 1) await new Promise(resolve => setTimeout(resolve, 50));
-    if (!window.google?.accounts?.id) return;
-    window.google.accounts.id.initialize({ client_id: config.client_id, callback: startGoogleOtp, auto_select: false, cancel_on_tap_outside: true });
-    if (byId('google-signin-button')) {
-      window.google.accounts.id.renderButton(byId('google-signin-button'), { theme: 'outline', size: 'large', text: 'signin_with', locale: 'vi', width: 300 });
-    }
-    if (byId('google-login-area')) byId('google-login-area').hidden = false;
-  } catch { /* Configuration is intentionally silent until the hotel enables Google login. */ }
 }
 
 export async function handleLoginSubmit(e) {
@@ -964,158 +933,10 @@ export function initAuthEvents() {
     registerForm.addEventListener('submit', handleRegisterSubmit);
   }
 
-  // Google OTP Form
-  const otpForm = byId('google-otp-form');
-  if (otpForm) {
-    otpForm.addEventListener('submit', async event => {
-      event.preventDefault();
-      const button = event.currentTarget.querySelector('button[type="submit"]');
-      if (button) button.disabled = true;
-      try {
-        const result = await api.post('/auth/google/verify-otp', {
-          challenge_id: googleChallengeId,
-          otp: byId('google-otp-code')?.value.trim()
-        });
-        completeLogin(result);
-      } catch (error) {
-        status(error.message || 'Không thể xác nhận mã. Vui lòng thử lại.');
-      } finally {
-        if (button) button.disabled = false;
-      }
-    });
-  }
-
-  byId('google-otp-resend')?.addEventListener('click', async event => {
-    event.currentTarget.disabled = true;
-    try {
-      const data = await api.post('/auth/google/resend-otp', { challenge_id: googleChallengeId });
-      if (byId('google-otp-email')) {
-        byId('google-otp-email').textContent = data.email || byId('google-otp-email').textContent;
-      }
-      status('Mã mới đã được gửi. Mã cũ không còn hiệu lực.', 'success');
-    } catch (error) {
-      status(error.message || 'Không thể gửi lại mã.');
-    } finally {
-      event.currentTarget.disabled = false;
-    }
-  });
-
-  byId('google-otp-cancel')?.addEventListener('click', () => {
-    googleChallengeId = null;
-    status('');
-    showAuth('login');
-  });
-
-  // Social Auth handlers: Google Identity Services & Meta Facebook SDK
-  const googleBtn = byId('google-signin-btn');
-  if (googleBtn) {
-    googleBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-        try {
-          window.google.accounts.id.initialize({
-            client_id: window.AURELIA_GOOGLE_CLIENT_ID || '823901239123-placeholder.apps.googleusercontent.com',
-            callback: (response) => {
-              if (response && response.credential) {
-                sendGoogleCredential(response.credential);
-              }
-            }
-          });
-          window.google.accounts.id.prompt((notification) => {
-            if (notification && (notification.isNotDisplayed?.() || notification.isSkippedMoment?.())) {
-              status('Vui lòng cấp quyền truy cập tài khoản Google.');
-            }
-          });
-        } catch (err) {
-          console.warn('Lỗi khởi tạo Google GIS:', err);
-          status('Google GIS SDK: Sẵn sàng kết nối Google Client ID.', 'success');
-        }
-      } else {
-        status('Google Identity Services SDK đang sẵn sàng.', 'success');
-      }
-    });
-  }
-
-  const facebookBtn = byId('facebook-signin-btn');
-  if (facebookBtn) {
-    facebookBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (typeof window !== 'undefined' && window.FB) {
-        try {
-          window.FB.login((response) => {
-            if (response && response.authResponse && response.authResponse.accessToken) {
-              sendFacebookAccessToken(response.authResponse.accessToken);
-            } else {
-              status('Đăng nhập Facebook đã bị hủy hoặc không thành công.');
-            }
-          }, { scope: 'public_profile,email' });
-        } catch (err) {
-          console.warn('Lỗi gọi FB.login:', err);
-          status('Facebook Login SDK: Sẵn sàng kết nối Facebook App ID.', 'success');
-        }
-      } else {
-        status('Facebook Login SDK đang sẵn sàng.', 'success');
-      }
-    });
-  }
 }
 
 export async function sendGoogleCredential(credential) {
-  if (!credential) {
-    status('Google không trả về thông tin xác thực. Vui lòng thử lại.');
-    return;
-  }
-  status('Đang xác thực bảo mật với Google...', 'success');
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/google`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ credential })
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
-      const errorMsg = data?.message || 'Xác thực Google không thành công. Vui lòng thử lại.';
-      status(errorMsg);
-      return;
-    }
-    status('Đăng nhập Google thành công!', 'success');
-    completeLogin(data, data?.data?.email || data?.email || 'google_user');
-  } catch (error) {
-    console.error('Lỗi khi đăng nhập Google:', error);
-    status('Không thể kết nối đến máy chủ xác thực Google. Vui lòng thử lại sau.');
-  }
-}
-
-export async function sendFacebookAccessToken(accessToken) {
-  if (!accessToken) {
-    status('Facebook không trả về mã truy cập. Vui lòng thử lại.');
-    return;
-  }
-  status('Đang xác thực bảo mật với Facebook...', 'success');
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/facebook`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ access_token: accessToken })
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
-      const errorMsg = data?.message || 'Xác thực Facebook không thành công. Vui lòng thử lại.';
-      status(errorMsg);
-      return;
-    }
-    status('Đăng nhập Facebook thành công!', 'success');
-    completeLogin(data, data?.data?.email || data?.email || 'facebook_user');
-  } catch (error) {
-    console.error('Lỗi khi đăng nhập Facebook:', error);
-    status('Không thể kết nối đến máy chủ xác thực Facebook. Vui lòng thử lại sau.');
-  }
+  return googleSignIn?.credential({ credential });
 }
 
 // Initial DOM events setup wrapped in try...catch
@@ -1223,9 +1044,11 @@ if (typeof window !== 'undefined') {
   window.setupAuthTabs = setupAuthTabs;
   window.completeLogin = completeLogin;
   window.sendGoogleCredential = sendGoogleCredential;
-  window.sendFacebookAccessToken = sendFacebookAccessToken;
 }
 
 try {
-  initialiseGoogleLogin();
+  if (byId('google-login-area')) {
+    googleSignIn = createGoogleSignIn({ api, document, window, onAuthenticated: completeLogin, onStatus: status, onCancel: () => showAuth('login') });
+    googleSignIn.initialise();
+  }
 } catch {}

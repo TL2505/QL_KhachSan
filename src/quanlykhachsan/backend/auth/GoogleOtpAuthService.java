@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.Clock;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.Map;
@@ -27,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import quanlykhachsan.backend.auth.dto.AuthUserInfo;
-import quanlykhachsan.backend.customer.Customer;
 import quanlykhachsan.backend.user.User;
 import quanlykhachsan.backend.utils.DatabaseConnection;
 import quanlykhachsan.backend.utils.JwtTokenUtil;
@@ -39,16 +39,33 @@ public final class GoogleOtpAuthService {
     private static final Duration OTP_TTL = Duration.ofMinutes(5);
     private static final int MAX_ATTEMPTS = 5;
     private static final int MAX_RESENDS = 2;
-    private static final Map<String, Challenge> CHALLENGES = new ConcurrentHashMap<>();
+    private static final Duration CHALLENGE_TTL = Duration.ofMinutes(15);
+    private final Map<String, Challenge> challenges = new ConcurrentHashMap<>();
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    private final Clock clock;
+    private final IdentityVerifier identityVerifier;
+    private final OtpSender otpSender;
+    private final LoginCompleter loginCompleter;
+
+    @FunctionalInterface interface IdentityVerifier { GoogleIdentity verify(String credential) throws AuthFailure; }
+    @FunctionalInterface interface OtpSender { void send(String email, String otp) throws Exception; }
+    @FunctionalInterface interface LoginCompleter { AuthUserInfo complete(GoogleIdentity identity) throws AuthFailure; }
+    public GoogleOtpAuthService() {
+        clock = Clock.systemUTC(); identityVerifier = this::verifyGoogleToken; otpSender = this::sendOtp;
+        loginCompleter = this::completeLogin;
+    }
+    GoogleOtpAuthService(Clock clock, IdentityVerifier verifier, OtpSender sender, LoginCompleter completer) {
+        this.clock = clock; identityVerifier = verifier; otpSender = sender; loginCompleter = completer;
+    }
 
     public record StartResult(String challengeId, String maskedEmail, Instant expiresAt) { }
-    private record GoogleIdentity(String subject, String email, String name) { }
+    record GoogleIdentity(String subject, String email, String name) { }
     private static final class Challenge {
         final GoogleIdentity identity;
         final byte[] salt;
         byte[] otpHash;
         Instant expiresAt;
+        Instant sessionExpiresAt;
         int attempts;
         int resends;
         boolean used;
@@ -56,9 +73,7 @@ public final class GoogleOtpAuthService {
             this.identity = identity;
             this.salt = randomBytes(16);
             this.otpHash = hash(salt, otp);
-            this.expiresAt = Instant.now().plus(OTP_TTL);
         }
-        void replaceOtp(String otp) { otpHash = hash(salt, otp); expiresAt = Instant.now().plus(OTP_TTL); attempts = 0; }
     }
 
     public boolean isConfigured() {
@@ -67,46 +82,63 @@ public final class GoogleOtpAuthService {
     public String clientId() { return value("GOOGLE_CLIENT_ID"); }
 
     public StartResult begin(String credential) throws AuthFailure {
-        requireConfigured();
-        GoogleIdentity identity = verifyGoogleToken(credential);
+        challenges.entrySet().removeIf(entry -> !clock.instant().isBefore(entry.getValue().sessionExpiresAt));
+        GoogleIdentity identity = identityVerifier.verify(credential);
         String otp = nextOtp();
         Challenge challenge = new Challenge(identity, otp);
         String id = randomId();
-        CHALLENGES.put(id, challenge);
         try {
-            sendOtp(identity.email(), otp);
+            otpSender.send(identity.email(), otp);
         } catch (Exception e) {
-            CHALLENGES.remove(id);
             throw new AuthFailure(503, "Chưa thể gửi mã xác thực. Vui lòng thử lại sau.");
         }
+        // Start the validity window after SMTP delivery, not before a slow send.
+        challenge.expiresAt = clock.instant().plus(OTP_TTL);
+        challenge.sessionExpiresAt = clock.instant().plus(CHALLENGE_TTL);
+        challenges.put(id, challenge);
         return new StartResult(id, maskEmail(identity.email()), challenge.expiresAt);
     }
 
     public StartResult resend(String challengeId) throws AuthFailure {
         Challenge c = challenge(challengeId);
-        if (c.resends >= MAX_RESENDS) throw new AuthFailure(429, "Bạn đã dùng hết số lần gửi lại mã. Vui lòng đăng nhập lại bằng Google.");
-        String otp = nextOtp();
-        c.resends++;
-        c.replaceOtp(otp);
-        try {
-            sendOtp(c.identity.email(), otp);
-        } catch (Exception e) {
-            throw new AuthFailure(503, "Chưa thể gửi lại mã xác thực. Vui lòng thử lại sau.");
+        synchronized (c) {
+            requireActive(challengeId, c);
+            if (c.resends >= MAX_RESENDS) throw new AuthFailure(429, "Bạn đã dùng hết số lần gửi lại mã. Vui lòng đăng nhập lại bằng Google.");
+            String otp = nextOtp();
+            try {
+                otpSender.send(c.identity.email(), otp);
+            } catch (Exception e) {
+                throw new AuthFailure(503, "Chưa thể gửi lại mã xác thực. Vui lòng thử lại sau.");
+            }
+            c.resends++;
+            c.otpHash = hash(c.salt, otp);
+            c.expiresAt = clock.instant().plus(OTP_TTL);
+            c.sessionExpiresAt = clock.instant().plus(CHALLENGE_TTL);
+            return new StartResult(challengeId, maskEmail(c.identity.email()), c.expiresAt);
         }
-        return new StartResult(challengeId, maskEmail(c.identity.email()), c.expiresAt);
     }
 
     public AuthUserInfo verify(String challengeId, String otp) throws AuthFailure {
         Challenge c = challenge(challengeId);
-        if (otp == null || !otp.matches("\\d{4}")) throw new AuthFailure(400, "Mã xác thực phải gồm đúng 4 chữ số.");
-        if (!MessageDigest.isEqual(c.otpHash, hash(c.salt, otp))) {
-            c.attempts++;
-            if (c.attempts >= MAX_ATTEMPTS) { CHALLENGES.remove(challengeId); throw new AuthFailure(429, "Bạn đã nhập sai quá nhiều lần. Vui lòng đăng nhập lại bằng Google."); }
-            throw new AuthFailure(401, "Mã xác thực không đúng. Vui lòng kiểm tra lại.");
+        synchronized (c) {
+            requireActive(challengeId, c);
+            if (!clock.instant().isBefore(c.expiresAt)) throw new AuthFailure(422, "Mã xác thực đã hết hạn. Bấm Gửi lại mã để nhận mã mới.");
+            if (otp == null || !otp.matches("\\d{4}")) throw new AuthFailure(400, "Mã xác thực phải gồm đúng 4 chữ số.");
+            if (!MessageDigest.isEqual(c.otpHash, hash(c.salt, otp))) {
+                c.attempts++;
+                if (c.attempts >= MAX_ATTEMPTS) { challenges.remove(challengeId); throw new AuthFailure(429, "Bạn đã nhập sai quá nhiều lần. Vui lòng đăng nhập lại bằng Google."); }
+                throw new AuthFailure(401, "Mã xác thực không đúng. Vui lòng kiểm tra lại.");
+            }
+            // A database failure must not consume a correct OTP and then look expired.
+            AuthUserInfo info = loginCompleter.complete(c.identity);
+            c.used = true;
+            challenges.remove(challengeId, c);
+            return info;
         }
-        c.used = true;
-        CHALLENGES.remove(challengeId);
-        User user = findOrCreateCustomer(c.identity);
+    }
+
+    private AuthUserInfo completeLogin(GoogleIdentity identity) throws AuthFailure {
+        User user = findOrCreateCustomer(identity);
         AuthUserInfo info = AuthMapper.toUserInfo(user, "CUSTOMER");
         info.setToken(JwtTokenUtil.issueToken(user.getId(), user.getUsername(), "CUSTOMER"));
         return info;
@@ -114,12 +146,21 @@ public final class GoogleOtpAuthService {
 
     private Challenge challenge(String id) throws AuthFailure {
         if (id == null || id.isBlank()) throw new AuthFailure(400, "Phiên xác thực không hợp lệ. Vui lòng đăng nhập lại bằng Google.");
-        Challenge c = CHALLENGES.get(id);
-        if (c == null || c.used || Instant.now().isAfter(c.expiresAt)) { CHALLENGES.remove(id); throw new AuthFailure(401, "Mã xác thực đã hết hạn. Vui lòng đăng nhập lại bằng Google."); }
+        Challenge c = challenges.get(id);
+        if (c == null) throw new AuthFailure(410, "Phiên xác thực không còn tồn tại. Vui lòng chọn lại Google để nhận mã mới.");
+        requireActive(id, c);
         return c;
     }
 
+    private void requireActive(String id, Challenge c) throws AuthFailure {
+        if (c.used || !clock.instant().isBefore(c.sessionExpiresAt)) {
+            challenges.remove(id, c);
+            throw new AuthFailure(410, "Phiên xác thực đã kết thúc. Vui lòng chọn lại Google để nhận mã mới.");
+        }
+    }
+
     private GoogleIdentity verifyGoogleToken(String credential) throws AuthFailure {
+        requireConfigured();
         if (credential == null || credential.isBlank() || credential.length() > 12_000) throw new AuthFailure(400, "Google không trả về thông tin xác thực hợp lệ.");
         try {
             String endpoint = "https://oauth2.googleapis.com/tokeninfo?id_token=" + URLEncoder.encode(credential, StandardCharsets.UTF_8);
@@ -163,7 +204,7 @@ public final class GoogleOtpAuthService {
                     if (!r.next()) throw new AuthFailure(500, "Không tìm thấy quyền khách hàng trong hệ thống."); roleId = r.getInt(1);
                 }
                 int customerId;
-                try (PreparedStatement q = c.prepareStatement("INSERT INTO customers(full_name,identity_card,phone,email,address) VALUES(?,NULL,NULL,?,NULL)", Statement.RETURN_GENERATED_KEYS)) {
+                try (PreparedStatement q = c.prepareStatement("INSERT INTO customers(full_name,identity_card,phone,email,address) VALUES(?,NULL,'',?,NULL)", Statement.RETURN_GENERATED_KEYS)) {
                     q.setString(1, identity.name().isBlank() ? identity.email() : identity.name()); q.setString(2, identity.email()); q.executeUpdate();
                     try (ResultSet keys = q.getGeneratedKeys()) { if (!keys.next()) throw new AuthFailure(500, "Không thể tạo hồ sơ khách hàng."); customerId = keys.getInt(1); }
                 }
@@ -197,10 +238,16 @@ public final class GoogleOtpAuthService {
             command(out, in, Base64.getEncoder().encodeToString(username.getBytes(StandardCharsets.UTF_8)), 334);
             command(out, in, Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.UTF_8)), 235);
             command(out, in, "MAIL FROM:<" + from + ">", 250); command(out, in, "RCPT TO:<" + recipient + ">", 250); command(out, in, "DATA", 354);
-            String subject = Base64.getEncoder().encodeToString("Mã xác thực Aurelia Grand Palace".getBytes(StandardCharsets.UTF_8));
-            String body = "Mã OTP đăng nhập Aurelia của bạn là: " + otp + "\r\n\r\nMã có hiệu lực trong 5 phút và chỉ được dùng một lần. Nếu bạn không yêu cầu đăng nhập, hãy bỏ qua email này.";
-            out.write("From: Aurelia Grand Palace <" + from + ">\r\nTo: <" + recipient + ">\r\nSubject: =?UTF-8?B?" + subject + "?=\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n" + body.replace("\n.", "\n..") + "\r\n.\r\n"); out.flush(); expect(in, 250); command(out, in, "QUIT", 221);
+            out.write(otpMessage(from, recipient, otp) + "\r\n.\r\n"); out.flush(); expect(in, 250); command(out, in, "QUIT", 221);
         }
+    }
+    // Keep the SMTP wire payload ASCII while preserving Vietnamese as UTF-8 MIME.
+    static String otpMessage(String from, String recipient, String otp) {
+        String subject = Base64.getEncoder().encodeToString("Mã xác thực Aurelia Grand Palace".getBytes(StandardCharsets.UTF_8));
+        String body = "Mã OTP đăng nhập Aurelia của bạn là: " + otp + "\r\n\r\nMã có hiệu lực trong 5 phút và chỉ được dùng một lần. Nếu bạn không yêu cầu đăng nhập, hãy bỏ qua email này.";
+        String encodedBody = Base64.getMimeEncoder(76, "\r\n".getBytes(StandardCharsets.US_ASCII)).encodeToString(body.getBytes(StandardCharsets.UTF_8));
+        return "From: Aurelia Grand Palace <" + from + ">\r\nTo: <" + recipient + ">\r\nSubject: =?UTF-8?B?" + subject
+                + "?=\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" + encodedBody;
     }
     private static void command(BufferedWriter out, BufferedReader in, String line, int expected) throws Exception { out.write(line + "\r\n"); out.flush(); expect(in, expected); }
     private static void expect(BufferedReader in, int expected) throws Exception { String line, last = null; do { line = in.readLine(); if (line == null) throw new IllegalStateException("SMTP closed connection"); last = line; } while (line.length() > 3 && line.charAt(3) == '-'); if (last == null || !last.startsWith(Integer.toString(expected))) throw new IllegalStateException("SMTP rejected request"); }

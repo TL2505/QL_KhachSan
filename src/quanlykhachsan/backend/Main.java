@@ -57,7 +57,9 @@ public class Main {
 
     /** Configures the same production routes used by main, without starting jobs or migrating data. */
     public static HttpServer createServer(int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
+        String bindAddress = System.getenv().getOrDefault("HOTEL_BIND_ADDRESS", "127.0.0.1").trim();
+        if (bindAddress.isEmpty()) bindAddress = "127.0.0.1";
+        HttpServer server = HttpServer.create(new InetSocketAddress(bindAddress, port), 0);
         // Khởi tạo các Filter
         Filter corsFilter = new CorsFilter();
         Filter jwtFilter = new JwtFilter();

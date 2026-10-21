@@ -45,6 +45,7 @@ services:
       DB_NAME: hotel_prod_db
       DB_USER: ${DB_USER:?Set an approved application database user}
       DB_PASSWORD: ${DB_PASSWORD:?Set an approved application database password}
+      HOTEL_BIND_ADDRESS: 0.0.0.0
       JWT_SECRET: ${JWT_SECRET:?Set approved JWT_SECRET configuration}
       AES_VAULT_KEY: ${AES_VAULT_KEY:?Supply an approved Base64 AES-256 vault key}
       HMAC_IDENTITY_KEY: ${HMAC_IDENTITY_KEY:-aurelia_pms_secret_identity_key_2026_prod_vault_guard}
@@ -63,7 +64,7 @@ services:
     volumes:
       - ai_settings_data:/app/.data/ai
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     networks:
       - pms-internal-net
     healthcheck:
@@ -78,7 +79,7 @@ services:
     image: nginx:1.25-alpine
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "127.0.0.1:3000:80"
     volumes:
       - ./web-ui:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro

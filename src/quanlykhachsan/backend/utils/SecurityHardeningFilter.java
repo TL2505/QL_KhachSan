@@ -29,8 +29,10 @@ public class SecurityHardeningFilter extends Filter {
     public static final String HEADER_X_FRAME_OPTIONS = "DENY";
     public static final String HEADER_CONTENT_SECURITY_POLICY =
             "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; " +
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://accounts.google.com/gsi/client; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; " +
+            "connect-src 'self' https://accounts.google.com/gsi/; " +
+            "frame-src 'self' https://accounts.google.com/gsi/; " +
             "font-src 'self' https://fonts.gstatic.com; " +
             "img-src 'self' data: https:;";
     public static final String HEADER_STRICT_TRANSPORT_SECURITY = "max-age=31536000; includeSubDomains";

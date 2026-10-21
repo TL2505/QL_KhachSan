@@ -900,3 +900,18 @@ Invalid settings return 400, oversized bodies return 413, non-admin callers retu
 All cloud calls include packaged public project context and administrator supplemental notes. Gemini additionally receives prior successful user/model turns from the same authenticated actor and session. It preserves model content/signatures server-side while returning only answer text to the browser. Memory is process-local, capped at 1000 sessions, six pairs and 32,000 characters per session, with a 30-minute idle TTL cleaned on subsequent chat access. Failed generations are not committed. Model/key/knowledge changes reset context; browser reload/account changes create a new session. Concurrent sends in the same Gemini session return 409 `AI_CONVERSATION_BUSY` with `Retry-After: 2` before policy evaluation.
 
 See [the developer setup guide](../chatbot-ai-dev-setup.md) for independent demo credentials, local startup and verification.
+
+### Google customer authentication — 2026-10-21
+
+These public routes use the standard success/error envelope. The portal uses one Google Identity Services button for sign-in/sign-up, with no Facebook SDK. Configuration requires `GOOGLE_CLIENT_ID` and SMTP email delivery; see [Google setup](../google-otp-setup.md).
+
+| Route | Behavior |
+| --- | --- |
+| `GET /api/v1/auth/google/config` | Returns `{enabled, client_id?}`. Client ID is included only when Google and SMTP are configured; no SMTP credentials or secrets are returned. |
+| `POST /api/v1/auth/google/request-otp` | Accepts `{credential}` from Google GIS. Backend validates with Google, checks audience/issuer/verified email/subject, then emails a four-digit OTP. Returns `{challenge_id, email, expires_at}` with a masked email; no hotel JWT yet. |
+| `POST /api/v1/auth/google/resend-otp` | Accepts `{challenge_id}`. Resends a new code and invalidates the old one. Up to two resends per challenge. |
+| `POST /api/v1/auth/google/verify-otp` | Accepts `{challenge_id, otp}`. Validates a five-minute, one-use code with at most five wrong attempts across resends. Creates a customer account on first use or selects the account by unique Google subject; returns the normal auth user projection including JWT and linked customer ID. An existing password account with the same email returns 409 rather than being auto-linked. A failed account/session creation does not consume the valid code. |
+| `POST /api/v1/auth/google` | Retired direct social login: returns 410. No mock token, unverified JWT decoding or email-based auto-provisioning fallback. |
+| `POST /api/v1/auth/facebook` | Removed login route: returns 410 and never creates an account/session. |
+
+Unavailable Google/SMTP configuration or transport returns 503. Invalid input/credentials or a wrong code return 400/401. An expired code returns 422 and can be resent within fifteen minutes of the most recent successful send. Missing, used or expired sessions return 410 and the portal restores the Google button. Exhausted attempts/resends return 429. Code validity starts after successful SMTP delivery; failed resend delivery preserves the previous code and resend budget. Challenges are process-local and do not survive a backend restart. Frontend stores only the final hotel session, including `customerId`; Google credentials remain transient.

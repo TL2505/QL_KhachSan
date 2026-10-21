@@ -14,7 +14,7 @@ Hướng dẫn dành cho **Windows + PowerShell**, dùng database demo riêng tr
 | Mạng | Backend truy cập được HTTPS tới nhà cung cấp AI đã chọn |
 | AI key | Dev tự tạo API key của nhà cung cấp; quyền model và hạn mức được quản lý tại tài khoản đó |
 
-Các cổng local cần dùng: database `3306`, backend `8081`, web `3000`. Không cần cổng `8082` trong luồng cloud của hướng dẫn này.
+Các cổng local cần dùng: database `3306`, backend `8081`, web `3000`. Cấu hình Compose phát hành web và backend trên loopback (`127.0.0.1`) để không cho máy khác trong mạng truy cập cấu hình HTTP thử nghiệm. Không dùng cấu hình Compose dev này để triển khai trên mạng dùng chung hoặc production; dùng cấu hình production có HTTPS. Không cần cổng `8082` trong luồng cloud của hướng dẫn này.
 
 ## 2. Lấy đúng nhánh và cài web dependencies
 
@@ -128,9 +128,9 @@ Lưu ý theo nhà cung cấp:
 
 Danh sách model có thể gồm model chuyên dụng cho tác vụ khác. Lấy được danh sách chưa bảo đảm có quyền sinh nội dung hoặc còn hạn mức. Không có model/key nào được cam kết miễn phí trong hướng dẫn này.
 
-Không cần đặt `GEMINI_API_KEY` trong frontend hoặc sửa mã JavaScript. Luồng hiện tại đọc key từ cấu hình admin mã hóa trên backend. Backend Java cũng không tự đọc `.env` khi chạy bằng launcher.
+Không cần đặt `GEMINI_API_KEY` trong frontend hoặc sửa mã JavaScript. Luồng hiện tại đọc key từ cấu hình admin mã hóa trên backend. Launcher demo `scripts/start-demo.ps1` nạp cấu hình local từ `.env` (biến môi trường đã có được ưu tiên); Java chạy trực tiếp không tự đọc file này. Các khoá AI lưu trong admin vẫn là nguồn cấu hình chatbot.
 
-Launcher đặt `AI_GUEST_ENABLED=false` để không tự dùng RAG nội bộ chưa cấu hình. Khi **nhà cung cấp cloud đã được bật trong admin**, chatbot vẫn dùng nhà cung cấp đó; không cần đổi flag hoặc bật Python/RAG.
+Backend Java mặc định chỉ bind vào `127.0.0.1`; launcher demo cũng giữ backend trên loopback, nên chỉ truy cập được từ cùng máy. Nếu tự host qua Compose, service bind nội bộ trong container và các cổng dev chỉ được publish tới loopback. Launcher đặt `AI_GUEST_ENABLED=false` để không tự dùng RAG nội bộ chưa cấu hình. Khi **nhà cung cấp cloud đã được bật trong admin**, chatbot vẫn dùng nhà cung cấp đó; không cần đổi flag hoặc bật Python/RAG.
 
 ## 6. Chạy thử chatbot
 

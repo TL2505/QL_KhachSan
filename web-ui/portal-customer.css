@@ -3,6 +3,136 @@
   display: none;
 }
 
+/* Customer content uses the same tier/theme tokens as the portal shell. */
+.customer-portal {
+  --customer-accent-text: var(--portal-soft);
+  --customer-success-text: #6ee7b7;
+  --customer-warning-text: #fde68a;
+  --customer-warning-bg: #332c1b;
+}
+html[data-theme="light"] .customer-portal {
+  --customer-success-text: #08734f;
+  --customer-warning-text: #854d0e;
+  --customer-warning-bg: #fff7e6;
+}
+.customer-portal .portal-view .customer-text { color: var(--portal-text); }
+.customer-portal .portal-view .customer-muted { color: var(--portal-muted); }
+.customer-portal .portal-view .customer-accent { color: var(--customer-accent-text); }
+.customer-portal .portal-view .customer-success { color: var(--customer-success-text); }
+.customer-portal .portal-view .customer-secondary-surface { background: var(--customer-secondary-bg); }
+.customer-portal .portal-view .customer-border { border-color: var(--portal-border); }
+.customer-portal .portal-view:is(.customer-dashboard-view, .customer-services-view, .customer-profile-view) { min-width: 0; }
+.customer-portal .portal-view :is(input, textarea)::placeholder { color: var(--portal-muted); opacity: 1; }
+
+.customer-portal .portal-view .customer-membership-card {
+  min-height: 270px;
+  height: 100%;
+  border-color: var(--customer-nav-active-border);
+  background: linear-gradient(135deg, var(--customer-surface), var(--customer-secondary-bg));
+  box-shadow: var(--customer-card-shadow);
+}
+.customer-portal .customer-membership-card > .absolute { color: var(--portal-gold); }
+.customer-portal .portal-view .customer-membership-badge {
+  color: var(--customer-accent-text);
+  border-color: var(--customer-nav-active-border);
+  background: var(--customer-nav-active-bg);
+  white-space: nowrap;
+}
+.customer-portal .customer-membership-card > .grid { grid-template-columns: 1.25fr .8fr 1fr; }
+.customer-portal .customer-membership-card > .grid > div { min-width: 0; }
+.customer-portal .customer-cardholder { overflow-wrap: anywhere; line-height: 1.5; }
+.customer-portal .customer-membership-card .text-\[9px\] { font-size: 10px; }
+.customer-portal .portal-view .customer-progress-track {
+  background: var(--customer-secondary-bg);
+  border-color: var(--portal-border);
+}
+.customer-portal #member-summary-stats > .card {
+  flex-direction: row;
+  align-items: center;
+  min-width: 0;
+}
+.customer-portal #member-summary-stats h4 { white-space: nowrap; }
+.customer-portal #member-summary-stats h4 span { display: inline; }
+.customer-portal .greeting-banner > :first-child { min-width: 0; }
+body.customer-portal .portal-view .customer-booking-action {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  height: auto;
+  padding: 11px 16px;
+  border: 1px solid var(--customer-nav-active-border);
+  border-radius: 12px;
+  color: var(--customer-accent-text);
+  background: var(--customer-nav-active-bg);
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.customer-portal .customer-booking-action svg { flex: 0 0 16px; width: 16px; height: 16px; }
+body.customer-portal .portal-view .customer-booking-action:hover { border-color: var(--portal-gold); filter: brightness(.97); }
+
+.customer-portal .portal-view.customer-services-view :is(.service-card, .customer-voucher-card) {
+  min-width: 0;
+  background: var(--customer-secondary-bg);
+  border-color: var(--portal-border);
+  box-shadow: none;
+}
+.customer-portal .customer-services-empty { grid-column: 1 / -1; margin: 0; padding: 8px 0; font-size: 13px; line-height: 1.7; }
+.customer-portal .customer-services-view .customer-voucher-card h3 { font-size: 16px; line-height: 1.4; }
+.customer-portal .customer-services-view .customer-voucher-card p { line-height: 1.65; }
+.customer-portal .customer-services-view .customer-voucher-tag {
+  color: var(--customer-accent-text);
+  background: var(--customer-surface);
+  border-color: var(--customer-nav-active-border);
+}
+.customer-portal .customer-services-view :is(.btn-copy-code, .btn-filter-cat) {
+  min-height: 38px;
+  flex-shrink: 0;
+  border: 1px solid var(--portal-border);
+  cursor: pointer;
+}
+.customer-portal .customer-services-view .btn-filter-cat { white-space: nowrap; }
+.customer-portal .customer-services-view .btn-filter-cat.active {
+  color: #fff;
+  background: var(--customer-primary-bg);
+  border-color: var(--customer-primary-bg);
+}
+.customer-portal .customer-services-view .btn-copy-code:hover {
+  color: var(--customer-accent-text);
+  background: var(--customer-nav-active-bg);
+}
+.customer-portal .customer-profile-summary > div { gap: 16px; align-items: start; }
+.customer-portal .customer-profile-summary > div > :last-child { text-align: right; overflow-wrap: anywhere; }
+.customer-portal .portal-view .customer-profile-note {
+  color: var(--customer-warning-text);
+  background: var(--customer-warning-bg);
+  border-color: color-mix(in srgb, var(--customer-warning-text) 30%, transparent);
+}
+.customer-portal .customer-profile-note .customer-accent { color: inherit; }
+.customer-portal .customer-support-placeholder { max-width: 760px; }
+.customer-portal .portal-view > .card.customer-support-placeholder { padding: 0; }
+.customer-portal .customer-support-placeholder .card-body { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding: clamp(24px, 4vw, 40px); }
+.customer-portal .customer-support-placeholder .card-title { margin: 0; font: 600 24px/1.3 'Playfair Display', Georgia, serif; color: var(--portal-text); }
+.customer-portal .customer-support-placeholder p { max-width: 560px; margin: 0; color: var(--portal-muted); line-height: 1.8; }
+.customer-portal .customer-support-placeholder .badge { display: inline-flex; align-items: center; min-height: 26px; padding: 4px 10px; border: 1px solid var(--customer-nav-active-border); border-radius: 999px; color: var(--customer-accent-text); background: var(--customer-nav-active-bg); font-size: 12px; font-weight: 600; }
+.customer-portal .customer-support-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; color: var(--customer-accent-text); background: var(--customer-secondary-bg); }
+.customer-portal .customer-support-icon svg { width: 28px; height: 28px; }
+.customer-portal :is(.customer-booking-action, .btn-filter-cat, .btn-copy-code):focus-visible { outline: 3px solid var(--portal-gold); outline-offset: 3px; }
+@media (max-width: 640px) {
+  .customer-portal .customer-voucher-card > :last-child { flex-wrap: wrap; }
+  .customer-portal .customer-profile-summary > div { flex-wrap: wrap; gap: 4px 12px; }
+  .customer-portal .customer-membership-card { padding: 20px; }
+  .customer-portal .customer-membership-heading { flex-wrap: wrap; gap: 12px; }
+  .customer-portal .customer-membership-card > .grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .customer-portal .customer-membership-card > .grid > :last-child { grid-column: 1 / -1; text-align: left; }
+}
+
 .customer-portal .identity-scan-panel {
   margin-top: 24px;
   padding: 20px;

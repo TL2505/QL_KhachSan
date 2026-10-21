@@ -28,19 +28,19 @@ Trang Thành viên hiển thị Gold từ **300 điểm**, VIP từ **1.000 đi�
 
 ## Customer — các vấn đề còn tồn đọng (21/10/2026)
 
-Phạm vi đợt sửa mới nhất: chỉ xử lý hộp thông báo bị che và theme của hộp thông báo. Các mục dưới đây **chưa sửa**, dựa trên ảnh người dùng gửi và kiểm tra mã; không coi các kiểm tra shell thành nghiệm thu toàn bộ nội dung customer.
+Danh sách dưới đây ghi nhận các vấn đề sau đợt sửa hộp thông báo. Cập nhật tiếp theo đã xử lý màu nội dung Dashboard, Dịch vụ & ưu đãi và Hồ sơ; xem kết quả kiểm tra bên dưới. Các mục khác vẫn mở.
 
 | Mức | Vị trí | Vấn đề / bằng chứng | Hướng xử lý tiếp |
 | --- | --- | --- | --- |
-| P1 | Dashboard sáng — `#member-stats-wrapper` | Tiêu đề tiến độ gần như mất trên nền trắng; mô tả hạng và phần giải thích có độ tương phản thấp. `js/customer/dashboard.js` còn `text-white`, `text-slate-300` và nền tối bán trong suốt cố định. | Chuyển màu chữ/nền/viền sang token theme; kiểm tra tương phản cho cả bốn hạng. |
-| P1 | Dashboard sáng — `#member-summary-stats` | Giá trị số đêm/lượt đặt phòng không nhìn rõ trong ảnh; `h4` còn `text-white` khi card đã đổi thành trắng. | Dùng màu nội dung theo theme cho giá trị và nhãn phụ; kiểm tra số 0 và số lớn. |
+| Đã sửa | Dashboard sáng — `#member-stats-wrapper` | Tiêu đề, mô tả, tiến độ và phần giải thích dùng token theme thay màu tối cố định. | Đã xem trực tiếp Member sáng/tối; chưa nghiệm thu trực quan ba hạng còn lại. |
+| Đã sửa | Dashboard sáng — `#member-summary-stats` | Số đêm, lượt đặt phòng và ưu đãi dùng màu nội dung/ngữ nghĩa theo theme. | Đã xác nhận số 0 hiển thị trên backend thật. |
 | P2 | Dashboard, Đặt phòng | Một số badge, icon, khối hướng dẫn và nút ở trang Đặt phòng còn màu amber cố định, chưa đồng bộ hoàn toàn với màu hạng. Giữ màu ngữ nghĩa thành công/cảnh báo khi phù hợp. | Rà soát component nội dung theo Member/Silver/Gold/VIP; tách màu thương hiệu trang trí của thẻ khỏi màu thao tác chính. |
 | P2 | Đặt phòng và một số trang hồ sơ | Shell và nội dung có hai tiêu đề cùng nghĩa, ví dụ “Lịch sử đặt phòng” / “Lịch Sử Đặt Phòng” trong ảnh phản hồi trước. | Thống nhất một tiêu đề chính và phần mô tả, kiểm tra spacing từng tab. |
-| P2 | Thẻ thành viên dashboard | Tên chủ thẻ bị cắt thành “Khách hàng Te...” ngay cả ở desktop trong ảnh mới. | Cân đối cột thông tin trên thẻ, cho phép xuống dòng hoặc cung cấp cách xem tên đầy đủ. |
+| Đã sửa | Thẻ thành viên dashboard | Tên chủ thẻ được xuống dòng thay vì cắt; thẻ dùng nền theo theme, nhãn club theo hạng thực tế. | Kiểm thử nhãn Member/Silver/Gold/VIP và escape tên người dùng; đã xem trực tiếp Member sáng/tối. |
 | P2 | Đặt phòng — bảng rỗng | Ảnh phản hồi trước có thanh cuộn ngang ngay cả khi không có đơn; bố cục trạng thái rỗng bị bó trong khung bảng. | Kiểm tra `min-width` bảng và hiển thị trạng thái rỗng ngoài vùng cuộn; vẫn giữ cuộn ngang khi có dữ liệu trên màn hình hẹp. |
 | P2 | Thông báo — khi API lỗi | Kiểm tra mã `loadNotifications()` cho thấy có fallback thông báo/voucher minh họa khi API không trả dữ liệu hợp lệ; có thể làm khách hiểu nhầm ưu đãi thật. Chưa xác nhận lỗi API trên backend thật. | Thay fallback bằng trạng thái lỗi/thử lại và phân biệt rõ dữ liệu rỗng; xử lý ở lượt sau, không đổi trong bản sửa lớp hiển thị này. |
 
-Chưa nghiệm thu toàn bộ Dịch vụ & ưu đãi, Hồ sơ, Bảo mật và các modal với backend thật trong lượt này; cần rà soát sáng/tối, mobile và dữ liệu thực tế trước khi đóng audit customer.
+Đã xem trực tiếp Dashboard, Dịch vụ & ưu đãi, Hồ sơ và placeholder Hỗ trợ bằng tài khoản customer trên `localhost:8081`, giao diện sáng/tối ở viewport desktop của trình duyệt. Không gửi yêu cầu dịch vụ, sửa hồ sơ hoặc tin nhắn thật. Danh mục dịch vụ rỗng được giải thích bằng trạng thái cập nhật, không thêm dữ liệu giả. Chưa nghiệm thu mobile, ba hạng khác, Bảo mật và mọi modal/giao dịch; audit customer vẫn mở.
 
 ## Kết quả và giới hạn kiểm tra
 

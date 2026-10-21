@@ -136,8 +136,11 @@ test('100% File synchronization between web-ui/ and web-ui/public/', () => {
     ['portal-customer.css', 'public/portal-customer.css'],
     ['portal-theme.css', 'public/portal-theme.css'],
     ['js/view-customer.js', 'public/js/view-customer.js'],
+    ['js/auth/google-signin.js', 'public/js/auth/google-signin.js'],
     ['js/customer/tier-helper.js', 'public/js/customer/tier-helper.js'],
     ['js/customer/dashboard.js', 'public/js/customer/dashboard.js'],
+    ['js/customer/concierge.js', 'public/js/customer/concierge.js'],
+    ['js/customer/support.js', 'public/js/customer/support.js'],
     ['js/customer/bookings.js', 'public/js/customer/bookings.js'],
     ['js/customer/profile.js', 'public/js/customer/profile.js'],
     ['js/customer/security.js', 'public/js/customer/security.js']
@@ -253,6 +256,29 @@ test('getLegacyTierInfo maps tiers and calculates points & spend correctly (1 po
 // =============================================================================
 // 3. TAB 1: DASHBOARD MODULE (DIGITAL MEMBER CARD & SUMMARY STATS)
 // =============================================================================
+test('Dashboard club label follows earned tier and escapes the cardholder name', async () => {
+  const env = setupMockEnvironment();
+  const { api } = await loadModule('public/api.js');
+  const originalGet = api.get;
+  try {
+    const { renderDashboard } = await loadModule('public/js/customer/dashboard.js');
+    for (const [points, label] of [[0, 'MEMBER CLUB'], [500, 'SILVER MEMBER CLUB'], [1000, 'GOLD MEMBER CLUB'], [5000, 'VIP MEMBER CLUB']]) {
+      api.get = async url => url.startsWith('/loyalty/') ? [{ type: 'earn', pointsChange: points }] : [];
+      const container = env.getOrCreate('view-container');
+      await renderDashboard(container, { customerId: 3, fullName: '<img src=x onerror=alert(1)>' });
+      const card = env.getOrCreate('member-card-wrapper').innerHTML;
+      assert.ok(card.includes(`>${label}</span>`), `Expected ${label} at ${points} points`);
+      assert.doesNotMatch(card, /<img\b/);
+      assert.doesNotMatch(container.innerHTML, /<img\b/);
+      assert.match(card, /&lt;img/);
+      if (points === 0) assert.match(env.getOrCreate('member-stats-wrapper').innerHTML, /giảm 5% giá phòng/);
+    }
+  } finally {
+    api.get = originalGet;
+    env.teardown();
+  }
+});
+
 test('Dashboard module renders Digital Member Card, Tier Progress, and 3 Summary Stats', async () => {
   const env = setupMockEnvironment();
   try {
@@ -273,6 +299,9 @@ test('Dashboard module renders Digital Member Card, Tier Progress, and 3 Summary
     assert.match(html, /id="member-card-wrapper"/, 'Must contain member-card-wrapper');
     assert.match(html, /id="member-stats-wrapper"/, 'Must contain member-stats-wrapper');
     assert.match(html, /id="member-summary-stats"/, 'Must contain member-summary-stats');
+    const card = env.getOrCreate('member-card-wrapper').innerHTML;
+    assert.match(card, />MEMBER CLUB</, 'A Member must receive the normal club label');
+    assert.doesNotMatch(card, /VIP MEMBER CLUB/, 'A Member must not be presented as VIP');
   } finally {
     env.teardown();
   }
@@ -453,13 +482,14 @@ test('Security module validates passwords properly and btn-save-password re-enab
 // =============================================================================
 // 7. AUTH GUARD & VIEW ROUTING VERIFICATION
 // =============================================================================
-test('portal-app.js configures 5 customer tabs and handles view routing cleanly', async () => {
+test('portal-app.js places customer support immediately after concierge and handles view routing cleanly', async () => {
   const portalAppSource = fs.readFileSync(path.join(webUiDir, 'portal-app.js'), 'utf-8');
 
-  // Verify menus.CUSTOMER contains all 5 required modules
+  // Customer navigation keeps support directly below services and offers.
   assert.match(portalAppSource, /\['dashboard',\s*'Tổng quan'/);
   assert.match(portalAppSource, /\['bookings',\s*'Đặt phòng'/);
   assert.match(portalAppSource, /\['concierge',\s*'Dịch vụ & ưu đãi'/);
+  assert.match(portalAppSource, /\['concierge',[^\n]+\n\s*\['support',\s*'Hỗ trợ'/);
   assert.match(portalAppSource, /\['profile',\s*'Hồ sơ'/);
   assert.match(portalAppSource, /\['security',\s*'Bảo mật'/);
 
@@ -467,6 +497,20 @@ test('portal-app.js configures 5 customer tabs and handles view routing cleanly'
   assert.match(portalAppSource, /localStorage\.getItem\(['"]auth_token['"]\)/, 'Auth Guard must check auth_token');
   assert.match(portalAppSource, /index\.html#login/, 'Auth Guard must redirect unauthenticated users to index.html#login');
   assert.match(portalAppSource, /appView\.classList\.remove\(['"]hidden['"],\s*['"]opacity-0['"]\)/, 'Must immediately unhide appView on token presence');
+});
+
+test('Customer support is a clearly labelled placeholder without a message composer', async () => {
+  const env = setupMockEnvironment();
+  try {
+    const { renderSupport } = await loadModule('public/js/customer/support.js');
+    const container = env.getOrCreate('view-container');
+    renderSupport(container);
+    assert.match(container.innerHTML, /Sắp ra mắt/);
+    assert.match(container.innerHTML, /Hỗ trợ khách hàng/);
+    assert.doesNotMatch(container.innerHTML, /<(form|textarea|input|button)\b/);
+  } finally {
+    env.teardown();
+  }
 });
 
 // =============================================================================

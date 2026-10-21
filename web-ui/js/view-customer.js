@@ -1,19 +1,21 @@
 // Customer Views Module Coordinator
-import { renderDashboard } from "./customer/dashboard.js?v=3.6.18";
+import { renderDashboard } from "./customer/dashboard.js?v=3.6.20";
 import { renderBookings } from "./customer/bookings.js";
-import { renderProfile } from "./customer/profile.js";
+import { renderProfile } from "./customer/profile.js?v=3.6.20";
 import { renderSecurity } from "./customer/security.js";
 import { renderDiscovery } from "./customer/discovery.js";
 import { renderLoyalty } from "./customer/loyalty.js";
 import { renderPromotions } from "./customer/promotions.js";
 import { renderChat } from "./customer/chat.js";
-import { renderConcierge } from "./customer/concierge.js";
+import { renderConcierge } from "./customer/concierge.js?v=3.6.20";
+import { renderSupport } from "./customer/support.js";
 import { api } from "../api.js";
 import { getLegacyTierInfo, summarizeLoyaltyHistory } from "./customer/tier-helper.js";
 
 export async function loadCustomerView(tab = "dashboard") {
   const container = document.getElementById("view-container");
   if (!container) return;
+  container.classList.remove('customer-dashboard-view', 'customer-services-view', 'customer-profile-view');
 
   let session = null;
   try {
@@ -51,6 +53,8 @@ export async function loadCustomerView(tab = "dashboard") {
       await renderBookings(container, session);
     } else if (tab === "concierge") {
       await renderConcierge(container, session);
+    } else if (tab === "support") {
+      renderSupport(container);
     } else if (tab === "profile") {
       await renderProfile(container, session);
     } else if (tab === "security") {
