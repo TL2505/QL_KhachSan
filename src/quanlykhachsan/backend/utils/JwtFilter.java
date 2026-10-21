@@ -18,6 +18,12 @@ public class JwtFilter extends Filter {
         "/auth/login",
         "/api/v1/auth/register",
         "/auth/register",
+        "/api/v1/auth/oauth",
+        "/auth/oauth",
+        "/api/v1/auth/oauth/google",
+        "/auth/oauth/google",
+        "/api/v1/auth/oauth/facebook",
+        "/auth/oauth/facebook",
         "/api/v1/health",
         "/health",
         "/api/v1/rooms/availability",
@@ -57,6 +63,8 @@ public class JwtFilter extends Filter {
                 || path.equals("/booking") || path.startsWith("/booking/")
                 || path.startsWith("/api/v1/auth/google")
                 || path.startsWith("/api/v1/auth/facebook")
+                || path.startsWith("/api/v1/auth/oauth")
+                || path.contains("/auth/oauth/")
                 || path.endsWith("/auth/google")
                 || path.endsWith("/auth/facebook")
                 || path.equals("/api/v1/rooms")

@@ -97,7 +97,8 @@ export function getApiBaseUrl() {
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     const host = window.location.hostname || 'localhost';
-    if (window.location.port === '3000') {
+    const port = window.location.port || (window.location.origin.includes(':3000') ? '3000' : '');
+    if (port === '3000') {
       return `http://${host}:8081/api/v1`;
     }
     return window.location.origin + '/api/v1';
@@ -185,7 +186,7 @@ export async function apiFetch(path, init = {}) {
       signal = controller.signal;
       timeoutId = setTimeout(() => {
         controller.abort(new DOMException('Request timed out after 2.5s', 'TimeoutError'));
-      }, 2500);
+      }, 15000);
     }
     try {
       return await fetch(targetUrl, { ...init, headers, signal });
@@ -224,12 +225,16 @@ export async function apiFetch(path, init = {}) {
 
   if (response.status === 204) return null;
 
-  const text = await response.text();
-  let result;
-  try {
-    result = text ? JSON.parse(text) : null;
-  } catch {
-    throw new ApiError('Chưa thể đọc phản hồi. Vui lòng thử lại hoặc liên hệ lễ tân.', response.status);
+  let result = null;
+  if (typeof response.text === 'function') {
+    const text = await response.text();
+    try {
+      result = text ? JSON.parse(text) : null;
+    } catch {
+      throw new ApiError('Chưa thể đọc phản hồi. Vui lòng thử lại hoặc liên hệ lễ tân.', response.status);
+    }
+  } else if (typeof response.json === 'function') {
+    result = await response.json();
   }
 
   if (!response.ok) {
@@ -239,9 +244,10 @@ export async function apiFetch(path, init = {}) {
 
   if (result && typeof result === 'object' && 'status' in result) {
     const status = String(result.status).toLowerCase();
-    if (status === 'success') return result.data ?? null;
+    if (status === 'success') return result.data ?? result;
     if (['error', 'failed', 'failure'].includes(status)) {
-      throw new ApiError('Yêu cầu chưa được hoàn tất. Vui lòng kiểm tra lại.', response.status);
+      const serverMessage = typeof result.message === 'string' && result.message.trim() ? result.message.trim() : 'Yêu cầu chưa được hoàn tất. Vui lòng kiểm tra lại.';
+      throw new ApiError(serverMessage, response.status);
     }
   }
 
@@ -448,7 +454,7 @@ export function mapRoomCategory(roomTypeId, rawCategory, rawName) {
 
 export function formatCurrency(amount, currency = "VND") {
   if (currency === "USD") {
-    const usd = Math.round(amount / 25000);
+    const usd = Math.round(amount / 150000);
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(usd);
   }
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);

@@ -27,6 +27,7 @@ public class BookingController implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        exchange.getResponseHeaders().set("Cache-Control", "no-store");
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
@@ -186,8 +187,10 @@ public class BookingController implements HttpHandler {
             error.addProperty("timestamp", java.time.Instant.now().toString());
             ApiResponseUtil.write(exchange, 409, JsonUtil.getGson().toJson(error));
         } catch (Exception e) {
-            e.printStackTrace();
-            ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("Booking transaction was not confirmed; retry the same Idempotency-Key or contact the Front Desk"));
+            exchange.getResponseHeaders().set("X-Booking-Error-Id", BookingFailureLog.record("GET".equalsIgnoreCase(method) ? "booking-list" : "booking-write", e));
+            ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("GET".equalsIgnoreCase(method)
+                ? "Unable to load bookings; please retry or contact the Front Desk"
+                : "Booking transaction was not confirmed; retry the same Idempotency-Key or contact the Front Desk"));
         }
     }
 }

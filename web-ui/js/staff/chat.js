@@ -1,12 +1,15 @@
+
 import { api } from '../../api.js';
 import { escapeHtml } from '../shared/ui.js';
 import { normalizeSupportInboxes } from './chat-model.js';
 
 let disposeChat = null;
 
+
 export async function renderChat(container, session) {
     disposeChat?.();
     container.innerHTML = `
+
         <section class="support-view">
             <div class="page-header">
                 <div><h1>Hộp thư hỗ trợ khách hàng</h1><p>Theo dõi hội thoại và trả lời yêu cầu của khách lưu trú.</p></div>
@@ -43,6 +46,7 @@ export async function renderChat(container, session) {
                 </div>
             </div>
         </section>`;
+
 
     const root = container.querySelector('.support-view');
     const find = selector => root.querySelector(selector);
@@ -107,10 +111,23 @@ export async function renderChat(container, session) {
         if (focusedId) [...inbox.querySelectorAll('button')].find(button => button.dataset.customerId === focusedId)?.focus();
     };
 
+    const inboxNames = new Map();
+    const filterInboxes = () => {
+        const query = document.getElementById('staff-chat-search').value.trim().toLocaleLowerCase('vi');
+        let visible = 0;
+        inboxesDiv.querySelectorAll('.sc-chat-inbox').forEach(item => {
+            item.hidden = !item.dataset.search.includes(query);
+            if (!item.hidden) visible++;
+        });
+        document.getElementById('staff-chat-no-results').hidden = !query || visible > 0;
+    };
+    document.getElementById('staff-chat-search').addEventListener('input', filterInboxes);
+
     const loadInboxes = async () => {
         if (!alive() || inboxBusy) return;
         inboxBusy = true;
         try {
+
             const rows = await api.get(`/chat/inbox?staffId=${encodeURIComponent(session.userId)}`, requestOptions());
             if (!alive()) return;
             const next = normalizeSupportInboxes(rows, session.userId);
@@ -178,6 +195,7 @@ export async function renderChat(container, session) {
                 messages.setAttribute('aria-busy', 'false');
                 updateComposer();
             }
+
         }
     };
 

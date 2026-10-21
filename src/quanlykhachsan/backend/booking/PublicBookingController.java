@@ -41,6 +41,6 @@ public final class PublicBookingController implements HttpHandler {
         }catch(SecurityException ex){ApiResponseUtil.write(e,403,ApiResponseUtil.error("Role or guest identity is not authorized"));}
         catch(IllegalArgumentException | DateTimeException ex){ApiResponseUtil.write(e,400,ApiResponseUtil.error("Invalid booking data or Idempotency-Key"));}
         catch(OptimisticLockException | IllegalStateException ex){ApiResponseUtil.write(e,409,ApiResponseUtil.error("Room or request data changed; please check availability again"));}
-        catch(Exception ex){System.err.println("Public booking failed: "+ex.getClass().getSimpleName());ApiResponseUtil.write(e,503,ApiResponseUtil.error("Booking is unavailable; please retry with the same Idempotency-Key or contact the Front Desk"));}
+        catch(Exception ex){e.getResponseHeaders().set("X-Booking-Error-Id",BookingFailureLog.record("public-booking",ex));ApiResponseUtil.write(e,503,ApiResponseUtil.error("Booking is unavailable; please retry with the same Idempotency-Key or contact the Front Desk"));}
     }
 }

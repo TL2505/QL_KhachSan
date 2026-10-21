@@ -1,3 +1,4 @@
+
 import { api, getApiBaseUrl } from "../../api.js";
 import { escapeHtml } from "../shared/ui.js";
 import { renderPaginationComponent } from "../shared/pagination.js";
@@ -134,63 +135,37 @@ export async function renderCheckout(container, session) {
                 refresh.disabled = false;
                 grid.setAttribute('aria-busy', 'false');
             }
+
         }
     };
     search.addEventListener('input', () => { currentPage = 1; renderCards(); });
     refresh.addEventListener('click', loadData);
     refreshIcons();
 
-    const openModal = (bookingId) => {
-        const b = activeBookings.find(x => x.id == bookingId);
+    const openModal = bookingId => {
+        const b = activeBookings.find(booking => String(booking.id) === String(bookingId));
         if (!b) return;
         currentProcessBooking = b;
-
-        const modal = document.getElementById('global-modal');
-        const content = document.getElementById('global-modal-content');
-
-        content.innerHTML = `
-            <div class="modal-header">
-                <h2>Xác nhận Thanh toán</h2>
-                <button class="modal-close" onclick="closeModal('global-modal')">&times;</button>
+        const modal = byId('global-modal'), content = byId('global-modal-content');
+        const close = () => { modal.classList.remove('active'); modal.setAttribute('aria-hidden', 'true'); };
+        content.innerHTML = `<section class="sc-dialog">
+            <div class="sc-modal-head"><div><h2>Xác nhận thanh toán</h2><p>Kiểm tra thông tin và số tiền trước khi xác nhận</p></div><button type="button" class="sc-close" id="sc-modal-close" aria-label="Đóng">×</button></div>
+            <div class="sc-modal-guest"><div><strong>${escapeHtml(b.customerName)}</strong><small>Đặt phòng #${escapeHtml(b.id)}</small></div><div><strong>Phòng ${escapeHtml(b.roomNumber)}</strong><small>Trả dự kiến: ${dateLabel(b.checkOutDate)}</small></div></div>
+            <div id="modal-checkout-form">
+                <div class="sc-balance"><label for="pay-amount">Số tiền thu (VNĐ)</label><input class="sc-amount-input" id="pay-amount" type="number" min="0" value="${Number(b.totalPrice) || 0}" required></div>
+                <label for="pay-method">Phương thức thanh toán</label><select id="pay-method"><option value="Cash">Tiền mặt</option><option value="Credit Card">Thẻ tín dụng (POS)</option><option value="Chuyển khoản">Chuyển khoản ngân hàng</option></select>
+                <div id="qr-code-section" class="sc-qr" style="display:none"><p class="sc-note">Quét mã VietQR để thanh toán</p><img id="qr-image" src="" alt="Mã VietQR thanh toán" width="200" height="200"></div>
+                <p class="sc-note">Đối chiếu số tiền và giao dịch của khách trước khi hoàn tất thanh toán.</p>
             </div>
-            <div class="modal-body" id="modal-checkout-form" style="padding-top:10px;">
-                <div style="background: var(--bg-input); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p style="margin: 0 0 8px 0; color: var(--text-muted); font-size: 14px;">Phòng: <strong style="color: var(--text-color); font-size: 16px; float: right;">${b.roomNumber || 'N/A'}</strong></p>
-                    <p style="margin: 0; color: var(--text-muted); font-size: 14px;">Khách hàng: <strong style="color: var(--text-color); font-size: 16px; float: right;">${b.customerName || 'Khách vãng lai'}</strong></p>
-                </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display:block;margin-bottom:5px;font-size:14px;color:var(--text-muted);">Số tiền thu (VNĐ)</label>
-                    <input type="number" class="form-control" id="pay-amount" value="${b.totalPrice || 0}" required style="width:100%;">
-                </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display:block;margin-bottom:5px;font-size:14px;color:var(--text-muted);">Phương thức thanh toán</label>
-                    <select class="form-control" id="pay-method" style="width:100%;">
-                        <option value="Cash">Tiền mặt</option>
-                        <option value="Credit Card">Thẻ tín dụng (POS)</option>
-                        <option value="Chuyển khoản">Chuyển khoản ngân hàng</option>
-                    </select>
-                </div>
-                <div id="qr-code-section" style="display: none; text-align: center; margin-top: 15px;">
-                    <p style="font-size: 14px; color: var(--success); margin-bottom: 10px;">Quét mã VietQR để thanh toán</p>
-                    <img id="qr-image" src="" alt="VietQR" style="width: 200px; height: 200px; border-radius: 8px; border: 2px solid var(--border);">
-                </div>
-            </div>
-            <div class="modal-body" id="modal-success-screen" style="display: none; text-align: center; padding: 40px 20px;">
-                <i data-lucide="check-circle" style="width: 64px; height: 64px; color: var(--success); margin-bottom: 20px; display: inline-block;"></i>
-                <h3 style="margin-bottom: 10px;">Thanh Toán Thành Công!</h3>
-                <p style="color: var(--text-muted); margin-bottom: 25px;">Hệ thống đã ghi nhận doanh thu và chuyển phòng sang trạng thái Đang Dọn Dẹp.</p>
-                <button class="btn btn-primary" id="btn-print-invoice">
-                    <i data-lucide="printer" style="width:16px;height:16px;"></i> In Hóa Đơn PDF
-                </button>
-            </div>
-            <div class="modal-footer" id="modal-footer-form" style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
-                <button class="btn btn-secondary" onclick="closeModal('global-modal')">Hủy</button>
-                <button class="btn btn-primary" id="btn-confirm-pay">Hoàn tất Thanh toán</button>
-            </div>
-        `;
-        if(window.lucide) lucide.createIcons();
-        modal.classList.add('active');
-
+            <div id="modal-success-screen" class="sc-success" style="display:none"><i data-lucide="circle-check"></i><h3>Đã ghi nhận thanh toán</h3><p>Bạn có thể xem hoặc in hóa đơn cho khách.</p><div class="sc-modal-actions"><button type="button" class="sc-secondary" id="btn-print-invoice"><i data-lucide="printer"></i>In hóa đơn PDF</button><button type="button" class="sc-primary" id="sc-finish">Hoàn tất</button></div></div>
+            <div class="sc-modal-actions" id="modal-footer-form"><button type="button" class="sc-secondary" id="sc-cancel-pay">Quay lại</button><button type="button" class="sc-primary" id="btn-confirm-pay">Hoàn tất thanh toán</button></div>
+        </section>`;
+        byId('sc-modal-close').addEventListener('click', close);
+        byId('sc-cancel-pay').addEventListener('click', close);
+        byId('sc-finish').addEventListener('click', () => { close(); loadData(); });
+        modal.classList.add('active'); modal.setAttribute('aria-hidden','false');
+        byId('sc-modal-close').focus();
+        icons();
         // Bind events inside modal
         const payMethodSelect = document.getElementById("pay-method");
         const payAmountInput = document.getElementById("pay-amount");
@@ -267,5 +242,12 @@ export async function renderCheckout(container, session) {
         });
     };
 
-    loadData();
+    byId('sc-refresh').addEventListener('click', loadData);
+    byId('sc-search').addEventListener('input', renderList);
+    for (const key of ['all','today','overdue']) {
+        byId(`sc-filter-${key}`).addEventListener('click', () => { filter = key; renderList(); });
+    }
+    container.querySelectorAll?.('.sc-stat').forEach(button => button.addEventListener('click', () => { filter = button.dataset.filter; renderList(); }));
+    icons();
+    await loadData();
 }

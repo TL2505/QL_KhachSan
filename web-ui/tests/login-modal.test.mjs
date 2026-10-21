@@ -614,8 +614,8 @@ test('Scenario 5 (Integration): Duplicate registration returns HTTP 400 and unlo
   }
 });
 
-// Scenario 6: Post-login flow retains user on homepage (no redirect), renders User Dropdown Menu, and handleLogout works
-test('Scenario 6 (Integration): Post-login flow retains user on index.html, renders User Dropdown in header, and handleLogout clears session', async () => {
+// Scenario 6: Post-login flow retains user on homepage (no redirect), renders direct account shortcuts, and handleLogout works
+test('Scenario 6 (Integration): Post-login flow retains user on index.html, renders three header shortcuts, and handleLogout clears session', async () => {
   const jwtSample = 'eyJhbGciOiJIUzI1NiJ9.sig_guest_token_888';
   const server = http.createServer(async (req, res) => {
     assert.equal(req.method, 'POST');
@@ -691,15 +691,17 @@ test('Scenario 6 (Integration): Post-login flow retains user on index.html, rend
     await new Promise(r => setTimeout(r, 650));
     assert.equal(modalEl.classList.contains('hidden'), true, '#login-modal must be closed');
 
-    // Assert Header contains User Dropdown Menu with required items
+    // Account, member portal and logout are direct actions with accessible labels.
     assert.match(headerContainer.innerHTML, /Nguyễn Văn Aurelia/, 'Header must display guest name');
     assert.match(headerContainer.innerHTML, /portal\.html/, 'Header must link to Member Gateway');
-    assert.match(headerContainer.innerHTML, /portal\.html\?view=dashboard/, 'Header must link to Booking History');
+    assert.match(headerContainer.innerHTML, /portal\.html\?view=profile/, 'Account icon must open the existing profile view');
+    assert.equal((headerContainer.innerHTML.match(/class="header-account-icon(?:[" ])/g) || []).length, 3);
+    assert.doesNotMatch(headerContainer.innerHTML, /<details|<summary|header-account-panel/);
+    for (const label of ['Tài khoản', 'Cổng thành viên', 'Đăng xuất']) assert.ok(headerContainer.innerHTML.includes(`aria-label="${label}"`));
     assert.match(headerContainer.innerHTML, /id="btn-logout"/, 'Header must contain #btn-logout button');
 
-    // Assert Mobile drawer contains user navigation
-    assert.match(mobileContainer.innerHTML, /Nguyễn Văn Aurelia/);
-    assert.match(mobileContainer.innerHTML, /id="mobile-btn-logout"/);
+    // Signed-in actions stay in the header rather than being duplicated in the mobile drawer.
+    assert.equal(mobileContainer.innerHTML, '');
 
     // Assert handleLogout clears session and localStorage across all three keys
     assert.equal(globalThis.localStorage.getItem('auth_token'), jwtSample);

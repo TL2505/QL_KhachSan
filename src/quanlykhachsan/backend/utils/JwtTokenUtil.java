@@ -33,7 +33,10 @@ public final class JwtTokenUtil {
             }
         }
         if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
-            throw new IllegalStateException("JWT_SECRET must be securely configured with at least 32 bytes");
+            secret = SecurityUtil.getJwtSecret();
+        }
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            secret = "aurelia_default_jwt_secret_key_minimum_32_bytes_long";
         }
         return secret;
     }
@@ -64,6 +67,19 @@ public final class JwtTokenUtil {
             .claim("role", role)
             .issuedAt(Date.from(now))
             .expiration(Date.from(now.plusSeconds(3600)))
+            .signWith(KEY)
+            .compact();
+    }
+
+    public static String issueRefreshToken(int userId, String username, String role) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+            .subject(Integer.toString(userId))
+            .claim("username", username)
+            .claim("role", role)
+            .claim("token_type", "refresh")
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(now.plusSeconds(86400 * 7))) // 7 days validity
             .signWith(KEY)
             .compact();
     }

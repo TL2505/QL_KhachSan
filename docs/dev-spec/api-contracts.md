@@ -227,6 +227,18 @@ curl -X POST http://localhost:8081/api/v1/customers \
 - **Method:** `GET`
 - **Route:** `/api/v1/customers?search=Tran`
 - **Auth:** Bearer JWT
+- **Response:** `data` contains the newest 50 matching customer profiles, with `id`, `full_name`, `identity_card`, `phone`, `email`, `address`, `loyalty_level`, and `created_at`. Optional contact fields may be `null`; clients must not infer that missing fields represent empty profiles. The collection uses snake_case field names.
+
+#### Staff membership directory (read-only)
+
+- `GET /api/v1/loyalty/members` returns `data.members` and `data.summary` for all customer records, independently of the customer-search endpoint's 50-row limit. The staff UI searches, filters and paginates this complete result locally; summary counts refer to the complete directory.
+- Access requires a verified administrator or front-desk/staff JWT (role IDs 1 or 2). `X-User-Role` cannot grant access. Customer and other departmental accounts cannot use these routes.
+- Member fields: `id`, `fullName`, `phone`, `loyaltyLevel`, `loyaltyPoints` (available balance), `totalLoyaltyPoints` (stored cumulative points), and `joinedAt` (the existing customer `created_at`). Nullable fields remain `null`. Tiers and balances are read from storage without recalculation, promotion, redemption or policy changes.
+- `data.summary` contains integer counts for `total`, `Silver`, `Gold`, `VIP`, and `other`. Known tier names are counted case-insensitively. Legacy values such as `Member` and missing ranks remain distinct in member rows and contribute to `other`, rather than being silently converted to Silver.
+- `GET /api/v1/loyalty/members/{customerId}/history` returns `data.member` and `data.history`. History is read from the existing `loyalty_histories` ledger, scoped by the bound customer ID, ordered by `created_at DESC, id DESC`. Fields are `id`, `pointsChange` (the stored signed `points` value), `type`, `description`, and `createdAt`. No transactions are reconstructed from point totals.
+- Stored timestamps are ISO local date-time strings in the hotel's database calendar, or `null`; missing dates must not be replaced with the current date.
+- An existing customer without ledger entries returns an empty `history`; an unknown customer returns 404. Invalid/out-of-range IDs return 400 or 404. Database failures return 503 instead of a successful empty directory/history. Non-GET methods return 405 with `Allow: GET`.
+- Existing `/loyalty/customers`, `/loyalty/history/{id}`, redemption, points-award and tier-calculation workflows are unchanged.
 
 ```bash
 curl -X GET "http://localhost:8081/api/v1/customers?search=Tran" \
@@ -239,6 +251,8 @@ curl -X GET "http://localhost:8081/api/v1/customers?search=Tran" \
 - **Method:** `GET`
 - **Route:** `/api/v1/bookings`
 - **Auth:** Bearer JWT
+
+**Creation order and failures:** The shared booking DAO returns `bookings.created_at DESC, bookings.id DESC`, using the actual database creation timestamp exposed as `createdAt`. Staff and Admin read this same ordered collection, including through `/api/bookings` and customer-specific list routes. Frontend filters and Staff page slices preserve that order; reloads start on page one. The customer portal's independent booking query uses the same creation-time/ID order. Booking responses use `Cache-Control: no-store`; failed database reads return 503 rather than a successful empty array. Permissions are unchanged. Existing refresh buttons and tab-return reloads use the same loaders; no polling/push channel was introduced.
 
 ```bash
 curl -X GET http://localhost:8081/api/v1/bookings \
@@ -446,6 +460,8 @@ These routes support Phase 1 folio routing and the OOO-room manager override:
 
 ### 2.2 Public Room Availability & Web Booking Engine
 * **Endpoint:** `POST /api/v1/bookings/public`
+
+**Identity persistence and diagnostics:** A supplied `identity_card` is stored through the existing encrypted identity vault in the guest-ingestion transaction, keeping `customers.identity_card` NULL as required by `chk_no_plain_identity`. A matching established identity is retained; a conflicting identity still requires Front Desk review (409). The reservation transaction commits before a 201 receipt is returned; errors are not converted into success. Booking persistence failures return 503 with an opaque `X-Booking-Error-Id`; the corresponding `[BookingFailure]` server log contains exception types, SQLState/vendor codes and source location, excluding exception messages, SQL text and personal/credential values. The existing Night Audit 503 freeze and authorization rules are unchanged. Operational verification: [booking-order.md](../verification/booking-order.md).
   * **Auth:** Public or Guest Bearer Token
   * **Headers:** `Idempotency-Key: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d` (Required)
   * **Request Body:**

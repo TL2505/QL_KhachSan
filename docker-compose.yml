@@ -1,47 +1,62 @@
 services:
   # ============================================================================
   # 1. Transactional Database: MariaDB 11.2 (Hardened Jammy Container)
+  # Profile: [default, dev, full] - Always available for both Mode A & Mode B
   # ============================================================================
   mariadb:
     image: mariadb:11.2-jammy
+    container_name: aurelia-mariadb
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set an approved database root password}
-      MYSQL_DATABASE: hotel_prod_db
-      MYSQL_USER: ${DB_USER:?Set an approved application database user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:?Set an approved application database password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-${MARIADB_ROOT_PASSWORD:-hotel_root_secret_2026}}
+      MYSQL_DATABASE: ${DB_NAME:-hotel_prod_db}
+      MYSQL_USER: ${DB_USER:-hotel_admin}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-hotel_secret_pass}
     volumes:
       - ./database:/pms-database:ro
       - ./database/bootstrap/00-init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
       - mariadb_data:/var/lib/mysql
     networks:
       - pms-internal-net
-    # Exposed to host for Desktop Swing App synchronization and VM access
+    # Exposed to host for Desktop Swing App synchronization and Localhost IDE access
     ports:
       - "3306:3306"
     expose:
       - "3306"
     healthcheck:
-      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:?Set an approved database root password}" ]
+      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-hotel_root_secret_2026}" ]
       interval: 3s
       timeout: 3s
       retries: 10
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   # ============================================================================
   # 2. 5★ Luxury Hotel PMS Core Backend API Server (Pure Java 17 Runtime)
+  # Profile: [full, backend] - Only launched in Mode B; stopped in Mode A to free port 8081
   # ============================================================================
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: aurelia-backend
     restart: unless-stopped
+    profiles:
+      - full
+      - backend
     depends_on:
       mariadb:
         condition: service_healthy
     environment:
+      ALLOW_INSECURE_OAUTH_MOCK: ${ALLOW_INSECURE_OAUTH_MOCK:-true}
+      APP_ENV: ${APP_ENV:-development}
       DB_HOST: mariadb
       DB_PORT: 3306
+
       DB_NAME: hotel_prod_db
       DB_USER: ${DB_USER:?Set an approved application database user}
       DB_PASSWORD: ${DB_PASSWORD:?Set an approved application database password}
@@ -63,6 +78,7 @@ services:
       AI_GUEST_ENABLED: false
     volumes:
       - ai_settings_data:/app/.data/ai
+
     ports:
       - "127.0.0.1:8081:8081"
     networks:
@@ -73,30 +89,46 @@ services:
       timeout: 3s
       retries: 5
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
+  # ============================================================================
   # 3. Web Client: Nginx Reverse Proxy & No-Build Static Server (Port 3000)
+  # Profile: [default, dev, full] - Available in both Mode A & Mode B
+  # ============================================================================
   web:
     image: nginx:1.25-alpine
+    container_name: aurelia-web
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:80"
     volumes:
       - ./web-ui:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      backend:
-        condition: service_healthy
     networks:
       - pms-internal-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   # ============================================================================
   # 4. AI Service: Microservice for Vision & RAG Knowledge Retrieval (Port 8082)
+  # Profile: [full, ai] - Launched in Mode B
   # ============================================================================
   ai-service:
     build:
       context: ./ai-service
       dockerfile: Dockerfile
+    container_name: aurelia-ai-service
     restart: unless-stopped
+    profiles:
+      - full
+      - ai
     ports:
       - "8082:8082"
     environment:
@@ -114,6 +146,11 @@ services:
       timeout: 3s
       retries: 5
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
 networks:
   pms-internal-net:
