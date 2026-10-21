@@ -8,6 +8,9 @@ public class Room {
     private String status;
     private String typeName;
     private int version;
+    private java.time.LocalDateTime createdAt;
+    public java.time.LocalDateTime getCreatedAt(){return createdAt;}
+    public void setCreatedAt(java.time.LocalDateTime value){createdAt=value;}
     public int getVersion(){return version;}
     public void setVersion(int value){version=value;}
 

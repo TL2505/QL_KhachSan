@@ -22,6 +22,7 @@ public class RoomMapper {
         response.setPrice(room.getPrice());
         response.setStatus(room.getStatus());
         response.setVersion(room.getVersion());
+        response.setCreatedAt(room.getCreatedAt()==null?null:room.getCreatedAt().toString());
         return response;
     }
 }

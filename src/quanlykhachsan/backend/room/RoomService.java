@@ -39,7 +39,11 @@ public class RoomService {
     }
 
     public List<Room> getAllRooms() {
-        List<Room> rooms = roomDAO.findAll();
+        return getAllRooms(false);
+    }
+
+    public List<Room> getAllRooms(boolean newest) {
+        List<Room> rooms = newest ? roomDAO.findAllNewest() : roomDAO.findAll();
         long now = System.currentTimeMillis();
         for (Room r : rooms) {
             computeVirtualStatus(r, now);

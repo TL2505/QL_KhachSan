@@ -1,5 +1,38 @@
 import { api } from "../../api.js";
 
+// Backend order is authoritative when creation dates are available. Older APIs
+// omit dates; auto-increment IDs keep newly inserted rooms visible there too.
+export function orderRoomsNewest(rooms) {
+    const timestamp = room => {
+        const value = room.createdAt ?? room.created_at;
+        if (value == null || value === '') return -Infinity;
+        const time = Date.parse(String(value).replace(' ', 'T'));
+        return Number.isFinite(time) ? time : -Infinity;
+    };
+    return [...rooms].sort((left, right) => timestamp(right) - timestamp(left) || Number(right.id) - Number(left.id));
+}
+
+
+
+function renderRoomPageControls(node, page, count, change) {
+    node.replaceChildren();
+    if (count <= 1) return;
+    const controls = document.createElement('div');
+    controls.className = 'flex-row';
+    controls.style.cssText = 'justify-content:flex-end;align-items:center;gap:12px;margin-top:16px';
+    const previous = document.createElement('button');
+    previous.type = 'button'; previous.className = 'btn btn-secondary btn-sm';
+    previous.textContent = 'Trước'; previous.setAttribute('aria-label', 'Trang phòng trước'); previous.disabled = page <= 1;
+    previous.addEventListener('click', () => change(page - 1));
+    const label = document.createElement('span');
+    label.textContent = `Trang ${page} / ${count}`; label.setAttribute('aria-live', 'polite');
+    const next = document.createElement('button');
+    next.type = 'button'; next.className = 'btn btn-secondary btn-sm';
+    next.textContent = 'Sau'; next.setAttribute('aria-label', 'Trang phòng sau'); next.disabled = page >= count;
+    next.addEventListener('click', () => change(page + 1));
+    controls.append(previous, label, next); node.append(controls);
+}
+
 export async function renderRooms(container, session) {
     container.innerHTML = `
         <div class="page-header flex-row justify-between">
@@ -37,8 +70,8 @@ export async function renderRooms(container, session) {
     const loadRooms = async () => {
         const body = document.getElementById("admin-rooms-body");
         try {
-            const list = await api.get("/rooms");
-            allRooms = list;
+            const list = await api.get("/rooms?sort=newest", { cache: "no-store" });
+            allRooms = orderRoomsNewest(list);
             currentPage = 1;
             renderTable();
         } catch (e) {
@@ -110,6 +143,9 @@ export async function renderRooms(container, session) {
                     renderTable();
                 }
             );
+        } else {
+            renderRoomPageControls(document.getElementById("pagination-admin-rooms"), currentPage,
+                Math.max(1, Math.ceil(allRooms.length / itemsPerPage)), page => { currentPage = page; renderTable(); });
         }
     };
 

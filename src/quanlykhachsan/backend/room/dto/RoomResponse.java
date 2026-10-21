@@ -8,6 +8,9 @@ public class RoomResponse {
     private double price;
     private String status;
     private int version;
+    private String createdAt;
+    public String getCreatedAt(){return createdAt;}
+    public void setCreatedAt(String value){createdAt=value;}
     public int getVersion(){return version;}
     public void setVersion(int value){version=value;}
 

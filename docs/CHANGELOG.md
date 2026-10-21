@@ -1,5 +1,12 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-21] — @codex — New Admin rooms first, visible after creation
+
+- Added an Admin-only newest room-list option ordered by the existing `rooms.created_at DESC, id DESC`; default Staff/desktop ordering remains unchanged. Room DTOs expose the real creation date and successful inserts return the committed generated ID.
+- Admin room tables preserve creation order through filters/pages, support legacy responses through descending insert IDs, clear filters/return to page one after creation and verify the refreshed list before reporting success. Local controls restore access to later pages when the shared pagination renderer is absent; stale responses cannot overwrite another view.
+- Preserved the existing Admin layout, room validation, duplicate protection and operational workflows. Added isolated frontend/JDBC/HTTP regressions and documented real Windows verification without generating application records or changing database schema. Windows persistence remains an operator check. Validation: 105 web tests and 10 isolated backend tests passed; Chromium verified filtering, page reset, legacy/modern responses, reload and error handling without application database writes.
+
+
 ## [2026-10-21] — @codex — Booking runtime diagnostics, owned-account booking and safe retries
 
 - Accept verified customer booking through a server-resolved owned profile/phone, and lock that specific profile during identity capture; preserve existing guest and staff workflows and encrypted identity constraints.

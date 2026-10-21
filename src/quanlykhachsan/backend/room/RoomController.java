@@ -17,7 +17,9 @@ import quanlykhachsan.backend.room.dto.RoomResponse;
 
 public class RoomController implements HttpHandler {
 
-    private RoomService roomService = new RoomService();
+    private final RoomService roomService;
+    public RoomController() { this(new RoomService()); }
+    RoomController(RoomService roomService) { this.roomService=roomService; }
     private Gson gson = JsonUtil.getGson();
 
     @Override
@@ -103,12 +105,26 @@ public class RoomController implements HttpHandler {
 
     private void handleGetAll(HttpExchange exchange) throws IOException {
         try {
-            List<Room> rooms = roomService.getAllRooms();
+            boolean newest=false;
+            String query=exchange.getRequestURI().getRawQuery();
+            if(query!=null) for(String part:query.split("&")) {
+                String[] pair=part.split("=",2);
+                if(java.net.URLDecoder.decode(pair[0],StandardCharsets.UTF_8).equals("sort")) {
+                    String value=pair.length==2?java.net.URLDecoder.decode(pair[1],StandardCharsets.UTF_8):"";
+                    if(!value.equals("newest"))throw new IllegalArgumentException();
+                    newest=true;
+                }
+            }
+            if(newest && !SecurityUtil.checkAdmin(exchange))return;
+            exchange.getResponseHeaders().set("Cache-Control","no-store");
+            List<Room> rooms = roomService.getAllRooms(newest);
             List<RoomResponse> dtoList = new java.util.ArrayList<>();
             for (Room r : rooms) {
                 dtoList.add(RoomMapper.toRoomResponse(r));
             }
             ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dtoList));
+        } catch (IllegalArgumentException ex) {
+            ApiResponseUtil.write(exchange,400,ApiResponseUtil.error("Thứ tự danh sách phòng không hợp lệ."));
         } catch (IllegalStateException ex) {
             ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("Không thể tải danh sách phòng lúc này."));
         }
@@ -150,7 +166,8 @@ public class RoomController implements HttpHandler {
             Room room = buildValidatedRoom(req, 0, true);
             boolean ok = roomService.addRoom(room);
             if (ok) {
-                ApiResponseUtil.write(exchange, 201, ApiResponseUtil.success("Thêm phòng thành công"));
+                exchange.getResponseHeaders().set("Cache-Control","no-store");
+                ApiResponseUtil.write(exchange, 201, ApiResponseUtil.success("Thêm phòng thành công",RoomMapper.toRoomResponse(room)));
             } else {
                 ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Thêm phòng thất bại"));
             }

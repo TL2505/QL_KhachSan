@@ -1,5 +1,18 @@
 import { api } from "../../api.js";
 
+// Backend order is authoritative when creation dates are available. Older APIs
+// omit dates; auto-increment IDs keep newly inserted rooms visible there too.
+export function orderRoomsNewest(rooms) {
+    const timestamp = room => {
+        const value = room.createdAt ?? room.created_at;
+        if (value == null || value === '') return -Infinity;
+        const time = Date.parse(String(value).replace(' ', 'T'));
+        return Number.isFinite(time) ? time : -Infinity;
+    };
+    return [...rooms].sort((left, right) => timestamp(right) - timestamp(left) || Number(right.id) - Number(left.id));
+}
+
+
 const ROOM_STATUSES = {
     vacant_clean: { label: "Trống - sạch", badge: "badge-available" },
     vacant_dirty: { label: "Cần vệ sinh", badge: "badge-cleaning" },
@@ -13,6 +26,26 @@ const ROOM_STATUSES = {
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
 })[character]);
+
+
+function renderRoomPageControls(node, page, count, change) {
+    node.replaceChildren();
+    if (count <= 1) return;
+    const controls = document.createElement('div');
+    controls.className = 'flex-row';
+    controls.style.cssText = 'justify-content:flex-end;align-items:center;gap:12px;margin-top:16px';
+    const previous = document.createElement('button');
+    previous.type = 'button'; previous.className = 'btn btn-secondary btn-sm';
+    previous.textContent = 'Trước'; previous.setAttribute('aria-label', 'Trang phòng trước'); previous.disabled = page <= 1;
+    previous.addEventListener('click', () => change(page - 1));
+    const label = document.createElement('span');
+    label.textContent = `Trang ${page} / ${count}`; label.setAttribute('aria-live', 'polite');
+    const next = document.createElement('button');
+    next.type = 'button'; next.className = 'btn btn-secondary btn-sm';
+    next.textContent = 'Sau'; next.setAttribute('aria-label', 'Trang phòng sau'); next.disabled = page >= count;
+    next.addEventListener('click', () => change(page + 1));
+    controls.append(previous, label, next); node.append(controls);
+}
 
 export async function renderRooms(container) {
     container.innerHTML = `
@@ -66,9 +99,13 @@ export async function renderRooms(container) {
     let roomTypes = [];
     let currentPage = 1;
     let itemsPerPage = 10;
+    let loadVersion = 0;
+    const viewRoot = container.querySelector('.card');
+    const isCurrent = () => viewRoot.isConnected && container.contains(viewRoot);
 
     const feedback = (message, kind = "error") => {
         const node = document.getElementById("rooms-feedback");
+        if (!isCurrent() || !node) return;
         node.textContent = message;
         node.className = `rooms-feedback ${kind}`;
         node.hidden = !message;
@@ -153,30 +190,44 @@ export async function renderRooms(container) {
                 pageSize => { itemsPerPage = pageSize; currentPage = 1; renderTable(); }
             );
         } else {
-            pagination.replaceChildren();
+            renderRoomPageControls(pagination, currentPage, pageCount, page => { currentPage = page; renderTable(); });
         }
     };
 
-    const loadRooms = async () => {
+    const loadRooms = async ({ resetFilters = false, createdRoom = null } = {}) => {
+        if (!isCurrent()) return false;
+        const version = ++loadVersion;
         const body = document.getElementById("admin-rooms-body");
         body.innerHTML = '<tr><td colspan="6" class="rooms-empty">Đang tải danh sách phòng...</td></tr>';
         feedback("");
         try {
             const [rooms, types] = await Promise.all([
-                api.get("/rooms"),
+                api.get("/rooms?sort=newest", { cache: "no-store" }),
                 api.get("/rooms/types")
             ]);
+            if (version !== loadVersion || !isCurrent()) return false;
             if (!Array.isArray(rooms) || !Array.isArray(types)) {
                 throw new Error("Phản hồi danh sách phòng không đúng định dạng.");
             }
-            allRooms = rooms;
+            allRooms = orderRoomsNewest(rooms);
             roomTypes = types;
             const typeFilter = document.getElementById("rooms-type-filter");
+            const previousType = typeFilter.value;
             typeFilter.innerHTML = '<option value="">Tất cả hạng phòng</option>' + types.map(type =>
                 `<option value="${escapeHtml(type.id)}">${escapeHtml(type.name)}</option>`).join("");
+            typeFilter.value = resetFilters ? '' : previousType;
+            if (resetFilters) {
+                document.getElementById('rooms-search').value = '';
+                document.getElementById('rooms-status-filter').value = '';
+            }
             currentPage = 1;
             renderTable();
+            if (createdRoom && !rooms.some(room => createdRoom.id
+                ? Number(room.id) === Number(createdRoom.id)
+                : String(room.roomNumber).toLowerCase() === String(createdRoom.roomNumber).toLowerCase())) return false;
+            return true;
         } catch (error) {
+            if (version !== loadVersion || !isCurrent()) return false;
             body.replaceChildren();
             const row = body.insertRow();
             const cell = row.insertCell();
@@ -184,10 +235,12 @@ export async function renderRooms(container) {
             cell.className = "rooms-empty";
             cell.textContent = error.message || "Không thể tải dữ liệu phòng.";
             feedback(error.message || "Không thể tải dữ liệu phòng.");
+            return false;
         }
     };
 
     const openRoomForm = room => {
+        feedback("");
         const modal = document.getElementById("global-modal");
         const content = document.getElementById("global-modal-content");
         if (!modal || !content) {
@@ -243,6 +296,7 @@ export async function renderRooms(container) {
             event.preventDefault();
             const form = event.currentTarget;
             const submit = form.querySelector('button[type="submit"]');
+            if (submit.disabled) return;
             const errorNode = form.querySelector("#room-form-error");
             const payload = {
                 roomNumber: form.querySelector("#ar-number").value.trim(),
@@ -254,11 +308,13 @@ export async function renderRooms(container) {
             submit.textContent = "Đang lưu...";
             errorNode.hidden = true;
             try {
-                if (editing) await api.put(`/rooms/${encodeURIComponent(room.id)}`, payload);
-                else await api.post("/rooms", payload);
+                const saved = editing ? await api.put(`/rooms/${encodeURIComponent(room.id)}`, payload) : await api.post("/rooms", payload);
+                if (!isCurrent()) return;
+                const loaded = await loadRooms({ resetFilters: !editing, createdRoom: editing ? null : (saved?.id ? saved : payload) });
+                if (!isCurrent()) return;
                 window.closeModal?.("global-modal");
-                feedback(editing ? "Đã cập nhật phòng." : "Đã thêm phòng.", "success");
-                await loadRooms();
+                if (loaded) feedback(editing ? "Đã cập nhật phòng." : "Đã thêm phòng. Phòng mới ở đầu danh sách.", "success");
+                else feedback("Máy chủ đã nhận yêu cầu nhưng chưa xác minh được phòng trong danh sách. Vui lòng tải lại trước khi gửi lại.");
             } catch (error) {
                 errorNode.textContent = error.message || "Không thể lưu thông tin phòng.";
                 errorNode.hidden = false;

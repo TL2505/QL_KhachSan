@@ -8,11 +8,15 @@ import java.util.ArrayList;
 import quanlykhachsan.backend.utils.DBconn;
 
 public class RoomDAOImpl implements RoomDAO {
+    @FunctionalInterface interface Connections { Connection open() throws SQLException; }
+    private final Connections connections;
+    public RoomDAOImpl() { this(DBconn::getConnection); }
+    RoomDAOImpl(Connections connections) { this.connections=connections; }
 
     @Override
     public void addRoom(Room room) {
         String query = "INSERT INTO rooms(room_number, room_type_id, price, status) VALUES (?, ?, ?, ?)";
-        try (Connection con = DBconn.getConnection()) {
+        try (Connection con = connections.open()) {
             con.setAutoCommit(false);
             try {
                 try (PreparedStatement check = con.prepareStatement(
@@ -22,14 +26,19 @@ public class RoomDAOImpl implements RoomDAO {
                         if (rows.next()) throw new RoomConflictException("Số phòng đã tồn tại.");
                     }
                 }
-                try (PreparedStatement ps = con.prepareStatement(query)) {
+                int createdId;
+                try (PreparedStatement ps = con.prepareStatement(query, java.sql.Statement.RETURN_GENERATED_KEYS)) {
                     ps.setString(1, room.getRoomNumber());
                     ps.setInt(2, room.getRoomTypeId());
                     ps.setBigDecimal(3, java.math.BigDecimal.valueOf(room.getPrice()));
                     ps.setString(4, room.getStatus());
-                    ps.executeUpdate();
+                    if (ps.executeUpdate()!=1) throw new SQLException("Room insert did not create one row");
+                    try (ResultSet keys=ps.getGeneratedKeys()) {
+                        if(!keys.next() || (createdId=keys.getInt(1))<1) throw new SQLException("Room ID missing");
+                    }
                 }
                 con.commit();
+                room.setId(createdId);
             } catch (Exception ex) {
                 con.rollback();
                 if (ex instanceof SQLException sql && isConstraintViolation(sql)) {
@@ -148,11 +157,22 @@ public class RoomDAOImpl implements RoomDAO {
 
     @Override
     public ArrayList<Room> selectRoom() {
+        return selectRooms(false);
+    }
+
+    @Override public java.util.List<Room> findAllNewest() { return selectRooms(true); }
+
+    private ArrayList<Room> selectRooms(boolean newest) {
+        try (Connection con=connections.open()) { return readRooms(con,newest); }
+        catch (SQLException e) { throw new IllegalStateException("Không thể tải danh sách phòng từ cơ sở dữ liệu.",e); }
+    }
+
+    static ArrayList<Room> readRooms(Connection con, boolean newest) throws SQLException {
         ArrayList<Room> list = new ArrayList<>();
         String query = "SELECT r.*, t.name AS type_name FROM rooms r "
-                + "JOIN room_types t ON t.id=r.room_type_id ORDER BY r.id";
-        try (Connection con = DBconn.getConnection(); 
-             PreparedStatement ps = con.prepareStatement(query);
+                + "JOIN room_types t ON t.id=r.room_type_id ORDER BY "
+                + (newest ? "r.created_at DESC, r.id DESC" : "r.id");
+        try (PreparedStatement ps = con.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Room r = new Room();
@@ -163,10 +183,10 @@ public class RoomDAOImpl implements RoomDAO {
                 r.setStatus(rs.getString("status"));
                 r.setVersion(rs.getInt("version"));
                 r.setTypeName(rs.getString("type_name"));
+                java.sql.Timestamp createdAt=rs.getTimestamp("created_at");
+                r.setCreatedAt(createdAt==null?null:createdAt.toLocalDateTime());
                 list.add(r);
             }
-        } catch (Exception e) {
-            throw new IllegalStateException("Không thể tải danh sách phòng từ cơ sở dữ liệu.", e);
         }
         return list;
     }
