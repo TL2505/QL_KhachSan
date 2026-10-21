@@ -1,5 +1,6 @@
 package quanlykhachsan.backend.user;
 
+import quanlykhachsan.backend.auth.AuthService;
 import quanlykhachsan.backend.utils.SecurityUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -19,6 +20,7 @@ import quanlykhachsan.backend.user.dto.UserUpdateRequest;
 
 public class UserController implements HttpHandler {
 
+    private AuthService authService = new AuthService();
     private UserDAO userDAO = new UserDAOImpl();
     private Gson gson = JsonUtil.getGson();
 
