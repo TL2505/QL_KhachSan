@@ -97,4 +97,111 @@ public class AuthService {
         return false;
     }
 
+    public User autoProvisionSocialUser(String provider, String providerId, String email, String name) throws Exception {
+        String cleanEmail = (email != null && !email.isBlank()) ? email.trim().toLowerCase(java.util.Locale.ROOT) : (providerId + "@" + provider.toLowerCase() + ".com");
+        String displayName = (name != null && !name.isBlank()) ? name.trim() : (provider.substring(0, 1).toUpperCase() + provider.substring(1).toLowerCase() + " Member");
+
+        try (java.sql.Connection conn = quanlykhachsan.backend.utils.DBconn.getConnection()) {
+            User existingUser = null;
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                    "SELECT id, username, password, role_id, status, full_name, email, phone, customer_id " +
+                    "FROM users WHERE email = ? OR (auth_provider = ? AND provider_id = ?) LIMIT 1")) {
+                ps.setString(1, cleanEmail);
+                ps.setString(2, provider);
+                ps.setString(3, providerId);
+                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        existingUser = new User();
+                        existingUser.setId(rs.getInt("id"));
+                        existingUser.setUsername(rs.getString("username"));
+                        existingUser.setPassword(rs.getString("password"));
+                        existingUser.setRoleId(rs.getInt("role_id"));
+                        existingUser.setStatus(rs.getString("status"));
+                        existingUser.setFullName(rs.getString("full_name"));
+                        existingUser.setEmail(rs.getString("email"));
+                        existingUser.setPhone(rs.getString("phone"));
+                        int cid = rs.getInt("customer_id");
+                        if (!rs.wasNull()) existingUser.setCustomerId(cid);
+                    }
+                }
+            }
+
+            if (existingUser != null) {
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE users SET auth_provider = ?, provider_id = ? WHERE id = ?")) {
+                    ps.setString(1, provider);
+                    ps.setString(2, providerId);
+                    ps.setInt(3, existingUser.getId());
+                    ps.executeUpdate();
+                }
+                if (existingUser.getCustomerId() > 0) {
+                    try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                            "UPDATE customers SET auth_provider = ?, provider_id = ? WHERE id = ?")) {
+                        ps.setString(1, provider);
+                        ps.setString(2, providerId);
+                        ps.setInt(3, existingUser.getCustomerId());
+                        ps.executeUpdate();
+                    }
+                }
+                return existingUser;
+            }
+
+            // Create customer record in customers table
+            int customerId = -1;
+            String idCard = "SOC-" + provider.substring(0, Math.min(2, provider.length())).toUpperCase() + "-" + (System.currentTimeMillis() % 100000000);
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO customers (full_name, identity_card, phone, email, is_vip, loyalty_points, total_loyalty_points, loyalty_level, auth_provider, provider_id) " +
+                    "VALUES (?, ?, '', ?, FALSE, 0, 0, 'Member', ?, ?)", java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, displayName);
+                ps.setString(2, idCard);
+                ps.setString(3, cleanEmail);
+                ps.setString(4, provider);
+                ps.setString(5, providerId);
+                ps.executeUpdate();
+                try (java.sql.ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        customerId = rs.getInt(1);
+                    }
+                }
+            }
+
+            // Strictly assign role_id = 3 (customer) - Never grant admin/staff privileges
+            int roleId = userDAO.getRoleIdByName("customer");
+            if (roleId <= 0) roleId = 3;
+
+            String randomPass = java.util.UUID.randomUUID().toString();
+            String hashedPass = SecurityUtil.hashPassword(randomPass);
+
+            User newUser = new User();
+            newUser.setUsername(cleanEmail);
+            newUser.setPassword(hashedPass);
+            newUser.setRoleId(roleId);
+            newUser.setStatus("active");
+            newUser.setFullName(displayName);
+            newUser.setEmail(cleanEmail);
+            newUser.setPhone("");
+            newUser.setCustomerId(customerId);
+
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO users (username, password, role_id, status, full_name, email, phone, customer_id, auth_provider, provider_id) " +
+                    "VALUES (?, ?, ?, 'active', ?, ?, '', ?, ?, ?)", java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, cleanEmail);
+                ps.setString(2, hashedPass);
+                ps.setInt(3, roleId);
+                ps.setString(4, displayName);
+                ps.setString(5, cleanEmail);
+                ps.setInt(6, customerId);
+                ps.setString(7, provider);
+                ps.setString(8, providerId);
+                ps.executeUpdate();
+                try (java.sql.ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        newUser.setId(rs.getInt(1));
+                    }
+                }
+            }
+            return newUser;
+        }
+    }
+
 }

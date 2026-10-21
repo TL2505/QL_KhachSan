@@ -213,7 +213,9 @@ public final class DBconn {
                     config.setMinimumIdle(5);
                     config.setConnectionTimeout(30000);
                     config.setIdleTimeout(300000);
-                    config.setLeakDetectionThreshold(5000);
+                    config.setMaxLifetime(1800000);
+                    config.setKeepaliveTime(300000);
+                    config.setLeakDetectionThreshold(60000);
                     config.setInitializationFailTimeout(-1);
                     config.setPoolName("HotelPMS-HikariPool");
 

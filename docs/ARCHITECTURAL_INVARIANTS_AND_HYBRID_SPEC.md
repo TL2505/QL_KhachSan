@@ -567,19 +567,27 @@ graph LR
   2. Nếu rỗng, nạp từ file `config.properties` hoặc `.env` nằm tại thư mục gốc dự án.
   3. Nếu vẫn không có, kích hoạt giá trị Fallback an toàn (Invariant 2).
 
-### 4.5. Bảo toàn dữ liệu sổ cái (Nghiêm cấm Down Volume)
-- **Vấn đề:** Lệnh `docker compose down -v` sẽ xóa vĩnh viễn volume `mariadb_data`, phá hủy toàn bộ dữ liệu lịch sử đặt phòng, thanh toán và cấu hình phòng đã tạo.
-- **Nguyên tắc xử lý:**
-  - Nghiêm cấm tuyệt đối sử dụng flag `-v` trong các thao tác bảo trì hàng ngày.
-  - Khi cần dừng hệ thống, chỉ dùng:
+### 4.5. Bảo toàn dữ liệu sổ cái & Quy trình nạp dữ liệu an toàn (Safe Database Loading)
+- **Vấn đề xóa volume:** Lệnh `docker compose down -v` sẽ xóa vĩnh viễn volume `mariadb_data`, phá hủy toàn bộ dữ liệu lịch sử đặt phòng, thanh toán và cấu hình phòng đã tạo.
+- **Vấn đề nạp file `hotel.sql`:** Nạp bằng tài khoản thường sẽ gây `ERROR 1227: Access denied` khi khởi tạo các người dùng hệ thống (`ai_reader`), hoặc gặp `ERROR 1005 (errno: 150)` do ràng buộc khóa ngoại chéo.
+- **Nguyên tắc xử lý bắt buộc (Invariant 1 & Invariant 4):**
+  1. **Nghiêm cấm tuyệt đối cờ `-v`:** Khi dừng hệ thống, chỉ dùng:
     ```bash
     docker compose down
     ```
-  - Chỉ xóa volume khi có chỉ thị trực tiếp từ Lead Architect để thực hiện Hard Reset môi trường:
-    ```bash
-    # CHỈ DÙNG KHI CÓ PHÊ DUYỆT CỦA LEAD:
-    docker compose down -v
-    ```
+  2. **Quy trình nạp `hotel.sql` chuẩn qua tài khoản `root`:**
+    - Luôn nạp bằng user `root` (`hotel_root_secret_2026`).
+    - Tắt kiểm tra khóa ngoại trước khi nạp: `SET FOREIGN_KEY_CHECKS=0;`.
+    - Bật lại kiểm tra khóa ngoại sau khi nạp: `SET FOREIGN_KEY_CHECKS=1;`.
+    - Chạy lại ngay lập tức `database/grant_remote_access.sql` để cấp quyền `'hotel_admin'@'%'` cho máy Windows host (`192.168.56.2`).
+    - Thực thi thuận tiện qua script chuẩn hóa:
+      ```bash
+      bash database/safe_load_hotel.sh database/hotel.sql
+      ```
+  3. **Chuẩn hóa vòng đời kết nối HikariCP ([DBconn.java](file:///c:/NetBeansProjects/QL_KhachSan/src/quanlykhachsan/backend/utils/DBconn.java)):**
+    - `leakDetectionThreshold = 60000` (60 giây): Ngăn chặn triệt để cảnh báo giả trong quá trình migrate hoặc batch query lớn.
+    - `maxLifetime = 1800000` (30 phút): Chu kỳ làm mới kết nối tối đa.
+    - `keepaliveTime = 300000` (5 phút): Bắn tín hiệu ping giữ kết nối sống, ngăn MariaDB đóng kết nối do idle timeout (`No operations allowed after connection closed`).
 
 ---
 

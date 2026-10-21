@@ -46,21 +46,28 @@ public final class AesGcmEncryptionUtil {
      */
     public static byte[] resolveTo32Bytes(String rawKey) {
         if (rawKey == null || rawKey.isBlank()) {
-            return resolveTo32Bytes(DEFAULT_FALLBACK_KEY_BASE64);
+            return Base64.getDecoder().decode(DEFAULT_FALLBACK_KEY_BASE64);
         }
-        String trimmed = rawKey.trim();
         try {
-            byte[] decoded = Base64.getDecoder().decode(trimmed);
+            byte[] decoded = Base64.getDecoder().decode(rawKey.trim());
             if (decoded.length == 32) {
                 return decoded;
             }
-            return sha256(decoded);
-        } catch (IllegalArgumentException notBase64) {
-            byte[] rawBytes = trimmed.getBytes(StandardCharsets.UTF_8);
-            if (rawBytes.length == 32) {
-                return rawBytes;
-            }
-            return sha256(rawBytes);
+        } catch (IllegalArgumentException ignored) {
+            // Not valid Base64, switch to checking raw string length
+        }
+
+        byte[] rawBytes = rawKey.getBytes(StandardCharsets.UTF_8);
+        if (rawBytes.length == 32) {
+            return rawBytes;
+        }
+
+        // Normalize using SHA-256 to ensure a consistent 32-byte array for AES-256
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return digest.digest(rawBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
         }
     }
 

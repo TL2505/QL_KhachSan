@@ -158,13 +158,61 @@ function bookingReturnUrl() {
   } catch { return null; }
 }
 
-function status(message, kind = 'error') {
+let authStatusTimer = null;
+
+export function clearAuthStatus() {
+  if (authStatusTimer) {
+    clearTimeout(authStatusTimer);
+    authStatusTimer = null;
+  }
+  const node = byId('auth-status');
+  if (node) {
+    node.textContent = '';
+    node.className = 'auth-status';
+    node.style.opacity = '1';
+    node.style.display = 'none';
+  }
+}
+
+export function status(message, kind = 'error') {
   try {
-    const node = byId('auth-status');
-    if (node) {
-      node.textContent = message;
-      node.className = `auth-status ${kind === 'success' ? 'success' : ''}`;
+    if (authStatusTimer) {
+      clearTimeout(authStatusTimer);
+      authStatusTimer = null;
     }
+    const node = byId('auth-status');
+    if (!node) return;
+    if (!message) {
+      clearAuthStatus();
+      return;
+    }
+    node.textContent = message;
+    node.className = `auth-status has-content ${kind === 'success' ? 'success' : 'error'}`;
+    node.style.display = 'flex';
+    node.style.opacity = '1';
+
+    if (typeof document !== 'undefined' && typeof document.createElement === 'function' && typeof node.appendChild === 'function') {
+      try {
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn-close-status';
+        closeBtn.setAttribute('aria-label', 'Đóng thông báo');
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', (e) => {
+          if (e && typeof e.preventDefault === 'function') e.preventDefault();
+          clearAuthStatus();
+        });
+        node.appendChild(closeBtn);
+      } catch {}
+    }
+
+    // Auto-fade / disappear after 5000 ms
+    authStatusTimer = setTimeout(() => {
+      node.style.opacity = '0';
+      authStatusTimer = setTimeout(() => {
+        clearAuthStatus();
+      }, 350);
+    }, 5000);
   } catch { }
 }
 
@@ -196,6 +244,7 @@ export function setupAuthSwitching() {
 
   const switchToLogin = (e) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    clearAuthStatus();
     [tabLogin, showLogin].forEach(el => {
       if (el) {
         el.classList.add('active', 'tab-active');
@@ -216,12 +265,12 @@ export function setupAuthSwitching() {
       registerForm.hidden = true;
       registerForm.style.display = 'none';
     }
-    status('');
     refreshIcons();
   };
 
   const switchToRegister = (e) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    clearAuthStatus();
     [tabRegister, showRegister].forEach(el => {
       if (el) {
         el.classList.add('active', 'tab-active');
@@ -242,7 +291,6 @@ export function setupAuthSwitching() {
       loginForm.hidden = true;
       loginForm.style.display = 'none';
     }
-    status('');
     refreshIcons();
   };
 
@@ -826,28 +874,11 @@ export async function handleLoginSubmit(e) {
   status('Đang xác thực bảo mật...', 'success');
 
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ username, password })
-    });
-
-    const data = await res.json().catch(() => null);
-
-    if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
-      const errorMsg = data?.message || (res.status === 401 ? 'Sai tên đăng nhập hoặc mật khẩu.' : 'Đăng nhập không thành công.');
-      status(errorMsg);
-      return;
-    }
-
+    const data = await api.post('/auth/login', { username, password });
     completeLogin(data, username);
-
   } catch (error) {
     console.error('Lỗi khi đăng nhập:', error);
-    status('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng hoặc thử lại sau.');
+    status(error.message || 'Sai tên đăng nhập hoặc mật khẩu.');
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -909,22 +940,7 @@ export async function handleRegisterSubmit(e) {
       identity_card: 'TEMP-' + Date.now()
     };
 
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json().catch(() => null);
-
-    if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
-      const errorMsg = data?.message || 'Đăng ký không thành công. Vui lòng thử lại.';
-      status(errorMsg);
-      return;
-    }
+    await api.post('/auth/register', payload);
 
     status('Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.', 'success');
 
@@ -940,7 +956,7 @@ export async function handleRegisterSubmit(e) {
 
   } catch (error) {
     console.error('Lỗi khi đăng ký:', error);
-    status('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
+    status(error.message || 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -951,6 +967,18 @@ export async function handleRegisterSubmit(e) {
 
 export function initAuthEvents() {
   setupAuthSwitching();
+
+  // Clear auth status on user typing across all form fields
+  const inputIds = [
+    'reg-fullname', 'reg-email', 'reg-phone', 'reg-password', 'reg-confirm-password',
+    'login-username', 'login-password'
+  ];
+  inputIds.forEach(id => {
+    const el = byId(id);
+    if (el) {
+      el.addEventListener('input', () => clearAuthStatus());
+    }
+  });
 
   const loginForm = byId('login-form');
   if (loginForm) {
@@ -1002,7 +1030,7 @@ export function initAuthEvents() {
 
   byId('google-otp-cancel')?.addEventListener('click', () => {
     googleChallengeId = null;
-    status('');
+    clearAuthStatus();
     showAuth('login');
   });
 
@@ -1011,6 +1039,7 @@ export function initAuthEvents() {
   if (googleBtn) {
     googleBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      clearAuthStatus();
       if (typeof window !== 'undefined' && window.google?.accounts?.id) {
         try {
           window.google.accounts.id.initialize({
@@ -1040,6 +1069,7 @@ export function initAuthEvents() {
   if (facebookBtn) {
     facebookBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      clearAuthStatus();
       if (typeof window !== 'undefined' && window.FB) {
         try {
           window.FB.login((response) => {
@@ -1067,25 +1097,18 @@ export async function sendGoogleCredential(credential) {
   }
   status('Đang xác thực bảo mật với Google...', 'success');
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/google`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ credential })
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
-      const errorMsg = data?.message || 'Xác thực Google không thành công. Vui lòng thử lại.';
-      status(errorMsg);
-      return;
-    }
+    const data = await api.post('/auth/oauth/google', { credential, token: credential });
     status('Đăng nhập Google thành công!', 'success');
     completeLogin(data, data?.data?.email || data?.email || 'google_user');
   } catch (error) {
-    console.error('Lỗi khi đăng nhập Google:', error);
-    status('Không thể kết nối đến máy chủ xác thực Google. Vui lòng thử lại sau.');
+    try {
+      const data = await api.post('/auth/google', { credential, token: credential });
+      status('Đăng nhập Google thành công!', 'success');
+      completeLogin(data, data?.data?.email || data?.email || 'google_user');
+    } catch (fallbackErr) {
+      console.error('Lỗi khi đăng nhập Google:', fallbackErr);
+      status(fallbackErr.message || 'Không thể kết nối đến máy chủ xác thực Google. Vui lòng thử lại sau.');
+    }
   }
 }
 
@@ -1096,25 +1119,18 @@ export async function sendFacebookAccessToken(accessToken) {
   }
   status('Đang xác thực bảo mật với Facebook...', 'success');
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/facebook`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ access_token: accessToken })
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
-      const errorMsg = data?.message || 'Xác thực Facebook không thành công. Vui lòng thử lại.';
-      status(errorMsg);
-      return;
-    }
+    const data = await api.post('/auth/oauth/facebook', { access_token: accessToken, token: accessToken });
     status('Đăng nhập Facebook thành công!', 'success');
     completeLogin(data, data?.data?.email || data?.email || 'facebook_user');
   } catch (error) {
-    console.error('Lỗi khi đăng nhập Facebook:', error);
-    status('Không thể kết nối đến máy chủ xác thực Facebook. Vui lòng thử lại sau.');
+    try {
+      const data = await api.post('/auth/facebook', { access_token: accessToken, token: accessToken });
+      status('Đăng nhập Facebook thành công!', 'success');
+      completeLogin(data, data?.data?.email || data?.email || 'facebook_user');
+    } catch (fallbackErr) {
+      console.error('Lỗi khi đăng nhập Facebook:', fallbackErr);
+      status(fallbackErr.message || 'Không thể kết nối đến máy chủ xác thực Facebook. Vui lòng thử lại sau.');
+    }
   }
 }
 
