@@ -52,6 +52,8 @@ services:
       mariadb:
         condition: service_healthy
     environment:
+      ALLOW_INSECURE_OAUTH_MOCK: ${ALLOW_INSECURE_OAUTH_MOCK:-true}
+      APP_ENV: ${APP_ENV:-development}
       DB_HOST: mariadb
       DB_PORT: 3306
       DB_NAME: ${DB_NAME:-hotel_prod_db}

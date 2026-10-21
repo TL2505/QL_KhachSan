@@ -153,7 +153,7 @@ public class AuthService {
                     "INSERT INTO customers (full_name, identity_card, phone, email, is_vip, loyalty_points, total_loyalty_points, loyalty_level, auth_provider, provider_id) " +
                     "VALUES (?, ?, '', ?, FALSE, 0, 0, 'Member', ?, ?)", java.sql.Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, displayName);
-                ps.setString(2, idCard);
+                ps.setNull(2, java.sql.Types.VARCHAR);
                 ps.setString(3, cleanEmail);
                 ps.setString(4, provider);
                 ps.setString(5, providerId);
