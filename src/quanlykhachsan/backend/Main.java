@@ -78,6 +78,7 @@ public class Main {
         registerContext(server, ipRateLimiter, "/api/v1/auth/register", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/auth/facebook", new AuthController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/auth/logout", new quanlykhachsan.backend.auth.LogoutController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/account", new quanlykhachsan.backend.auth.AccountSecurityController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/auth/change-password", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/auth/guest-otp", new quanlykhachsan.backend.auth.GuestAuthController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/auth/google", new quanlykhachsan.backend.auth.GoogleOtpAuthController(), exceptionFilter, corsFilter, jwtFilter);

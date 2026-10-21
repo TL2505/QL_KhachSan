@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS users (
   status ENUM('active', 'inactive', 'banned') DEFAULT 'active',
   full_name VARCHAR(100) NULL,
   email VARCHAR(100) NULL,
+  verified_email VARCHAR(100) NULL,
   phone VARCHAR(20) NULL,
   customer_id INT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

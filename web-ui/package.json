@@ -5,6 +5,8 @@
   "scripts": {
     "start": "node server.js",
     "build:concierge": "tailwindcss -i concierge-ui.input.css -o public/css/concierge-ui.css --minify",
+    "build:ai-settings": "tailwindcss -i ai-settings-ui.input.css -o public/css/ai-settings-ui.css --minify",
+    "build:account-settings": "tailwindcss -i account-settings-ui.input.css -o public/css/account-settings-ui.css --minify",
     "test": "node --test tests/*.test.mjs"
   },
   "devDependencies": {

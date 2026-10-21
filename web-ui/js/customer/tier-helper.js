@@ -42,6 +42,14 @@ export function summarizeLoyaltyHistory(history) {
   return { currentPoints: Math.max(0, currentPoints), totalPoints };
 }
 
+// Prefer the account's stored lifetime total; redemption never lowers its tier.
+export function membershipPoints(overview, history = []) {
+  if (overview && Number.isFinite(Number(overview.totalLoyaltyPoints)) && overview.totalLoyaltyPoints != null) {
+    return { totalPoints: Math.max(0, Number(overview.totalLoyaltyPoints)), currentPoints: Math.max(0, Number(overview.loyaltyPoints) || 0) };
+  }
+  return summarizeLoyaltyHistory(history);
+}
+
 export function getLegacyTierInfo(totalPoints = 0, customSpent = null) {
   const pts = Math.max(0, Number(totalPoints) || 0);
   const spent = customSpent != null ? Number(customSpent) : pts * 1000;

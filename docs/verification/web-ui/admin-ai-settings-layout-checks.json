@@ -1,0 +1,50 @@
+[
+  {
+    "theme": "dark",
+    "width": "375",
+    "background": "rgb(19, 27, 46)",
+    "fits": true,
+    "saveBackground": "rgb(212, 175, 55)",
+    "sideBySide": false
+  },
+  {
+    "theme": "dark",
+    "width": "768",
+    "background": "rgb(19, 27, 46)",
+    "fits": true,
+    "saveBackground": "rgb(212, 175, 55)",
+    "sideBySide": false
+  },
+  {
+    "theme": "dark",
+    "width": "1230",
+    "background": "rgb(19, 27, 46)",
+    "fits": true,
+    "saveBackground": "rgb(212, 175, 55)",
+    "sideBySide": true
+  },
+  {
+    "theme": "light",
+    "width": "375",
+    "background": "rgb(255, 255, 255)",
+    "fits": true,
+    "saveBackground": "rgb(192, 152, 58)",
+    "sideBySide": false
+  },
+  {
+    "theme": "light",
+    "width": "768",
+    "background": "rgb(255, 255, 255)",
+    "fits": true,
+    "saveBackground": "rgb(166, 123, 61)",
+    "sideBySide": false
+  },
+  {
+    "theme": "light",
+    "width": "1230",
+    "background": "rgb(255, 255, 255)",
+    "fits": true,
+    "saveBackground": "rgb(155, 110, 63)",
+    "sideBySide": true
+  }
+]

@@ -1,0 +1,182 @@
+[
+  {
+    "buttonOverflow": false,
+    "columns": "601.384px 601.384px",
+    "headingFont": "600 30px / 40.5px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "1230",
+    "role": "ADMIN",
+    "scrollWidth": 1225,
+    "theme": "dark",
+    "width": 1225
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "767.991px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "768",
+    "role": "ADMIN",
+    "scrollWidth": 768,
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "374.985px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "375",
+    "role": "ADMIN",
+    "scrollWidth": 375,
+    "theme": "dark",
+    "width": 375
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "601.384px 601.384px",
+    "headingFont": "600 30px / 40.5px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "1230",
+    "role": "ADMIN",
+    "scrollWidth": 1225,
+    "theme": "light",
+    "width": 1225
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "767.991px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "768",
+    "role": "ADMIN",
+    "scrollWidth": 768,
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "374.985px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "375",
+    "role": "ADMIN",
+    "scrollWidth": 375,
+    "theme": "light",
+    "width": 375
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "601.384px 601.384px",
+    "headingFont": "600 30px / 40.5px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "1230",
+    "role": "STAFF",
+    "scrollWidth": 1225,
+    "theme": "dark",
+    "width": 1225
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "767.991px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "768",
+    "role": "STAFF",
+    "scrollWidth": 768,
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "374.985px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "375",
+    "role": "STAFF",
+    "scrollWidth": 375,
+    "theme": "dark",
+    "width": 375
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "601.384px 601.384px",
+    "headingFont": "600 30px / 40.5px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "1230",
+    "role": "STAFF",
+    "scrollWidth": 1225,
+    "theme": "light",
+    "width": 1225
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "767.991px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "768",
+    "role": "STAFF",
+    "scrollWidth": 768,
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "374.985px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "375",
+    "role": "STAFF",
+    "scrollWidth": 375,
+    "theme": "light",
+    "width": 375
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "601.384px 601.384px",
+    "headingFont": "600 30px / 40.5px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "1230",
+    "role": "CUSTOMER",
+    "scrollWidth": 1225,
+    "theme": "dark",
+    "width": 1225
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "767.991px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "768",
+    "role": "CUSTOMER",
+    "scrollWidth": 768,
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "374.985px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "375",
+    "role": "CUSTOMER",
+    "scrollWidth": 375,
+    "theme": "dark",
+    "width": 375
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "601.384px 601.384px",
+    "headingFont": "600 30px / 40.5px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "1230",
+    "role": "CUSTOMER",
+    "scrollWidth": 1225,
+    "theme": "light",
+    "width": 1225
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "767.991px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "768",
+    "role": "CUSTOMER",
+    "scrollWidth": 768,
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "buttonOverflow": false,
+    "columns": "374.985px",
+    "headingFont": "600 24px / 32.4px \"Playfair Display\", Georgia, serif",
+    "requestedWidth": "375",
+    "role": "CUSTOMER",
+    "scrollWidth": 375,
+    "theme": "light",
+    "width": 375
+  }
+]

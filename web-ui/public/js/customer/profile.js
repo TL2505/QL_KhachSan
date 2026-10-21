@@ -280,6 +280,7 @@ export async function renderProfile(container, session) {
       if (idcardInput) idcardInput.value = '';
       identityState(saved.identitySaved);
       report('Đã lưu hồ sơ thành công. Thông tin giấy tờ sẽ được đối chiếu khi nhận phòng.',true);
+      window.dispatchEvent?.(new (window.Event || Event)('hotel:profile-updated'));
     } catch (error) {
       report(error.message || 'Chưa thể lưu hồ sơ. Vui lòng thử lại.');
     } finally {

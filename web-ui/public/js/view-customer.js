@@ -1,20 +1,22 @@
 // Customer Views Module Coordinator
 import { renderDashboard } from "./customer/dashboard.js?v=3.6.20";
 import { renderBookings } from "./customer/bookings.js";
-import { renderProfile } from "./customer/profile.js?v=3.6.20";
-import { renderSecurity } from "./customer/security.js";
+import { renderAccountSettings } from "./shared/account-settings.js?v=1";
 import { renderDiscovery } from "./customer/discovery.js";
 import { renderLoyalty } from "./customer/loyalty.js";
 import { renderPromotions } from "./customer/promotions.js";
 import { renderChat } from "./customer/chat.js";
 import { renderConcierge } from "./customer/concierge.js?v=3.6.20";
 import { renderSupport } from "./customer/support.js";
-import { api } from "../api.js";
-import { getLegacyTierInfo, summarizeLoyaltyHistory } from "./customer/tier-helper.js";
+import { api, getAuthSession } from "../api.js";
+import { getLegacyTierInfo, membershipPoints } from "./customer/tier-helper.js";
+
+let navigationVersion = 0;
 
 export async function loadCustomerView(tab = "dashboard") {
   const container = document.getElementById("view-container");
   if (!container) return;
+  const navigation = ++navigationVersion;
   container.classList.remove('customer-dashboard-view', 'customer-services-view', 'customer-profile-view');
 
   let session = null;
@@ -35,16 +37,19 @@ export async function loadCustomerView(tab = "dashboard") {
   // Load the member tier for every customer view so shared panels keep the
   // correct accent even when the customer opens a page other than dashboard.
   if (tab !== "dashboard") {
-    document.body.dataset.customerTier = "member";
     const customerId = session.customerId || session.userId || session.id || 1;
     try {
-      const history = await api.get(`/loyalty/history/${customerId}`);
-      const { totalPoints: points } = summarizeLoyaltyHistory(history);
+      const overview = await api.get('/customer-portal/overview');
+      const history = overview?.totalLoyaltyPoints != null ? [] : await api.get(`/loyalty/history/${customerId}`);
+      if (navigation !== navigationVersion || getAuthSession()?.token !== session.token) return;
+      const { totalPoints: points } = membershipPoints(overview, history);
       document.body.dataset.customerTier = getLegacyTierInfo(Math.max(0, points)).name.toLowerCase();
     } catch {
-      // Keep the neutral member palette when loyalty data is unavailable.
+      // Keep the last known palette when membership data is unavailable.
     }
   }
+
+  if (navigation !== navigationVersion || getAuthSession()?.token !== session.token) return;
 
   try {
     if (tab === "dashboard") {
@@ -56,9 +61,9 @@ export async function loadCustomerView(tab = "dashboard") {
     } else if (tab === "support") {
       renderSupport(container);
     } else if (tab === "profile") {
-      await renderProfile(container, session);
+      await renderAccountSettings(container, session, { mode: 'profile', showIdentity: true });
     } else if (tab === "security") {
-      await renderSecurity(container, session);
+      await renderAccountSettings(container, session, { mode: 'security' });
     } else if (tab === "discovery") {
       await renderDiscovery(container, session);
     } else if (tab === "loyalty") {

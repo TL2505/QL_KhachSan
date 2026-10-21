@@ -2,55 +2,54 @@ import { apiFetch } from '../../api.js';
 
 export async function renderAiSettings(container) {
     container.innerHTML = `
-      <div class="page-header"><div><p class="portal-eyebrow">AURELIA · AI CONCIERGE</p><h1>Quản lý API key AI</h1><p>Kết nối nhà cung cấp AI cho Quản gia trên trang chủ.</p></div></div>
-      <div class="card ai-settings-card">
-        <div class="card-body">
-          <div class="flex-row justify-between"><h2 class="card-title">Cấu hình chatbot</h2><span id="ai-config-state" role="status">Đang tải…</span></div>
-          <fieldset class="fieldset" id="ai-settings-fields" disabled>
-            <form id="ai-key-form" autocomplete="off" aria-labelledby="ai-key-heading">
-              <h3 id="ai-key-heading">1. Nhập API key và lấy model</h3>
-              <p class="ai-settings-note">Bước này chỉ cần nhà cung cấp và API key. Bạn chưa cần biết tên model.</p>
-              <div class="form-group"><label for="ai-provider">Nhà cung cấp</label><select class="select form-input" id="ai-provider"><option value="openai">OpenAI</option><option value="gemini">Google Gemini</option><option value="claude">Claude (Anthropic)</option><option value="groq">Groq</option></select></div>
-              <div class="form-group"><label for="ai-api-key">API key <span id="ai-key-state"></span></label><input class="input form-input" id="ai-api-key" name="provider-credential" type="password" autocomplete="new-password" spellcheck="false" maxlength="512" placeholder="Nhập API key"><small id="ai-key-hint">Dán chuỗi key do nhà cung cấp hiển thị. Tên bạn đặt khi tạo key chỉ là nhãn quản lý, không phải tên model. Key được mã hóa khi lưu trên máy chủ.</small></div>
-              <div class="form-group" id="ai-workspace-field" hidden><label for="ai-workspace">Workspace ID Claude (tùy chọn)</label><input class="input form-input" id="ai-workspace" type="text" maxlength="107" placeholder="wrkspc_…" autocomplete="off"><small>Chỉ cần nhập khi API key Claude dùng nhiều workspace. Key dành cho một workspace có thể để trống.</small></div>
-              <div class="form-group">
-                <button class="btn btn-primary" id="ai-load-models" type="submit">Tiếp tục: Lấy danh sách model</button>
-                <small>Key được dùng để hỏi nhà cung cấp có những model nào. Chưa lưu hoặc bật chatbot ở bước này. Nếu đã lưu key cùng nhà cung cấp, có thể để trống ô key.</small>
+      <section class="ai-settings-view" aria-label="Quản lý API key AI">
+        <div class="page-header"><div><h1>Quản lý API key AI</h1><p>Kết nối nhà cung cấp và thiết lập câu trả lời cho Quản gia AI.</p></div></div>
+        <div class="ai-settings-card">
+          <div class="ai-settings-topline"><h2>Cấu hình chatbot</h2><div class="ai-settings-state"><span id="ai-busy" class="ais-loading ais-loading-spinner ais-loading-sm" aria-hidden="true" hidden></span><span class="ais-badge ais-badge-outline" id="ai-config-state" role="status">Đang tải…</span></div></div>
+          <fieldset id="ai-settings-fields" class="ai-settings-grid" aria-label="Cấu hình nhà cung cấp AI" disabled>
+            <form id="ai-key-form" class="ais-card ais-card-border ai-settings-step" autocomplete="off" aria-labelledby="ai-key-heading">
+              <div class="ais-card-body">
+                <div class="ai-step-heading"><span class="ais-badge ais-badge-outline ai-step-number" aria-hidden="true">1</span><div><h3 id="ai-key-heading">Kết nối nhà cung cấp</h3><p>Nhập key để lấy danh sách model.</p></div></div>
+                <fieldset class="ais-fieldset ai-settings-fields-group">
+                  <legend class="ais-fieldset-legend">Thông tin kết nối</legend>
+                  <div class="ai-form-group"><label for="ai-provider">Nhà cung cấp</label><select class="ais-select" id="ai-provider"><option value="openai">OpenAI</option><option value="gemini">Google Gemini</option><option value="claude">Claude (Anthropic)</option><option value="groq">Groq</option></select></div>
+                  <div class="ai-form-group"><label class="ai-key-label" for="ai-api-key">API key <span class="ais-badge ais-badge-ghost ais-badge-sm" id="ai-key-state"></span></label><input class="ais-input" id="ai-api-key" name="provider-credential" type="password" autocomplete="new-password" spellcheck="false" maxlength="512" placeholder="Nhập API key" aria-describedby="ai-key-hint"><small id="ai-key-hint">Key được mã hóa khi lưu. Để trống để giữ key đã lưu của cùng nhà cung cấp.</small></div>
+                  <div class="ai-form-group" id="ai-workspace-field" hidden><label for="ai-workspace">Workspace ID Claude <span class="ai-optional">(tùy chọn)</span></label><input class="ais-input" id="ai-workspace" type="text" maxlength="107" placeholder="wrkspc_…" autocomplete="off"><small>Chỉ cần khi API key Claude dùng nhiều workspace.</small></div>
+                </fieldset>
+                <button class="ais-btn ais-btn-outline ai-models-button" id="ai-load-models" type="submit">Lấy danh sách model <span aria-hidden="true">→</span></button>
+                <small>Bước này chưa lưu key hoặc bật chatbot.</small>
+                <p id="ai-model-status" class="ais-alert ais-alert-soft ai-inline-feedback" role="status" aria-live="polite"></p>
+                <details class="ais-collapse ais-collapse-arrow ai-settings-details"><summary class="ais-collapse-title">Lưu ý về API key và model</summary><div class="ais-collapse-content"><p>Dùng key do nhà cung cấp cấp. Tên bạn đặt cho key chỉ là nhãn quản lý, khác với Model ID. Danh sách model phụ thuộc quyền của key; hãy kiểm tra kết nối sau khi lưu.</p></div></details>
               </div>
             </form>
-            <p id="ai-model-status" role="status" aria-live="polite"></p>
-            <form id="ai-settings-form" autocomplete="off" aria-labelledby="ai-model-heading">
-              <h3 id="ai-model-heading">2. Chọn model và lưu cấu hình</h3>
-              <p class="ai-settings-note" id="ai-model-guide">Hoàn thành bước 1 để xem danh sách model. Chọn một model rồi lưu API key và cấu hình chatbot.</p>
-              <div class="form-group">
-                <div id="ai-model-picker" hidden><label for="ai-model-select">Chọn model từ nhà cung cấp</label><select class="select form-input" id="ai-model-select"><option value="">Chọn model…</option></select></div>
-                <p id="ai-selected-model" role="status">Chưa chọn model</p>
-                <details id="ai-manual-model"><summary>Nhập Model ID thủ công (nâng cao)</summary><label for="ai-model">Model ID</label><input class="input form-input" id="ai-model" type="text" maxlength="100" placeholder="Chỉ nhập nếu bạn đã biết Model ID"><small id="ai-model-hint">Model là mô hình AI dùng để trả lời, khác với tên key bạn tự đặt.</small></details>
-              </div>
-              <div class="form-group">
-                <details><summary>Ngữ cảnh mặc định của dự án</summary><label for="ai-project-context">Thông tin từ website và các chức năng hiện có</label><textarea class="textarea form-input" id="ai-project-context" rows="10" readonly></textarea><small id="ai-project-sources"></small></details>
-                <small id="ai-project-state" role="status">Đang tải ngữ cảnh dự án…</small>
-              </div>
-              <div class="form-group"><label for="ai-knowledge">Thông tin khách sạn bổ sung cho AI</label><textarea class="textarea form-input" id="ai-knowledge" rows="6" maxlength="10000" placeholder="Bổ sung thông tin đã xác nhận chưa có trong ngữ cảnh dự án…"></textarea><small>Ngữ cảnh mặc định luôn được gửi cho AI, kể cả khi để trống ô này. Không nhập dữ liệu mẫu như giá hiện hành; nội dung chưa có cần lễ tân xác nhận.</small></div>
-              <label class="ai-enable-label"><input id="ai-enabled" type="checkbox"> Bật nhà cung cấp này cho chatbot</label>
-              <p class="ai-settings-note">Khi bật, câu hỏi khách gửi cho chatbot và thông tin khách sạn ở trên được gửi tới nhà cung cấp đã chọn. Với Gemini, các lượt hội thoại gần nhất cũng được gửi để hiểu câu hỏi tiếp nối. Kiểm tra kết nối có thể dùng một lượng nhỏ hạn mức API.</p>
-              <div class="card-actions flex-row" style="flex-wrap:wrap;gap:10px;margin-top:20px">
-                <button class="btn btn-secondary" id="ai-save" type="submit" disabled>Lưu API key và model đã chọn</button>
-                <button class="btn btn-secondary" id="ai-test" type="button">Kiểm tra kết nối đã lưu</button>
-                <button class="btn btn-danger" id="ai-delete" type="button">Xóa key</button>
+            <form id="ai-settings-form" class="ais-card ais-card-border ai-settings-step" autocomplete="off" aria-labelledby="ai-model-heading">
+              <div class="ais-card-body">
+                <div class="ai-step-heading"><span class="ais-badge ais-badge-outline ai-step-number" aria-hidden="true">2</span><div><h3 id="ai-model-heading">Model & hành vi chatbot</h3><p id="ai-model-guide">Chọn model từ bước 1, bổ sung thông tin rồi lưu cấu hình.</p></div></div>
+                <div class="ai-form-group">
+                  <div class="ai-form-group" id="ai-model-picker" hidden><label for="ai-model-select">Model từ nhà cung cấp</label><select class="ais-select" id="ai-model-select"><option value="">Chọn model…</option></select></div>
+                  <p class="ai-selected-model" id="ai-selected-model" role="status">Chưa chọn model</p>
+                  <details class="ais-collapse ais-collapse-arrow ai-settings-details" id="ai-manual-model"><summary class="ais-collapse-title">Nhập Model ID thủ công</summary><div class="ais-collapse-content ai-form-group"><label for="ai-model">Model ID</label><input class="ais-input" id="ai-model" type="text" maxlength="100" placeholder="Chỉ nhập nếu bạn đã biết Model ID"><small id="ai-model-hint">Model là mô hình AI dùng để trả lời, khác với tên key bạn tự đặt.</small></div></details>
+                </div>
+                <div class="ai-form-group"><label for="ai-knowledge">Thông tin khách sạn bổ sung</label><textarea class="ais-textarea" id="ai-knowledge" rows="5" maxlength="10000" placeholder="Bổ sung chính sách, dịch vụ hoặc thông tin đã được xác nhận…"></textarea><small>Chỉ nhập thông tin đã xác nhận. Ngữ cảnh mặc định vẫn được sử dụng khi để trống.</small></div>
+                <details class="ais-collapse ais-collapse-arrow ai-settings-details"><summary class="ais-collapse-title">Ngữ cảnh mặc định của dự án</summary><div class="ais-collapse-content ai-form-group"><p id="ai-project-state">Đang tải ngữ cảnh dự án…</p><label for="ai-project-context">Thông tin từ website và các chức năng hiện có</label><textarea class="ais-textarea" id="ai-project-context" rows="7" readonly></textarea><small id="ai-project-sources"></small></div></details>
+                <div class="ai-enable-panel"><label class="ai-enable-label" for="ai-enabled"><span><strong>Bật chatbot</strong><small>Sử dụng nhà cung cấp này để trả lời khách.</small></span><input class="ais-toggle" id="ai-enabled" type="checkbox"></label><p>Khi bật, câu hỏi khách và thông tin khách sạn được gửi tới nhà cung cấp đã chọn. Gemini có thể nhận các lượt hội thoại gần nhất.</p></div>
+                <div class="ais-card-actions ai-settings-actions"><button class="ais-btn ais-btn-primary" id="ai-save" type="submit" disabled>Lưu cấu hình</button><button class="ais-btn ais-btn-outline" id="ai-test" type="button">Kiểm tra kết nối</button><button class="ais-btn ais-btn-ghost ais-btn-error" id="ai-delete" type="button">Xóa key</button></div>
+                <small>Kiểm tra kết nối có thể dùng một lượng nhỏ hạn mức API.</small>
               </div>
             </form>
           </fieldset>
-          <p id="ai-settings-feedback" role="status" aria-live="polite"></p>
-          <button class="btn btn-secondary" id="ai-reload" type="button" hidden>Tải lại cấu hình</button>
+          <p class="ais-alert ais-alert-soft ai-inline-feedback" id="ai-settings-feedback" role="status" aria-live="polite"></p>
+          <button class="ais-btn ais-btn-outline" id="ai-reload" type="button" hidden>Tải lại cấu hình</button>
         </div>
-      </div>`;
-    // Scope layout additions to this view; existing portal styles supply the components.
-    if (!document.getElementById('ai-settings-layout')) {
-        const style = document.createElement('style'); style.id = 'ai-settings-layout';
-        style.textContent = '.ai-settings-card{max-width:900px;padding:0}.ai-settings-card [hidden]{display:none!important}.ai-settings-card .card-body{padding:24px}.ai-settings-card fieldset{border:0;padding:0;margin:18px 0 0;min-width:0}.ai-settings-card .form-group{display:grid;gap:8px;margin-bottom:20px}.ai-settings-card .form-input{width:100%;max-width:100%}.ai-settings-card small,.ai-settings-note{color:var(--portal-muted);font-size:12px;line-height:1.65}.ai-enable-label{display:flex;gap:10px;align-items:center}.ai-settings-card textarea{resize:vertical}.ai-settings-note{margin:12px 0 20px}#ai-settings-form{border-top:1px solid var(--portal-border);padding-top:24px;margin-top:24px}.ai-settings-card h3{margin:0;font-size:18px}.ai-settings-card summary{cursor:pointer;font-size:13px;color:var(--portal-muted)}.ai-settings-card details[open] summary{margin-bottom:12px}#ai-selected-model{margin:0;font-size:13px;overflow-wrap:anywhere}#ai-settings-feedback,#ai-model-status{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}#ai-model-status{font-size:13px}#ai-config-state,#ai-key-state{font-size:12px;color:var(--portal-muted)}';
-        document.head.append(style);
+      </section>`;
+    if (!document.getElementById('ai-settings-ui')) {
+        const stylesheet = document.createElement('link');
+        stylesheet.id = 'ai-settings-ui';
+        stylesheet.rel = 'stylesheet';
+        stylesheet.href = new URL('../../css/ai-settings-ui.css?v=1', import.meta.url).href;
+        document.head.append(stylesheet);
     }
+
     const $ = selector => container.querySelector(selector);
     const fields = $('#ai-settings-fields');
     const provider = $('#ai-provider');
@@ -82,6 +81,7 @@ export async function renderAiSettings(container) {
         loadModels.disabled = busy || (!sameProvider && !key.value.trim());
         saveButton.disabled = busy || !saved || !model.value.trim() || (!sameProvider && !key.value.trim());
         $('#ai-selected-model').textContent = model.value.trim() ? `Model đã chọn: ${model.value.trim()}` : 'Chưa chọn model. Lấy danh sách ở bước 1 để chọn.';
+        $('#ai-config-state').classList.toggle('ais-badge-success', !!(sameProvider && saved.enabled));
     };
     const syncKey = () => {
         $('#ai-workspace-field').hidden = provider.value !== 'claude';
@@ -127,10 +127,10 @@ export async function renderAiSettings(container) {
         : error.message || 'Chưa thể hoàn tất thao tác. Vui lòng thử lại.';
     async function run(operation) {
         if (busy) return;
-        busy = true; fields.disabled = true; feedback.textContent = 'Đang xử lý…';
+        busy = true; fields.disabled = true; feedback.textContent = 'Đang xử lý…'; $('#ai-busy').hidden = false;
         try { await operation(); }
         catch (error) { if (active()) feedback.textContent = failure(error); }
-        finally { busy = false; if (active()) { fields.disabled = !saved; updateSavedActions(); } }
+        finally { busy = false; if (active()) { $('#ai-busy').hidden = true; fields.disabled = !saved; updateSavedActions(); } }
     }
     const load = () => run(async () => {
         const data = await request('GET');

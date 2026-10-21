@@ -5,6 +5,71 @@
   --admin-shadow: 0 10px 28px rgba(0, 0, 0, .16);
 }
 
+/* Membership management uses the portal palette in both themes. */
+.admin-membership { min-width: 0; }
+.admin-membership svg { width: 17px; height: 17px; flex: none; }
+.membership-heading, .membership-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.membership-dialog-heading h2 { margin: 0; font-size: 21px; font-weight: 600; color: var(--portal-text); }
+.membership-dialog-close { margin: 0; flex: none; }
+.membership-heading p, .membership-policy p, .membership-help { color: var(--portal-muted); font-size: 13px; line-height: 1.8; margin: 0; }
+.membership-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.admin-portal .portal-view .admin-membership .membership-summary .card { padding: 0; min-width: 0; }
+.membership-summary .stat { padding: 20px; min-width: 0; }
+.membership-summary .stat-title { display: flex; align-items: center; gap: 8px; color: var(--portal-muted); font-size: 12px; white-space: normal; }
+.membership-summary .stat-title svg { color: var(--portal-gold); }
+.membership-summary .stat-value { color: var(--portal-text); font-size: clamp(24px, 2.3vw, 34px); margin: 10px 0 6px; overflow-wrap: anywhere; }
+.membership-summary .stat-desc { color: var(--portal-muted); font-size: 11px; white-space: normal; }
+#membership-notice { margin: 16px 0; color: var(--portal-gold); font-size: 13px; }
+#membership-notice:empty { margin: 20px 0 0; }
+.admin-portal .portal-view .admin-membership .membership-list { padding: 0; overflow: hidden; }
+.membership-filters { display: flex; flex-wrap: wrap; gap: 16px; padding: 22px; border-bottom: 1px solid var(--portal-border); }
+.membership-filters label, .membership-adjust-form label { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 12px; color: var(--portal-muted); }
+.membership-filters .membership-search { flex: 1; min-width: 220px; }
+.admin-membership .form-input { width: 100%; margin: 0; height: 44px; background: var(--portal-bg); color: var(--portal-text); border: 1px solid var(--portal-border); border-radius: 10px; padding: 10px 12px; font: inherit; }
+.membership-filters select { min-width: 155px; }
+.admin-membership .table { font-size: 13px; }
+.admin-membership .table th { white-space: nowrap; font-size: 11px; color: var(--portal-muted); }
+.admin-membership .table td { vertical-align: middle; }
+.admin-membership .table td small { display: block; margin-top: 5px; color: var(--portal-muted); font-size: 11px; overflow-wrap: anywhere; }
+.membership-points { font-weight: 700; font-variant-numeric: tabular-nums; }
+.membership-tier { font-size: 11px; border-color: var(--portal-border); background: var(--portal-surface); color: var(--portal-text); }
+.membership-tier-gold, .membership-tier-vip { color: var(--portal-gold); border-color: var(--portal-gold); }
+.membership-actions { display: flex; gap: 6px; white-space: nowrap; }
+.admin-membership .btn { gap: 7px; white-space: nowrap; }
+.membership-actions .btn { font-size: 11px; padding-inline: 10px; }
+.admin-membership #pagination-membership { padding-bottom: 16px; border-top: 1px solid var(--portal-border); }
+.admin-membership #pagination-membership-history { margin-top: 12px; }
+.admin-membership .membership-dialog .portal-pagination { flex-wrap: wrap; padding-inline: 0; }
+.admin-membership .membership-policy { margin-top: 22px; padding: 22px; }
+.membership-policy h3 { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 600; margin: 0 0 8px; color: var(--portal-text); }
+.membership-policy h3 svg { color: var(--portal-gold); }
+.membership-policy > div { display: flex; flex-wrap: wrap; gap: 12px 28px; margin-top: 16px; font-size: 12px; color: var(--portal-muted); }
+.membership-policy strong { color: var(--portal-text); }
+.admin-membership .membership-dialog { padding: 0; border: 0; outline: none; background: transparent; box-shadow: none; color: var(--portal-text); }
+.membership-dialog::backdrop { background: rgba(2, 6, 14, .74); backdrop-filter: blur(5px); }
+.admin-membership .membership-dialog .modal-box { width: min(740px, 100%); max-width: 740px; max-height: calc(100dvh - 32px); padding: 24px; border: 1px solid var(--portal-border); border-radius: 18px; background: var(--portal-panel); color: var(--portal-text); }
+.membership-member { padding: 16px; border-radius: 12px; background: var(--portal-surface); margin-bottom: 20px; font-size: 14px; }
+.membership-member p { margin: 10px 0 0; color: var(--portal-muted); font-size: 13px; }
+.membership-adjust-form { display: grid; gap: 16px; }
+.membership-adjust-form .btn { justify-self: end; }
+.membership-points-field { position: relative; display: block; }
+.membership-points-sign { position: absolute; z-index: 1; top: 50%; left: 14px; transform: translateY(-50%); color: var(--portal-text); font-size: 16px; pointer-events: none; }
+.admin-portal .portal-view .admin-membership .membership-points-field.is-deduction input.form-input { padding-left: 30px; }
+#membership-adjust-error, .membership-deducted { color: var(--color-error, #ef4444); }
+.membership-earned { color: var(--color-success, #10b981); }
+#membership-preview { color: var(--portal-gold); font-size: 13px; }
+.membership-dialog .table td:nth-child(2) { white-space: normal; overflow-wrap: anywhere; min-width: 160px; }
+@media (max-width: 1200px) { .membership-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+  .membership-heading { align-items: flex-start; flex-direction: column; }
+  .membership-summary { gap: 10px; }
+  .membership-summary .stat { padding: 14px; }
+  .membership-filters { padding: 16px; gap: 12px; }
+  .membership-filters label { width: 100%; }
+  .membership-filters .membership-search { min-width: 0; }
+  .membership-dialog .modal-box { padding: 18px; }
+}
+
 .admin-portal .portal-shell {
   grid-template-columns: 248px minmax(0, 1fr);
 }
@@ -1546,7 +1611,8 @@ body:is(.admin-portal, .staff-portal, .customer-portal) .portal-topbar-avatar {
 body:is(.admin-portal, .staff-portal, .customer-portal) .portal-topbar-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 body:is(.admin-portal, .staff-portal, .customer-portal) .portal-topbar-avatar img[hidden] { display: none; }
 body:is(.admin-portal, .staff-portal, .customer-portal) :is(.portal-icon-btn, .portal-close-circle) svg { width: 18px; height: 18px; }
-body.admin-portal .portal-view .page-header > h1 + p { flex-basis: 100%; margin-top: -8px; }
+body.admin-portal .portal-view .page-header:has(> h1) { display: block; }
+body.admin-portal .portal-view .page-header > h1 + p { margin: 7px 0 0; }
 
 html[data-theme="light"] body.admin-portal .portal-view th {
   background: #f4f0e9;
@@ -2223,6 +2289,18 @@ html[data-theme="light"] .staff-portal :is(.staff-customers-view, .staff-data-vi
 }
 
 /* Shared operational pages: bookings, invoices, and account settings. */
+.admin-portal .staff-bookings-view { display: grid; gap: 20px; min-width: 0; }
+.admin-portal .staff-bookings-view > .page-header { margin-bottom: 0; }
+.admin-portal .staff-bookings-view > .card { margin: 0; }
+.admin-portal .staff-bookings-view .stats { grid-auto-flow: row; margin-bottom: 0; }
+.admin-portal .staff-bookings-filters { display: grid; grid-template-columns: minmax(0, 1fr) 190px 46px; align-items: center; gap: 12px; }
+.admin-portal .staff-bookings-filters .staff-filter-search { position: relative; min-width: 0; }
+.admin-portal .staff-bookings-filters :is(input, select) { width: 100%; min-width: 0; }
+.admin-portal .staff-bookings-view table { min-width: 980px; }
+@media (max-width: 620px) {
+  .admin-portal .staff-bookings-filters { grid-template-columns: minmax(0, 1fr) 46px; }
+  .admin-portal .staff-bookings-filters .staff-filter-search { grid-column: 1 / -1; }
+}
 .staff-portal .staff-data-view { display: grid; gap: 20px; min-width: 0; }
 .staff-portal .staff-data-view > .page-header { margin-bottom: 0; }
 .staff-portal .staff-data-view > .page-header > p { flex-basis: 100%; margin-top: -8px; }

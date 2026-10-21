@@ -1,6 +1,5 @@
 package quanlykhachsan.backend.user;
 
-import quanlykhachsan.backend.auth.AuthService;
 import quanlykhachsan.backend.utils.SecurityUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -20,7 +19,6 @@ import quanlykhachsan.backend.user.dto.UserUpdateRequest;
 
 public class UserController implements HttpHandler {
 
-    private AuthService authService = new AuthService();
     private UserDAO userDAO = new UserDAOImpl();
     private Gson gson = JsonUtil.getGson();
 
@@ -51,8 +49,9 @@ public class UserController implements HttpHandler {
             return;
         }
 
-        if (legacyPath.equals("/api/users/update-profile") || legacyPath.equals("/api/users/change-password")) {
-            handleProfileActions(exchange, legacyPath);
+        if (legacyPath.equals("/api/users/update-profile") || legacyPath.equals("/api/users/change-password") || legacyPath.equals("/api/auth/change-password")) {
+            new quanlykhachsan.backend.auth.AccountSecurityController().handleAction(exchange,
+                    legacyPath.endsWith("update-profile") ? "profile" : "password/confirm");
             return;
         }
 
@@ -70,65 +69,6 @@ public class UserController implements HttpHandler {
         } else {
             ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Endpoint không tồn tại"));
         }
-    }
-
-    private void handleProfileActions(HttpExchange exchange, String path) throws IOException {
-        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod()) && !"PUT".equalsIgnoreCase(exchange.getRequestMethod())) {
-            ApiResponseUtil.write(exchange, 405, ApiResponseUtil.error("Method Not Allowed"));
-            return;
-        }
-        InputStream is = exchange.getRequestBody();
-        String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        JsonObject reqObj = gson.fromJson(requestBody, JsonObject.class);
-        JsonObject resObj = new JsonObject();
-        int statusCode = 200;
-
-        String username = reqObj.has("username") ? reqObj.get("username").getAsString() : null;
-
-        if (username == null) {
-            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu username"));
-            return;
-        }
-
-        try {
-            if (path.equals("/api/users/update-profile")) {
-                String fullName = reqObj.has("fullName") ? reqObj.get("fullName").getAsString() : null;
-                String email = reqObj.has("email") ? reqObj.get("email").getAsString() : null;
-                String phone = reqObj.has("phone") ? reqObj.get("phone").getAsString() : null;
-
-                boolean success = authService.updateProfile(username, fullName, email, phone);
-                if (success) {
-                    if (success) {
-                        ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Cập nhật hồ sơ thành công"));
-                    } else {
-                        ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi khi cập nhật hồ sơ"));
-                    }
-                    return;
-                } else {
-                    statusCode = 500;
-                    resObj.addProperty("status", "error");
-                    resObj.addProperty("message", "Lỗi khi cập nhật hồ sơ");
-                }
-            } else if (path.equals("/api/users/change-password")) {
-                String oldPassword = reqObj.has("oldPassword") ? reqObj.get("oldPassword").getAsString() : null;
-                String newPassword = reqObj.has("newPassword") ? reqObj.get("newPassword").getAsString() : null;
-
-                boolean success = authService.changePassword(username, oldPassword, newPassword);
-                if (success) {
-                    resObj.addProperty("status", "success");
-                    resObj.addProperty("message", "Đổi mật khẩu thành công");
-                } else {
-                    statusCode = 400;
-                    resObj.addProperty("status", "error");
-                    resObj.addProperty("message", "Mật khẩu cũ không chính xác");
-                }
-            }
-        } catch (Exception e) {
-            statusCode = 500;
-            resObj.addProperty("status", "error");
-            resObj.addProperty("message", "Lỗi hệ thống: " + e.getMessage());
-        }
-        ApiResponseUtil.write(exchange, statusCode, gson.toJson(resObj));
     }
 
     private void handleGetAllUsers(HttpExchange exchange) throws IOException {

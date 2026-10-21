@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MEMBERSHIP_TIERS, getLegacyTierInfo, summarizeLoyaltyHistory, normalizeLoyaltyHistory } from '../public/js/customer/tier-helper.js';
+import { MEMBERSHIP_TIERS, getLegacyTierInfo, summarizeLoyaltyHistory, normalizeLoyaltyHistory, membershipPoints } from '../public/js/customer/tier-helper.js';
 import { renderLoyalty } from '../public/js/staff/loyalty.js';
 
 test('staff policy and customer tiers match backend boundaries', () => {
@@ -37,4 +37,13 @@ test('history normalizes Java DTOs and handles unavailable data', () => {
   assert.equal(log.reason, 'Voucher');
   assert.equal(log.changeDate, '2026-10-21');
   assert.deepEqual(summarizeLoyaltyHistory([{ type: 'earn', pointsChange: 'invalid' }]), { currentPoints: 0, totalPoints: 0 });
+});
+
+test('stored lifetime totals keep all customer pages on the same tier despite partial history or redemptions',()=>{
+  const history=[{type:'earn',pointsChange:200}];
+  const result=membershipPoints({totalLoyaltyPoints:1500,loyaltyPoints:100},history);
+  assert.deepEqual(result,{totalPoints:1500,currentPoints:100});
+  assert.equal(getLegacyTierInfo(result.totalPoints).name,'Gold');
+  assert.deepEqual(membershipPoints({totalLoyaltyPoints:0,loyaltyPoints:0},history),{totalPoints:0,currentPoints:0});
+  assert.deepEqual(membershipPoints(null,history),{totalPoints:200,currentPoints:200});
 });

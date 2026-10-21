@@ -415,7 +415,7 @@ function openView(session, role, tab) {
     const heading = byId('portal-heading');
     if (heading) heading.textContent = (role === 'CUSTOMER' ? titles[tab] : menus[role]?.find(([key]) => key === tab)?.[1]) || 'Tổng quan';
     const contentBar = heading?.closest?.('.portal-content-bar');
-    if (contentBar) contentBar.style.display = role === 'CUSTOMER' && tab === 'profile' ? 'none' : '';
+    if (contentBar) contentBar.style.display = role === 'ADMIN' || tab === 'profile' || (role === 'CUSTOMER' && tab === 'security') ? 'none' : '';
 
     const msg = byId('portal-message');
     if (msg) msg.hidden = true;
@@ -439,7 +439,9 @@ function openView(session, role, tab) {
     if (view) {
       view.querySelectorAll('table').forEach(table => table.classList.add('table', 'table-zebra'));
       view.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea').forEach(field => {
-        field.classList.add(field.tagName === 'SELECT' ? 'select' : field.tagName === 'TEXTAREA' ? 'textarea' : 'input');
+        if (!field.matches('.ais-input, .ais-select, .ais-textarea')) {
+          field.classList.add(field.tagName === 'SELECT' ? 'select' : field.tagName === 'TEXTAREA' ? 'textarea' : 'input');
+        }
       });
       view.querySelectorAll('.btn-primary, .btn-secondary').forEach(button => button.classList.add('btn'));
     }

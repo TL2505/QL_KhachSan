@@ -11,7 +11,7 @@ public class LoyaltyHistoryDAOImpl implements LoyaltyHistoryDAO {
 
     @Override
     public void addHistory(LoyaltyHistory history) {
-        String query = "INSERT INTO loyalty_history (customer_id, points_change, type, description) VALUES (?, ?, ?, ?)";
+        String query = "INSERT INTO loyalty_histories (customer_id, points, type, description) VALUES (?, ?, ?, ?)";
         try (Connection con = DBconn.getConnection(); 
              PreparedStatement ps = con.prepareStatement(query)) {
             ps.setInt(1, history.getCustomerId());
@@ -20,14 +20,14 @@ public class LoyaltyHistoryDAOImpl implements LoyaltyHistoryDAO {
             ps.setString(4, history.getDescription());
             ps.executeUpdate();
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể lưu lịch sử điểm.", e);
         }
     }
 
     @Override
     public List<LoyaltyHistory> findByCustomerId(int customerId) {
         List<LoyaltyHistory> list = new ArrayList<>();
-        String query = "SELECT * FROM loyalty_history WHERE customer_id = ? ORDER BY created_at DESC";
+        String query = "SELECT * FROM loyalty_histories WHERE customer_id = ? ORDER BY created_at DESC, id DESC";
         try (Connection con = DBconn.getConnection(); 
              PreparedStatement ps = con.prepareStatement(query)) {
             ps.setInt(1, customerId);
@@ -36,7 +36,7 @@ public class LoyaltyHistoryDAOImpl implements LoyaltyHistoryDAO {
                     LoyaltyHistory h = new LoyaltyHistory();
                     h.setId(rs.getInt("id"));
                     h.setCustomerId(rs.getInt("customer_id"));
-                    h.setPointsChange(rs.getInt("points_change"));
+                    h.setPointsChange(rs.getInt("points"));
                     h.setType(rs.getString("type"));
                     h.setDescription(rs.getString("description"));
                     h.setCreatedAt(rs.getTimestamp("created_at"));
@@ -44,7 +44,7 @@ public class LoyaltyHistoryDAOImpl implements LoyaltyHistoryDAO {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể tải lịch sử điểm.", e);
         }
         return list;
     }
@@ -52,7 +52,7 @@ public class LoyaltyHistoryDAOImpl implements LoyaltyHistoryDAO {
     @Override
     public List<LoyaltyHistory> findAll() {
         List<LoyaltyHistory> list = new ArrayList<>();
-        String query = "SELECT * FROM loyalty_history ORDER BY created_at DESC";
+        String query = "SELECT * FROM loyalty_histories ORDER BY created_at DESC, id DESC";
         try (Connection con = DBconn.getConnection(); 
              PreparedStatement ps = con.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
@@ -60,14 +60,14 @@ public class LoyaltyHistoryDAOImpl implements LoyaltyHistoryDAO {
                 LoyaltyHistory h = new LoyaltyHistory();
                 h.setId(rs.getInt("id"));
                 h.setCustomerId(rs.getInt("customer_id"));
-                h.setPointsChange(rs.getInt("points_change"));
+                h.setPointsChange(rs.getInt("points"));
                 h.setType(rs.getString("type"));
                 h.setDescription(rs.getString("description"));
                 h.setCreatedAt(rs.getTimestamp("created_at"));
                 list.add(h);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể tải lịch sử điểm.", e);
         }
         return list;
     }

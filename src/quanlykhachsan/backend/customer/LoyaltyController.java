@@ -7,6 +7,10 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonParseException;
+import java.util.NoSuchElementException;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.JsonUtil;
 import quanlykhachsan.backend.customer.dto.LoyaltyRedeemRequest;
@@ -17,6 +21,13 @@ public class LoyaltyController implements HttpHandler {
     private LoyaltyService loyaltyService = new LoyaltyService();
     private CustomerService customerService = new CustomerService();
 
+    public LoyaltyController() { }
+
+    LoyaltyController(LoyaltyService loyaltyService, CustomerService customerService) {
+        this.loyaltyService = loyaltyService;
+        this.customerService = customerService;
+    }
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
@@ -26,20 +37,28 @@ public class LoyaltyController implements HttpHandler {
         // Kiểm tra quyền cơ bản: phải đăng nhập (role 1, 2, hoặc 3)
         if (!SecurityUtil.hasPermission(exchange, 1, 2, 3)) return;
 
-        // Lấy role của người dùng để phân quyền chi tiết
-        String roleHeader = exchange.getRequestHeaders().getFirst("X-User-Role");
-        boolean isCustomer = "CUSTOMER".equalsIgnoreCase(roleHeader);
-        boolean isAdminOrStaff = "ADMIN".equalsIgnoreCase(roleHeader) || "STAFF".equalsIgnoreCase(roleHeader);
-
         try {
             // GET /api/loyalty/customers  → Chỉ ADMIN và STAFF được xem danh sách
             if ("GET".equalsIgnoreCase(method) && path.equals("/api/loyalty/customers")) {
-                if (!isAdminOrStaff) {
-                    ApiResponseUtil.write(exchange, 403, ApiResponseUtil.error("Chỉ Admin/Staff mới được xem danh sách khách hàng thân thiết."));
-                    return;
-                }
+                if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
                 List<Customer> customers = customerService.getAllCustomers();
                 ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(customers));
+
+            } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/loyalty/adjust")) {
+                if (!SecurityUtil.checkAdmin(exchange)) return;
+                var json = JsonParser.parseString(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+                if (!json.isJsonObject()) throw new IllegalArgumentException("Dữ liệu điều chỉnh điểm không hợp lệ.");
+                JsonObject request = json.getAsJsonObject();
+                if (!request.has("customerId") || !request.has("pointsChange") || !request.has("reason")
+                        || !request.get("customerId").isJsonPrimitive() || !request.getAsJsonPrimitive("customerId").isNumber()
+                        || !request.get("pointsChange").isJsonPrimitive() || !request.getAsJsonPrimitive("pointsChange").isNumber()
+                        || !request.get("reason").isJsonPrimitive() || !request.getAsJsonPrimitive("reason").isString()) {
+                    throw new IllegalArgumentException("Dữ liệu điều chỉnh điểm không hợp lệ.");
+                }
+                int customerId = request.get("customerId").getAsBigDecimal().intValueExact();
+                int pointsChange = request.get("pointsChange").getAsBigDecimal().intValueExact();
+                Customer updated = loyaltyService.adjustPoints(customerId, pointsChange, request.get("reason").getAsString(), String.valueOf(exchange.getAttribute("userId")));
+                ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(updated));
 
             // GET /api/loyalty/history/{customerId} → CUSTOMER chỉ xem lịch sử của mình
             } else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/loyalty/history/")) {
@@ -76,6 +95,12 @@ public class LoyaltyController implements HttpHandler {
                 exchange.sendResponseHeaders(405, -1);
             }
 
+        } catch (NoSuchElementException e) {
+            ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error(e.getMessage()));
+        } catch (JsonParseException | IllegalArgumentException | ArithmeticException | UnsupportedOperationException e) {
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Dữ liệu không hợp lệ. Số điểm phải là số nguyên, khác 0; lý do tối đa 200 ký tự."));
+        } catch (IllegalStateException e) {
+            ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error(e.getMessage()));
         } catch (Exception e) {
             e.printStackTrace();
             ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi Server: " + e.getMessage()));

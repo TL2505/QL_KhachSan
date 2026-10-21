@@ -52,6 +52,7 @@ public class UpdateDbUtility {
                     "VARCHAR(20) NOT NULL DEFAULT 'light'");
             // Google accounts are linked by Google's immutable subject, never by email.
             ensureColumn(conn, "users", "google_subject", "VARCHAR(255) NULL");
+            ensureColumn(conn, "users", "verified_email", "VARCHAR(100) NULL");
             ensureIndex(conn, "users", "uq_users_google_subject",
                     "UNIQUE INDEX uq_users_google_subject (google_subject)");
 

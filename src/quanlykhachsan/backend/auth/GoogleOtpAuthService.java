@@ -80,6 +80,11 @@ public final class GoogleOtpAuthService {
         return !value("GOOGLE_CLIENT_ID").isBlank() && smtpConfigured();
     }
     public String clientId() { return value("GOOGLE_CLIENT_ID"); }
+    public boolean isMailConfigured() { return smtpConfigured(); }
+    public void sendAccountOtp(String recipient, String otp, String purpose) throws Exception {
+        if (!smtpConfigured()) throw new IllegalStateException("Email delivery is not configured");
+        sendOtp(recipient, otp, purpose);
+    }
 
     public StartResult begin(String credential) throws AuthFailure {
         challenges.entrySet().removeIf(entry -> !clock.instant().isBefore(entry.getValue().sessionExpiresAt));
@@ -229,22 +234,33 @@ public final class GoogleOtpAuthService {
     private static String maskEmail(String email) { int at = email.indexOf('@'); if (at <= 1) return "***" + email.substring(Math.max(at, 0)); return email.charAt(0) + "***" + email.substring(at); }
 
     private void sendOtp(String recipient, String otp) throws Exception {
+        sendOtp(recipient, otp, "đăng nhập");
+    }
+    private void sendOtp(String recipient, String otp, String purpose) throws Exception {
         String host = value("SMTP_HOST"); int port = Integer.parseInt(value("SMTP_PORT").isBlank() ? "465" : value("SMTP_PORT"));
         String username = value("SMTP_USERNAME"), password = value("SMTP_APP_PASSWORD"), from = value("SMTP_FROM");
         try (SSLSocket socket = (SSLSocket) SSLSocketFactory.getDefault().createSocket(host, port);
              BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
              BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.US_ASCII))) {
+            socket.setSoTimeout(15000);
+            var parameters = socket.getSSLParameters();
+            parameters.setEndpointIdentificationAlgorithm("HTTPS");
+            socket.setSSLParameters(parameters);
+            socket.startHandshake();
             expect(in, 220); command(out, in, "EHLO aurelia.local", 250); command(out, in, "AUTH LOGIN", 334);
             command(out, in, Base64.getEncoder().encodeToString(username.getBytes(StandardCharsets.UTF_8)), 334);
             command(out, in, Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.UTF_8)), 235);
             command(out, in, "MAIL FROM:<" + from + ">", 250); command(out, in, "RCPT TO:<" + recipient + ">", 250); command(out, in, "DATA", 354);
-            out.write(otpMessage(from, recipient, otp) + "\r\n.\r\n"); out.flush(); expect(in, 250); command(out, in, "QUIT", 221);
+            out.write(otpMessage(from, recipient, otp, purpose) + "\r\n.\r\n"); out.flush(); expect(in, 250); command(out, in, "QUIT", 221);
         }
     }
     // Keep the SMTP wire payload ASCII while preserving Vietnamese as UTF-8 MIME.
     static String otpMessage(String from, String recipient, String otp) {
+        return otpMessage(from, recipient, otp, "đăng nhập");
+    }
+    static String otpMessage(String from, String recipient, String otp, String purpose) {
         String subject = Base64.getEncoder().encodeToString("Mã xác thực Aurelia Grand Palace".getBytes(StandardCharsets.UTF_8));
-        String body = "Mã OTP đăng nhập Aurelia của bạn là: " + otp + "\r\n\r\nMã có hiệu lực trong 5 phút và chỉ được dùng một lần. Nếu bạn không yêu cầu đăng nhập, hãy bỏ qua email này.";
+        String body = "Mã OTP " + purpose + " Aurelia của bạn là: " + otp + "\r\n\r\nMã có hiệu lực trong 5 phút và chỉ được dùng một lần. Không chia sẻ mã này. Nếu bạn không yêu cầu " + purpose + ", hãy bỏ qua email này.";
         String encodedBody = Base64.getMimeEncoder(76, "\r\n".getBytes(StandardCharsets.US_ASCII)).encodeToString(body.getBytes(StandardCharsets.UTF_8));
         return "From: Aurelia Grand Palace <" + from + ">\r\nTo: <" + recipient + ">\r\nSubject: =?UTF-8?B?" + subject
                 + "?=\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" + encodedBody;

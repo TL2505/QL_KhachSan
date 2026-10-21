@@ -1,12 +1,13 @@
 // Admin Views Module Coordinator
 import { renderDashboard } from "./admin/dashboard.js?v=3.6.4";
 import { renderRooms } from "./admin/rooms.js?v=3.6.4";
+import { renderBookings } from "./staff/bookings.js";
 import { renderUsers } from "./admin/users.js?v=3.6.4";
 import { renderPromotions } from "./admin/promotions.js?v=3.6.4";
 import { renderReviews } from "./admin/reviews.js?v=3.6.4";
 import { renderInvoices } from "./admin/invoices.js?v=3.6.4";
 import { renderAdminCustomers } from "./admin/customers.js?v=3.6.4";
-import { renderMembershipPlaceholder } from "./admin/loyalty.js";
+import { renderAdminMembership } from "./admin/loyalty.js?v=3.6.21";
 import { renderAiSettings } from "./admin/ai-settings.js?v=7";
 
 export function loadAdminView(tab = "dashboard") {
@@ -19,12 +20,14 @@ export function loadAdminView(tab = "dashboard") {
         renderDashboard(container, session);
     } else if (tab === "rooms") {
         renderRooms(container, session);
+    } else if (tab === "bookings") {
+        renderBookings(container, session);
     } else if (tab === "users") {
         renderUsers(container, session);
     } else if (tab === "customers") {
         renderAdminCustomers(container, session);
     } else if (tab === "loyalty") {
-        renderMembershipPlaceholder(container);
+        renderAdminMembership(container, session);
     } else if (tab === "promotions") {
         renderPromotions(container, session);
     } else if (tab === "reviews") {

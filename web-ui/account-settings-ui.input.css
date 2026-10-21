@@ -1,0 +1,106 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "./public/js/shared/account-settings.js";
+@plugin "daisyui" {
+  themes: false;
+  root: ".account-settings-view";
+  prefix: ais-;
+  include: button, card, fieldset, input, textarea, badge, collapse, alert;
+  logs: false;
+}
+.account-settings-view {
+  container: account-settings / inline-size;
+  width: 100%; min-width: 0; color-scheme: inherit;
+  --color-base-100: var(--portal-panel);
+  --color-base-200: var(--portal-bg);
+  --color-base-300: var(--portal-border);
+  --color-base-content: var(--portal-text);
+  --color-primary: var(--portal-gold);
+  --color-primary-content: #101318;
+  --color-secondary: var(--portal-soft);
+  --color-secondary-content: var(--portal-bg);
+  --color-accent: var(--portal-gold);
+  --color-accent-content: #101318;
+  --color-neutral: var(--portal-surface);
+  --color-neutral-content: var(--portal-text);
+  --color-info: #60a5fa;
+  --color-info-content: #101318;
+  --color-success: #34d399;
+  --color-success-content: #101318;
+  --color-warning: #fbbf24;
+  --color-warning-content: #101318;
+  --color-error: #fb7185;
+  --color-error-content: #101318;
+  --radius-selector: .5rem;
+  --radius-field: .625rem;
+  --radius-box: 1rem;
+  --size-selector: .25rem;
+  --size-field: .25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+html[data-theme="light"] .account-settings-view { --color-primary-content: #fff; --color-error: #b4233d; --color-success: #087f5b; }
+body.customer-portal .account-settings-view { --color-primary: var(--customer-primary-bg); --color-primary-content: #fff; }
+.account-settings-view [hidden] { display: none !important; }
+.portal-body .portal-view .account-settings-view > .page-header { display: flex; margin: 0 0 24px; padding: 0 0 18px; border-bottom: 1px solid var(--portal-border); }
+.portal-body .portal-view .account-settings-view > .page-header h1 { font: 600 clamp(24px, 2.5cqi, 30px)/1.35 'Playfair Display', Georgia, serif; color: var(--portal-text); margin: 0 0 8px; }
+.portal-body .portal-view .account-settings-view > .page-header p { font-size: 13px; line-height: 1.7; color: var(--portal-muted); margin: 0; }
+.account-summary { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 18px 20px; margin-bottom: 22px; border: 1px solid var(--portal-border); border-radius: 14px; background: var(--portal-panel); }
+.account-settings-avatar { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 12px; border: 1px solid var(--portal-gold); color: var(--portal-gold); font-weight: 700; font-size: 20px; }
+.account-summary strong { font-size: 15px; color: var(--portal-text); }
+.account-summary > div:nth-child(2) { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.account-summary small { display: block; margin-top: 5px; color: var(--portal-muted); font-size: 12px; }
+.account-summary > .ais-badge { margin-left: auto; }
+.account-settings-grid { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 22px; }
+@container account-settings (min-width: 860px) { .account-settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.account-mode-profile .account-settings-grid { grid-template-columns: minmax(0, 1fr); }
+@container account-settings (min-width: 600px) {
+  .account-mode-profile .account-profile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .account-mode-profile .account-profile-grid > .ais-card-actions { grid-column: 1 / -1; }
+}
+.account-card { min-width: 0; background: var(--portal-panel); }
+.account-card > .ais-card-body { display: flex; flex-direction: column; gap: 18px; padding: clamp(18px, 2.2cqi, 28px); min-width: 0; }
+.account-card-heading h2 { font: 600 19px/1.5 'Plus Jakarta Sans', sans-serif; margin: 0 0 7px; color: var(--portal-text); }
+.account-card-heading p, .account-settings-view small, .account-otp-panel > p, .account-security-note { font-size: 12px; line-height: 1.7; color: var(--portal-muted); margin: 0; overflow-wrap: anywhere; }
+.account-settings-view :is(form,fieldset) { min-width: 0; }
+.account-fields { display: grid; gap: 18px; border: 0; padding: 0; margin: 0; }
+.account-profile-grid { display: grid; gap: 18px; min-width: 0; }
+.account-field { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.account-field > label { font-size: 13px; color: var(--portal-muted); }
+.account-settings-view :is(.ais-input,.ais-textarea) { width: 100%; max-width: 100%; min-width: 0; background: var(--portal-bg); color: var(--portal-text); border-color: var(--portal-border); font: inherit; font-size: 13px; }
+.account-settings-view .ais-input { min-height: 44px; }
+body.customer-portal .portal-view .account-settings-view .ais-input { background: var(--customer-secondary-bg); border-color: var(--customer-input-border); }
+.account-settings-view .ais-input[readonly] { opacity: .65; cursor: default; }
+.account-password-field { position: relative; min-width: 0; }
+.account-settings-view .account-password-field > .ais-input { padding-right: 68px; }
+.account-settings-view .account-password-field > .ais-btn { position: absolute; right: 5px; top: 6px; bottom: 6px; transform: none; padding: 5px 10px; min-height: 32px; }
+.account-settings-view .ais-btn { min-height: 42px; height: auto; padding: 10px 14px; font: 600 12px/1.5 'Plus Jakarta Sans',sans-serif; white-space: normal; }
+/* Restore daisyUI component variables above the legacy portal reset. */
+.portal-body .portal-view .account-settings-view .ais-btn { display: inline-flex; background: var(--ais-btn-bg); color: var(--ais-btn-fg); border: var(--border) solid var(--ais-btn-border); border-radius: var(--radius-field); }
+.portal-body .portal-view .account-settings-view .ais-btn:is(.ais-btn-outline,.ais-btn-ghost) { color: var(--ais-btn-color,var(--portal-text)); }
+.portal-body .portal-view .account-settings-view .ais-btn:disabled { opacity: .65; cursor: not-allowed; color: var(--portal-text); background: var(--portal-surface); border-color: var(--portal-border); }
+.account-settings-view .ais-btn-outline { --ais-btn-border: var(--portal-border); }
+.portal-body .portal-view .account-settings-view .ais-card-border { border: 1px solid var(--portal-border); }
+.portal-body .portal-view .account-settings-view .ais-badge { display: inline-flex; border: 1px solid var(--ais-badge-color,var(--portal-border)); border-radius: var(--radius-selector); background: var(--ais-badge-bg); color: var(--ais-badge-fg); height: auto; padding: 5px 10px; font-size: 11px; white-space: normal; }
+.portal-body .portal-view .account-settings-view .ais-badge-outline { color: var(--ais-badge-color,var(--portal-muted)); background: transparent; }
+.account-settings-view .ais-card-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.account-security-note { border-radius: 10px; background: var(--portal-surface); padding: 12px 14px; }
+.account-otp-panel { display: grid; gap: 14px; border-top: 1px solid var(--portal-border); padding-top: 18px; }
+.account-otp-panel h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.account-settings-view input.account-otp { font-size: 22px; letter-spacing: .32em; text-align: center; font-variant-numeric: tabular-nums; }
+.account-settings-view .account-notice { margin: 0; font-size: 12px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.account-settings-view .account-notice:empty, #account-operation:empty { display: none; }
+.account-settings-view .account-notice.account-error { color: var(--color-error); }
+#account-operation { margin: 12px 0; font-size: 12px; color: var(--portal-muted); }
+.account-identity { border: 1px solid var(--portal-border); background: var(--portal-panel); margin-top: 22px; }
+.account-identity > summary { list-style: none; font-size: 14px; font-weight: 600; }
+.account-identity > summary::-webkit-details-marker { display: none; }
+#account-identity-content > .page-header, #account-identity-content .profile-member-panel { display: none; }
+@container account-settings (max-width: 450px) {
+  .account-summary { padding: 14px; }
+  .account-summary > .ais-badge { margin-left: 58px; }
+  .account-settings-view .ais-card-actions { flex-direction: column; align-items: stretch; }
+  .account-settings-view .ais-card-actions > .ais-btn { width: 100%; }
+  .account-card > .ais-card-body { padding: 16px; }
+}
