@@ -1,4 +1,4 @@
-import { api, getApiBaseUrl } from "../../api.js";
+import { api, generateUUID, getApiBaseUrl } from "../../api.js";
 import { escapeHtml } from "../shared/ui.js";
 import { renderPaginationComponent } from "../shared/pagination.js";
 
@@ -140,7 +140,7 @@ export async function renderCheckout(container, session) {
     refresh.addEventListener('click', loadData);
     refreshIcons();
 
-    const openModal = (bookingId) => {
+    const openModal = async (bookingId) => {
         const b = activeBookings.find(x => x.id == bookingId);
         if (!b) return;
         currentProcessBooking = b;
@@ -197,6 +197,24 @@ export async function renderCheckout(container, session) {
         const qrCodeSection = document.getElementById("qr-code-section");
         const qrImage = document.getElementById("qr-image");
         const btnConfirm = document.getElementById("btn-confirm-pay");
+        const paymentRequestKeys = new Map();
+        let checkoutOnly = false;
+
+        try {
+            const folios = await api.get(`/folios/booking/${encodeURIComponent(b.id)}`);
+            if (Array.isArray(folios) && folios.length) {
+                const outstanding = folios.reduce((sum, folio) => sum + Math.max(0, Number(folio.balance) || 0), 0);
+                payAmountInput.value = String(outstanding);
+                checkoutOnly = outstanding === 0;
+                const amountLabel = payAmountInput.parentElement?.querySelector('label');
+                if (amountLabel) amountLabel.textContent = checkoutOnly
+                    ? 'Đơn đã thanh toán đủ — không thu thêm'
+                    : 'Số dư cần thanh toán (VNĐ)';
+                if (checkoutOnly) btnConfirm.textContent = 'Hoàn tất trả phòng';
+            }
+        } catch (error) {
+            console.warn('Could not prefill the remaining folio balance.', error);
+        }
         
         const updateQRCode = () => {
             if (payMethodSelect.value === "Chuyển khoản") {
@@ -223,18 +241,18 @@ export async function renderCheckout(container, session) {
                 return;
             }
 
-            const payload = {
-                bookingId: currentProcessBooking.id,
-                customerId: currentProcessBooking.customerId,
-                amount: parseFloat(amount),
-                paymentMethod: method
-            };
-
             try {
                 btnConfirm.disabled = true;
                 btnConfirm.textContent = "Đang xử lý...";
                 
-                await api.post("/payments", payload);
+                const paymentResult = await settleAndCheckout(currentProcessBooking, Number(amount), method, paymentRequestKeys);
+
+                if (paymentResult?.checked_out !== true) {
+                    throw new Error("Thanh toán đã ghi nhận nhưng chưa hoàn tất trả phòng. Vui lòng làm mới danh sách và thử lại bước trả phòng.");
+                }
+
+                activeBookings = activeBookings.filter(booking => booking.id != currentProcessBooking.id);
+                renderCards();
                 
                 // Handle success
                 document.getElementById("modal-checkout-form").style.display = 'none';
@@ -262,9 +280,53 @@ export async function renderCheckout(container, session) {
                 alert("Lỗi thanh toán: " + e.message);
             } finally {
                 btnConfirm.disabled = false;
-                btnConfirm.textContent = "Hoàn tất Thanh toán";
+                btnConfirm.textContent = checkoutOnly ? "Hoàn tất trả phòng" : "Hoàn tất Thanh toán";
             }
         });
+    };
+
+    const settleAndCheckout = async (booking, submittedAmount, method, requestKeys) => {
+        const folios = await api.get(`/folios/booking/${encodeURIComponent(booking.id)}`);
+        if (!Array.isArray(folios) || folios.length === 0) {
+            // Compatibility for legacy demo bookings. The backend's demo-only fallback
+            // provisions the missing folio before recording the simulated collection.
+            const payload = {
+                bookingId: booking.id,
+                customerId: booking.customerId,
+                amount: submittedAmount,
+                paymentMethod: method
+            };
+            const signature = JSON.stringify(payload);
+            if (!requestKeys.has(signature)) requestKeys.set(signature, generateUUID());
+            return api.post("/payments", payload, {
+                headers: { "Idempotency-Key": requestKeys.get(signature) }
+            });
+        }
+
+        const orderedFolios = [...folios].sort((a, b) =>
+            (a.folio_type === 'master' ? -1 : 1) - (b.folio_type === 'master' ? -1 : 1));
+        const totalOutstanding = orderedFolios.reduce((sum, folio) => sum + Math.max(0, Number(folio.balance) || 0), 0);
+        if (totalOutstanding > 0 && submittedAmount < totalOutstanding) {
+            throw new Error(`Số tiền cần thu để trả phòng là ${formatCurrency(totalOutstanding)} (bao gồm toàn bộ khoản phát sinh).`);
+        }
+
+        const payableFolios = orderedFolios.filter(folio => Number(folio.balance) > 0);
+        const targets = payableFolios.length ? payableFolios : [orderedFolios[0]];
+        let result = null;
+        for (let index = 0; index < targets.length; index++) {
+            const folio = targets[index];
+            const payload = {
+                amount: payableFolios.length ? Number(folio.balance) : 0,
+                payment_method: method,
+                checkout: index === targets.length - 1
+            };
+            const signature = JSON.stringify({ bookingId: booking.id, folioId: folio.id, ...payload });
+            if (!requestKeys.has(signature)) requestKeys.set(signature, generateUUID());
+            result = await api.post(`/folios/${encodeURIComponent(folio.id)}/pay`, payload, {
+                headers: { "Idempotency-Key": requestKeys.get(signature) }
+            });
+        }
+        return result;
     };
 
     loadData();

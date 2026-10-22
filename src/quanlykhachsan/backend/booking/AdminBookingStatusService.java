@@ -64,7 +64,8 @@ final class AdminBookingStatusService {
                 if (booking == null) { connection.rollback(); return new Result(404, "Không tìm thấy đơn đặt phòng"); }
                 if (!"confirmed".equals(booking.status())) { connection.rollback(); return new Result(409, "Chỉ đơn đã xác nhận mới được nhận phòng"); }
                 java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
-                if (today.isBefore(booking.checkIn().toLocalDateTime().toLocalDate()) || !today.isBefore(booking.checkOut().toLocalDateTime().toLocalDate())) {
+                boolean allowEarlyCheckIn = Boolean.parseBoolean(System.getenv("HOTEL_DEMO_ALLOW_EARLY_CHECKIN"));
+                if ((!allowEarlyCheckIn && today.isBefore(booking.checkIn().toLocalDateTime().toLocalDate())) || !today.isBefore(booking.checkOut().toLocalDateTime().toLocalDate())) {
                     connection.rollback(); return new Result(409, "Chưa đến ngày nhận phòng hoặc đơn đã quá ngày lưu trú");
                 }
                 try (PreparedStatement updateBooking = connection.prepareStatement("UPDATE bookings SET status='checked_in' WHERE id=? AND status='confirmed'")) {

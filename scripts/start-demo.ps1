@@ -15,7 +15,7 @@ if ([Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActi
 $keys = @('GOOGLE_CLIENT_ID','SMTP_HOST','SMTP_PORT','SMTP_USERNAME','SMTP_APP_PASSWORD','SMTP_FROM','HOTEL_BIND_ADDRESS',
     'DB_URL','JDBC_URL','DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASSWORD','DB_PASSWORD_FILE',
     'AES_VAULT_KEY','AES_VAULT_KEY_FILE','HMAC_IDENTITY_KEY','HMAC_IDENTITY_KEY_FILE',
-    'JWT_SECRET','JWT_SECRET_FILE','HOTEL_VAT_RATE','HOTEL_OTP_MODE','AI_GUEST_ENABLED')
+    'JWT_SECRET','JWT_SECRET_FILE','HOTEL_VAT_RATE','HOTEL_OTP_MODE','AI_GUEST_ENABLED','HOTEL_DEMO_ALLOW_EARLY_CHECKIN','HOTEL_DEMO_MOCK_PAYMENTS')
 $saved = @{}
 foreach ($key in $keys) { $saved[$key] = [Environment]::GetEnvironmentVariable($key, 'Process') }
 Push-Location $projectRoot
@@ -86,6 +86,8 @@ try {
     $env:DB_URL = "jdbc:mysql://127.0.0.1:3306/${schema}?useSSL=false&serverTimezone=UTC"
     $env:HOTEL_BIND_ADDRESS = '127.0.0.1'
     $env:HOTEL_VAT_RATE = '0.08'; $env:HOTEL_OTP_MODE = 'mock'; $env:AI_GUEST_ENABLED = 'false'
+    $env:HOTEL_DEMO_ALLOW_EARLY_CHECKIN = 'true'
+    $env:HOTEL_DEMO_MOCK_PAYMENTS = 'true'
     # Keep demo bytecode separate from IDE auto-builds and running desktop packages.
     $buildRoot = Join-Path $demoRoot 'build'
     $classpathFile = Join-Path $buildRoot 'demo-classpath.txt'
