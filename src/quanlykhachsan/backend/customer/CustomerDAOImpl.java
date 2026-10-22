@@ -188,8 +188,8 @@ public class CustomerDAOImpl implements CustomerDAO {
         List<Map<String, Object>> list = new ArrayList<>();
         boolean hasKeyword = (keyword != null && !keyword.isBlank());
         String sql = hasKeyword
-                ? "SELECT id, full_name, phone, identity_card, loyalty_level, created_at FROM customers WHERE full_name LIKE ? OR phone LIKE ? OR identity_card LIKE ? ORDER BY id DESC LIMIT 50"
-                : "SELECT id, full_name, phone, identity_card, loyalty_level, created_at FROM customers ORDER BY id DESC LIMIT 50";
+                ? "SELECT id, full_name, phone, identity_card, email, address, loyalty_level, created_at, EXISTS(SELECT 1 FROM guest_identity_vault v WHERE v.customer_id=customers.id) AS identity_protected FROM customers WHERE full_name LIKE ? OR phone LIKE ? OR identity_card LIKE ? OR email LIKE ? OR address LIKE ? ORDER BY id DESC LIMIT 50"
+                : "SELECT id, full_name, phone, identity_card, email, address, loyalty_level, created_at, EXISTS(SELECT 1 FROM guest_identity_vault v WHERE v.customer_id=customers.id) AS identity_protected FROM customers ORDER BY id DESC LIMIT 50";
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -198,6 +198,8 @@ public class CustomerDAOImpl implements CustomerDAO {
                 ps.setString(1, pattern);
                 ps.setString(2, pattern);
                 ps.setString(3, pattern);
+                ps.setString(4, pattern);
+                ps.setString(5, pattern);
             }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -206,6 +208,9 @@ public class CustomerDAOImpl implements CustomerDAO {
                     map.put("full_name", rs.getString("full_name"));
                     map.put("phone", rs.getString("phone"));
                     map.put("identity_card", rs.getString("identity_card"));
+                    map.put("identity_protected", rs.getBoolean("identity_protected"));
+                    map.put("email", rs.getString("email"));
+                    map.put("address", rs.getString("address"));
                     map.put("loyalty_level", rs.getString("loyalty_level"));
                     map.put("created_at", rs.getString("created_at"));
                     list.add(map);

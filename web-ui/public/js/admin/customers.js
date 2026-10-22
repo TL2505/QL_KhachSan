@@ -15,6 +15,18 @@ function getInitials(name) {
         : name.substring(0, 2).toUpperCase();
 }
 
+function normalizeCustomer(customer) {
+    return {
+        ...customer,
+        fullName: customer.fullName ?? customer.full_name ?? "",
+        identityCard: customer.identityCard ?? customer.identity_card ?? "",
+        identityProtected: customer.identityProtected ?? customer.identity_protected ?? false,
+        phone: customer.phone ?? "",
+        email: customer.email ?? "",
+        address: customer.address ?? ""
+    };
+}
+
 function skeletonRows(count = 5) {
     return Array.from({ length: count }, () => `
         <tr class="skeleton-row">
@@ -60,7 +72,7 @@ export async function renderAdminCustomers(container, session) {
         </div>
 
         <div class="card" style="margin-top:0;border-top:none;border-top-left-radius:0;border-top-right-radius:0;">
-            <div class="table-container">
+            <div class="table-container overflow-x-auto">
                 <table class="table">
                     <thead>
                         <tr>
@@ -125,7 +137,7 @@ export async function renderAdminCustomers(container, session) {
                     <div style="font-weight:600;font-size:14px;">${c.fullName || '—'}</div>
                     <div style="font-size:12px;color:var(--text-muted);">ID: ${c.id}</div>
                 </td>
-                <td style="font-size:13px;font-family:monospace;color:var(--text-muted);">${c.identityCard || '—'}</td>
+                <td style="font-size:13px;font-family:monospace;color:var(--text-muted);">${c.identityCard || (c.identityProtected ? 'Đã lưu bảo mật' : '—')}</td>
                 <td style="font-size:13px;">
                     ${c.phone ? `<a href="tel:${c.phone}" style="color:var(--text-main);text-decoration:none;">${c.phone}</a>` : '<span style="color:var(--text-muted);">—</span>'}
                 </td>
@@ -165,7 +177,7 @@ export async function renderAdminCustomers(container, session) {
                     <div class="grid grid-cols-2" style="gap:12px;">
                         <div style="background:var(--bg-card);border-radius:var(--radius-sm);padding:14px;">
                             <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">CCCD / Hộ chiếu</div>
-                            <div style="font-weight:600;font-family:monospace;">${c.identityCard || '—'}</div>
+                            <div style="font-weight:600;font-family:monospace;">${c.identityCard || (c.identityProtected ? 'Đã lưu bảo mật' : '—')}</div>
                         </div>
                         <div style="background:var(--bg-card);border-radius:var(--radius-sm);padding:14px;">
                             <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Điện thoại</div>
@@ -248,7 +260,7 @@ export async function renderAdminCustomers(container, session) {
         const body = document.getElementById("admin-customers-body");
         body.innerHTML = skeletonRows(5);
         try {
-            allCustomers = await api.get("/customers") || [];
+            allCustomers = (await api.get("/customers") || []).map(normalizeCustomer);
 
             // Summary bar
             const summaryBar = document.getElementById("admin-customers-summary");

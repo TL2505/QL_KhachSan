@@ -71,6 +71,7 @@ public class CustomerController implements HttpHandler {
                 }
 
                 if ("GET".equalsIgnoreCase(method)) {
+                    if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
 
                     Customer c = customerService.getCustomerById(id);
                     if (c != null) {
@@ -155,6 +156,7 @@ public class CustomerController implements HttpHandler {
      */
     public void handleSearch(HttpExchange exchange) throws IOException {
         try {
+            if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
             String query = exchange.getRequestURI().getQuery();
             String keyword = null;
             if (query != null && !query.isBlank()) {

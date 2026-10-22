@@ -162,12 +162,79 @@ export async function renderUsers(container, session) {
                     <td>${getRoleBadge(u.roleName)}</td>
                     <td style="text-align:right;">
                         <div class="action-btns" style="justify-content:flex-end;">
+                            <button class="btn-icon btn-edit-user" data-id="${u.id}" title="Sửa quyền" aria-label="Sửa quyền của ${u.username}">
+                                <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+                            </button>
                             <button class="btn-icon danger btn-delete-user" data-id="${u.id}" title="Xóa tài khoản">
                                 <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
                             </button>
                         </div>
                     </td>
                 `;
+
+                tr.querySelector(".btn-edit-user").addEventListener("click", () => {
+                    const modal = document.getElementById("global-modal");
+                    const content = document.getElementById("global-modal-content");
+                    content.innerHTML = `
+                        <div class="modal-header">
+                            <h2>Sửa quyền tài khoản</h2>
+                            <button type="button" class="modal-close" id="close-edit-user-role" aria-label="Đóng">&times;</button>
+                        </div>
+                        <div class="card bg-base-200 mb-4"><div class="card-body p-4">
+                            <p id="edit-user-name" class="font-semibold"></p>
+                            <p id="edit-user-meta" class="text-sm text-base-content/70"></p>
+                        </div></div>
+                        <label class="form-control w-full">
+                            <span class="label"><span class="label-text font-semibold">Vai trò tài khoản</span></span>
+                            <select id="edit-user-role" class="select select-bordered w-full">
+                                <option value="2">STAFF — Nhân viên lễ tân</option>
+                                <option value="1">ADMIN — Quản trị viên</option>
+                            </select>
+                        </label>
+                        <div id="edit-user-role-error" class="alert alert-error mt-3" role="alert" hidden></div>
+                        <div class="modal-action">
+                            <button type="button" class="btn btn-ghost" id="cancel-edit-user-role">Hủy</button>
+                            <button type="button" class="btn btn-primary" id="save-edit-user-role"><i data-lucide="save" aria-hidden="true"></i> Lưu quyền</button>
+                        </div>
+                    `;
+                    document.getElementById("edit-user-name").textContent = u.fullName || u.username;
+                    document.getElementById("edit-user-meta").textContent = `@${u.username} · ${u.email || "Không có email"} · Quyền hiện tại: ${String(u.roleName || "STAFF").toUpperCase()}`;
+                    document.getElementById("edit-user-role").value = String(u.roleId);
+                    modal.classList.add("active");
+                    modal.setAttribute("aria-hidden", "false");
+                    lucide.createIcons();
+                    const closeEditor = () => {
+                        modal.classList.remove("active");
+                        modal.setAttribute("aria-hidden", "true");
+                        content.replaceChildren();
+                    };
+                    document.getElementById("close-edit-user-role").addEventListener("click", closeEditor);
+                    document.getElementById("cancel-edit-user-role").addEventListener("click", closeEditor);
+                    document.getElementById("save-edit-user-role").addEventListener("click", async event => {
+                        const button = event.currentTarget;
+                        const error = document.getElementById("edit-user-role-error");
+                        const roleId = Number(document.getElementById("edit-user-role").value);
+                        if (roleId === Number(u.roleId)) { closeEditor(); return; }
+                        button.disabled = true;
+                        error.hidden = true;
+                        try {
+                            await api.put(`/users/${encodeURIComponent(u.id)}`, {
+                                fullName: u.fullName || u.username,
+                                email: u.email || "",
+                                phone: u.phone || "",
+                                roleId,
+                                status: u.status || "active"
+                            });
+                            closeEditor();
+                            await loadUsers();
+                            await window.showCustomAlert?.("Quyền tài khoản đã được cập nhật.", { title: "Cập nhật thành công", kind: "success" });
+                        } catch (err) {
+                            error.textContent = err.message || "Không thể cập nhật quyền tài khoản.";
+                            error.hidden = false;
+                            button.disabled = false;
+                        }
+                    });
+                });
 
                 tr.querySelector(".btn-delete-user").addEventListener("click", async () => {
                     // Custom confirm modal
@@ -232,54 +299,140 @@ export async function renderUsers(container, session) {
         const modal   = document.getElementById("global-modal");
         const content = document.getElementById("global-modal-content");
         modal.classList.add("active");
+        modal.setAttribute("aria-hidden", "false");
 
         content.innerHTML = `
             <div class="modal-header">
                 <h2>Thêm Nhân Viên / Người dùng</h2>
-                <button class="modal-close" onclick="closeModal('global-modal')">&times;</button>
+                <button type="button" class="modal-close" id="close-add-user" aria-label="Đóng">&times;</button>
             </div>
+            <div role="tablist" class="tabs tabs-box mb-5" aria-label="Cách thêm nhân viên">
+                <button type="button" role="tab" class="tab tab-active" id="tab-create-account" aria-selected="true">Tạo tài khoản mới</button>
+                <button type="button" role="tab" class="tab" id="tab-existing-account" aria-selected="false">Cấp quyền tài khoản có sẵn</button>
+            </div>
+            <section id="create-account-panel" role="tabpanel" aria-labelledby="tab-create-account">
             <form id="form-add-staff-action">
-                <div class="grid grid-cols-2" style="gap:16px;">
-                    <div class="form-group">
-                        <label class="form-label">Tên đăng nhập *</label>
-                        <input class="form-input" type="text" id="as-username" required placeholder="vd: nguyen_van_a">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Mật khẩu *</label>
-                        <input class="form-input" type="password" id="as-password" required placeholder="Tối thiểu 6 ký tự">
-                    </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label class="form-control w-full"><span class="label"><span class="label-text font-semibold">Tên đăng nhập *</span></span><input class="input input-bordered w-full" type="text" id="as-username" required autocomplete="username" placeholder="vd: nguyen_van_a"></label>
+                    <label class="form-control w-full"><span class="label"><span class="label-text font-semibold">Mật khẩu *</span></span><input class="input input-bordered w-full" type="password" id="as-password" required minlength="6" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự"></label>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Họ và tên *</label>
-                    <input class="form-input" type="text" id="as-name" required placeholder="Nguyễn Văn A">
+                <label class="form-control w-full"><span class="label"><span class="label-text font-semibold">Họ và tên *</span></span><input class="input input-bordered w-full" type="text" id="as-name" required autocomplete="name" placeholder="Nguyễn Văn A"></label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label class="form-control w-full"><span class="label"><span class="label-text font-semibold">Số điện thoại</span></span><input class="input input-bordered w-full" type="tel" id="as-phone" autocomplete="tel" placeholder="0912 345 678"></label>
+                    <label class="form-control w-full"><span class="label"><span class="label-text font-semibold">Email</span></span><input class="input input-bordered w-full" type="email" id="as-email" autocomplete="email" placeholder="email@aurelia.vn"></label>
                 </div>
-                <div class="grid grid-cols-2" style="gap:16px;">
-                    <div class="form-group">
-                        <label class="form-label">Số điện thoại</label>
-                        <input class="form-input" type="text" id="as-phone" placeholder="0912 345 678">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input class="form-input" type="email" id="as-email" placeholder="email@aurelia.vn">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Chức vụ (Phân quyền) *</label>
-                    <select class="form-input" id="as-role" required>
+                <label class="form-control w-full"><span class="label"><span class="label-text font-semibold">Chức vụ (Phân quyền) *</span></span>
+                    <select class="select select-bordered w-full" id="as-role" required>
                         <option value="1">⚡ ADMIN — Quản trị viên</option>
                         <option value="2" selected>👤 STAFF — Nhân viên lễ tân</option>
                     </select>
-                </div>
-                <div id="form-add-error" style="color:var(--danger);font-size:13px;margin-bottom:12px;"></div>
-                <div class="flex-row" style="justify-content: flex-end;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('global-modal')">Hủy</button>
+                </label>
+                <div id="form-add-error" class="alert alert-error mt-3" role="alert" hidden></div>
+                <div class="modal-action">
+                    <button type="button" class="btn btn-ghost" data-close-add-user>Hủy</button>
                     <button type="submit" class="btn btn-primary">
-                        <i data-lucide="user-plus" style="width:14px;height:14px;"></i> Tạo tài khoản
+                        <i data-lucide="user-plus" aria-hidden="true"></i> Tạo tài khoản
                     </button>
                 </div>
             </form>
+            </section>
+            <section id="existing-account-panel" role="tabpanel" aria-labelledby="tab-existing-account" hidden>
+                <p class="text-sm text-base-content/70 mb-4">Tìm tài khoản khách hàng đã đăng ký để cấp quyền nhân viên. Hồ sơ và trạng thái tài khoản sẽ được giữ nguyên.</p>
+                <label class="form-control w-full"><span class="label"><span class="label-text font-semibold">Tìm tài khoản</span></span><input class="input input-bordered w-full" type="search" id="existing-account-search" autocomplete="off" placeholder="Tên, tên đăng nhập, email hoặc số điện thoại"></label>
+                <div id="existing-account-results" class="mt-3 max-h-56 overflow-y-auto" aria-live="polite"></div>
+                <div id="selected-account-panel" class="card bg-base-200 mt-4" hidden><div class="card-body gap-3 p-4"><div><p class="text-xs uppercase tracking-wide text-base-content/60">Tài khoản được chọn</p><h3 id="selected-account-name" class="font-semibold"></h3><p id="selected-account-meta" class="text-sm text-base-content/70"></p></div>
+                    <label class="form-control w-full"><span class="label"><span class="label-text font-semibold">Cấp vai trò</span></span><select class="select select-bordered w-full" id="existing-account-role"><option value="2" selected>STAFF — Nhân viên lễ tân</option><option value="1">ADMIN — Quản trị viên</option></select></label>
+                </div></div>
+                <div id="grant-account-error" class="alert alert-error mt-3" role="alert" hidden></div>
+                <div class="modal-action"><button type="button" class="btn btn-ghost" data-close-add-user>Đóng</button><button type="button" class="btn btn-primary" id="grant-existing-role" disabled><i data-lucide="user-round-check" aria-hidden="true"></i> Cấp quyền</button></div>
+            </section>
         `;
         lucide.createIcons();
+
+        let eligibleAccounts = null;
+        let selectedAccount = null;
+        const createPanel = document.getElementById("create-account-panel");
+        const existingPanel = document.getElementById("existing-account-panel");
+        const createTab = document.getElementById("tab-create-account");
+        const existingTab = document.getElementById("tab-existing-account");
+        const closeAddUser = () => {
+            modal.classList.remove("active");
+            modal.setAttribute("aria-hidden", "true");
+            content.replaceChildren();
+        };
+        const showPanel = existing => {
+            createPanel.hidden = existing;
+            existingPanel.hidden = !existing;
+            createTab.classList.toggle("tab-active", !existing);
+            existingTab.classList.toggle("tab-active", existing);
+            createTab.setAttribute("aria-selected", String(!existing));
+            existingTab.setAttribute("aria-selected", String(existing));
+        };
+        const renderAccountMatches = query => {
+            const results = document.getElementById("existing-account-results");
+            if (!eligibleAccounts) return;
+            const normalizedQuery = query.trim().toLocaleLowerCase("vi");
+            const matches = eligibleAccounts.filter(user => [user.username, user.fullName, user.email, user.phone]
+                .some(value => String(value || "").toLocaleLowerCase("vi").includes(normalizedQuery)))
+                .slice(0, 8);
+            results.replaceChildren();
+            if (!matches.length) {
+                const empty = document.createElement("div");
+                empty.className = "alert alert-info";
+                empty.textContent = normalizedQuery ? "Không tìm thấy tài khoản khách hàng phù hợp." : "Chưa có tài khoản khách hàng phù hợp để cấp quyền.";
+                results.append(empty);
+                return;
+            }
+            const list = document.createElement("ul");
+            list.className = "menu rounded-box bg-base-200 w-full p-2";
+            matches.forEach(user => {
+                const item = document.createElement("li");
+                const choose = document.createElement("button");
+                choose.type = "button";
+                choose.className = "flex-col items-start gap-0";
+                const name = document.createElement("strong");
+                name.textContent = user.fullName || user.username;
+                const detail = document.createElement("span");
+                detail.className = "text-xs text-base-content/60";
+                detail.textContent = `@${user.username}${user.email ? ` · ${user.email}` : ""}`;
+                choose.append(name, detail);
+                choose.addEventListener("click", () => {
+                    selectedAccount = user;
+                    document.getElementById("selected-account-panel").hidden = false;
+                    document.getElementById("selected-account-name").textContent = user.fullName || user.username;
+                    document.getElementById("selected-account-meta").textContent = `@${user.username} · ${user.email || user.phone || "Không có email hoặc số điện thoại"}`;
+                    document.getElementById("grant-existing-role").disabled = false;
+                    document.getElementById("grant-account-error").hidden = true;
+                });
+                item.append(choose);
+                list.append(item);
+            });
+            results.append(list);
+        };
+        document.getElementById("close-add-user").addEventListener("click", closeAddUser);
+        content.querySelectorAll("[data-close-add-user]").forEach(button => button.addEventListener("click", closeAddUser));
+        createTab.addEventListener("click", () => showPanel(false));
+        existingTab.addEventListener("click", async () => {
+            showPanel(true);
+            document.getElementById("existing-account-search").focus();
+            if (eligibleAccounts) return;
+            const results = document.getElementById("existing-account-results");
+            results.textContent = "Đang tải danh sách tài khoản…";
+            try {
+                const users = await api.get("/users");
+                eligibleAccounts = (users || []).filter(user => String(user.roleName || "").toUpperCase() === "CUSTOMER");
+                renderAccountMatches(document.getElementById("existing-account-search").value);
+            } catch (error) {
+                results.textContent = error.message || "Không tải được danh sách tài khoản.";
+                eligibleAccounts = null;
+            }
+        });
+        document.getElementById("existing-account-search").addEventListener("input", event => {
+            selectedAccount = null;
+            document.getElementById("selected-account-panel").hidden = true;
+            document.getElementById("grant-existing-role").disabled = true;
+            renderAccountMatches(event.target.value);
+        });
 
         document.getElementById("form-add-staff-action").addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -293,11 +446,35 @@ export async function renderUsers(container, session) {
 
             try {
                 await api.post("/users", { username, password, fullName, phone, email, roleId, status: "active" });
-                closeModal("global-modal");
+                closeAddUser();
                 loadUsers();
             } catch (err) {
-                errDiv.innerHTML = `<i data-lucide="alert-circle" style="width:13px;height:13px;vertical-align:middle;"></i> ${err.message}`;
-                lucide.createIcons();
+                errDiv.textContent = err.message || "Không thể tạo tài khoản.";
+                errDiv.hidden = false;
+            }
+        });
+
+        document.getElementById("grant-existing-role").addEventListener("click", async event => {
+            if (!selectedAccount) return;
+            const button = event.currentTarget;
+            const errorBox = document.getElementById("grant-account-error");
+            button.disabled = true;
+            errorBox.hidden = true;
+            try {
+                await api.put(`/users/${encodeURIComponent(selectedAccount.id)}`, {
+                    fullName: selectedAccount.fullName || selectedAccount.username,
+                    email: selectedAccount.email || "",
+                    phone: selectedAccount.phone || "",
+                    roleId: Number(document.getElementById("existing-account-role").value),
+                    status: selectedAccount.status || "active"
+                });
+                closeAddUser();
+                await loadUsers();
+                await window.showCustomAlert?.("Đã cấp quyền cho tài khoản hiện có.", { title: "Cấp quyền thành công", kind: "success" });
+            } catch (error) {
+                errorBox.textContent = error.message || "Không thể cấp quyền cho tài khoản này.";
+                errorBox.hidden = false;
+                button.disabled = false;
             }
         });
     });
