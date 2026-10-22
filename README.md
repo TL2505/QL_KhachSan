@@ -27,14 +27,14 @@ Xem [hướng dẫn cấu hình chatbot AI riêng cho máy dev](docs/chatbot-ai-
 
 3. Build và chạy backend
    - Trong PowerShell, chạy `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1` để biên dịch và khởi chạy backend. Cấu hình khóa vault theo `docs/run-project.md` trước khi chạy.
+   - Trên Windows, có thể chạy `start-backend.bat` để khởi động backend demo ở chế độ nền; trình duyệt tự mở website tại `http://localhost:8081/` sau khi backend sẵn sàng.
    - Khởi chạy backend bằng `Main`:
      - `quanlykhachsan.backend.Main`
    - Backend hiện đang lắng nghe trên cổng `8081`.
 
 4. Chạy giao diện frontend
-   - Chạy lớp chính:
-     - `quanlykhachsan.Quanlykhachsan`
-   - Frontend sẽ gọi API tới `http://localhost:8081/api`.
+   - Trên Windows, chạy `web-ui\start-web.bat` để khởi động web UI riêng và tự mở `http://localhost:3000/`. Backend cần đang chạy tại `http://localhost:8081` để web UI gọi API.
+   - Trang tích hợp sẵn của backend cũng có thể mở tại `http://localhost:8081/`.
 
 5. Chạy kiểm thử Maven
    - `mvn test` chạy các kiểm thử đơn vị và kiểm thử UI bất đồng bộ.

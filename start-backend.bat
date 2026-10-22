@@ -13,5 +13,7 @@ if not "%RESULT%"=="0" (
 )
 
 echo.
+echo Opening the hotel website at http://localhost:8081/...
+start "" "http://localhost:8081/"
 pause
 exit /b 0

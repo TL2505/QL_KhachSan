@@ -86,9 +86,12 @@ try {
     $env:DB_URL = "jdbc:mysql://127.0.0.1:3306/${schema}?useSSL=false&serverTimezone=UTC"
     $env:HOTEL_BIND_ADDRESS = '127.0.0.1'
     $env:HOTEL_VAT_RATE = '0.08'; $env:HOTEL_OTP_MODE = 'mock'; $env:AI_GUEST_ENABLED = 'false'
-    & $MavenCommand '-q' '-DskipTests' 'compile' 'dependency:build-classpath' '-Dmdep.outputFile=target/demo-classpath.txt'
+    # Keep demo bytecode separate from IDE auto-builds and running desktop packages.
+    $buildRoot = Join-Path $demoRoot 'build'
+    $classpathFile = Join-Path $buildRoot 'demo-classpath.txt'
+    & $MavenCommand '-q' '-DskipTests' "-Dhotel.build.directory=$buildRoot" 'clean' 'compile' 'dependency:build-classpath' "-Dmdep.outputFile=$classpathFile"
     if ($LASTEXITCODE -ne 0) { throw 'Demo backend build failed.' }
-    $classpath = (Join-Path $projectRoot 'target/classes') + ';' + [IO.File]::ReadAllText((Join-Path $projectRoot 'target/demo-classpath.txt')).Trim()
+    $classpath = (Join-Path $buildRoot 'classes') + ';' + [IO.File]::ReadAllText($classpathFile).Trim()
     if ($initialize) {
         & $JavaCommand '-cp' $classpath 'scripts/DemoDatabaseSetup.java'
         if ($LASTEXITCODE -ne 0) { throw 'Demo initialization failed. Existing schemas have not been reset; inspect the error before retrying.' }

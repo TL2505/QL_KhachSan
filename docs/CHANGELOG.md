@@ -1,5 +1,9 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-22] — @codex — Windows backend and web launchers
+
+- Updated the Windows backend launcher to open the integrated website only after backend startup succeeds. Updated the standalone web launcher to start its server separately, wait for an HTTP 200 response, and then open the browser. Documented both launch paths and their ports.
+
 ## [2026-10-22] — @codex — Backend/web-ui — Admin membership, account OTP and consistent portal themes
 
 - Replaced the administrator membership placeholder with member statistics, search, tier filters, sorting, paginated records, point history and audited point adjustments. Server-side admin authorization, transactional updates and balance validation prevent unauthorized changes, overdrafts and partial history writes; deductions leave lifetime tier points unchanged.
