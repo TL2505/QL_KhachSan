@@ -51,11 +51,18 @@ export async function renderAccountSettings(container, session = getAuthSession(
         </div></section>
         ` : ''}
       </div>
+      <section class="ais-card ais-card-border account-card mt-6" aria-labelledby="account-devices-title">
+        <div class="ais-card-body">
+          <div class="account-card-heading"><h2 id="account-devices-title">Thiết bị đã đăng nhập</h2><p>Các trình duyệt đã được ghi nhận với tài khoản của bạn.</p></div>
+          <div id="account-devices-list" role="status" aria-live="polite">Đang tải thiết bị…</div>
+          <div class="ais-card-actions"><button class="ais-btn ais-btn-outline ais-btn-sm" id="account-devices-reload" type="button">Làm mới thiết bị</button></div>
+        </div>
+      </section>
       ${options.showIdentity ? '<details class="ais-collapse ais-collapse-arrow account-identity"><summary class="ais-collapse-title">Hồ sơ lưu trú & giấy tờ định danh</summary><div class="ais-collapse-content"><div id="account-identity-content"></div></div></details>' : ''}
     </section>`;
     if (!document.getElementById('account-settings-ui')) {
         const link = document.createElement('link'); link.id = 'account-settings-ui'; link.rel = 'stylesheet';
-        link.href = new URL('../../css/account-settings-ui.css?v=2', import.meta.url).href; document.head.append(link);
+        link.href = new URL('../../css/account-settings-ui.css?v=3', import.meta.url).href; document.head.append(link);
     }
     const root = container.querySelector('.account-settings-view'), $ = selector => root.querySelector(selector);
     const on = (selector, event, handler) => $(selector)?.addEventListener(event, handler);
@@ -65,6 +72,29 @@ export async function renderAccountSettings(container, session = getAuthSession(
     let profile = null, busy = false, emailFlow = null, passwordFlow = null, identityLoaded = false;
     const message = (target, text, error = false) => { $(target).textContent = text; $(target).classList.toggle('account-error', error); };
     const post = (path, body = {}) => api.post('/account/' + path, body, transport);
+    async function loadDevices() {
+        if (!active()) return;
+        const button = $('#account-devices-reload');
+        button.disabled = true;
+        try {
+            const devices = await api.get('/account/devices', { ...transport, credentials: 'include' });
+            if (!active()) return;
+            if (!Array.isArray(devices)) throw new Error('Chưa thể tải danh sách thiết bị.');
+            const date = value => {
+                const parsed = new Date(value);
+                return Number.isNaN(parsed.getTime()) ? 'Chưa ghi nhận' : parsed.toLocaleString('vi-VN');
+            };
+            $('#account-devices-list').innerHTML = devices.length ? `<div class="overflow-x-auto"><table class="ais-table ais-table-sm">
+              <thead><tr><th>Trình duyệt / Thiết bị</th><th>Địa chỉ IP</th><th>Đăng nhập gần nhất</th><th>Ghi nhận gần nhất</th></tr></thead>
+              <tbody>${devices.map(device => `<tr><td><strong>${esc(device.browser)} · ${esc(device.platform)}</strong>
+                ${device.current ? '<span class="ais-badge ais-badge-success ais-badge-sm">Thiết bị này</span>' : ''}</td>
+                <td>${esc(device.ip || 'Chưa ghi nhận')}</td><td>${esc(date(device.lastLoginAt))}</td><td>${esc(date(device.lastSeenAt))}</td></tr>`).join('')}</tbody>
+            </table></div>` : '<p>Chưa có thiết bị được ghi nhận.</p>';
+        } catch (error) {
+            if (active()) $('#account-devices-list').textContent = error.message || 'Chưa thể tải thiết bị. Bấm Làm mới để thử lại.';
+        } finally { if (active()) button.disabled = false; }
+    }
+    on('#account-devices-reload', 'click', loadDevices);
     const remaining = flow => Math.max(0, Math.ceil((Date.parse(flow?.resendAt || '') - Date.now()) / 1000) || 0);
     function sync() {
         if (!active()) return;
@@ -75,6 +105,7 @@ export async function renderAccountSettings(container, session = getAuthSession(
         hidden('#account-password-confirm', !passwordFlow);
         hidden('#account-email-verify', !emailFlow);
         disabled('#account-email-send', busy || !profile?.email || dirtyEmail || !!profile?.emailVerified || !profile?.mailConfigured || !!emailFlow);
+        hidden('#account-email-send', !!profile?.emailVerified && !dirtyEmail);
         disabled('#account-password-send', busy || !profile?.emailVerified || !profile?.mailConfigured);
         $('#account-email-help').textContent = dirtyEmail ? 'Email đã thay đổi. Lưu hồ sơ trước khi yêu cầu mã mới.' : profile?.emailVerified ? 'Email đã xác minh, có thể dùng để nhận OTP đổi mật khẩu.' : mode === 'profile' ? 'Xác minh email trong tab Bảo mật sau khi lưu hồ sơ.' : mode === 'security' && !profile?.email ? 'Thêm email trong tab Hồ sơ trước khi yêu cầu mã xác minh.' : 'Xác minh bằng mã OTP gửi đến hộp thư của bạn.';
         $('#account-email-badge').textContent = !profile ? 'Đang tải hồ sơ…' : dirtyEmail ? 'Email chưa lưu' : profile.emailVerified ? 'Email đã xác minh' : 'Email chưa xác minh';
@@ -179,5 +210,5 @@ export async function renderAccountSettings(container, session = getAuthSession(
         try { const { renderProfile } = await import('../customer/profile.js'); if (active()) await renderProfile(host, getAuthSession()); }
         catch { if (active()) { host.textContent = 'Chưa thể tải hồ sơ lưu trú. Đóng và mở lại để thử lại.'; identityLoaded = false; } }
     });
-    await load();
+    await Promise.all([load(), loadDevices()]);
 }

@@ -8,3 +8,4 @@ v3_2_phase2_1_schema.sql
 v3_3_revenue_views.sql
 v3_4_audit_compliance.sql
 v4_0_phase4_integrity.sql
+v4_1_login_devices.sql

@@ -46,6 +46,12 @@ public final class GoogleOtpAuthService {
     private final IdentityVerifier identityVerifier;
     private final OtpSender otpSender;
     private final LoginCompleter loginCompleter;
+    private final DeviceTrust deviceTrust;
+
+    interface DeviceTrust {
+        boolean recognizes(GoogleIdentity identity, String token) throws AuthFailure;
+        String remember(GoogleIdentity identity) throws AuthFailure;
+    }
 
     @FunctionalInterface interface IdentityVerifier { GoogleIdentity verify(String credential) throws AuthFailure; }
     @FunctionalInterface interface OtpSender { void send(String email, String otp) throws Exception; }
@@ -53,10 +59,21 @@ public final class GoogleOtpAuthService {
     public GoogleOtpAuthService() {
         clock = Clock.systemUTC(); identityVerifier = this::verifyGoogleToken; otpSender = this::sendOtp;
         loginCompleter = this::completeLogin;
+        deviceTrust = new GoogleDeviceTrust();
     }
     GoogleOtpAuthService(Clock clock, IdentityVerifier verifier, OtpSender sender, LoginCompleter completer) {
-        this.clock = clock; identityVerifier = verifier; otpSender = sender; loginCompleter = completer;
+        this(clock, verifier, sender, completer, new DeviceTrust() {
+            public boolean recognizes(GoogleIdentity identity, String token) { return false; }
+            public String remember(GoogleIdentity identity) { return null; }
+        });
     }
+    GoogleOtpAuthService(Clock clock, IdentityVerifier verifier, OtpSender sender, LoginCompleter completer, DeviceTrust trust) {
+        this.clock = clock; identityVerifier = verifier; otpSender = sender; loginCompleter = completer;
+        this.deviceTrust = trust;
+    }
+
+    public record LoginStart(StartResult challenge, AuthUserInfo user) { }
+    public record VerifiedLogin(AuthUserInfo user, String deviceToken) { }
 
     public record StartResult(String challengeId, String maskedEmail, Instant expiresAt) { }
     record GoogleIdentity(String subject, String email, String name) { }
@@ -87,8 +104,14 @@ public final class GoogleOtpAuthService {
     }
 
     public StartResult begin(String credential) throws AuthFailure {
+        return begin(credential, null).challenge();
+    }
+    public LoginStart begin(String credential, String deviceToken) throws AuthFailure {
         challenges.entrySet().removeIf(entry -> !clock.instant().isBefore(entry.getValue().sessionExpiresAt));
         GoogleIdentity identity = identityVerifier.verify(credential);
+        if (deviceTrust.recognizes(identity, deviceToken)) {
+            return new LoginStart(null, loginCompleter.complete(identity));
+        }
         String otp = nextOtp();
         Challenge challenge = new Challenge(identity, otp);
         String id = randomId();
@@ -101,7 +124,7 @@ public final class GoogleOtpAuthService {
         challenge.expiresAt = clock.instant().plus(OTP_TTL);
         challenge.sessionExpiresAt = clock.instant().plus(CHALLENGE_TTL);
         challenges.put(id, challenge);
-        return new StartResult(id, maskEmail(identity.email()), challenge.expiresAt);
+        return new LoginStart(new StartResult(id, maskEmail(identity.email()), challenge.expiresAt), null);
     }
 
     public StartResult resend(String challengeId) throws AuthFailure {
@@ -124,6 +147,9 @@ public final class GoogleOtpAuthService {
     }
 
     public AuthUserInfo verify(String challengeId, String otp) throws AuthFailure {
+        return verifyWithDevice(challengeId, otp).user();
+    }
+    public VerifiedLogin verifyWithDevice(String challengeId, String otp) throws AuthFailure {
         Challenge c = challenge(challengeId);
         synchronized (c) {
             requireActive(challengeId, c);
@@ -136,9 +162,10 @@ public final class GoogleOtpAuthService {
             }
             // A database failure must not consume a correct OTP and then look expired.
             AuthUserInfo info = loginCompleter.complete(c.identity);
+            String deviceToken = deviceTrust.remember(c.identity);
             c.used = true;
             challenges.remove(challengeId, c);
-            return info;
+            return new VerifiedLogin(info, deviceToken);
         }
     }
 
@@ -198,6 +225,9 @@ public final class GoogleOtpAuthService {
                 }
                 if (existing != null) {
                     if (!"active".equalsIgnoreCase(existing.getStatus()) || existing.getCustomerId() == null) throw new AuthFailure(403, "Tài khoản Google này không có quyền truy cập cổng khách hàng.");
+                    try (PreparedStatement q = c.prepareStatement("UPDATE users SET verified_email=? WHERE id=? AND LOWER(TRIM(email))=LOWER(?)")) {
+                        q.setString(1, identity.email()); q.setInt(2, existing.getId()); q.setString(3, identity.email()); q.executeUpdate();
+                    }
                     c.commit(); return existing;
                 }
                 try (PreparedStatement q = c.prepareStatement("SELECT id FROM users WHERE LOWER(email)=LOWER(?) AND google_subject IS NULL LIMIT 1")) {
@@ -214,8 +244,8 @@ public final class GoogleOtpAuthService {
                     try (ResultSet keys = q.getGeneratedKeys()) { if (!keys.next()) throw new AuthFailure(500, "Không thể tạo hồ sơ khách hàng."); customerId = keys.getInt(1); }
                 }
                 String username = "google_" + identity.subject();
-                try (PreparedStatement q = c.prepareStatement("INSERT INTO users(username,password,role_id,status,full_name,email,phone,customer_id,google_subject) VALUES(?,?,?,?,?,?,NULL,?,?)", Statement.RETURN_GENERATED_KEYS)) {
-                    q.setString(1, username); q.setString(2, SecurityUtil.hashPassword(randomId())); q.setInt(3, roleId); q.setString(4, "active"); q.setString(5, identity.name().isBlank() ? identity.email() : identity.name()); q.setString(6, identity.email()); q.setInt(7, customerId); q.setString(8, identity.subject()); q.executeUpdate();
+                try (PreparedStatement q = c.prepareStatement("INSERT INTO users(username,password,role_id,status,full_name,email,phone,customer_id,google_subject,verified_email) VALUES(?,?,?,?,?,?,NULL,?,?,?)", Statement.RETURN_GENERATED_KEYS)) {
+                    q.setString(1, username); q.setString(2, SecurityUtil.hashPassword(randomId())); q.setInt(3, roleId); q.setString(4, "active"); q.setString(5, identity.name().isBlank() ? identity.email() : identity.name()); q.setString(6, identity.email()); q.setInt(7, customerId); q.setString(8, identity.subject()); q.setString(9, identity.email()); q.executeUpdate();
                     try (ResultSet keys = q.getGeneratedKeys()) { if (!keys.next()) throw new AuthFailure(500, "Không thể tạo tài khoản Google."); int id = keys.getInt(1); c.commit(); return new User(id, username, "", roleId, "active", identity.name().isBlank() ? identity.email() : identity.name(), identity.email(), null, customerId); }
                 }
             } catch (AuthFailure e) { c.rollback(); throw e; } catch (Exception e) { c.rollback(); throw e; } finally { c.setAutoCommit(true); }

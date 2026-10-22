@@ -6,6 +6,18 @@ import { createGoogleSignIn } from '../public/js/auth/google-signin.js';
 import { apiFetch } from '../public/api.js';
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
+test('remembered device completes Google login without showing another OTP form', async () => {
+  const f = fixture();
+  try {
+    f.api.post = async () => ({token:'synthetic-trusted-session',role:'CUSTOMER'});
+    await f.controller.credential({credential:'synthetic-fresh-google-credential'});
+    assert.equal(f.authenticated.length, 1);
+    assert.equal(f.authenticated[0].token, 'synthetic-trusted-session');
+    assert.equal(f.el('google-otp-form').hidden, true);
+    assert.equal(f.el('google-otp-code').value, '');
+    assert.equal(f.dom.window.localStorage.length, 0, 'Device trust is not a client-written boolean');
+  } finally { f.close(); }
+});
 function fixture({ configured = true, sdkAvailable = true } = {}) {
   const html = fs.readFileSync(new URL('../public/portal.html', import.meta.url), 'utf8');
   const dom = new JSDOM(html, { url: 'http://localhost:8081/portal.html' });

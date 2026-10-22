@@ -5,7 +5,7 @@
   themes: false;
   root: ".account-settings-view";
   prefix: ais-;
-  include: button, card, fieldset, input, textarea, badge, collapse, alert;
+  include: button, card, fieldset, input, textarea, badge, collapse, alert, table;
   logs: false;
 }
 .account-settings-view {

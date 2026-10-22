@@ -6,6 +6,22 @@
 }
 
 /* Membership management uses the portal palette in both themes. */
+.front-desk-view { min-width: 0; }
+.front-desk-view .card { margin-bottom: 20px; }
+.front-desk-view .card-body { padding: 24px; }
+.desk-fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.front-desk-view label { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--portal-muted); }
+.front-desk-view .form-input { width: 100%; min-width: 0; background: var(--portal-bg); color: var(--portal-text); }
+.front-desk-view fieldset { display: grid; gap: 16px; border: 0; padding: 0; min-width: 0; }
+.front-desk-view legend { padding-bottom: 16px; font-weight: 700; color: var(--portal-text); }
+.front-desk-view fieldset > .btn { justify-self: start; }
+.front-desk-view p { color: var(--portal-muted); font-size: 13px; line-height: 1.7; }
+.desk-quote { padding: 16px; border: 1px solid var(--portal-border); border-radius: 12px; color: var(--portal-text); }
+.desk-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.front-desk-view [hidden] { display: none !important; }
+.front-desk-view #desk-message.error { color: var(--error, #f87171); }
+@media (max-width: 640px) { .desk-fields-grid { grid-template-columns: minmax(0, 1fr); } }
+
 .admin-membership { min-width: 0; }
 .admin-membership svg { width: 17px; height: 17px; flex: none; }
 .membership-heading, .membership-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
@@ -13,7 +29,7 @@
 .membership-dialog-close { margin: 0; flex: none; }
 .membership-heading p, .membership-policy p, .membership-help { color: var(--portal-muted); font-size: 13px; line-height: 1.8; margin: 0; }
 .membership-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.admin-portal .portal-view .admin-membership .membership-summary .card { padding: 0; min-width: 0; }
+:is(.admin-portal, .staff-portal) .portal-view .admin-membership .membership-summary .card { padding: 0; min-width: 0; }
 .membership-summary .stat { padding: 20px; min-width: 0; }
 .membership-summary .stat-title { display: flex; align-items: center; gap: 8px; color: var(--portal-muted); font-size: 12px; white-space: normal; }
 .membership-summary .stat-title svg { color: var(--portal-gold); }
@@ -21,7 +37,7 @@
 .membership-summary .stat-desc { color: var(--portal-muted); font-size: 11px; white-space: normal; }
 #membership-notice { margin: 16px 0; color: var(--portal-gold); font-size: 13px; }
 #membership-notice:empty { margin: 20px 0 0; }
-.admin-portal .portal-view .admin-membership .membership-list { padding: 0; overflow: hidden; }
+:is(.admin-portal, .staff-portal) .portal-view .admin-membership .membership-list { padding: 0; overflow: hidden; }
 .membership-filters { display: flex; flex-wrap: wrap; gap: 16px; padding: 22px; border-bottom: 1px solid var(--portal-border); }
 .membership-filters label, .membership-adjust-form label { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 12px; color: var(--portal-muted); }
 .membership-filters .membership-search { flex: 1; min-width: 220px; }
@@ -54,7 +70,7 @@
 .membership-adjust-form .btn { justify-self: end; }
 .membership-points-field { position: relative; display: block; }
 .membership-points-sign { position: absolute; z-index: 1; top: 50%; left: 14px; transform: translateY(-50%); color: var(--portal-text); font-size: 16px; pointer-events: none; }
-.admin-portal .portal-view .admin-membership .membership-points-field.is-deduction input.form-input { padding-left: 30px; }
+:is(.admin-portal, .staff-portal) .portal-view .admin-membership .membership-points-field.is-deduction input.form-input { padding-left: 30px; }
 #membership-adjust-error, .membership-deducted { color: var(--color-error, #ef4444); }
 .membership-earned { color: var(--color-success, #10b981); }
 #membership-preview { color: var(--portal-gold); font-size: 13px; }

@@ -1,4 +1,4 @@
-import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.35';
+import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.36';
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.35';
 import { loadAdminView } from './js/view-admin.js?v=3.6.11';
 import { loadStaffView } from './js/view-staff.js';
@@ -90,6 +90,7 @@ const menus = {
   ],
   STAFF: [
     ['room-map', 'Sơ đồ phòng', 'panels-top-left'],
+    ['front-desk', 'Xử lý tại quầy', 'concierge-bell'],
     ['bookings', 'Đặt phòng', 'calendar-check'],
     ['customers', 'Khách hàng', 'contact-round'],
     ['checkout', 'Nhận & trả phòng', 'key-round'],
@@ -100,7 +101,8 @@ const menus = {
   ],
   CUSTOMER: [
     ['dashboard', 'Tổng quan', 'layout-dashboard'],
-    ['bookings', 'Đặt phòng', 'calendar-check'],
+    ['discovery', 'Đặt phòng', 'calendar-plus'],
+    ['bookings', 'Lịch sử đặt phòng', 'history'],
     ['concierge', 'Dịch vụ & ưu đãi', 'sparkles'],
     ['support', 'Hỗ trợ', 'life-buoy'],
     ['profile', 'Hồ sơ', 'user-cog'],
@@ -408,11 +410,10 @@ function renderNav(session, activeTab) {
 
 function openView(session, role, tab) {
   try {
-    const isCustomerBooking = role === 'CUSTOMER' && tab === 'discovery';
-    if (!isCustomerBooking && !menus[role]?.some(([key]) => key === tab)) {
+    if (!menus[role]?.some(([key]) => key === tab)) {
       tab = menus[role]?.[0]?.[0] || 'dashboard';
     }
-    renderNav(session, isCustomerBooking ? 'bookings' : tab);
+    renderNav(session, tab);
 
     const heading = byId('portal-heading');
     if (heading) heading.textContent = (role === 'CUSTOMER' ? titles[tab] : menus[role]?.find(([key]) => key === tab)?.[1]) || 'Tổng quan';
@@ -425,7 +426,7 @@ function openView(session, role, tab) {
     const view = byId('view-container');
     if (view) {
       view.setAttribute('role', 'tabpanel');
-      view.setAttribute('aria-labelledby', `tab-${isCustomerBooking ? 'bookings' : tab}`);
+      view.setAttribute('aria-labelledby', `tab-${tab}`);
     }
 
     if (role === 'CUSTOMER') {
@@ -801,6 +802,7 @@ export async function handleLoginSubmit(e) {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'

@@ -49,10 +49,35 @@ public final class CustomerPortalController implements HttpHandler {
             else if (path.endsWith("/bookings")) ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(bookings(connection, customerId)));
             else if (path.endsWith("/invoices")) ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(invoices(connection, customerId)));
             else if (path.endsWith("/profile")) ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(profile(connection, ((Number) rawUserId).intValue())));
+            else if (path.equals("/api/v1/customer-portal/vouchers")) ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(vouchers(connection)));
             else ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Not found"));
         } catch (Exception ex) {
             ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Unable to load customer portal data"));
         }
+    }
+
+    private static JsonArray vouchers(Connection c) throws java.sql.SQLException {
+        JsonArray result = new JsonArray();
+        String sql = "SELECT code,name,discount_type,discount_value,max_discount,minimum_spend FROM promotions "
+            + "WHERE status='active' AND CURRENT_TIMESTAMP BETWEEN start_date AND end_date "
+            + "AND code IS NOT NULL AND max_discount>=0 AND minimum_spend>=0 AND max_uses_per_user>=1 "
+            + "AND discount_type IN ('percentage','fixed_amount') AND applicable_scope IN ('ROOM','ALL') "
+            + "AND (condition_type IS NULL OR condition_type IN ('none','room_type','min_stay','vip_only')) ORDER BY id";
+        try (PreparedStatement q = c.prepareStatement(sql); ResultSet rows = q.executeQuery()) {
+            while (rows.next()) {
+                String code = rows.getString("code");
+                if (!code.matches("[A-Za-z0-9_-]{1,50}")) continue;
+                JsonObject voucher = new JsonObject();
+                voucher.addProperty("code", code);
+                voucher.addProperty("name", rows.getString("name"));
+                voucher.addProperty("discount_type", rows.getString("discount_type"));
+                voucher.addProperty("discount_value", rows.getBigDecimal("discount_value"));
+                voucher.addProperty("max_discount", rows.getBigDecimal("max_discount"));
+                voucher.addProperty("minimum_spend", rows.getBigDecimal("minimum_spend"));
+                result.add(voucher);
+            }
+        }
+        return result;
     }
 
     private static JsonObject profile(Connection c, int userId) throws Exception {
@@ -119,8 +144,9 @@ public final class CustomerPortalController implements HttpHandler {
                 ApiResponseUtil.write(exchange, 403, ApiResponseUtil.error("Customer profile is not linked"));
                 return;
             }
+            String voucherCode = PortalValidation.text(body, "voucher_code", 50, false);
             var request = new PublicBookingService.Request(
-                null, null, null, roomId, roomVersion, dates.checkIn(), dates.checkOut(), null, guestCount, quotedTotal);
+                null, null, null, roomId, roomVersion, dates.checkIn(), dates.checkOut(), voucherCode, guestCount, quotedTotal);
             var result = new PublicBookingService().reserve(
                 key.toLowerCase(java.util.Locale.ROOT), request, customerId, "Web");
             ApiResponseUtil.write(exchange, result.status(), result.body());

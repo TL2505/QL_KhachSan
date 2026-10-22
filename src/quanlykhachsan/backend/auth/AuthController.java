@@ -59,6 +59,10 @@ public class AuthController implements HttpHandler {
                     }
 
                     quanlykhachsan.backend.auth.dto.AuthUserInfo userInfo = AuthMapper.toUserInfo(user, roleStr);
+                    try { LoginDeviceService.recordLogin(exchange, user.getId()); }
+                    catch (java.sql.SQLException ex) {
+                        ApiResponseUtil.write(exchange,503,ApiResponseUtil.error("Chưa thể ghi nhận thiết bị đăng nhập. Vui lòng thử lại.")); return;
+                    }
                     userInfo.setToken(quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(
                         user.getId(), user.getUsername(), roleStr));
                     response = AuthMapper.success("Đăng nhập thành công", userInfo);
@@ -128,7 +132,7 @@ public class AuthController implements HttpHandler {
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
             
             // Chống lỗi CORS khi Frontend gọi API từ nguồn khác
-            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", quanlykhachsan.backend.utils.CorsFilter.resolveOrigin(exchange));
             
             byte[] responseBytes = responseStr.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(statusCode, responseBytes.length);

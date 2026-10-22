@@ -18,7 +18,7 @@ public final class PublicBookingController implements HttpHandler {
         if(!e.getRequestMethod().equals("POST")){ApiResponseUtil.write(e,405,ApiResponseUtil.error("Method not allowed"));return;}
         try {
             String role=String.valueOf(e.getAttribute("role"));
-            if(walkIn && !java.util.Set.of("front_desk","admin").contains(role))throw new SecurityException();
+            if(walkIn && !java.util.Set.of("front_desk","staff","admin").contains(role.toLowerCase(java.util.Locale.ROOT)))throw new SecurityException();
             if(!walkIn && e.getAttribute("role")!=null && !role.equals("guest"))throw new SecurityException();
             String key=e.getRequestHeaders().getFirst("Idempotency-Key");
             if(key==null || !key.matches("(?i)[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"))throw new IllegalArgumentException();
@@ -34,9 +34,15 @@ public final class PublicBookingController implements HttpHandler {
             if(walkIn && !range.checkIn().equals(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"))))throw new IllegalArgumentException();
             int roomId=PortalValidation.integer(b,"room_id",1),roomVersion=PortalValidation.integer(b,"room_version",0);
             int guestCount=b.has("guest_count")?PortalValidation.integer(b,"guest_count",1):1;
+            java.math.BigDecimal expectedTotal=null;
+            if(b.has("quoted_total")) {
+                if(!b.get("quoted_total").isJsonPrimitive() || !b.getAsJsonPrimitive("quoted_total").isNumber())throw new IllegalArgumentException();
+                expectedTotal=b.get("quoted_total").getAsBigDecimal();
+                if(expectedTotal.signum()<=0 || expectedTotal.scale()>2)throw new IllegalArgumentException();
+            }
             int customer=new GuestIngestionService().ingest(name,phone,email,identity);
             if(role.equals("guest") && e.getAttribute("userId")!=null && (!(e.getAttribute("customer_id") instanceof Number) || ((Number)e.getAttribute("customer_id")).intValue()!=customer))throw new SecurityException();
-            var result=new PublicBookingService().reserve(key.toLowerCase(java.util.Locale.ROOT),new PublicBookingService.Request(name,phone,email,roomId,roomVersion,range.checkIn(),range.checkOut(),voucher,guestCount),customer,walkIn?"Walk-in":"Web");
+            var result=new PublicBookingService().reserve(key.toLowerCase(java.util.Locale.ROOT),new PublicBookingService.Request(name,phone,email,roomId,roomVersion,range.checkIn(),range.checkOut(),voucher,guestCount,expectedTotal),customer,walkIn?"Walk-in":"Web");
             ApiResponseUtil.write(e,result.status(),result.body());
         }catch(SecurityException ex){ApiResponseUtil.write(e,403,ApiResponseUtil.error("Role or guest identity is not authorized"));}
         catch(IllegalArgumentException | DateTimeException ex){ApiResponseUtil.write(e,400,ApiResponseUtil.error("Invalid booking data or Idempotency-Key"));}

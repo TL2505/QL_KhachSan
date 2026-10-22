@@ -6,6 +6,7 @@ import { renderInvoices } from "./staff/invoices.js";
 import { renderCheckout } from "./staff/checkout.js";
 import { renderLoyalty } from "./staff/loyalty.js";
 import { renderChat } from "./staff/chat.js";
+import { renderFrontDesk } from "./staff/front-desk.js";
 
 export function loadStaffView(tab = "room-map") {
     const container = document.getElementById("view-container");
@@ -13,6 +14,8 @@ export function loadStaffView(tab = "room-map") {
     
     if (tab === "room-map") {
         renderRoomMap(container, session);
+    } else if (tab === "front-desk") {
+        renderFrontDesk(container, session);
     } else if (tab === "bookings") {
         renderBookings(container, session);
     } else if (tab === "customers") {

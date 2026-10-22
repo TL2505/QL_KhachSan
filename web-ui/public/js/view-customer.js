@@ -59,7 +59,7 @@ export async function loadCustomerView(tab = "dashboard") {
     } else if (tab === "concierge") {
       await renderConcierge(container, session);
     } else if (tab === "support") {
-      renderSupport(container);
+      await renderSupport(container, session);
     } else if (tab === "profile") {
       await renderAccountSettings(container, session, { mode: 'profile', showIdentity: true });
     } else if (tab === "security") {

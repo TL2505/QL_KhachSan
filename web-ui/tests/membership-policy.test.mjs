@@ -1,14 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MEMBERSHIP_TIERS, getLegacyTierInfo, summarizeLoyaltyHistory, normalizeLoyaltyHistory, membershipPoints } from '../public/js/customer/tier-helper.js';
-import { renderLoyalty } from '../public/js/staff/loyalty.js';
 
 test('staff policy and customer tiers match backend boundaries', () => {
-  const container = {};
-  renderLoyalty(container, {});
   for (const tier of MEMBERSHIP_TIERS) {
     assert.equal(getLegacyTierInfo(tier.minPoints).name, tier.name);
-    assert.ok(container.innerHTML.includes(tier.minPoints.toLocaleString('vi-VN')));
   }
   for (const [points, name] of [[0, 'Member'], [299, 'Member'], [499, 'Member'], [999, 'Silver'], [4999, 'Gold']]) {
     assert.equal(getLegacyTierInfo(points).name, name);

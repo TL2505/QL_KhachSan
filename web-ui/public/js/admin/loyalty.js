@@ -14,9 +14,9 @@ const tierOf = member => getLegacyTierInfo(member.totalLoyaltyPoints).name;
 const badge = member => `<span class="badge badge-outline membership-tier membership-tier-${tierOf(member).toLowerCase()}">${tierOf(member)}</span>`;
 const fold = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase();
 
-export async function renderAdminMembership(container) {
+export async function renderAdminMembership(container, { readOnly = false } = {}) {
     container.innerHTML = `<section class="admin-membership" aria-label="Quản lý thành viên">
-        <div class="page-header membership-heading"><div><h1>Quản lý thành viên</h1><p>Theo dõi hạng thành viên, điểm thưởng và lịch sử tích lũy.</p></div><button class="btn" id="membership-refresh">${icon('refresh-cw')} Làm mới</button></div>
+        <div class="page-header membership-heading"><div><h1>${readOnly ? 'Tra cứu thành viên' : 'Quản lý thành viên'}</h1><p>Theo dõi hạng thành viên, điểm thưởng và lịch sử tích lũy.</p></div><button class="btn" id="membership-refresh">${icon('refresh-cw')} Làm mới</button></div>
         <div class="membership-summary" id="membership-summary" aria-label="Thống kê thành viên"></div>
         <p id="membership-notice" role="status" aria-live="polite"></p>
         <section class="card membership-list" aria-label="Danh sách thành viên">
@@ -66,7 +66,7 @@ export async function renderAdminMembership(container) {
         $('#membership-body').innerHTML = list.length ? list.slice(offset, offset + pageSize).map(m => `<tr>
             <td><strong>${esc(m.fullName || 'Chưa có tên')}</strong><small>Mã TV${esc(m.id)}</small></td><td>${esc(m.phone || 'Chưa có số điện thoại')}<small>${esc(m.email || 'Chưa có email')}</small></td>
             <td>${badge(m)}</td><td class="membership-points">${num(m.loyaltyPoints)}</td><td>${num(m.totalLoyaltyPoints)}</td>
-            <td><div class="membership-actions"><button class="btn btn-sm" data-history="${Number(m.id)}" aria-label="Lịch sử của ${esc(m.fullName)}">${icon('history')} Lịch sử</button><button class="btn btn-sm" data-adjust="${Number(m.id)}" aria-label="Điều chỉnh điểm của ${esc(m.fullName)}">${icon('sliders-horizontal')} Điều chỉnh</button></div></td></tr>`).join('') : `<tr><td colspan="6"><div class="empty-state">${icon('users')}<p>${members.length ? 'Không tìm thấy thành viên phù hợp' : 'Chưa có thành viên'}</p><small>${members.length ? 'Thử từ khóa khác hoặc chọn tất cả hạng.' : 'Hồ sơ được tạo trong mục Khách hàng sẽ xuất hiện tại đây.'}</small></div></td></tr>`;
+            <td><div class="membership-actions"><button class="btn btn-sm" data-history="${Number(m.id)}" aria-label="Lịch sử của ${esc(m.fullName)}">${icon('history')} Lịch sử</button>${readOnly ? '' : `<button class="btn btn-sm" data-adjust="${Number(m.id)}" aria-label="Điều chỉnh điểm của ${esc(m.fullName)}">${icon('sliders-horizontal')} Điều chỉnh</button>`}</div></td></tr>`).join('') : `<tr><td colspan="6"><div class="empty-state">${icon('users')}<p>${members.length ? 'Không tìm thấy thành viên phù hợp' : 'Chưa có thành viên'}</p><small>${members.length ? 'Thử từ khóa khác hoặc chọn tất cả hạng.' : 'Hồ sơ được tạo trong mục Khách hàng sẽ xuất hiện tại đây.'}</small></div></td></tr>`;
         renderPaginationComponent('pagination-membership', list.length, pageSize, page,
             nextPage => { page = nextPage; renderTable(); },
             nextSize => { pageSize = nextSize; page = 1; renderTable(); });
@@ -120,6 +120,7 @@ export async function renderAdminMembership(container) {
         await loadHistory();
     }
     function showAdjustment(member) {
+        if (readOnly) return;
         openDialog('Điều chỉnh điểm', `<div class="membership-member"><strong>${esc(member.fullName)}</strong> · TV${esc(member.id)} ${badge(member)}<p>Số dư hiện tại: <strong>${num(member.loyaltyPoints)} điểm</strong></p></div>
             <form id="membership-adjust-form" class="membership-adjust-form">
                 <label><span>Loại điều chỉnh</span><select class="select form-input" name="direction"><option value="1">Cộng điểm</option><option value="-1">Trừ điểm</option></select></label>

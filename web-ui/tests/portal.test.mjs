@@ -486,8 +486,12 @@ test('portal-app.js places customer support immediately after concierge and hand
   const portalAppSource = fs.readFileSync(path.join(webUiDir, 'portal-app.js'), 'utf-8');
 
   // Customer navigation keeps support directly below services and offers.
+  const customerMenu = portalAppSource.match(/CUSTOMER:\s*\[([\s\S]*?)\n\s*\]/)?.[1];
+  assert.ok(customerMenu, 'Customer navigation must exist');
+  assert.match(customerMenu, /\['discovery',\s*'Đặt phòng'/);
+  assert.match(customerMenu, /\['bookings',\s*'Lịch sử đặt phòng'/);
+  assert.doesNotMatch(customerMenu, /\['bookings',\s*'Đặt phòng'/);
   assert.match(portalAppSource, /\['dashboard',\s*'Tổng quan'/);
-  assert.match(portalAppSource, /\['bookings',\s*'Đặt phòng'/);
   assert.match(portalAppSource, /\['concierge',\s*'Dịch vụ & ưu đãi'/);
   assert.match(portalAppSource, /\['concierge',[^\n]+\n\s*\['support',\s*'Hỗ trợ'/);
   assert.match(portalAppSource, /\['profile',\s*'Hồ sơ'/);
@@ -499,18 +503,9 @@ test('portal-app.js places customer support immediately after concierge and hand
   assert.match(portalAppSource, /appView\.classList\.remove\(['"]hidden['"],\s*['"]opacity-0['"]\)/, 'Must immediately unhide appView on token presence');
 });
 
-test('Customer support is a clearly labelled placeholder without a message composer', async () => {
-  const env = setupMockEnvironment();
-  try {
-    const { renderSupport } = await loadModule('public/js/customer/support.js');
-    const container = env.getOrCreate('view-container');
-    renderSupport(container);
-    assert.match(container.innerHTML, /Sắp ra mắt/);
-    assert.match(container.innerHTML, /Hỗ trợ khách hàng/);
-    assert.doesNotMatch(container.innerHTML, /<(form|textarea|input|button)\b/);
-  } finally {
-    env.teardown();
-  }
+test('Customer support route passes the authenticated session to the conversation', async () => {
+  const source = fs.readFileSync(path.join(webUiDir, 'public/js/view-customer.js'), 'utf8');
+  assert.match(source, /await renderSupport\(container, session\)/);
 });
 
 // =============================================================================
@@ -528,6 +523,9 @@ test('Concierge module renders Voucher Wallet and form with reliable button life
       {id:1,category:'FNB',name:'Bít Tết Bò Wagyu A5 Dùng Tại Phòng',price:100},
       {id:2,category:'SPA',name:'Trị Liệu Massage Thụy Điển Toàn Thân',price:200},
       {id:3,category:'HOUSEKEEPING',name:'Dịch Vụ Buồng Phòng: Đổi Khăn Tắm',price:0}
+    ] : path === '/customer-portal/vouchers' ? [
+      {code:'LUXURY2026',name:'Ưu đãi phòng',discount_type:'percentage',discount_value:10,max_discount:500000,minimum_spend:0},
+      {code:'VIP5STAR',name:'Ưu đãi VIP',discount_type:'percentage',discount_value:15,max_discount:500000,minimum_spend:0}
     ] : [];
     try { await renderConcierge(container, { fullName: 'Trần Văn VIP', userId: 99 }); }
     finally { api.get = savedGet; }

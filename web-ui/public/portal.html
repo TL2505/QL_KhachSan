@@ -132,7 +132,7 @@
           <button class="btn portal-primary w-full" type="submit" id="btn-login-submit"><span>Secure Login</span><i data-lucide="arrow-right"></i></button>
         </form>
         <form id="google-otp-form" class="auth-form" onsubmit="return false;" hidden>
-          <p class="otp-intro">Nhập mã gồm 4 chữ số đã gửi tới <strong id="google-otp-email"></strong>.</p>
+          <p class="otp-intro">Xác thực lần đầu trên thiết bị này. Nhập mã gồm 4 chữ số đã gửi tới <strong id="google-otp-email"></strong>. Những lần đăng nhập sau trên thiết bị đã ghi nhận sẽ không cần nhập lại mã.</p>
           <label for="google-otp-code">Mã xác thực</label>
           <input class="input input-md google-otp-code" id="google-otp-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{4}" maxlength="4" placeholder="0000" required>
           <button class="btn portal-primary" type="submit"><span>Xác nhận mã</span><i data-lucide="shield-check"></i></button>

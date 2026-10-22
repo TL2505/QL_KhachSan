@@ -53,6 +53,15 @@ public class UpdateDbUtility {
             // Google accounts are linked by Google's immutable subject, never by email.
             ensureColumn(conn, "users", "google_subject", "VARCHAR(255) NULL");
             ensureColumn(conn, "users", "verified_email", "VARCHAR(100) NULL");
+            ensureTable(conn, "user_login_devices",
+                "CREATE TABLE IF NOT EXISTS user_login_devices ("
+                + "id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,user_id INT NOT NULL,"
+                + "device_key_hash CHAR(64) NOT NULL,user_agent VARCHAR(512) NOT NULL,last_ip VARCHAR(64) NOT NULL,"
+                + "first_login_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+                + "last_login_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+                + "UNIQUE KEY uq_user_login_device(user_id,device_key_hash),INDEX idx_user_device_seen(user_id,last_seen_at),"
+                + "CONSTRAINT fk_login_device_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE"
+                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             ensureIndex(conn, "users", "uq_users_google_subject",
                     "UNIQUE INDEX uq_users_google_subject (google_subject)");
 

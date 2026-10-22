@@ -84,6 +84,7 @@ const validDateRange = (checkIn, checkOut) => {
 const validTime = value => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
 
 export async function renderDiscovery(container, session) {
+  const requestedVoucher = new URLSearchParams(window.location.search).get('voucher') || '';
   const today = localDate(new Date());
   const tomorrow = localDate(Date.now() + 86400000);
   container.innerHTML = `
@@ -109,6 +110,11 @@ export async function renderDiscovery(container, session) {
         </div>
       </div>
     </section>
+    <div class="card p-4 mb-4">
+      <label for="booking-voucher-code">Mã ưu đãi tiền phòng</label>
+      <input id="booking-voucher-code" class="input input-sm" maxlength="50" placeholder="Nhập mã hoặc để trống" value="${esc(requestedVoucher)}">
+      <small>Mã được kiểm tra khi chọn phòng. Bạn sẽ xem giá sau giảm trước khi xác nhận; có thể xóa mã để đặt không dùng ưu đãi.</small>
+    </div>
     <div class="discovery-result-head"><strong id="room-result-count">Đang tải phòng…</strong><span>Giá theo mỗi đêm</span></div>
     <div id="search-rooms-grid" class="customer-room-grid"></div>
 
@@ -366,7 +372,8 @@ export async function renderDiscovery(container, session) {
       try {
         sessionStorage.setItem('aurelia-discovery-booking-intent', JSON.stringify({
           roomId: room.id, checkIn, checkOut, checkInTime, checkOutTime, guests,
-          type: byId('filter-type').value, price: byId('filter-price').value
+          type: byId('filter-type').value, price: byId('filter-price').value,
+          voucherCode: byId('booking-voucher-code').value.trim()
         }));
       } catch {
         feedback('Không thể lưu lựa chọn phòng. Vui lòng đăng nhập trước khi tìm và đặt phòng.', true);
@@ -415,7 +422,8 @@ export async function renderDiscovery(container, session) {
         feedback(currentCapacity ? `Phòng này có sức chứa tối đa ${currentCapacity} khách.` : 'Chưa có thông tin sức chứa để xác nhận đặt phòng.', true);
         return;
       }
-      const [profile, quote] = await Promise.all([
+      const voucherCode = byId('booking-voucher-code').value.trim();
+      const [profile, baseQuote] = await Promise.all([
         api.get('/customer-portal/profile'),
         api.get(`/pricing/quote?${new URLSearchParams({
           room_type_id: String(current.room_type_id),
@@ -423,13 +431,20 @@ export async function renderDiscovery(container, session) {
           check_out: checkOut
         })}`)
       ]);
+      const discount = voucherCode ? await api.post('/promotions/validate', {
+        voucher_code: voucherCode,
+        room_type_id: Number(current.room_type_id),
+        check_in_date: checkIn,
+        check_out_date: checkOut
+      }) : null;
+      const quote = discount ? { ...baseQuote, ...discount } : baseQuote;
       if (!profile?.fullName || !profile?.phone) {
         throw new Error('Hồ sơ cần có họ tên và số điện thoại. Vui lòng cập nhật tại mục Hồ sơ & bảo mật trước khi đặt.');
       }
       if (!quote || !Array.isArray(quote.nightly_rates) || !Number.isFinite(Number(quote.total_amount)) || Number(quote.total_amount) <= 0) {
         throw new Error('Chưa thể lấy báo giá hợp lệ từ máy chủ. Vui lòng thử lại.');
       }
-      pendingRoom = { room: current, checkIn, checkOut, checkInTime, checkOutTime, guests, profile, quote };
+      pendingRoom = { room: current, checkIn, checkOut, checkInTime, checkOutTime, guests, profile, quote, voucherCode };
       bookingSucceeded = false;
       const nights = Math.round((Date.parse(`${checkOut}T00:00:00Z`) - Date.parse(`${checkIn}T00:00:00Z`)) / 86400000);
       byId('booking-dialog-content').innerHTML = `
@@ -440,7 +455,10 @@ export async function renderDiscovery(container, session) {
         <div class="booking-summary-line"><span>Số khách</span><strong>${guests}</strong></div>
         <section class="booking-rate-breakdown"><strong>Chi tiết giá lưu trú</strong>
           ${quote.nightly_rates.map(rate => `<div class="booking-summary-line"><span>${esc(rate.date)}</span><strong>${money(rate.amount)}</strong></div>`).join('')}
-          <div class="booking-summary-line"><span>Tiền phòng</span><strong>${money(quote.room_subtotal)}</strong></div>
+          ${discount ? `<div class="booking-summary-line"><span>Mã ưu đãi</span><strong>${esc(voucherCode)}</strong></div>
+          <div class="booking-summary-line"><span>Tiền phòng trước giảm</span><strong>${money(baseQuote.room_subtotal)}</strong></div>
+          <div class="booking-summary-line"><span>Giảm giá tiền phòng</span><strong>−${money(discount.discount_amount)}</strong></div>` : ''}
+          <div class="booking-summary-line"><span>Tiền phòng${discount ? ' sau giảm' : ''}</span><strong>${money(quote.room_subtotal)}</strong></div>
           <div class="booking-summary-line"><span>Phí dịch vụ</span><strong>${money(quote.service_charge)}</strong></div>
           <div class="booking-summary-line"><span>Thuế</span><strong>${money(quote.vat)}</strong></div>
           <div class="booking-summary-line booking-total-line"><span>Tổng cộng</span><strong>${money(quote.total_amount)}</strong></div>
@@ -475,7 +493,7 @@ export async function renderDiscovery(container, session) {
 
   const submitBooking = async () => {
     if (booking || !pendingRoom) return;
-    const { room, checkIn, checkOut, guests, profile, quote } = pendingRoom;
+    const { room, checkIn, checkOut, guests, profile, quote, voucherCode } = pendingRoom;
     if (!byId('booking-personal-confirmed')?.checked) {
       byId('booking-feedback').textContent = 'Vui lòng xác nhận thông tin cá nhân và chi tiết đặt phòng.';
       byId('booking-feedback').classList.add('is-error');
@@ -501,6 +519,7 @@ export async function renderDiscovery(container, session) {
       quoted_total: quote.total_amount,
       personal_info_confirmed: true
     };
+    if (voucherCode) payload.voucher_code = voucherCode;
     try {
       const result = await api.post('/customer-portal/bookings', payload, {
         headers: { 'Idempotency-Key': bookingKey(payload) }
@@ -562,6 +581,7 @@ export async function renderDiscovery(container, session) {
     byId('search-checkout-time').value = intent.checkOutTime || '12:00';
     byId('guest-count').value = String(intent.guests);
     byId('filter-price').value = String(intent.price || '0');
+    byId('booking-voucher-code').value = intent.voucherCode || '';
     return intent;
   };
 

@@ -95,6 +95,7 @@ public final class AccountSecurityService {
             if (clock.instant().isBefore(g.nextSend)) throw new Failure(429,"Vui lòng chờ trước khi gửi lại mã.",seconds(g.nextSend));
             if (g.sends>=MAX_SENDS) throw new Failure(429,"Đã đạt giới hạn gửi mã trong một giờ.",seconds(g.hour.plusSeconds(3600)));
             Account a=account(userId);
+            if (purpose.equals("email") && a.emailVerified()) throw new Failure(409,"Email này đã được xác minh. Không cần gửi lại mã.");
             String email=clean(a.email());
             if (email.isEmpty() || !email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) throw new Failure(400,"Hãy lưu một email hợp lệ trong hồ sơ trước.");
             if (purpose.equals("password")) {

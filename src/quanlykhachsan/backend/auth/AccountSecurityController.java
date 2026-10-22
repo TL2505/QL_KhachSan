@@ -9,8 +9,11 @@ import quanlykhachsan.backend.utils.*;
 public final class AccountSecurityController implements HttpHandler {
     private static final AccountSecurityService SHARED = new AccountSecurityService();
     private final AccountSecurityService service;
-    public AccountSecurityController() { service=SHARED; }
-    public AccountSecurityController(AccountSecurityService service) { this.service=service; }
+    private final Devices devices;
+    @FunctionalInterface interface Devices { Object read(HttpExchange exchange,int userId) throws Exception; }
+    public AccountSecurityController() { this(SHARED); }
+    public AccountSecurityController(AccountSecurityService service) { this(service, LoginDeviceService::devices); }
+    AccountSecurityController(AccountSecurityService service,Devices devices) { this.service=service;this.devices=devices; }
     public void handle(HttpExchange exchange) throws IOException {
         String path=exchange.getRequestURI().getPath();
         String action=path.replaceFirst("^/api/(?:v1/)?account/?","");
@@ -24,6 +27,7 @@ public final class AccountSecurityController implements HttpHandler {
         try {
             String method=e.getRequestMethod();
             if ("profile".equals(action) && "GET".equals(method)) { ok(e,service.profile(userId));return; }
+            if ("devices".equals(action) && "GET".equals(method)) { service.account(userId);ok(e,devices.read(e,userId));return; }
             if (!"POST".equals(method) && !"PUT".equals(method)) { ApiResponseUtil.write(e,405,ApiResponseUtil.error("Method Not Allowed"));return; }
             JsonObject body=PortalValidation.body(e);
             switch(action) {

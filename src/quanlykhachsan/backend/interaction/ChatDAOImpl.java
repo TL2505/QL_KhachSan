@@ -21,7 +21,7 @@ public class ChatDAOImpl implements ChatDAO {
             ps.setString(3, msg.getContent());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Could not save support message", e);
         }
     }
 
@@ -32,11 +32,11 @@ public class ChatDAOImpl implements ChatDAO {
 
         if (user2Id == 0) {
             // Khách hàng (user1Id) xem hội thoại hỗ trợ:
-            // - Tin nhắn KHÁCH gửi vào hàng đợi (sender=khách, receiver IS NULL)
+            // - Tin nhắn KHÁCH gửi (gồm cả tin trực tiếp từ giao diện cũ)
             // - Tin nhắn NHÂN VIÊN trả lời cho khách (sender=bất kỳ, receiver=khách)
             sql = "SELECT m.*, u.full_name as sender_name FROM messages m " +
                   "JOIN users u ON m.sender_id = u.id " +
-                  "WHERE (m.sender_id = ? AND m.receiver_id IS NULL) " +
+                  "WHERE (m.sender_id = ?) " +
                   "   OR (m.receiver_id = ?) " +
                   "ORDER BY m.created_at ASC";
         } else {
@@ -80,7 +80,7 @@ public class ChatDAOImpl implements ChatDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Could not load support history", e);
         }
         return messages;
     }
@@ -127,7 +127,7 @@ public class ChatDAOImpl implements ChatDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Could not load support inbox", e);
         }
         return inboxes;
     }

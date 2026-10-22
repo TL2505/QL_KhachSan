@@ -7,6 +7,11 @@ import quanlykhachsan.backend.utils.SecurityUtil;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AccountSecurityTest {
+    @Test void verifiedEmailDoesNotSendAnotherVerificationOtp() throws Exception {
+        var f = new Fixture(); f.verified();
+        assertEquals(409, status(() -> f.service.beginEmail(1)));
+        assertEquals(0, f.codes.size());
+    }
     static final String OLD="Old-password-123", NEXT="New-password-456";
     static final String HASH=SecurityUtil.hashPassword(OLD);
     static class Time extends Clock {
@@ -59,6 +64,7 @@ class AccountSecurityTest {
         f.time.advance(61);f.mailFail=true;
         assertEquals(503,status(()->f.service.beginEmail(1)));
         f.service.verifyEmail(1,first.challengeId(),oldCode);
+        f.service.saveProfile(1,"Khách hàng","0900000000","changed@example.invalid");
         f.mailFail=false;f.time.advance(61);var second=f.service.beginEmail(1);
         assertEquals(410,status(()->f.service.verifyEmail(1,first.challengeId(),oldCode)));
         f.time.advance(300);
@@ -76,6 +82,7 @@ class AccountSecurityTest {
         assertEquals(429,status(()->f.service.verifyEmail(1,start.challengeId(),"abcdef")));
         assertEquals(429,status(()->f.service.beginEmail(1)));
         f.time.advance(601);var fresh=f.service.beginEmail(1);f.service.verifyEmail(1,fresh.challengeId(),f.code());
+        f.service.saveProfile(1,"Khách hàng","0900000000","changed@example.invalid");
         for(int i=2;i<10;i++){f.time.advance(61);f.service.beginEmail(1);}
         f.time.advance(61);assertEquals(429,status(()->f.service.beginEmail(1)));
     }

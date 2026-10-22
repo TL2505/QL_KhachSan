@@ -17,7 +17,7 @@ export function createGoogleSignIn({ api, document: doc, window: win, onAuthenti
   let buttonTheme = null;
   const visible = (id, show) => { const el = byId(id); if (el) el.hidden = !show; };
   const message = text => { const el = byId('google-signin-status'); if (el) el.textContent = text; };
-  const requestOptions = { timeoutMs: 45000, retryOnNetworkError: false };
+  const requestOptions = { timeoutMs: 45000, retryOnNetworkError: false, credentials: 'include' };
   const failureMessage = (error, fallback) => ['TimeoutError', 'AbortError'].includes(error?.name)
     ? 'Xác thực mất nhiều thời gian hơn dự kiến. Vui lòng chọn lại Google để nhận mã mới.'
     : error?.message || fallback;
@@ -67,12 +67,17 @@ export function createGoogleSignIn({ api, document: doc, window: win, onAuthenti
     onStatus('Đang xác thực tài khoản Google…', 'success');
     try {
       const data = await api.post('/auth/google/request-otp', { credential: response.credential }, requestOptions);
+      if (data?.token || data?.data?.token) {
+        otpStep(false);
+        onAuthenticated(data);
+        return;
+      }
       if (!data?.challenge_id) throw new Error('Máy chủ chưa tạo được phiên xác thực. Vui lòng thử lại.');
       challengeId = data.challenge_id;
       if (byId('google-otp-email')) byId('google-otp-email').textContent = data.email || 'email Google của bạn';
       otpStep(true);
       if (byId('google-otp-code')) { byId('google-otp-code').value = ''; byId('google-otp-code').focus(); }
-      onStatus('Mã xác thực đã được gửi tới email. Mã có hiệu lực trong 5 phút.', 'success');
+      onStatus('Xác thực lần đầu trên thiết bị này. Mã đã gửi tới email và có hiệu lực trong 5 phút.', 'success');
     } catch (error) { onStatus(failureMessage(error, 'Không thể bắt đầu đăng nhập Google. Vui lòng thử lại.')); }
     finally { setBusy(false); }
   }
@@ -101,7 +106,7 @@ export function createGoogleSignIn({ api, document: doc, window: win, onAuthenti
       renderGoogleButton();
       visible('google-signin-fallback', false);
       visible('google-signin-button', true);
-      message('Dùng tài khoản Google để đăng nhập hoặc tạo tài khoản thành viên mới.');
+      message('Đăng nhập hoặc đăng ký bằng Google. Chỉ cần OTP khi xác thực lần đầu trên thiết bị.');
     } catch (error) {
       message(error.message || 'Không tải được cấu hình Google. Vui lòng thử lại.');
       visible('google-signin-retry', true);

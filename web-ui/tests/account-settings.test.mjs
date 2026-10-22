@@ -7,12 +7,20 @@ import { renderAccountSettings } from '../public/js/shared/account-settings.js';
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const account = verified => ({userId:1, username:'synthetic', fullName:'Nguyễn Ánh',phone:'0900000000',email:'guest@example.invalid',emailVerified:verified,mailConfigured:true});
 const challenge = purpose => ({challengeId:`synthetic-${purpose}-challenge`,maskedEmail:'g***@example.invalid',expiresAt:new Date(Date.now()+300000).toISOString(),resendAt:new Date(Date.now()+60000).toISOString()});
+test('device inventory escapes labels and verified email hides repeat verification',async t=>{
+    const {$}=await setup(t,'ADMIN',true,async path=>path === '/account/devices'
+        ? [{browser:'<img src=x onerror=alert(1)>',platform:'Windows',current:true,lastLoginAt:'2026-10-22T01:00:00Z',lastSeenAt:'2026-10-22T01:00:00Z'}]
+        : account(true));
+    assert.equal($('#account-devices-list img'),null);
+    assert.match($('#account-devices-list').textContent,/<img src=x/);
+    assert.equal($('#account-email-send').hidden,true);
+});
 async function setup(t, role='ADMIN', verified=false, get, options={}) {
     const dom=new JSDOM('<main></main>',{url:'http://localhost'});
     const old={window:globalThis.window,document:globalThis.document,storage:globalThis.localStorage,get:api.get,post:api.post};
     globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.localStorage=dom.window.localStorage;
     setAuthSession({token:'synthetic-session',username:'synthetic',role});
-    api.get=get||(async()=>account(verified));
+    api.get=get||(async path=>path === '/account/devices' ? [{id:1,browser:'Chrome',platform:'Windows',ip:'127.0.0.1',current:true,lastLoginAt:'2026-10-22T01:00:00Z',lastSeenAt:'2026-10-22T01:00:00Z'}] : account(verified));
     const calls=[];api.post=async(path,body,options)=>{calls.push({path,body,options});return path.endsWith('request')?challenge(path.includes('email')?'email':'password'):account(true);};
     t.after(()=>{api.get=old.get;api.post=old.post;dom.window.close();globalThis.window=old.window;globalThis.document=old.document;globalThis.localStorage=old.storage;});
     const root=document.querySelector('main');await renderAccountSettings(root,getAuthSession(),{showIdentity:role==='CUSTOMER',...options});
@@ -24,6 +32,8 @@ async function setup(t, role='ADMIN', verified=false, get, options={}) {
 for(const role of ['ADMIN','STAFF','CUSTOMER'])test(`${role} shares email verification and password UX`,async t=>{
     const {$,submit,calls}=await setup(t,role);
     assert.equal($('.account-settings-view h1').textContent,'Hồ sơ & bảo mật');
+    assert.match($('#account-devices-list').textContent,/Chrome · Windows/);
+    assert.match($('#account-devices-list').textContent,/Thiết bị này/);
     assert.equal($('#account-password-fields').disabled,true);
     assert.equal(!!$('.account-identity'),role==='CUSTOMER');
     $('#account-email-send').click();await settle();

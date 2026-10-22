@@ -15,7 +15,7 @@ public final class VoucherService {
             Quote quote,boolean redeeming)throws SQLException {
         if(code==null || !code.matches("[A-Za-z0-9_-]{1,50}"))throw new IllegalArgumentException("Invalid voucher code");
         if(redeeming && c.getAutoCommit())throw new IllegalStateException("Redemption requires a transaction");
-        try(PreparedStatement q=c.prepareStatement("SELECT id,discount_type,discount_value,max_discount,minimum_spend,max_uses_per_user,condition_type,condition_value FROM promotions WHERE code=? AND status='active' AND CURRENT_TIMESTAMP BETWEEN start_date AND end_date"+(redeeming?" FOR UPDATE":""))) {
+        try(PreparedStatement q=c.prepareStatement("SELECT id,discount_type,discount_value,max_discount,minimum_spend,max_uses_per_user,condition_type,condition_value FROM promotions WHERE code=? AND status='active' AND applicable_scope IN ('ROOM','ALL') AND CURRENT_TIMESTAMP BETWEEN start_date AND end_date"+(redeeming?" FOR UPDATE":""))) {
             q.setString(1,code);try(ResultSet r=q.executeQuery()) {
                 if(!r.next())throw new IllegalArgumentException("Voucher is invalid or expired");
                 int id=r.getInt(1);BigDecimal cap=r.getBigDecimal(4),minimum=r.getBigDecimal(5);int limit=r.getInt(6);

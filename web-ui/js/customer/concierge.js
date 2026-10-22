@@ -1,4 +1,4 @@
-import { renderBookingAction } from '../shared/booking-action.js';
+import { renderBookingAction, customerBookingUrl } from '../shared/booking-action.js';
 import { api } from "../../api.js";
 import { resolveServiceSchedule } from "./service-order.js";
 
@@ -41,33 +41,7 @@ const VOUCHERS = [
     tag: "Spa & Sức khỏe",
     badgeCls: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30"
   },
-  {
-    code: "MEMORIAL_ROOM25",
-    title: "Tri Ân Nghỉ Dưỡng Trở Lại 25%",
-    discount: "Giảm 25% Tiền Phòng Kỳ Nghỉ Kế Tiếp",
-    desc: "Mã tri ân sau trả phòng áp dụng cho lần đặt phòng tiếp theo hoặc dịp sinh nhật.",
-    minSpend: "Từ 1.500.000 đ",
-    tag: "Tri ân",
-    badgeCls: "bg-purple-500/20 text-purple-300 border-purple-500/30"
-  },
-  {
-    code: "LUXURY2026",
-    title: "Ưu Đãi Nghỉ Dưỡng Thượng Lưu",
-    discount: "Giảm 10% Tổng Hóa Đơn Phòng",
-    desc: "Áp dụng cho mọi hạng phòng khi đặt trực tuyến. Hạn dùng: 31/12/2026.",
-    minSpend: "Không giới hạn",
-    tag: "Phổ biến",
-    badgeCls: "bg-amber-500/20 customer-accent border-amber-500/30"
-  },
-  {
-    code: "VIP5STAR",
-    title: "Đặc Quyền Thành Viên Gold & VIP",
-    discount: "Giảm 15% Tổng Kỳ Nghỉ",
-    desc: "Áp dụng cho khách hàng hạng thẻ Gold và VIP tại Aurelia Grand Palace.",
-    minSpend: "Từ 3.000.000 đ",
-    tag: "Đặc quyền VIP",
-    badgeCls: "bg-purple-500/20 text-purple-300 border-purple-500/30"
-  }
+
 ];
 
 export async function renderConcierge(container, session) {
@@ -86,6 +60,16 @@ export async function renderConcierge(container, session) {
   if (!container) return;
   session = session || {};
   const customerId = session.customerId || session.userId || session.id || null;
+
+  let voucherLoadFailed = false;
+  const roomVouchers = await api.get('/customer-portal/vouchers').catch(() => { voucherLoadFailed = true; return []; });
+  const amount = value => Number(value).toLocaleString('vi-VN') + ' đ';
+  const vouchers = [...VOUCHERS, ...(Array.isArray(roomVouchers) ? roomVouchers : []).map(v => ({
+    code: v.code, booking: true, title: v.name,
+    discount: 'Giảm ' + (v.discount_type === 'percentage' ? v.discount_value + '%' : amount(v.discount_value)) + ' tiền phòng · tối đa ' + amount(v.max_discount),
+    desc: 'Điều kiện hạng phòng, số đêm, hạng thành viên và lượt sử dụng được kiểm tra khi chọn phòng.',
+    minSpend: 'Từ ' + amount(v.minimum_spend), tag: 'Tiền phòng', badgeCls: 'badge-outline'
+  }))];
 
   // 1. Check guest stay status via customer bookings list
   let activeStay = null;
@@ -217,30 +201,38 @@ export async function renderConcierge(container, session) {
             <p class="text-xs customer-muted">Sao chép mã ưu đãi hoặc áp dụng trực tiếp khi đặt phòng / gọi dịch vụ phòng</p>
           </div>
         </div>
-        ${renderBookingAction({ label: 'Đặt phòng dùng voucher' })}
+        <form id="booking-voucher-form" class="flex flex-col sm:flex-row gap-2">
+          <select id="booking-voucher-select" class="select select-sm" aria-label="Chọn voucher đặt phòng" required>
+            <option value="">Chọn voucher tiền phòng</option>
+            ${vouchers.filter(v => v.booking).map(v => `<option value="${escapeHtml(v.code)}">${escapeHtml(v.code)} · ${escapeHtml(v.discount)}</option>`).join('')}
+          </select>
+          <button type="submit" class="btn portal-primary customer-booking-action" ${vouchers.some(v => v.booking) ? '' : 'disabled'}>Đặt phòng dùng voucher</button>
+        </form>
       </div>
 
+      ${voucherLoadFailed ? '<p role="status">Chưa tải được voucher tiền phòng. Vui lòng tải lại trang.</p>' : !vouchers.some(v => v.booking) ? '<p role="status">Hiện chưa có voucher tiền phòng đang hoạt động.</p>' : ''}
       <!-- Voucher Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        ${VOUCHERS.map(v => `
+        ${vouchers.map(v => `
           <div class="customer-voucher-card card p-4 rounded-2xl customer-secondary-surface border customer-border hover:border-amber-500/40 transition-all flex flex-col justify-between relative overflow-hidden group">
             <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-amber-500/5 rounded-full pointer-events-none group-hover:scale-150 transition-transform"></div>
             <div>
               <div class="flex items-center justify-between mb-2">
-                <span class="customer-voucher-tag badge badge-outline text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${v.badgeCls}">${v.tag}</span>
-                <span class="text-xs customer-muted">${v.minSpend}</span>
+                <span class="customer-voucher-tag badge badge-outline text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${v.badgeCls}">${escapeHtml(v.tag)}</span>
+                <span class="text-xs customer-muted">${escapeHtml(v.minSpend)}</span>
               </div>
-              <h3 class="text-sm font-bold customer-text mb-1">${v.title}</h3>
-              <p class="text-xs customer-accent font-semibold mb-1">${v.discount}</p>
-              <p class="text-[11px] customer-muted leading-relaxed mb-4">${v.desc}</p>
+              <h3 class="text-sm font-bold customer-text mb-1">${escapeHtml(v.title)}</h3>
+              <p class="text-xs customer-accent font-semibold mb-1">${escapeHtml(v.discount)}</p>
+              <p class="text-[11px] customer-muted leading-relaxed mb-4">${escapeHtml(v.desc)}</p>
             </div>
             <div class="flex items-center justify-between pt-3 border-t customer-border gap-2">
-              <span class="font-mono text-xs font-bold customer-accent bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg select-all">${v.code}</span>
-              <button type="button" class="btn-copy-code px-3 py-1.5 rounded-lg customer-secondary-surface hover:bg-amber-400 hover:text-slate-950 customer-text text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer" data-code="${v.code}">
+              <span class="font-mono text-xs font-bold customer-accent bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg select-all">${escapeHtml(v.code)}</span>
+              <button type="button" class="btn-copy-code px-3 py-1.5 rounded-lg customer-secondary-surface hover:bg-amber-400 hover:text-slate-950 customer-text text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer" data-code="${escapeHtml(v.code)}">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 <span>Sao chép mã</span>
               </button>
             </div>
+            ${v.booking ? `<div class="mt-3">${renderBookingAction({ label: 'Dùng mã đặt phòng', voucherCode: v.code })}</div>` : ''}
           </div>
         `).join('')}
       </div>
@@ -487,6 +479,12 @@ export async function renderConcierge(container, session) {
         console.warn('Không thể sao chép tự động:', err);
       }
     });
+  });
+
+  document.getElementById('booking-voucher-form')?.addEventListener('submit', event => {
+    event.preventDefault();
+    const code = document.getElementById('booking-voucher-select').value;
+    if (code) window.location.assign(customerBookingUrl(code));
   });
 
   // 2. Category Filter Buttons
