@@ -42,6 +42,7 @@ public class UpdateDbUtility {
     /** Runs the idempotent schema migration on a caller-owned connection. */
     public static void migrate(Connection conn) throws SQLException {
         if (conn == null || conn.isClosed()) throw new SQLException("An open migration connection is required");
+        migrateSupportQueue(conn);
 
             // ── TASK tiền kỳ: đảm bảo các cột cũ đã được thêm ──────────────
             ensureColumn(conn, "bookings", "customer_type",
@@ -265,6 +266,20 @@ public class UpdateDbUtility {
             ensureIndex(conn, "reviews", "uq_booking_review", "UNIQUE INDEX uq_booking_review (booking_id)");
         } catch (SQLException ex) {
             throw new SQLException("Phase 2.1 migration failed", ex);
+        }
+    }
+
+    /** A NULL recipient denotes the shared reception queue, while direct replies retain their FK. */
+    public static void migrateSupportQueue(Connection conn) throws SQLException {
+        boolean required;
+        try (ResultSet column = conn.getMetaData().getColumns(conn.getCatalog(), null, "messages", "receiver_id")) {
+            if (!column.next()) return;
+            required = column.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls;
+        }
+        if (required) {
+            try (Statement statement = conn.createStatement()) {
+                statement.executeUpdate("ALTER TABLE messages MODIFY COLUMN receiver_id INT NULL DEFAULT NULL");
+            }
         }
     }
 
