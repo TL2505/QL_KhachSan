@@ -86,7 +86,20 @@ final class AdminBookingStatusService {
     }
 
     private static Result confirm(Connection connection, BookingRow booking) throws SQLException {
-        return new Result(409,"Confirmation requires a verified bank payment or an authorized cash/POS folio collection");
+        if (!"pending".equals(booking.status())) {
+            return new Result(409, "Only pending bookings can be confirmed");
+        }
+        if (!booking.checkIn().after(Timestamp.from(Instant.now()))) {
+            return new Result(409, "The check-in time has passed; handle this booking at reception");
+        }
+        try (PreparedStatement update = connection.prepareStatement(
+                "UPDATE bookings SET status='confirmed' WHERE id=? AND status='pending'")) {
+            update.setInt(1, booking.id());
+            if (update.executeUpdate() != 1) {
+                return new Result(409, "Booking was updated; please refresh and try again");
+            }
+        }
+        return new Result(200, "Booking confirmed");
     }
 
     private static Result cancel(Connection connection, BookingRow booking) throws SQLException {
@@ -104,6 +117,7 @@ final class AdminBookingStatusService {
             update.setInt(1, booking.id());
             if (update.executeUpdate() != 1) return new Result(409, "Đơn đặt phòng vừa được cập nhật, vui lòng tải lại");
         }
+        voidUnpaidFolioBalances(connection, booking.id());
         // Legacy reservations reserve the room immediately.  Release only that
         // exact operational state; maintenance and other staff states are kept.
         try (PreparedStatement release = connection.prepareStatement(
@@ -119,10 +133,40 @@ final class AdminBookingStatusService {
             invoice.setInt(1, bookingId);
             try (ResultSet rows = invoice.executeQuery()) { if (rows.next()) return true; }
         }
-        try (PreparedStatement folio = connection.prepareStatement(
-                "SELECT 1 FROM folios WHERE booking_id=? AND (status IN ('settled','closed') OR balance<>0) LIMIT 1")) {
-            folio.setInt(1, bookingId);
-            try (ResultSet rows = folio.executeQuery()) { return rows.next(); }
+        try (PreparedStatement payment = connection.prepareStatement(
+                "SELECT 1 FROM folio_transactions t JOIN folios f ON f.id=t.folio_id "
+              + "WHERE f.booking_id=? AND t.transaction_type='credit' AND t.charge_type='payment' LIMIT 1")) {
+            payment.setInt(1, bookingId);
+            try (ResultSet rows = payment.executeQuery()) { return rows.next(); }
+        }
+    }
+
+    /** Booking charges are expected on a new reservation, not evidence of payment. */
+    private static void voidUnpaidFolioBalances(Connection connection, int bookingId) throws SQLException {
+        try (PreparedStatement query = connection.prepareStatement(
+                "SELECT id,balance FROM folios WHERE booking_id=? FOR UPDATE")) {
+            query.setInt(1, bookingId);
+            try (ResultSet rows = query.executeQuery()) {
+                while (rows.next()) {
+                    long folioId = rows.getLong("id");
+                    java.math.BigDecimal balance = rows.getBigDecimal("balance");
+                    if (balance.signum() > 0) {
+                        try (PreparedStatement reversal = connection.prepareStatement(
+                                "INSERT INTO folio_transactions(folio_id,transaction_type,charge_type,description,amount,business_date,reference_id) "
+                              + "SELECT ?,'credit','credit_adjustment','Cancelled unpaid booking',?,business_date,? FROM hotel_business_state WHERE id=1")) {
+                            reversal.setLong(1, folioId);
+                            reversal.setBigDecimal(2, balance);
+                            reversal.setString(3, "CANCELLED-BOOKING-" + bookingId + "-FOLIO-" + folioId);
+                            if (reversal.executeUpdate() != 1) throw new SQLException("Hotel business date missing");
+                        }
+                    }
+                }
+            }
+        }
+        try (PreparedStatement closeFolios = connection.prepareStatement(
+                "UPDATE folios SET balance=0,status='closed' WHERE booking_id=?")) {
+            closeFolios.setInt(1, bookingId);
+            closeFolios.executeUpdate();
         }
     }
 
