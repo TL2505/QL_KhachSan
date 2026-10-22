@@ -34,7 +34,6 @@ services:
       DB_PASSWORD_FILE: /run/secrets/db_password
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       AES_VAULT_KEY_FILE: /run/secrets/aes_vault_key
-      HMAC_IDENTITY_KEY: ${HMAC_IDENTITY_KEY:-aurelia_pms_secret_identity_key_2026_prod_vault_guard}
       HMAC_IDENTITY_KEY_FILE: /run/secrets/hmac_identity_key
       AI_SERVICE_URL: https://ai-service:8082
       AI_TLS_KEYSTORE_FILE: /run/secrets/ai_client_identity
@@ -43,8 +42,9 @@ services:
       AI_FACE_MATCH_THRESHOLD: ${AI_FACE_MATCH_THRESHOLD:-0.68}
       AI_GUEST_ENABLED: ${AI_GUEST_ENABLED:-false}
       TRUSTED_PROXY_IPS: ${PMS_PROXY_IP:?Supply the internal Nginx address}
+      HOTEL_MEDIA_DIR: /app/.data/media
     secrets: [db_password, jwt_secret, aes_vault_key, hmac_identity_key, ai_client_identity, ai_client_trust, ai_tls_password, ai_ca]
-    volumes: [pms_invoices:/app/invoices, pms_ai_settings:/app/.data/ai]
+    volumes: [pms_invoices:/app/invoices, pms_ai_settings:/app/.data/ai, pms_room_media:/app/.data/media]
     tmpfs: [/tmp:size=64m]
     read_only: true
     security_opt: [no-new-privileges:true]
@@ -114,6 +114,7 @@ volumes:
     name: ${PMS_DB_VOLUME:?Supply the approved persistent database volume name}
   pms_invoices:
   pms_ai_settings:
+  pms_room_media:
 secrets:
   db_root_password: {file: '${PMS_DB_ROOT_PASSWORD_FILE:?Required secret file}'}
   db_password: {file: '${PMS_DB_PASSWORD_FILE:?Required secret file}'}

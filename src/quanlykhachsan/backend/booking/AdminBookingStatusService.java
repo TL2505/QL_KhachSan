@@ -63,11 +63,24 @@ final class AdminBookingStatusService {
                 BookingRow booking = lockBooking(connection, bookingId);
                 if (booking == null) { connection.rollback(); return new Result(404, "Không tìm thấy đơn đặt phòng"); }
                 if (!"confirmed".equals(booking.status())) { connection.rollback(); return new Result(409, "Chỉ đơn đã xác nhận mới được nhận phòng"); }
-                java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
-                if (today.isBefore(booking.checkIn().toLocalDateTime().toLocalDate()) || !today.isBefore(booking.checkOut().toLocalDateTime().toLocalDate())) {
-                    connection.rollback(); return new Result(409, "Chưa đến ngày nhận phòng hoặc đơn đã quá ngày lưu trú");
+                java.time.LocalDateTime now=java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+                if (now.isBefore(booking.checkIn().toLocalDateTime()) || !now.isBefore(booking.checkOut().toLocalDateTime())) {
+                    connection.rollback(); return new Result(409, "Chưa đến giờ nhận phòng hoặc đơn đã quá giờ lưu trú");
                 }
-                try (PreparedStatement updateBooking = connection.prepareStatement("UPDATE bookings SET status='checked_in' WHERE id=? AND status='confirmed'")) {
+                try(PreparedStatement roomCheck=connection.prepareStatement(
+                        "SELECT r.status,r.ready_not_before,EXISTS(SELECT 1 FROM cleaning_tasks t WHERE t.room_id=r.id AND t.status IN ('pending','in_progress')) AS active_task FROM rooms r WHERE r.id=? FOR UPDATE")) {
+                    roomCheck.setInt(1,booking.roomId());
+                    try(ResultSet room=roomCheck.executeQuery()) {
+                        if(!room.next() || !("reserved".equals(room.getString("status")) || "vacant_clean".equals(room.getString("status")))) {
+                            connection.rollback();return new Result(409,"Phòng chưa ở trạng thái sạch và sẵn sàng");
+                        }
+                        Timestamp ready=room.getTimestamp("ready_not_before");
+                        if((ready!=null&&ready.toLocalDateTime().isAfter(now))||room.getBoolean("active_task")) {
+                            connection.rollback();return new Result(409,"Phòng cần hoàn tất thời gian đệm và công việc dọn phòng trước khi nhận khách");
+                        }
+                    }
+                }
+                try (PreparedStatement updateBooking = connection.prepareStatement("UPDATE bookings SET status='checked_in',check_in_actual=CURRENT_TIMESTAMP(6) WHERE id=? AND status='confirmed'")) {
                     updateBooking.setInt(1, booking.id());
                     if (updateBooking.executeUpdate() != 1) { connection.rollback(); return new Result(409, "Đơn đặt phòng vừa được cập nhật, vui lòng tải lại"); }
                 }
@@ -75,6 +88,7 @@ final class AdminBookingStatusService {
                     updateRoom.setInt(1, booking.roomId());
                     if (updateRoom.executeUpdate() != 1) { connection.rollback(); return new Result(409, "Trạng thái phòng không phù hợp để nhận phòng"); }
                 }
+                quanlykhachsan.backend.notification.LifecycleNotifications.booking(connection,booking.id(),"checkin_welcome","checkin:"+booking.id(),"Nhận phòng thành công","Chào mừng bạn đến Aurelia. Chúc bạn có kỳ lưu trú thoải mái.");
                 connection.commit();
                 return new Result(200, "Nhận phòng thành công");
             } catch (Exception error) {

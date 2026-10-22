@@ -198,19 +198,39 @@ export async function renderCheckout(container, session) {
         const qrImage = document.getElementById("qr-image");
         const btnConfirm = document.getElementById("btn-confirm-pay");
         
-        const updateQRCode = () => {
+        let transferPaid=false,folioId=null,pollTimer;
+        const qrStatus=document.createElement('p');qrStatus.className='alert';qrStatus.setAttribute('role','status');qrCodeSection.append(qrStatus);
+        async function findFolio(){const response=await api.get(`/folios/booking/${currentProcessBooking.id}`);const folios=Array.isArray(response)?response:response.data;const f=folios?.find(f=>f.id===folioId&&Number(f.balance)>0)||folios?.find(f=>Number(f.balance)>0)||folios?.find(f=>f.folio_type==='master')||folios?.[0];if(!f)throw new Error('Không tìm thấy folio');folioId=f.id;return f;}
+        const updateQRCode = async () => {
+            clearTimeout(pollTimer);transferPaid=false;btnConfirm.disabled=false;payAmountInput.readOnly=false;
             if (payMethodSelect.value === "Chuyển khoản") {
-                const amount = payAmountInput.value || 0;
-                const bookingId = currentProcessBooking ? currentProcessBooking.id : '';
-                qrImage.src = `https://img.vietqr.io/image/970436-1012345678-compact2.png?amount=${amount}&addInfo=Thanh toan don ${bookingId}&accountName=QUAN LY KHACH SAN`;
                 qrCodeSection.style.display = "block";
+                btnConfirm.disabled=true;payAmountInput.readOnly=true;qrImage.removeAttribute('src');qrStatus.textContent='Đang lấy QR từ máy chủ…';
+                try{
+                    const f=await findFolio();if(!btnConfirm.isConnected||payMethodSelect.value!=='Chuyển khoản')return;
+                    payAmountInput.value=f.balance;
+                    const state=await api.get(`/folios/${folioId}/payment-status`);
+                    if(state.payment_status==='PAID'){transferPaid=true;btnConfirm.disabled=false;qrStatus.textContent='Đã thanh toán. Có thể trả phòng.';return;}
+                    const qr=await api.get(`/folios/${folioId}/payment-qr`,{timeoutMs:20000});
+                    if(!btnConfirm.isConnected||payMethodSelect.value!=='Chuyển khoản')return;
+                    qrImage.src=`data:image/png;base64,${qr.qr_image_base64}`;qrStatus.textContent=`${qr.account_holder} · ${qr.account_number} · ${qr.reference_code}. Đang chờ ngân hàng xác nhận.`;
+                    const poll=async()=>{
+                        if(!btnConfirm.isConnected||!modal.classList.contains('active')||payMethodSelect.value!=='Chuyển khoản')return;
+                        try{const p=await api.get(`/folios/${folioId}/payment-status`);
+                            if(!btnConfirm.isConnected||payMethodSelect.value!=='Chuyển khoản')return;
+                            transferPaid=p.payment_status==='PAID';btnConfirm.disabled=!transferPaid;
+                            qrStatus.textContent=transferPaid?'Đã thanh toán. Có thể trả phòng.':p.payment_status==='PARTIAL'?`Thanh toán thiếu. Còn ${p.remaining_amount} đ.`:p.payment_status==='RECONCILIATION_ERROR'?'Lỗi đối soát. Thanh toán chưa hoàn tất.':'Đang chờ xác nhận từ ngân hàng.';
+                        }catch{qrStatus.textContent='Chưa lấy được xác nhận. Vui lòng kiểm tra kết nối.';}
+                        if(!transferPaid)pollTimer=setTimeout(poll,3000);
+                    };pollTimer=setTimeout(poll,2500);
+                }catch(error){qrStatus.textContent=error.message||'Chưa thể tạo QR. Kiểm tra cấu hình cổng thanh toán.';}
             } else {
                 qrCodeSection.style.display = "none";
             }
         };
 
         payMethodSelect.addEventListener("change", updateQRCode);
-        payAmountInput.addEventListener("input", updateQRCode);
+        findFolio().then(f=>{if(btnConfirm.isConnected&&payMethodSelect.value!=='Chuyển khoản')payAmountInput.value=f.balance;}).catch(error=>{btnConfirm.disabled=true;qrCodeSection.style.display='block';qrStatus.textContent=error.message;});
         
         btnConfirm.addEventListener('click', async () => {
             if (!currentProcessBooking) return;
@@ -234,7 +254,23 @@ export async function renderCheckout(container, session) {
                 btnConfirm.disabled = true;
                 btnConfirm.textContent = "Đang xử lý...";
                 
-                await api.post("/payments", payload);
+                if(method==='Chuyển khoản'&&!transferPaid)throw new Error('Ngân hàng chưa xác nhận thanh toán.');
+                if(!folioId)await findFolio();
+                const payment={amount:method==='Chuyển khoản'?0:payload.amount,payment_method:method==='Credit Card'?'POS':'cash',checkout:true};
+                const signature=JSON.stringify(payment);const attempt=currentProcessBooking.collectionAttempt;
+                const key=attempt?.signature===signature?attempt.key:crypto.randomUUID();currentProcessBooking.collectionAttempt={signature,key};
+                const result=await api.post(`/folios/${folioId}/pay`,payment,{headers:{'Idempotency-Key':key},timeoutMs:15000,retryOnNetworkError:false});
+                clearTimeout(pollTimer);
+                if(result?.checkout_required_payment){
+                    currentProcessBooking.collectionAttempt=null;
+                    let due=Number(result.balance||0);
+                    if(due<=0){folioId=null;try{const next=await findFolio();due=Number(next.balance||0);}catch{due=0;}}
+                    if(method==='Chuyển khoản'){transferPaid=false;await updateQRCode();}
+                    else payAmountInput.value=due.toFixed(2);
+                    const message=result.checked_out?'Phòng đã được trả.':'Đã ghi nhận khoản thu; chưa thể hoàn tất trả phòng.';
+                    alert(`${message} Còn ${Number(result.booking_balance||due).toLocaleString('vi-VN')} đ trên các folio. Số tiền kế tiếp là folio ${due.toLocaleString('vi-VN')} đ.`);
+                    return;
+                }
                 
                 // Handle success
                 document.getElementById("modal-checkout-form").style.display = 'none';

@@ -344,13 +344,13 @@
   * **Module:** Production Client Build & Assembly
   * **Assignee:** Dev C
   * **Dependencies (DAG):** Toàn bộ các task Dev C trước đó
-  * **Target Deliverables:** `src/quanlykhachsan/frontend/view/SplashScreen.java`, `pom.xml` (Cấu hình Maven Shade & JPackage), `build_desktop_dist.bat`.
+  * **Target Deliverables:** `src/quanlykhachsan/frontend/view/SplashScreen.java`, `pom.xml` (Cấu hình Maven Shade & JPackage), `scripts/build-desktop.ps1`.
   * **Definition of Done:**
     - Màn hình khởi động (Splash Screen) hiển thị trong $< 300\text{ms}$ với thanh tiến trình tải mượt mà và nạp trước Look and Feel FlatLaf Dark theme.
     - Đóng gói bộ cài tự chạy độc lập (Self-contained distribution) cho Windows: Tích hợp sẵn JRE 17 rút gọn, người dùng không cần cài đặt Java trên máy trạm.
     - Đo kiểm mức chiếm dụng bộ nhớ của client Desktop: RAM ở chế độ nghỉ (Idle) strictly $< 180\text{MB}$; RAM ở chế độ cao điểm khi mở lưới 200 phòng và camera strictly $< 350\text{MB}$.
     - Thời gian khởi động lạnh (Cold start) từ lúc bấm icon đến khi mở form đăng nhập hoàn tất trong $< 2.0\text{s}$.
-  * **Verification Method:** Chạy script `build_desktop_dist.bat`; kích hoạt ứng dụng trên máy trạm Windows sạch; đo thời gian khởi động và giám sát RAM qua Task Manager.
+  * **Verification Method:** Chạy script `scripts/build-desktop.ps1`; kích hoạt ứng dụng trên máy trạm Windows sạch; đo thời gian khởi động và giám sát RAM qua Task Manager.
 
 #### Dev D — DevOps, QA Automation & AI Subsystem
 * **TASK-D12.1: 200 Concurrent Users Stress, Soak & Connection Leak Test (JMeter)**

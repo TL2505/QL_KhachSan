@@ -203,16 +203,14 @@ public class RoomDAOImpl implements RoomDAO {
     public java.util.List<Room> findAvailableRooms(java.util.Date checkIn, java.util.Date checkOut) {
         java.util.List<Room> list = new java.util.ArrayList<>();
         String query = "SELECT r.*, t.name AS type_name FROM rooms r JOIN room_types t ON t.id=r.room_type_id " +
-                       "WHERE r.status <> 'out_of_order' " +
-                       "AND r.id NOT IN (" +
-                       "  SELECT b.room_id FROM bookings b " +
-                       "  WHERE b.status IN ('confirmed', 'checked_in', 'pending') " +
-                       "  AND NOT (b.check_out_date <= ? OR b.check_in_date >= ?)" +
-                       ")";
+                       "WHERE r.status NOT IN ('out_of_order','out_of_service') " +
+                       "AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.room_id=r.id " +
+                       "AND b.status IN ('confirmed','checked_in','pending','checked_out') " +
+                       "AND b.check_in_date<DATE_ADD(?, INTERVAL r.buffer_daily MINUTE) AND b.room_release_at>?)";
         try (Connection con = DBconn.getConnection(); 
              PreparedStatement ps = con.prepareStatement(query)) {
-            ps.setTimestamp(1, new java.sql.Timestamp(checkIn.getTime()));
-            ps.setTimestamp(2, new java.sql.Timestamp(checkOut.getTime()));
+            ps.setTimestamp(1, new java.sql.Timestamp(checkOut.getTime()));
+            ps.setTimestamp(2, new java.sql.Timestamp(checkIn.getTime()));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Room r = new Room();

@@ -1,5 +1,7 @@
 import { api } from "../../api.js";
 
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+
 export async function renderRooms(container, session) {
     container.innerHTML = `
         <div class="page-header flex-row justify-between">
@@ -71,7 +73,7 @@ export async function renderRooms(container, session) {
             tr.innerHTML = `
                 <td>${r.id}</td>
                 <td><strong>Phòng ${r.roomNumber}</strong></td>
-                <td>${r.typeName || 'Standard'}</td>
+                <td>${escapeHtml(r.typeName || 'Standard')}</td>
                 <td>${Number(r.price).toLocaleString('vi-VN')} đ</td>
                 <td><span class="room-badge badge-${r.status}">${r.status}</span></td>
                 <td>
@@ -115,7 +117,10 @@ export async function renderRooms(container, session) {
 
     loadRooms();
 
-    document.getElementById("btn-add-room-admin").addEventListener("click", () => {
+    document.getElementById("btn-add-room-admin").addEventListener("click", async () => {
+        let roomTypes = [];
+        try { roomTypes = await api.get('/admin/catalog/room-types'); }
+        catch (error) { window.showCustomAlert?.('Không tải được danh sách hạng phòng: ' + error.message); return; }
         const modal = document.getElementById("global-modal");
         const content = document.getElementById("global-modal-content");
         modal.classList.add("active");
@@ -133,10 +138,7 @@ export async function renderRooms(container, session) {
                 <div class="form-group">
                     <label class="form-label">Loại phòng (Hạng phòng) *</label>
                     <select class="form-input" id="ar-type" required>
-                        <option value="1">Standard (Standard Room)</option>
-                        <option value="2">Superior (Superior Room)</option>
-                        <option value="3">Deluxe (Deluxe Room)</option>
-                        <option value="4">Suite (Luxury Suite)</option>
+                        ${roomTypes.map(type => `<option value="${Number(type.id)}">${escapeHtml(type.name)}</option>`).join('')}
                     </select>
                 </div>
                 <div class="form-group">
@@ -153,11 +155,11 @@ export async function renderRooms(container, session) {
         document.getElementById("form-add-room-admin-action").addEventListener("submit", async (e) => {
             e.preventDefault();
             const roomNumber = document.getElementById("ar-number").value.trim();
-            const roomTypeId = document.getElementById("ar-type").value;
-            const price = document.getElementById("ar-price").value;
+            const roomTypeId = Number(document.getElementById("ar-type").value);
+            const price = Number(document.getElementById("ar-price").value);
 
             try {
-                await api.post("/rooms", { roomNumber, roomTypeId, price, status: "available" });
+                await api.post("/rooms", { roomNumber, roomTypeId, price, status: "vacant_clean" });
                 window.showCustomAlert("Đã tạo phòng mới thành công!");
                 closeModal("global-modal");
                 loadRooms();

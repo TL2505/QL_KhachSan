@@ -1,4 +1,5 @@
 import {api} from './booking-api.js';
+import {paymentState,paymentLabel} from './shared/payment-state.js';
 
 export function paymentFlow() {
   let controller, timer, countdown, active = 0;
@@ -22,10 +23,11 @@ export function paymentFlow() {
       const copy = document.createElement('button'); copy.type = 'button'; copy.textContent = 'Sao chép số tài khoản';
       copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(qr.account_number); copy.textContent='Đã sao chép'; } catch { status.textContent='Vui lòng sao chép số tài khoản được hiển thị bên trên.'; } });
       actions.append(download,copy); details.append(amount,account,reference,actions);
-      const until = Date.now() + Math.min(300, qr.expires_in_seconds ?? 300)*1000;
+      const until = Date.now() + Math.min(900, qr.expires_in_seconds ?? 300)*1000;
+      let latest = 'Đang chờ xác nhận thanh toán';
       countdown = setInterval(() => {
         if (current !== active) return;
-        const remaining = Math.max(0,Math.ceil((until-Date.now())/1000)); status.textContent=`Đang chờ xác nhận thanh toán · ${remaining}s`;
+        const remaining = Math.max(0,Math.ceil((until-Date.now())/1000)); status.textContent=`${latest} · ${remaining}s`;
         if (!remaining) {clearTimeout(timer);clearInterval(countdown);status.textContent='Mã đã hết thời gian hiển thị. Vui lòng liên hệ lễ tân để xác minh thanh toán.';}
       },1000);
       async function poll() {
@@ -33,7 +35,8 @@ export function paymentFlow() {
         try {
           const payment = await api(`/folios/${folio.id}/payment-status`,{token,signal:controller.signal});
           if (current !== active) return;
-          if(payment.status === 'settled') {stop();settled(payment);return;}
+          latest=paymentLabel(payment)+(paymentState(payment)==='PARTIAL'?` · Còn thiếu ${Number(payment.remaining_amount).toLocaleString('vi-VN')} đ`:'');
+          if(paymentState(payment) === 'PAID') {stop();settled(payment);return;}
         } catch(error) {
           if(current !== active) return;
           if(error.status === 401 || error.status === 403) {clearInterval(countdown);status.textContent='Vui lòng liên hệ lễ tân để xác minh thanh toán.';return;}

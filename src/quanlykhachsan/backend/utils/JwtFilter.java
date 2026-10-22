@@ -27,7 +27,9 @@ public class JwtFilter extends Filter {
         "/api/v1/auth/guest-otp/request",
         "/api/v1/auth/guest-otp/verify",
         "/api/v1/reviews/public",
-        "/reviews/public"
+        "/reviews/public",
+        "/api/v1/public/room-types",
+        "/api/v1/public/landing-content"
     );
 
     @Override

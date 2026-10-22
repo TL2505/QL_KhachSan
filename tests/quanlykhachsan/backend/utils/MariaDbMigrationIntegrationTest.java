@@ -41,6 +41,14 @@ class MariaDbMigrationIntegrationTest {
                 assertTrue(tableExists(connection, "folio_transactions"));
                 assertTrue(tableExists(connection, "audit_checkpoints"));
                 assertTrue(tableExists(connection, "ai_escalation_tickets"));
+                assertTrue(columnExists(connection, "rooms", "buffer_hourly"));
+                assertTrue(columnExists(connection, "rooms", "ready_not_before"));
+                assertTrue(columnExists(connection, "room_types", "hourly_base_price"));
+                assertTrue(columnExists(connection, "room_types", "overnight_price"));
+                assertTrue(columnExists(connection, "bookings", "rental_type"));
+                assertTrue(columnExists(connection, "bookings", "room_release_at"));
+                assertTrue(tableExists(connection, "cleaning_tasks"));
+                assertTrue(columnExists(connection, "cleaning_tasks", "expected_finish_at"));
                 assertTrue(foreignKeyExists(connection, "folios", "fk_folios_bookings"));
                 assertTrue(foreignKeyExists(connection, "folio_transactions", "fk_folio_transactions_folios"));
                 assertTrue(foreignKeyExists(connection, "ai_escalation_tickets", "fk_ai_escalation_customer"));
@@ -53,6 +61,10 @@ class MariaDbMigrationIntegrationTest {
                     executeHotelSchemaScript(scriptConnection, scriptSchema);
                     UpdateDbUtility.migrate(scriptConnection);
                     assertTrue(columnExists(scriptConnection, "rooms", "version"));
+                    assertTrue(columnExists(scriptConnection, "rooms", "buffer_daily"));
+                    assertTrue(columnExists(scriptConnection, "room_types", "hourly_extra_hour_price"));
+                    assertTrue(columnExists(scriptConnection, "bookings", "check_out_actual"));
+                    assertTrue(tableExists(scriptConnection, "cleaning_tasks"));
                     assertTrue(tableExists(scriptConnection, "audit_checkpoints"));
                     assertTrue(foreignKeyExists(scriptConnection, "folios", "fk_folios_bookings"));
                 } finally {

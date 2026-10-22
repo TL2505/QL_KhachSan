@@ -1,5 +1,32 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-22] — @codex — Shared payment audit and durable lifecycle notifications
+
+- Added a common provider/method/direction transaction audit for cash, POS, legacy bank receipts and future gateway adapters, with payOS as the first new QR integration. Added signature and beneficiary validation, partial/excess handling, duplicate/conflict audits, and late-payment exceptions without reopening cancelled stays.
+- Added transactional in-app/email outbox events, check-in/out reminders, bounded retries and conservative UNKNOWN delivery handling. Added customer-owned and staff audit APIs and a portal history view; removed fabricated notification fallback and fixed hard-coded checkout QR/manual transfer confirmation.
+- Added [Vietnamese setup and operations guide](vi/payments-notifications.md), configuration placeholders and disposable MariaDB integration checks. Live gateway activation awaits merchant/bank credentials; email delivery remains opt-in.
+
+## [2026-10-22] — @codex — Backend stop batch launcher
+
+- Added `stop-backend.bat` to invoke the existing PID- and workspace-verified PowerShell stop script. It preserves the script exit code and keeps the console open on failure. Updated startup guides for the start/stop pair; the desktop build and standalone web batch wrappers remain removed.
+
+## [2026-10-22] — @codex — Single backend batch launcher
+
+- Added only `start-backend.bat` at the user's request, with the complete command invoking `scripts/start-backend.ps1 -Background`. Startup reads the existing `.env`; on failure the window shows separate database/key checks and log paths. Removed the newly proposed VS Code tasks in favor of this batch launcher; the other batch wrappers remain removed.
+- Updated startup guides for the single double-click entry point.
+
+## [2026-10-22] — @codex — Remove batch wrappers before rebuilding startup
+
+- At the user's request, removed all four project-owned `.bat` files: backend start/stop, desktop build and standalone web start. Existing PowerShell and Node entry points remain available; updated their current setup instructions and desktop task references.
+- This cleanup does not replace the running backend or modify the database, `.env`, identity keys or application source.
+
+## [2026-10-22] — @codex — Persistent real database startup and developer database handoff
+
+- Real Windows launchers now load the ignored `.env`, retain stable DB/AES/HMAC/JWT configuration, prefer `JAVA_HOME`, run read-only preflight and start backend `Main` directly. Removed implicit localhost database switching by default and secret generation at restart. Scripts restore the caller's environment after temporary configuration checks.
+- Added separate connection/schema/key/account diagnostics, explicit one-time fresh database provisioning and an identity-key companion exporter for SQL handoff. Startup authenticates stored AES envelopes and compares HMAC indexes before migration, then verifies readiness after migration. Removed implicit HMAC fallback/padding in vault configuration and the conflicting production Compose HMAC sources. Login database errors no longer become credential mismatches.
+- Added the [Vietnamese real database and per-developer handoff runbook](vi/real-database-startup.md), updated startup instructions/template, and recorded [verification and limits](verification/real-database-startup-20261022.md). The operator authorized a new local database after confirming the original VM database's keys were lost; this does not establish recovery of its historical ciphertext.
+- Validation: 13 focused Java tests; 8 environment-loader assertions; live MariaDB startup/login/profile/vault checks across restart, negative AES/HMAC/password/network checks, and separate fresh-provision/configuration-switch checks. Secret values are retained only in ignored local configuration.
+
 ## [2026-10-22] — @codex — CORS response pipeline — Restore Google OTP login from localhost:3000
 
 - Fixed `ApiResponseUtil` overwriting the origin selected by `CorsFilter` with `*`. Credentialed Google requests from port 3000 could send an OTP email successfully while the browser rejected the response, leaving the OTP form hidden and preventing device verification from completing. JSON responses now preserve the selected origin; dynamic CORS responses include `Vary: Origin`.

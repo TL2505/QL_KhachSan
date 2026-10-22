@@ -1,5 +1,6 @@
 import { renderBookingAction } from '../shared/booking-action.js';
 import { api } from "../../api.js";
+import { paymentLabel,paymentBadge } from '../shared/payment-state.js';
 
 function refreshIcons() {
   if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -337,6 +338,7 @@ export async function renderBookings(container, session) {
                 <span class="w-1.5 h-1.5 rounded-full" style="background:${st.dot};"></span>
                 <span>${st.text}</span>
               </span>
+              <span class="${paymentBadge(b)}">${paymentLabel(b)}</span>
             </td>
             <td class="py-4 px-4 text-center">
               <div class="flex items-center justify-center gap-1.5 flex-wrap">

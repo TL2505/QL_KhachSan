@@ -2,16 +2,14 @@
 setlocal
 title Aurelia Hotel - Stop Backend
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\stop-demo.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\stop-backend.ps1"
 set "RESULT=%ERRORLEVEL%"
 
 if not "%RESULT%"=="0" (
     echo.
-    echo Backend could not be stopped. Review the message above.
+    echo Khong dung duoc backend. Xem thong bao loi phia tren.
+    echo Script chi dung dung tien trinh backend cua du an nay.
     pause
-    exit /b %RESULT%
 )
 
-echo.
-pause
-exit /b 0
+exit /b %RESULT%

@@ -22,18 +22,21 @@ public class BookingService {
     }
 
     public boolean checkAvailable(int roomId, java.util.Date checkIn, java.util.Date checkOut) {
-        List<Booking> bookings = bookingDAO.findByRoomId(roomId);
-
-        for (Booking b : bookings) {
-            String st = b.getStatus() != null ? b.getStatus().toLowerCase() : "";
-            if (st.equals("cancelled") || st.equals("no_show") || st.equals("completed") || st.equals("checked_out")) {
-                continue;
+        java.time.ZoneId zone=java.time.ZoneId.of("Asia/Ho_Chi_Minh");
+        java.time.LocalDateTime in=java.time.Instant.ofEpochMilli(checkIn.getTime()).atZone(zone).toLocalDate().atTime(14,0);
+        java.time.LocalDateTime out=java.time.Instant.ofEpochMilli(checkOut.getTime()).atZone(zone).toLocalDate().atTime(12,0);
+        try(java.sql.Connection c=quanlykhachsan.backend.utils.DatabaseConnection.getConnection()) {
+            int buffer;
+            try(java.sql.PreparedStatement q=c.prepareStatement("SELECT buffer_daily FROM rooms WHERE id=?")) {
+                q.setInt(1,roomId);try(java.sql.ResultSet r=q.executeQuery()){if(!r.next())return false;buffer=r.getInt(1);}
             }
-            boolean overlap = checkIn.getTime() < b.getCheckOutDate().getTime() &&
-                              checkOut.getTime() > b.getCheckInDate().getTime();
-            if (overlap) return false;
-        }
-        return true;
+            java.time.LocalDateTime release=out.plusMinutes(buffer);
+            try(java.sql.PreparedStatement q=c.prepareStatement(
+                    "SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in','checked_out') AND check_in_date<? AND room_release_at>? LIMIT 1")) {
+                q.setInt(1,roomId);q.setTimestamp(2,java.sql.Timestamp.valueOf(release));q.setTimestamp(3,java.sql.Timestamp.valueOf(in));
+                try(java.sql.ResultSet r=q.executeQuery()){return !r.next();}
+            }
+        } catch(java.sql.SQLException ex) { return false; }
     }
 
     public int addBooking(Booking booking) {
@@ -92,6 +95,7 @@ public class BookingService {
                     folioRows.add(folio);
                 }
             }
+            var payment=quanlykhachsan.backend.payment.PaymentStatus.forBooking(connection,booking.getId());result.add("payment",payment);result.addProperty("paymentStatus",payment.get("payment_status").getAsString());
         }
         result.add("folios", folioRows);
         return result;

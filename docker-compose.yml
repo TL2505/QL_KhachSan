@@ -48,21 +48,32 @@ services:
       HOTEL_BIND_ADDRESS: 0.0.0.0
       JWT_SECRET: ${JWT_SECRET:?Set approved JWT_SECRET configuration}
       AES_VAULT_KEY: ${AES_VAULT_KEY:?Supply an approved Base64 AES-256 vault key}
-      HMAC_IDENTITY_KEY: ${HMAC_IDENTITY_KEY:-aurelia_pms_secret_identity_key_2026_prod_vault_guard}
+      HMAC_IDENTITY_KEY: ${HMAC_IDENTITY_KEY:?Supply the matching Base64 32-byte identity lookup key}
       HOTEL_VAT_RATE: ${HOTEL_VAT_RATE:?Set approved HOTEL_VAT_RATE configuration}
       BANK_BIN: ${BANK_BIN:?Set approved BANK_BIN configuration}
       BANK_ACCOUNT_NUMBER: ${BANK_ACCOUNT_NUMBER:?Set approved BANK_ACCOUNT_NUMBER configuration}
       BANK_ACCOUNT_HOLDER: ${BANK_ACCOUNT_HOLDER:?Set approved BANK_ACCOUNT_HOLDER configuration}
       BANK_WEBHOOK_SECRET: ${BANK_WEBHOOK_SECRET:?Set approved BANK_WEBHOOK_SECRET configuration}
+      PAYMENT_QR_PROVIDER: ${PAYMENT_QR_PROVIDER:-payos}
+      PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID:-}
+      PAYOS_API_KEY: ${PAYOS_API_KEY:-}
+      PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:-}
+      PAYOS_BANK_BIN: ${PAYOS_BANK_BIN:-}
+      PAYOS_ACCOUNT_NUMBER: ${PAYOS_ACCOUNT_NUMBER:-}
+      PAYOS_ACCOUNT_NAME: ${PAYOS_ACCOUNT_NAME:-}
+      PAYOS_RETURN_URL: ${PAYOS_RETURN_URL:-}
+      PAYOS_CANCEL_URL: ${PAYOS_CANCEL_URL:-}
       MANAGER_PIN_HASH: ${MANAGER_PIN_HASH:?Set approved MANAGER_PIN_HASH configuration}
       HOTEL_LEGAL_NAME: ${HOTEL_LEGAL_NAME:?Set approved HOTEL_LEGAL_NAME configuration}
       HOTEL_LEGAL_ADDRESS: ${HOTEL_LEGAL_ADDRESS:?Set approved HOTEL_LEGAL_ADDRESS configuration}
       HOTEL_TAX_CODE: ${HOTEL_TAX_CODE:?Set approved HOTEL_TAX_CODE configuration}
       INVOICE_VERIFICATION_URL: ${INVOICE_VERIFICATION_URL:?Set approved INVOICE_VERIFICATION_URL configuration}
       HOTEL_OTP_MODE: ${HOTEL_OTP_MODE:?Set approved HOTEL_OTP_MODE configuration}
+      HOTEL_MEDIA_DIR: /app/.data/media
       AI_GUEST_ENABLED: false
     volumes:
       - ai_settings_data:/app/.data/ai
+      - room_media_data:/app/.data/media
     ports:
       - "127.0.0.1:8081:8081"
     networks:
@@ -122,3 +133,4 @@ networks:
 volumes:
   mariadb_data:
   ai_settings_data:
+  room_media_data:

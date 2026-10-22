@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import quanlykhachsan.backend.utils.DatabaseConnection;
 
@@ -60,11 +61,19 @@ public final class RoomAllocationService {
     public static void reserveForStay(Connection connection, int roomId, int expectedVersion,
             int guestCount, LocalDate checkIn, LocalDate checkOut)
             throws SQLException, OptimisticLockException {
+        reserveForStay(connection, roomId, expectedVersion, guestCount,
+                StayWindow.resolve(RentalType.DAILY, checkIn.atTime(14, 0), checkOut.atTime(12, 0)));
+    }
+
+    /** Locks and validates a complete stay interval using the room's configured buffer. */
+    public static int reserveForStay(Connection connection, int roomId, int expectedVersion,
+            int guestCount, StayWindow stay) throws SQLException, OptimisticLockException {
         String status;
         int version;
         int capacity;
+        int bufferMinutes;
         try (PreparedStatement query = connection.prepareStatement(
-                "SELECT r.status,r.version,t.capacity FROM rooms r "
+                "SELECT r.status,r.version,t.capacity,r.buffer_hourly,r.buffer_overnight,r.buffer_daily FROM rooms r "
               + "JOIN room_types t ON t.id=r.room_type_id WHERE r.id=? FOR UPDATE")) {
             query.setInt(1, roomId);
             try (ResultSet row = query.executeQuery()) {
@@ -72,25 +81,43 @@ public final class RoomAllocationService {
                 status = row.getString("status");
                 version = row.getInt("version");
                 capacity = row.getInt("capacity");
+                bufferMinutes = switch (stay.rentalType()) {
+                    case HOURLY -> row.getInt("buffer_hourly");
+                    case OVERNIGHT -> row.getInt("buffer_overnight");
+                    case DAILY -> row.getInt("buffer_daily");
+                };
             }
         }
         if (version != expectedVersion) throw new OptimisticLockException();
         if (guestCount < 1 || guestCount > capacity) throw new IllegalArgumentException("Guest count exceeds room capacity");
         if ("out_of_order".equals(status) || "out_of_service".equals(status)) throw new RoomUnavailableException();
-        if (checkIn.equals(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"))) && !"vacant_clean".equals(status)) {
-            throw new RoomUnavailableException();
-        }
+        LocalDateTime newReleaseAt = stay.releaseAt(bufferMinutes);
         try (PreparedStatement query = connection.prepareStatement(
-                "SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in') "
-              + "AND check_in_date<? AND check_out_date>? LIMIT 1 FOR UPDATE")) {
+                "SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in','checked_out') "
+              + "AND check_in_date<? AND room_release_at>? LIMIT 1 FOR UPDATE")) {
             query.setInt(1, roomId);
-            query.setTimestamp(2, java.sql.Timestamp.valueOf(checkOut.atTime(12, 0)));
-            query.setTimestamp(3, java.sql.Timestamp.valueOf(checkIn.atTime(14, 0)));
+            query.setTimestamp(2, java.sql.Timestamp.valueOf(newReleaseAt));
+            query.setTimestamp(3, java.sql.Timestamp.valueOf(stay.checkIn()));
             try (ResultSet row = query.executeQuery()) {
                 if (row.next()) throw new RoomUnavailableException();
             }
         }
-        String update = checkIn.equals(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))
+        try(PreparedStatement query=connection.prepareStatement(
+                "SELECT 1 FROM cleaning_tasks ct WHERE ct.room_id=? AND ct.status IN ('pending','in_progress') "
+              + "AND COALESCE(ct.expected_finish_at,DATE_ADD(ct.created_at,INTERVAL ct.estimated_duration_minutes MINUTE))>? LIMIT 1 FOR UPDATE")) {
+            query.setInt(1,roomId);query.setTimestamp(2,java.sql.Timestamp.valueOf(stay.checkIn()));
+            try(ResultSet row=query.executeQuery()){if(row.next())throw new RoomUnavailableException();}
+        }
+        boolean today=stay.checkIn().toLocalDate().equals(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+        if(today && "vacant_dirty".equals(status)) {
+            try(PreparedStatement query=connection.prepareStatement(
+                    "SELECT 1 FROM cleaning_tasks ct WHERE ct.room_id=? AND ct.status IN ('pending','in_progress') "
+                  + "AND COALESCE(ct.expected_finish_at,DATE_ADD(ct.created_at,INTERVAL ct.estimated_duration_minutes MINUTE))<=? LIMIT 1 FOR UPDATE")) {
+                query.setInt(1,roomId);query.setTimestamp(2,java.sql.Timestamp.valueOf(stay.checkIn()));
+                try(ResultSet row=query.executeQuery()){if(!row.next())throw new RoomUnavailableException();}
+            }
+        }
+        String update = today && "vacant_clean".equals(status)
                 ? "UPDATE rooms SET status='reserved',version=version+1 WHERE id=? AND version=? AND status='vacant_clean'"
                 : "UPDATE rooms SET version=version+1 WHERE id=? AND version=? AND status NOT IN ('out_of_order','out_of_service')";
         try (PreparedStatement query = connection.prepareStatement(update)) {
@@ -98,6 +125,7 @@ public final class RoomAllocationService {
             query.setInt(2, expectedVersion);
             if (query.executeUpdate() != 1) throw new RoomUnavailableException();
         }
+        return bufferMinutes;
     }
 
     public static final class RoomSnapshot {

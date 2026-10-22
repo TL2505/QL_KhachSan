@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.sql.*;
 import java.util.Arrays;
-import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import quanlykhachsan.backend.utils.AesGcmEncryptionUtil;
@@ -18,18 +17,46 @@ public final class GuestIdentityVaultDao {
         this.encryption = encryption; this.blindKey = blindKey.clone();
     }
     public static GuestIdentityVaultDao configured() {
-        String encoded = quanlykhachsan.backend.utils.SecretConfiguration.required("HMAC_IDENTITY_KEY");
-        byte[] bytes;
-        try {
-            bytes = Base64.getDecoder().decode(encoded);
-        } catch (IllegalArgumentException e) {
-            bytes = java.util.Arrays.copyOf(encoded.getBytes(StandardCharsets.UTF_8), 32);
-        }
-        if (bytes == null || bytes.length != 32) {
-            bytes = java.util.Arrays.copyOf(bytes != null ? bytes : encoded.getBytes(StandardCharsets.UTF_8), 32);
-        }
+        byte[] bytes = quanlykhachsan.backend.utils.SecretConfiguration.key256("HMAC_IDENTITY_KEY");
         try { return new GuestIdentityVaultDao(AesGcmEncryptionUtil.fromEnvironment(), bytes); }
         finally { Arrays.fill(bytes, (byte)0); }
+    }
+
+    /** Read-only proof against stored ciphertext and blind indexes; never logs identity data. */
+    public long verifyExistingRecords(Connection c) throws SQLException {
+        long count = 0;
+        try (var q = c.prepareStatement("SELECT v.customer_id,v.encrypted_id_number,v.encrypted_raw_payload,v.face_embedding_blob,c.identity_hash FROM guest_identity_vault v LEFT JOIN customers c ON c.id=v.customer_id");
+             var r = q.executeQuery()) {
+            while (r.next()) {
+                verifyRecord(r.getInt(1), r.getBytes(2), r.getBytes(3), r.getBytes(4), r.getBytes(5));
+                count++;
+            }
+        }
+        try (var q = c.prepareStatement("SELECT COUNT(*) FROM customers c LEFT JOIN guest_identity_vault v ON v.customer_id=c.id WHERE c.identity_hash IS NOT NULL AND v.customer_id IS NULL"); var r = q.executeQuery()) {
+            if (r.next() && r.getLong(1) != 0) throw new SQLException("Identity hash has no vault record", "VLT03");
+        }
+        return count;
+    }
+
+    void verifyRecord(int customer, byte[] encryptedId, byte[] raw, byte[] face, byte[] hash) throws SQLException {
+        byte[] clear = null;
+        try {
+            clear = encryption.decrypt(encryptedId, aad(customer, "id"));
+            byte[] actual = blindIndex(new String(clear, StandardCharsets.UTF_8));
+            try {
+                if (hash == null || !java.security.MessageDigest.isEqual(actual, hash))
+                    throw new SQLException("HMAC_IDENTITY_KEY does not match the stored identity index, or index is damaged; restore original key, do not rewrite data", "VLT02");
+            } finally { Arrays.fill(actual, (byte) 0); }
+            for (String field : new String[]{"raw", "face"}) {
+                byte[] encrypted = "raw".equals(field) ? raw : face;
+                if (encrypted != null) {
+                    byte[] payload = encryption.decrypt(encrypted, aad(customer, field));
+                    Arrays.fill(payload, (byte) 0);
+                }
+            }
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
+            throw new SQLException("AES_VAULT_KEY cannot authenticate stored vault data; restore original key and verify backup integrity", "VLT01");
+        } finally { if (clear != null) Arrays.fill(clear, (byte) 0); }
     }
     public byte[] blindIndex(String identity) {
         try {

@@ -15,11 +15,19 @@ public final class SecretConfiguration {
             catch(IOException e){throw new IllegalStateException("Required secret file is unavailable");}
         }
         if(value==null||value.isBlank()){
-            if ("HMAC_IDENTITY_KEY".equals(name)) {
-                return quanlykhachsan.backend.utils.SecurityUtil.getHmacIdentityKey();
-            }
             throw new IllegalStateException(name+" is required");
         }
         return value;
+    }
+
+    public static byte[] key256(String name) {
+        byte[] bytes;
+        try { bytes = java.util.Base64.getDecoder().decode(required(name)); }
+        catch (IllegalArgumentException e) { throw new IllegalStateException(name + " must be Base64 encoded"); }
+        if (bytes.length != 32) {
+            java.util.Arrays.fill(bytes, (byte) 0);
+            throw new IllegalStateException(name + " must decode to exactly 32 bytes");
+        }
+        return bytes;
     }
 }

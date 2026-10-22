@@ -5,6 +5,7 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.util.*;
 import quanlykhachsan.backend.booking.*;
+import quanlykhachsan.backend.room.*;
 import quanlykhachsan.backend.utils.PortalValidation.DateRange;
 
 /** Reads one occupancy matrix per stay, counting each physical room at most once. */
@@ -31,6 +32,47 @@ public final class DynamicPricingEngine {
         }
         var charges=FinancialCalculator.calculate(subtotal,BigDecimal.ZERO,TaxConfig.fromRuntimeConfiguration());
         return new Quote(roomTypeId,base,List.copyOf(nights),charges.getRoomFee(),charges.getServiceFee(),charges.getVat(),charges.getTotalAmount());
+    }
+
+    /** Quotes non-daily packages from explicitly configured room-type rates. */
+    public Quote quote(Connection c, int roomTypeId, StayWindow stay) throws SQLException {
+        if (stay.rentalType() == RentalType.DAILY) {
+            return quote(c, roomTypeId, new DateRange(stay.checkIn().toLocalDate(), stay.checkOut().toLocalDate()));
+        }
+        BigDecimal hourlyBase;
+        BigDecimal hourlyExtra;
+        BigDecimal overnight;
+        try (PreparedStatement q = c.prepareStatement(
+                "SELECT hourly_base_price,hourly_extra_hour_price,overnight_price FROM room_types WHERE id=?")) {
+            q.setInt(1, roomTypeId);
+            try (ResultSet r = q.executeQuery()) {
+                if (!r.next()) throw new IllegalArgumentException("Unknown room category");
+                hourlyBase = r.getBigDecimal("hourly_base_price");
+                hourlyExtra = r.getBigDecimal("hourly_extra_hour_price");
+                overnight = r.getBigDecimal("overnight_price");
+            }
+        }
+        BigDecimal roomCharge;
+        BigDecimal referenceRate;
+        if (stay.rentalType() == RentalType.HOURLY) {
+            if (hourlyBase == null || hourlyExtra == null) {
+                throw new IllegalStateException("Hourly rates have not been configured for this room category");
+            }
+            long billableExtras = stay.billableHourlyAddOns();
+            roomCharge = hourlyBase.add(hourlyExtra.multiply(BigDecimal.valueOf(billableExtras)));
+            referenceRate = hourlyBase;
+        } else {
+            if (overnight == null || hourlyExtra == null) {
+                throw new IllegalStateException("Overnight rates have not been configured for this room category");
+            }
+            long addOnHours = stay.billableHourlyAddOns();
+            roomCharge = overnight.add(hourlyExtra.multiply(BigDecimal.valueOf(addOnHours)));
+            referenceRate = overnight;
+        }
+        roomCharge = roomCharge.setScale(2, RoundingMode.HALF_UP);
+        var charges = FinancialCalculator.calculate(roomCharge, BigDecimal.ZERO, TaxConfig.fromRuntimeConfiguration());
+        return new Quote(roomTypeId, referenceRate, List.of(), charges.getRoomFee(), charges.getServiceFee(),
+                charges.getVat(), charges.getTotalAmount());
     }
     public static BigDecimal nightly(BigDecimal base,BigDecimal multiplier) {
         if(base==null || base.signum()<=0 || multiplier==null || multiplier.signum()<=0)throw new IllegalArgumentException("Invalid rate");

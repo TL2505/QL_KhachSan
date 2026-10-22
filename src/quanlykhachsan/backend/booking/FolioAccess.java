@@ -9,7 +9,7 @@ final class FolioAccess {
     static State find(Connection c,HttpExchange e,String identifier)throws SQLException {
         if(!identifier.matches("[A-Za-z0-9-]{1,64}"))throw new IllegalArgumentException();
         String role=String.valueOf(e.getAttribute("role")).toLowerCase(java.util.Locale.ROOT);
-        if(!java.util.Set.of("admin","front_desk","guest","customer").contains(role))throw new SecurityException();
+        if(!java.util.Set.of("admin","front_desk","staff","guest","customer").contains(role))throw new SecurityException();
         boolean numeric=identifier.matches("[0-9]+");
         try(PreparedStatement q=c.prepareStatement("SELECT f.id,f.code,f.balance,f.status,b.customer_id,(SELECT MAX(created_at) FROM folio_transactions t WHERE t.folio_id=f.id AND t.charge_type='payment') FROM folios f JOIN bookings b ON b.id=f.booking_id WHERE f."+(numeric?"id":"code")+"=?")) {
             if(numeric){long id=Long.parseLong(identifier);if(id<1)throw new IllegalArgumentException();q.setLong(1,id);}else q.setString(1,identifier);

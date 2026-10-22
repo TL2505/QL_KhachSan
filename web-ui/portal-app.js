@@ -1,6 +1,6 @@
 import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.36';
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.35';
-import { loadAdminView } from './js/view-admin.js?v=3.6.11';
+import { loadAdminView } from './js/view-admin.js?v=3.6.14';
 import { loadStaffView } from './js/view-staff.js';
 import { loadCustomerView } from './js/view-customer.js?v=3.6.20';
 import { loadProfileView } from './js/view-shared.js';
@@ -76,8 +76,11 @@ window.showCustomAlert = (message, options = {}) => new Promise(resolve => {
 
 const menus = {
   ADMIN: [
+    ['payment-operations', 'Giao dịch & thông báo', 'receipt-text'],
     ['dashboard', 'Tổng quan', 'chart-no-axes-combined'],
     ['rooms', 'Quản lý phòng', 'bed-double'],
+    ['catalog-content', 'Danh mục & landing page', 'images'],
+    ['rental-policy', 'Giá loại hình lưu trú', 'badge-dollar-sign'],
     ['bookings', 'Đặt phòng', 'calendar-check'],
     ['users', 'Tài khoản nhân viên', 'users'],
     ['customers', 'Khách hàng', 'contact-round'],
@@ -89,6 +92,8 @@ const menus = {
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   STAFF: [
+    ['payment-operations', 'Giao dịch & thông báo', 'receipt-text'],
+    ['catalog-content', 'Danh mục & landing page', 'images'],
     ['room-map', 'Sơ đồ phòng', 'panels-top-left'],
     ['front-desk', 'Xử lý tại quầy', 'concierge-bell'],
     ['bookings', 'Đặt phòng', 'calendar-check'],
@@ -100,6 +105,7 @@ const menus = {
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   CUSTOMER: [
+    ['payment-operations', 'Giao dịch & thông báo', 'receipt-text'],
     ['dashboard', 'Tổng quan', 'layout-dashboard'],
     ['discovery', 'Đặt phòng', 'calendar-plus'],
     ['bookings', 'Lịch sử đặt phòng', 'history'],
@@ -507,7 +513,7 @@ export async function initNotificationTray(session) {
   async function loadNotifications() {
     if (!listEl) return;
     try {
-      const resp = await api.get('/notifications?limit=20').catch(() => null);
+      const resp = await api.get('/notifications?limit=20');
       let notifs = [];
       let unread = 0;
 
@@ -518,30 +524,7 @@ export async function initNotificationTray(session) {
         notifs = resp;
         unread = notifs.filter(n => !n.is_read).length;
       } else {
-        // Fallback default notifications if offline / demo
-        notifs = [
-          {
-            id: 1,
-            notification_type: 'checkin_welcome',
-            title: 'Chào Mừng Quý Khách Đến Với Aurelia!',
-            message: 'Trân trọng gửi tặng Quý khách mã ưu đãi ẩm thực AURELIA_DINE15 giảm 15% cho dịch vụ F&B tại phòng.',
-            voucher_code: 'AURELIA_DINE15',
-            action_url: 'portal.html?view=concierge',
-            is_read: false,
-            created_at: new Date().toISOString()
-          },
-          {
-            id: 2,
-            notification_type: 'checkout_gratitude',
-            title: 'Tri Ân Nghỉ Dưỡng Trở Lại',
-            message: 'Kính tặng Quý khách mã tri ân MEMORIAL_ROOM25 giảm 25% giá phòng cho kỳ nghỉ kế tiếp.',
-            voucher_code: 'MEMORIAL_ROOM25',
-            action_url: 'portal.html?view=bookings',
-            is_read: true,
-            created_at: new Date(Date.now() - 86400000).toISOString()
-          }
-        ];
-        unread = 1;
+        throw new Error('Invalid notification response');
       }
 
       // Update badge
@@ -565,7 +548,8 @@ export async function initNotificationTray(session) {
         return;
       }
 
-      listEl.innerHTML = notifs.map(n => {
+      listEl.innerHTML = notifs.map(raw => {
+        const n={...raw,is_read:raw.is_read??raw.isRead??raw.read,created_at:raw.created_at??raw.createdAt,voucher_code:raw.voucher_code??raw.voucherCode};
         const isUnread = !n.is_read;
         const safeTitle = escapeHtml(n.title || 'Thông báo');
         const safeMsg = escapeHtml(n.message || '');
@@ -587,7 +571,7 @@ export async function initNotificationTray(session) {
                     <i data-lucide="copy" class="w-3 h-3"></i>
                     <span>Sao chép</span>
                   </button>
-                  <a href="${n.action_url || 'portal.html?view=concierge'}" class="notification-use-voucher px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-semibold transition-colors flex items-center gap-1">
+                  <a href="portal.html?view=concierge" class="notification-use-voucher px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-semibold transition-colors flex items-center gap-1">
                     <i data-lucide="sparkles" class="w-3 h-3"></i>
                     <span>Dùng ngay</span>
                   </a>
@@ -643,6 +627,8 @@ export async function initNotificationTray(session) {
 
     } catch (err) {
       console.warn('Không thể tải thông báo:', err);
+      listEl.replaceChildren();
+      const error=document.createElement('p');error.className='alert alert-warning';error.textContent='Chưa tải được thông báo. Vui lòng thử lại.';listEl.append(error);
     }
   }
 

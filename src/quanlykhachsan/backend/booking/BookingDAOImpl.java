@@ -6,9 +6,13 @@ import java.sql.ResultSet;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import quanlykhachsan.backend.utils.DBconn;
 import quanlykhachsan.backend.room.RoomAllocationService;
 import quanlykhachsan.backend.room.OptimisticLockException;
+import quanlykhachsan.backend.room.RentalType;
+import quanlykhachsan.backend.room.StayWindow;
 
 public class BookingDAOImpl implements BookingDAO {
 
@@ -25,17 +29,23 @@ public class BookingDAOImpl implements BookingDAO {
     }
 
     public int addBooking(Booking booking, int expectedRoomVersion) throws OptimisticLockException {
-        String query = "INSERT INTO bookings(customer_id, room_id, check_in_date, check_out_date, total_price, status) VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO bookings(customer_id,room_id,rental_type,check_in_date,check_out_date,buffer_minutes,total_price,status) VALUES (?,?,?,?,?,?,?,?)";
         try (Connection con = quanlykhachsan.backend.utils.DatabaseConnection.getConnection()) {
             con.setAutoCommit(false);
-            RoomAllocationService.reserve(con, booking.getRoomId(), expectedRoomVersion);
+            ZoneId zone=ZoneId.of("Asia/Ho_Chi_Minh");
+            LocalDateTime checkInDay=java.time.Instant.ofEpochMilli(booking.getCheckInDate().getTime()).atZone(zone).toLocalDate().atTime(14,0);
+            LocalDateTime checkOutDay=java.time.Instant.ofEpochMilli(booking.getCheckOutDate().getTime()).atZone(zone).toLocalDate().atTime(12,0);
+            StayWindow stay=StayWindow.resolve(RentalType.DAILY,checkInDay,checkOutDay);
+            int buffer=RoomAllocationService.reserveForStay(con,booking.getRoomId(),expectedRoomVersion,1,stay);
             try (PreparedStatement ps = con.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
                 ps.setInt(1, booking.getCustomerId());
                 ps.setInt(2, booking.getRoomId());
-                ps.setTimestamp(3, new java.sql.Timestamp(booking.getCheckInDate().getTime()));
-                ps.setTimestamp(4, new java.sql.Timestamp(booking.getCheckOutDate().getTime()));
-                ps.setBigDecimal(5, BigDecimal.valueOf(booking.getTotalPrice()).setScale(2, RoundingMode.HALF_UP));
-                ps.setString(6, booking.getStatus());
+                ps.setString(3,RentalType.DAILY.databaseValue());
+                ps.setTimestamp(4,java.sql.Timestamp.valueOf(stay.checkIn()));
+                ps.setTimestamp(5,java.sql.Timestamp.valueOf(stay.checkOut()));
+                ps.setInt(6,buffer);
+                ps.setBigDecimal(7, BigDecimal.valueOf(booking.getTotalPrice()).setScale(2, RoundingMode.HALF_UP));
+                ps.setString(8, booking.getStatus());
                 ps.executeUpdate();
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (!rs.next()) throw new java.sql.SQLException("Booking insert did not return an ID");
@@ -73,20 +83,7 @@ public class BookingDAOImpl implements BookingDAO {
 
     @Override
     public void updateBooking(Booking booking) {
-        String query = "UPDATE bookings SET customer_id=?, room_id=?, check_in_date=?, check_out_date=?, total_price=?, status=? WHERE id=?";
-        try (Connection con = DBconn.getConnection(); 
-             PreparedStatement ps = con.prepareStatement(query)) {
-            ps.setInt(1, booking.getCustomerId());
-            ps.setInt(2, booking.getRoomId());
-            ps.setTimestamp(3, new java.sql.Timestamp(booking.getCheckInDate().getTime()));
-            ps.setTimestamp(4, new java.sql.Timestamp(booking.getCheckOutDate().getTime()));
-            ps.setBigDecimal(5, BigDecimal.valueOf(booking.getTotalPrice()).setScale(2, RoundingMode.HALF_UP));
-            ps.setString(6, booking.getStatus());
-            ps.setInt(7, booking.getId());
-            ps.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        throw new UnsupportedOperationException("Booking schedule and status changes must use the booking or folio workflow");
     }
 
     @Override

@@ -46,7 +46,11 @@ public final class FolioPaymentService {
                 if(excess.signum()>0)credit(c,folio,"credit_adjustment",excess,payment.bankTransId(),"Excess overpayment credit");
                 BigDecimal remaining=balance.subtract(applied).setScale(2);
                 try(PreparedStatement q=c.prepareStatement("UPDATE folios SET balance=?,status=? WHERE id=?")) {q.setBigDecimal(1,remaining);q.setString(2,remaining.signum()==0?"settled":"open");q.setLong(3,folio);if(q.executeUpdate()!=1)throw new SQLException("Folio disappeared");}
+                if("checked_out".equals(locked.bookingStatus())&&locks.bookingBalance(c,locked.bookingId()).signum()==0)
+                    quanlykhachsan.backend.invoice.InvoiceFinalizationService.finalizePaid(c,locked.bookingId());
                 FolioDao.confirmPaidBooking(c,locked.bookingId());
+                quanlykhachsan.backend.payment.PaymentReconciliationService.recordCollection(c,"legacy_bank","bank_transfer",payment.bankTransId(),folio,payment.amount(),applied,excess,remaining);
+                quanlykhachsan.backend.notification.LifecycleNotifications.payment(c,locked.bookingId(),"legacy_bank:"+payment.bankTransId(),payment.amount(),remaining);
                 JsonObject data=new JsonObject();data.addProperty("status",remaining.signum()==0?"SETTLED":"PARTIAL");data.addProperty("folio_id",folio);data.addProperty("balance",remaining);data.addProperty("excess_credit",excess);
                 String response=ApiResponseUtil.successWithData(data);
                 try(PreparedStatement q=c.prepareStatement("INSERT INTO bank_webhook_logs(bank_trans_id,folio_id,amount,signature,status,raw_payload,response_body,business_date) SELECT ?,?,?,?,'PROCESSED',?,?,business_date FROM hotel_business_state WHERE id=1")) {

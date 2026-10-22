@@ -11,8 +11,8 @@ import java.util.function.BiPredicate;
 
 /**
  * Centralized Connection and Environment Configuration for Desktop App (Java Swing).
- * Explicit environment or reviewed file configuration takes priority. On Windows only,
- * an unreachable configured database may use localhost after a TCP availability check.
+ * Explicit environment or reviewed file configuration takes priority. Cross-host
+ * fallback is disabled unless explicitly enabled for a legacy desktop environment.
  */
 public final class ApiConfig {
     public static final String DEFAULT_VM_IP = "192.168.56.102";
@@ -110,7 +110,10 @@ public final class ApiConfig {
     }
 
     public static String getDbPassword() {
-        if(System.getenv("DB_PASSWORD_FILE")!=null)return quanlykhachsan.backend.utils.SecretConfiguration.required("DB_PASSWORD");
+        String file = System.getenv("DB_PASSWORD_FILE");
+        if(file != null && !file.isBlank())return quanlykhachsan.backend.utils.SecretConfiguration.required("DB_PASSWORD");
+        String password = System.getenv("DB_PASSWORD");
+        if (password != null) return password; // Empty local passwords and whitespace are explicit values.
         return getPropertyOrEnv("db.password", "DB_PASSWORD", "");
     }
 
@@ -160,8 +163,10 @@ public final class ApiConfig {
             jdbcUrl = "jdbc:mysql://" + getDbHost() + ":" + getDbPort() + "/" + getDbName()
                 + "?useSSL=false&serverTimezone=UTC";
         }
-        return resolveWindowsDbFallback(
-            jdbcUrl.trim(), isWindows(), (host, port) -> isTcpReachable(host, port, 1000));
+        // A real database must never silently switch to another server.
+        return resolveWindowsDbFallback(jdbcUrl.trim(),
+            isWindows() && Boolean.parseBoolean(System.getenv("DB_ALLOW_LOCAL_FALLBACK")),
+            (host, port) -> isTcpReachable(host, port, 1000));
     }
 
     static String resolveWindowsDbFallback(String jdbcUrl, boolean windows,

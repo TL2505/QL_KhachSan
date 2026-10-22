@@ -5,14 +5,13 @@ Giao diện web quản lý khách sạn Aurelia, viết bằng HTML, CSS và Jav
 ## 🚀 Cách chạy (Phát triển cục bộ)
 
 1. Đảm bảo **Node.js** đã được cài đặt.
-2. Trên Windows, chạy `start-web.bat` trong thư mục `web-ui`; script khởi động web server và tự mở trình duyệt sau khi server sẵn sàng.
-3. Hoặc mở terminal tại thư mục `web-ui` này và khởi động web server:
+2. Mở terminal tại thư mục `web-ui` này và khởi động web server:
    ```bash
    node server.js
    ```
-4. Khi chạy thủ công, truy cập `http://localhost:3000` trên trình duyệt.
+3. Truy cập `http://localhost:3000` trên trình duyệt.
 
-*Lưu ý: Backend Java phải đang chạy tại `http://localhost:8081`. Trên Windows, `start-backend.bat` ở thư mục gốc khởi động backend demo và tự mở website tích hợp tại `http://localhost:8081/`.*
+*Lưu ý: Backend Java phải đang chạy tại `http://localhost:8081`. Có thể chạy `scripts/start-backend.ps1 -Background` từ thư mục gốc với cấu hình `.env` hiện có. Các file `.bat` đã được bỏ để xây lại luồng chạy.*
 
 ### Chatbot AI trên trang chủ
 

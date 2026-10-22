@@ -15,7 +15,7 @@ public final class JwtTokenUtil {
 
     private static String resolveSecret() {
         String secret = System.getenv("JWT_SECRET");
-        if (System.getenv("JWT_SECRET_FILE") != null) {
+        if (System.getenv("JWT_SECRET_FILE") != null && !System.getenv("JWT_SECRET_FILE").isBlank()) {
             secret = SecretConfiguration.required("JWT_SECRET");
         }
         if (secret == null || secret.isBlank()) {

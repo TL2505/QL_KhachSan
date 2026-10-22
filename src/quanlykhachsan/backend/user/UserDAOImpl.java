@@ -107,8 +107,10 @@ public class UserDAOImpl implements UserDAO {
                     return u;
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (java.sql.SQLException e) {
+            org.slf4j.LoggerFactory.getLogger(UserDAOImpl.class).error(
+                "[LOGIN DB_FAILURE] SQLState={} code={}", e.getSQLState(), e.getErrorCode());
+            throw new IllegalStateException("Account lookup unavailable", e);
         }
         return null;
     }

@@ -1,4 +1,6 @@
 import { t, tx, setLanguage, initTranslations, translateUI, setTranslatedText } from './shared/home-i18n.js';
+import {paymentState,paymentLabel,paymentBadge} from './shared/payment-state.js';
+import { bindRoomImageFallbacks } from './shared/room-images.js';
 /**
  * ==========================================================================
  * AURELIA GRAND LUXURY HOTEL - 5★ NO-BUILD APPLICATION CONTROLLER
@@ -21,7 +23,7 @@ import {
   formatCurrency,
   generateVietQRUrl,
   LUXURY_ROOMS_CATALOG
-} from './api.js';
+} from './api.js?v=3.5.6';
 import './shared/theme.js';
 
 // Cross-environment safe global reference (Browser Window vs Node.js test environment)
@@ -163,6 +165,7 @@ if (typeof document !== 'undefined') {
     initEventListeners();
     updateHeaderAuthStatus();
     initScrollObservers();
+    void loadLandingContent();
     await loadRooms();
     const returnParams = new URLSearchParams(window.location.search);
     const requestedRoom = Number(returnParams.get('bookRoom'));
@@ -340,6 +343,7 @@ async function loadRooms(filterParams = {}) {
     // Keep the original room cards and enrich only their date-specific labels.
     const result = await getRooms();
     state.rooms = result.rooms;
+    syncRoomCategoryTabs();
     const checkIn = filterParams.checkIn || document.getElementById('search-checkin')?.value;
     const checkOut = filterParams.checkOut || document.getElementById('search-checkout')?.value;
     if (result.source === 'api' && checkIn && checkOut) {
@@ -363,6 +367,7 @@ async function loadRooms(filterParams = {}) {
     filterAndRenderRooms();
   } catch (err) {
     state.rooms = [];
+    syncRoomCategoryTabs();
     state.roomsAreLive = false;
     state.roomsSearchedFor = null;
     if (err.statusCode) showToast(tx`Không thể tải danh sách phòng (HTTP ${err.statusCode}). Vui lòng thử lại.`, 'error', 7000);
@@ -374,6 +379,56 @@ async function loadRooms(filterParams = {}) {
     const checkOutInput = document.getElementById('search-checkout');
     if (checkInInput) checkInInput.value = filterParams.checkIn;
     if (checkOutInput) checkOutInput.value = filterParams.checkOut;
+  }
+}
+
+async function loadLandingContent() {
+  try {
+    const base = getApiBaseUrl().replace(/\/+$/, '');
+    const response = await fetch(`${base}/public/landing-content`, { headers: { Accept: 'application/json', 'X-User-Role': 'guest' }, signal: AbortSignal.timeout(5000) });
+    if (!response.ok) return;
+    const payload = await response.json();
+    const content = new Map((Array.isArray(payload?.data) ? payload.data : []).map(item => [item.key, item.content || {}]));
+    const safeImageUrl = value => {
+      if (!value) return '';
+      try { const url = new URL(value, window.location.origin); return ['http:', 'https:'].includes(url.protocol) ? url.href : ''; }
+      catch { return ''; }
+    };
+    const setText = (id, value) => { const node = document.getElementById(id); if (node && typeof value === 'string') node.textContent = value; };
+    const hero = content.get('home_hero');
+    if (hero) {
+      setText('hero-title', hero.headline); setText('hero-subtitle', hero.subtitle);
+      const heroLink = document.getElementById('hero-cta');
+      const heroCta = heroLink?.querySelector('span');
+      if (heroCta && typeof hero.cta_label === 'string') {
+        heroCta.textContent = hero.cta_label;
+        heroLink?.classList.toggle('hidden', !hero.cta_label.trim());
+      }
+      if (heroLink && typeof hero.cta_url === 'string' && hero.cta_url.trim()) {
+        const target = hero.cta_url.trim();
+        if (target.startsWith('#') || (target.startsWith('/') && !target.startsWith('//') && !target.includes('\\')) || /^https:\/\//i.test(target)) heroLink.href = target;
+      }
+      const image = document.getElementById('hero-background-image'), src = safeImageUrl(hero.image_url);
+      if (image && src) { image.src = src; image.onerror = () => image.classList.add('hidden'); }
+    }
+    const about = content.get('home_about');
+    if (about) { setText('about-heading', about.headline); setText('about-description', about.description); }
+    const featured = content.get('home_featured');
+    if (featured && Object.values(featured).some(value => typeof value === 'string' && value.trim())) {
+      document.getElementById('landing-featured')?.classList.remove('hidden');
+      setText('landing-featured-heading', featured.headline); setText('landing-featured-description', featured.description);
+      const cta = document.getElementById('landing-featured-cta');
+      if (cta && featured.cta_label && featured.cta_url) { cta.textContent = featured.cta_label; cta.href = featured.cta_url; }
+      else cta?.classList.add('hidden');
+      const image = document.getElementById('landing-featured-image'), fallback = document.getElementById('landing-featured-image-fallback');
+      const src = safeImageUrl(featured.image_url);
+      if (image && src) { image.src = src; image.alt = featured.headline || ''; image.onerror = () => { image.classList.add('hidden'); fallback?.classList.remove('hidden'); fallback?.classList.add('flex'); }; }
+      else { image?.classList.add('hidden'); fallback?.classList.remove('hidden'); fallback?.classList.add('flex'); }
+    }
+    const legal = content.get('home_legal_notice');
+    if (typeof legal?.notice === 'string') { const notice = document.getElementById('landing-legal-notice'); if (notice) { notice.textContent = legal.notice; notice.classList.toggle('hidden', !legal.notice.trim()); } }
+  } catch {
+    // Curated source content remains visible when the CMS is unavailable.
   }
 }
 
@@ -437,7 +492,7 @@ function filterAndRenderRooms() {
       <div class="room-card glass-card rounded-2xl overflow-hidden flex flex-col group" data-room-id="${room.id}">
         <!-- Image Container -->
         <div class="room-image-container relative h-64 overflow-hidden">
-          <img src="${room.image}" alt="${room.name}" class="w-full h-full object-cover">
+          <img src="${escapeHtml(room.image)}" alt="${escapeHtml(room.imageAlt || room.name)}" class="room-photo w-full h-full object-cover">
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20"></div>
           
           <!-- Badge -->
@@ -466,12 +521,12 @@ function filterAndRenderRooms() {
           <div>
             <!-- Category & Title -->
             <div class="flex items-center justify-between text-xs tracking-widest uppercase font-semibold text-amber-400 mb-1">
-              <span>${room.category} Class${room.isDemoCatalog ? ' · Demo' : ''}</span>
-              <span class="text-slate-400">#${room.roomNumber}</span>
+              <span>${escapeHtml(room.category)} Class${room.isDemoCatalog ? ' · Demo' : ''}</span>
+              <span class="text-slate-400">#${escapeHtml(room.roomNumber)}</span>
             </div>
-            <div class="room-availability room-availability--${statusColor}" title="${t('Theo ngày nhận/trả phòng đã kiểm tra:')} ${room.statusDates || t('chưa có dữ liệu')}" role="status">${statusLabel}</div>
+            <div class="room-availability room-availability--${statusColor}" title="${escapeHtml(t('Theo ngày nhận/trả phòng đã kiểm tra:'))} ${escapeHtml(room.statusDates || t('chưa có dữ liệu'))}" role="status">${escapeHtml(statusLabel)}</div>
             <h3 class="font-serif text-xl text-white font-medium group-hover:text-amber-200 transition-colors line-clamp-1 mb-3">
-              ${room.name}
+              ${escapeHtml(room.name)}
             </h3>
 
             <!-- Room Specs -->
@@ -524,7 +579,26 @@ function filterAndRenderRooms() {
   }).join('');
 
   refreshLucideIcons();
+  bindRoomImageFallbacks(grid);
   attachRoomCardListeners();
+}
+
+function syncRoomCategoryTabs() {
+  const root = document.getElementById('room-category-tabs');
+  const allTab = root?.querySelector('[data-category="all"]');
+  if (!root || !allTab) return;
+  const categories = [...new Set(state.rooms.map(room => room.category).filter(Boolean))];
+  if (state.selectedCategory !== 'all' && !categories.some(category => category.toLowerCase() === state.selectedCategory.toLowerCase())) {
+    state.selectedCategory = 'all';
+  }
+  const active = 'bg-amber-500 text-slate-950 font-bold px-4 py-2 rounded-xl transition-all';
+  const inactive = 'text-slate-400 hover:text-white px-4 py-2 rounded-xl transition-all';
+  allTab.className = `room-filter-tab ${state.selectedCategory === 'all' ? active : inactive}`;
+  root.replaceChildren(allTab);
+  for (const category of categories) {
+    const tab = document.createElement('button'); tab.type = 'button'; tab.className = `room-filter-tab ${category.toLowerCase() === state.selectedCategory.toLowerCase() ? active : inactive}`;
+    tab.dataset.category = category; tab.textContent = category; root.append(tab);
+  }
 }
 
 function attachRoomCardListeners() {
@@ -560,15 +634,15 @@ function openRoomDetailModal(roomId) {
   body.innerHTML = `
     <!-- Top Image Hero -->
     <div class="relative h-72 md:h-96 w-full rounded-2xl overflow-hidden mb-6">
-      <img src="${room.image}" alt="${room.name}" class="w-full h-full object-cover">
+      <img src="${escapeHtml(room.image)}" alt="${escapeHtml(room.imageAlt || room.name)}" class="room-photo w-full h-full object-cover">
       <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
       
       <div class="absolute bottom-4 left-6 right-6 flex items-end justify-between">
         <div>
           <span class="text-xs font-semibold tracking-widest text-amber-400 uppercase bg-slate-900/80 px-3 py-1 rounded-full border border-amber-500/30">
-            ${room.category} - <span data-i18n="Phòng">Phòng</span> #${room.roomNumber}
+            ${escapeHtml(room.category)} - <span data-i18n="Phòng">Phòng</span> #${escapeHtml(room.roomNumber)}
           </span>
-          <h2 class="text-2xl md:text-3xl font-serif text-white font-medium mt-2">${room.name}</h2>
+          <h2 class="text-2xl md:text-3xl font-serif text-white font-medium mt-2">${escapeHtml(room.name)}</h2>
           <p class="text-sm text-amber-200/90 flex items-center gap-1.5 mt-1">
             <i data-lucide="compass" class="w-4 h-4 text-amber-400"></i> ${translatedLabel(room.view)}
           </p>
@@ -640,6 +714,7 @@ function openRoomDetailModal(roomId) {
     </div>
   `;
 
+  bindRoomImageFallbacks(body);
   refreshLucideIcons();
   modal.classList.add('active');
 }
@@ -774,6 +849,7 @@ function showBookingLoginPrompt(roomId) {
 }
 
 _global.closeBookingModal = function() {
+  clearTimeout(state.booking.paymentPollTimer);
   const modal = document.getElementById('booking-modal');
   if (modal) modal.classList.remove('active');
   if (state.booking.countdownTimer) {
@@ -876,13 +952,13 @@ function renderBookingModalContent() {
 
       <!-- Selected Room Highlight Card -->
       <div class="p-4 rounded-xl bg-slate-900/80 border border-amber-500/25 flex flex-col sm:flex-row gap-4 items-center mb-6">
-        <img src="${b.room.image}" alt="${b.room.name}" class="w-full sm:w-36 h-28 object-cover rounded-lg shrink-0">
+        <img src="${escapeHtml(b.room.image)}" alt="${escapeHtml(b.room.imageAlt || b.room.name)}" class="booking-room-photo w-full sm:w-36 h-28 object-cover rounded-lg shrink-0">
         <div class="flex-1 w-full text-left">
           <div class="flex items-center justify-between">
-            <span class="text-xs text-amber-400 font-bold tracking-wider uppercase">${b.room.category} - #${b.room.roomNumber}</span>
+            <span class="text-xs text-amber-400 font-bold tracking-wider uppercase">${escapeHtml(b.room.category)} - #${escapeHtml(b.room.roomNumber)}</span>
             <span class="text-xs text-slate-400">${b.room.area} m² | ${b.room.capacity} <span data-i18n="Khách">Khách</span></span>
           </div>
-          <h3 class="font-serif text-lg text-white font-medium my-1">${b.room.name}</h3>
+          <h3 class="font-serif text-lg text-white font-medium my-1">${escapeHtml(b.room.name)}</h3>
           <p class="text-xs text-slate-400">${translatedLabel(b.room.bedType)} • ${translatedLabel(b.room.view)}</p>
         </div>
       </div>
@@ -945,6 +1021,9 @@ function renderBookingModalContent() {
         </button>
       </div>
     `;
+
+    const bookingRoomPhoto = body.querySelector('.booking-room-photo');
+    if (bookingRoomPhoto) bindRoomImageFallbacks(bookingRoomPhoto.parentElement);
 
     // Step 1 Event Listeners
     const dateIn = document.getElementById('booking-checkin');
@@ -1061,7 +1140,7 @@ function renderBookingModalContent() {
 
       <!-- Mini Price Reminder -->
       <div class="p-3.5 rounded-xl bg-slate-900/60 border border-amber-500/20 flex items-center justify-between text-xs text-slate-300 mb-6">
-        <span><span data-i18n="Đặt phòng:">Đặt phòng:</span> <strong class="text-white">${b.room.name}</strong> (${b.nights} <span data-i18n="đêm" data-i18n-count="${b.nights}">đêm</span>)</span>
+        <span><span data-i18n="Đặt phòng:">Đặt phòng:</span> <strong class="text-white">${escapeHtml(b.room.name)}</strong> (${b.nights} <span data-i18n="đêm" data-i18n-count="${b.nights}">đêm</span>)</span>
         <span class="font-bold text-amber-300 text-sm">${formattedTotal}</span>
       </div>
 
@@ -1115,7 +1194,8 @@ function renderBookingModalContent() {
           });
 
           b.bookingId = res.bookingId;
-          b.payment = res.payment;
+          b.folio = res.folio;
+          b.payment = await api.get(`/folios/${res.folio.id}/payment-qr`,{timeoutMs:20000}).catch(()=>null);
           b.bookingReference = res.bookingReference;
           if (res.totalAmount >= 0) b.totalAmount = Math.round(res.totalAmount);
           b.step = 3;
@@ -1161,7 +1241,8 @@ function renderBookingModalContent() {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center vietqr-card rounded-2xl p-6 mb-6">
         <!-- QR Code Image -->
         <div class="flex flex-col items-center justify-center bg-white p-4 rounded-xl shadow-2xl">
-          <img src="${qrUrl}" alt="VietQR Thanh Toán" class="w-60 h-60 object-contain rounded-lg">
+          <img ${qrUrl?`src="${qrUrl}"`:'hidden'} alt="VietQR Thanh Toán" class="w-60 h-60 object-contain rounded-lg">
+          ${qrUrl?'':'<p class="alert alert-warning">Chưa thể tạo QR. Kiểm tra cấu hình cổng thanh toán với lễ tân.</p>'}
           <div class="mt-2 text-center text-slate-800 text-xs font-medium flex items-center gap-1.5">
             <i data-lucide="scan" class="w-4 h-4 text-emerald-600"></i>
             <span><span data-i18n="Quét bằng ứng dụng Ngân hàng bất kỳ">Quét bằng ứng dụng Ngân hàng bất kỳ</span></span>
@@ -1216,6 +1297,7 @@ function renderBookingModalContent() {
         </div>
       </div>
 
+      <p id="home-payment-status" class="alert" role="status">Đang chờ xác nhận thanh toán từ ngân hàng.</p>
       <!-- Action Buttons -->
       <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
         <button type="button" class="btn-outline-gold px-5 py-2.5 rounded-xl text-sm w-full sm:w-auto flex items-center justify-center gap-2" onclick="window.print()">
@@ -1226,6 +1308,7 @@ function renderBookingModalContent() {
         </button>
       </div>
     `;
+    watchHomePayment(b);
   }
 
   refreshLucideIcons();
@@ -1248,6 +1331,21 @@ _global.copyToClipboard = function(text, successMsg = t('Đã sao chép!')) {
   }
 };
 
+function watchHomePayment(booking) {
+  clearTimeout(booking.paymentPollTimer);
+  if(!booking.folio?.id)return;
+  const poll=async()=>{
+    const status=document.getElementById('home-payment-status');
+    if(booking!==state.booking||booking.step!==3||!status||!document.getElementById('booking-modal')?.classList.contains('active'))return;
+    try{
+      const payment=await api.get(`/folios/${booking.folio.id}/payment-status`);
+      if(booking!==state.booking||!status.isConnected)return;
+      status.textContent=paymentLabel(payment)+(paymentState(payment)==='PARTIAL'?` · Còn ${Number(payment.remaining_amount).toLocaleString('vi-VN')} đ`:'');
+      if(paymentState(payment)==='PAID'){clearInterval(booking.countdownTimer);booking.countdownTimer=null;return;}
+    }catch{status.textContent='Chưa lấy được xác nhận thanh toán. Đặt phòng vẫn được lưu; vui lòng kiểm tra lịch sử.';}
+    if(booking.countdownSeconds>0)booking.paymentPollTimer=setTimeout(poll,3000);
+  };booking.paymentPollTimer=setTimeout(poll,2500);
+}
 function startBookingCountdown() {
   if (state.booking.countdownTimer) {
     clearInterval(state.booking.countdownTimer);
@@ -1620,18 +1718,18 @@ function initEventListeners() {
   }
 
   // Category Filter Tabs
-  document.querySelectorAll('.room-filter-tab').forEach(tab => {
-    tab.addEventListener('click', (e) => {
+  document.getElementById('room-category-tabs')?.addEventListener('click', (e) => {
+      const tab = e.target.closest('.room-filter-tab');
+      if (!tab) return;
       document.querySelectorAll('.room-filter-tab').forEach(t => {
         t.classList.remove('bg-amber-500', 'text-slate-950', 'font-bold');
         t.classList.add('text-slate-400', 'hover:text-white');
       });
-      e.currentTarget.classList.add('bg-amber-500', 'text-slate-950', 'font-bold');
-      e.currentTarget.classList.remove('text-slate-400', 'hover:text-white');
+      tab.classList.add('bg-amber-500', 'text-slate-950', 'font-bold');
+      tab.classList.remove('text-slate-400', 'hover:text-white');
 
-      state.selectedCategory = e.currentTarget.dataset.category;
+      state.selectedCategory = tab.dataset.category;
       filterAndRenderRooms();
-    });
   });
 
   // Gallery Filter Tabs
@@ -1770,7 +1868,7 @@ async function handleBookingLookup(e) {
         <div class="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/40 text-left space-y-3">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <span class="text-xs font-bold uppercase tracking-wider text-amber-400"><span data-i18n="Chi Tiết Đặt Phòng">Chi Tiết Đặt Phòng</span></span>
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${b.status === 'CONFIRMED' || b.paymentStatus === 'PAID' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'}">
+            <span class="${paymentBadge(b)}">
               ${b.status || t('ĐÃ XÁC NHẬN')}
             </span>
           </div>
@@ -1806,7 +1904,7 @@ async function handleBookingLookup(e) {
           </div>
           <div class="text-[11px] text-emerald-400/90 flex items-center gap-1.5 pt-1">
             <i data-lucide="check-circle" class="w-3.5 h-3.5 shrink-0"></i>
-            <span><span data-i18n="Trạng thái thanh toán:">Trạng thái thanh toán:</span> <strong>${b.paymentStatus === 'PAID' ? t('Đã Thanh Toán (VietQR)') : t('Chờ Thanh Toán')}</strong></span>
+            <span><span data-i18n="Trạng thái thanh toán:">Trạng thái thanh toán:</span> <strong>${paymentLabel(b)}</strong></span>
           </div>
         </div>
       `;

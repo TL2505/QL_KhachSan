@@ -35,23 +35,53 @@ public final class FolioService {
                 dao.reserveIdempotency(c, request.idempotencyKey(), request.requestHash());
                 FolioDao.FolioState folio = dao.lockFolio(c, request.folioId());
                 if (folio == null) { c.rollback(); return PaymentResult.error(404, "ERR_404_NOT_FOUND", "Folio not found"); }
-                if (request.amount().compareTo(folio.balance()) > 0) { c.rollback(); return PaymentResult.error(409, "ERR_409_CONFLICT", "Payment exceeds the folio balance"); }
-                BigDecimal balance = FolioLedgerMath.apply(folio.balance(), "credit", request.amount());
+                if(request.checkout()&&!java.util.Set.of("checked_in","checked_out").contains(folio.bookingStatus())) {
+                    c.rollback(); return PaymentResult.error(409,"ERR_409_INVALID_STATE","Only checked-in bookings may check out");
+                }
+                CheckoutAdjustmentService.CheckoutPlan checkoutPlan = null;
+                if(request.checkout()&&"checked_in".equals(folio.bookingStatus())) {
+                    try { checkoutPlan = new CheckoutAdjustmentService().assess(c,folio.bookingId()); }
+                    catch(CheckoutAdjustmentService.CheckoutAdjustmentException ex) {
+                        c.rollback(); return PaymentResult.error(409,"ERR_409_CHECKOUT_RATE_REQUIRED",ex.getMessage());
+                    }
+                }
+                BigDecimal currentFolioBalance=dao.folioBalance(c,request.folioId());
+                if (request.amount().compareTo(currentFolioBalance) > 0) { c.rollback(); return PaymentResult.error(409, "ERR_409_CONFLICT", "Payment exceeds the folio balance"); }
+                BigDecimal balance = FolioLedgerMath.apply(currentFolioBalance, "credit", request.amount());
                 if (request.amount().signum() > 0) {
                     dao.insertPaymentCredit(c, request);
                     injector.afterLedgerInsert();
                 }
                 dao.updateBalance(c, request.folioId(), balance);
-                FolioDao.confirmPaidBooking(c,folio.bookingId());
-                boolean checkedOut = false;
-                if(request.checkout()){
-                    if(!new FolioRoutingEngine().canCloseBooking(c,folio.bookingId())){c.rollback();return PaymentResult.error(409,"ERR_409_UNPAID_FOLIOS","Unpaid folio balances prevent checkout; payment was not recorded");}
-                    checkedOut=dao.checkout(c,folio.bookingId(),folio.roomId());
-                    if(!checkedOut){c.rollback();return PaymentResult.error(409,"ERR_409_INVALID_STATE","Only checked-in bookings may check out");}
+                if(request.amount().signum()>0){
+                    String method=collectionMethod(request.paymentMethod());
+                    quanlykhachsan.backend.payment.PaymentReconciliationService.recordCollection(c,method.equals("cash")?"cash":"pos",method,request.idempotencyKey(),request.folioId(),request.amount(),balance);
+                    quanlykhachsan.backend.notification.LifecycleNotifications.payment(c,folio.bookingId(),request.idempotencyKey(),request.amount(),balance);
                 }
+                FolioDao.confirmPaidBooking(c,folio.bookingId());
+                boolean checkedOut = "checked_out".equals(folio.bookingStatus());
+                if(request.checkout()){
+                    if("checked_in".equals(folio.bookingStatus())) {
+                        if(dao.bookingBaseBalance(c,folio.bookingId()).signum()!=0){
+                            c.rollback();return PaymentResult.error(409,"ERR_409_UNPAID_FOLIOS","Unpaid base folio balances prevent checkout; payment was not recorded");
+                        }
+                        checkedOut=dao.checkout(c,folio.bookingId(),folio.roomId(),checkoutPlan.rentalType(),checkoutPlan.bufferMinutes());
+                        if(!checkedOut){c.rollback();return PaymentResult.error(409,"ERR_409_INVALID_STATE","Only checked-in bookings may check out");}
+                    }
+                }
+                BigDecimal bookingBalance=dao.bookingBalance(c,folio.bookingId());
+                if("checked_out".equals(folio.bookingStatus())&&bookingBalance.signum()==0)
+                    quanlykhachsan.backend.invoice.InvoiceFinalizationService.finalizePaid(c,folio.bookingId());
                 JsonObject data = new JsonObject();
                 data.addProperty("folio_id", request.folioId()); data.addProperty("booking_id", folio.bookingId());
                 data.addProperty("balance", balance); data.addProperty("checked_out", checkedOut);
+                if(request.checkout()) {
+                    data.addProperty("booking_balance",bookingBalance);
+                    data.addProperty("checkout_required_payment",bookingBalance.signum()>0);
+                    if(bookingBalance.signum()>0)data.addProperty("checkout_message",checkedOut
+                            ?"Phòng đã được trả; vui lòng thu tiếp số dư phụ thu trên folio."
+                            :"Đã ghi nhận khoản thu. Vui lòng thanh toán các khoản còn lại để hoàn tất trả phòng.");
+                }
                 JsonObject envelope = new JsonObject(); envelope.addProperty("status", "success");
                 envelope.addProperty("message", "Payment recorded"); envelope.add("data", data);
                 String body = quanlykhachsan.backend.utils.JsonUtil.getGson().toJson(envelope);

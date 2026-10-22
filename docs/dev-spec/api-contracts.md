@@ -1,5 +1,28 @@
 # API CONTRACTS & INTEGRATION GUIDE (PHASE 1, 2 & 3 REST API)
 
+## 2026-10-22 additive payment/notification contract
+
+These additions use the existing `{status:"success",data:...}` envelope. See [operations/setup](../vi/payments-notifications.md). Earlier frozen contracts retain their fields; `folios.status` remains the accounting state, separate from the canonical `payment_status`.
+
+| Route | Access | Result |
+| --- | --- | --- |
+| POST `/api/v1/webhooks/payos` | Public, verified body HMAC required | Atomically audit and settle a signed provider transaction. Invalid signature 401; malformed/oversized 400/413; missing configuration or transient DB failure 503. Persisted business exceptions return 200 with `data.payment_status=RECONCILIATION_ERROR` and `reason`; never infer payment from HTTP 200. |
+| GET `/api/v1/folios/{id-or-code}/payment-qr` | Staff or owning customer/guest | Provider QR image/payload, account details, reference, order_code, amount, currency, expires_in_seconds. Existing `/vietqr` is a compatibility alias. Missing payOS configuration returns 503 without a fabricated QR. |
+| GET `/api/v1/folios/{id-or-code}/payment-status` | Same ownership | Existing balance/status plus `payment_status` (WAITING/PAID/PARTIAL/RECONCILIATION_ERROR), `paid_amount`, `remaining_amount`, `reconciliation_reason`. |
+| GET `/api/v1/folios/{id-or-code}/payment-history` | Same ownership | Latest 100 normalized provider/method receipts and reconciliation exceptions. |
+| GET `/api/v1/payment-operations/transactions` | Staff sees all; customer/guest sees own | Paginated transaction audit; optional `folio_id`, `limit` 1–100 (default 50), `offset` >=0. Unknown-reference transactions visible only to staff. |
+| GET `/api/v1/payment-operations/notifications` | Same scope | Outbox state, booking/event reference, attempts, sanitized last_error, due/sent timestamps; no credentials or recipient addresses. |
+| GET `/api/v1/payment-operations/attempts?id={outbox-id}` | Same scope | Attempt number/state/error/start/finish timestamps; no access to another customer's deliveries. |
+| GET `/api/v1/payment-operations/configuration` | Staff only | QR provider/configuration presence and email opt-in flag; does not verify provider credentials. |
+
+Transaction audit includes provider, payment_method, direction (current collections IN), transaction_id, folio_id (nullable), amount, applied_amount, excess_amount, payment_status, reason, transaction_at and webhook delivery count. `HISTORICAL_COLLECTION` identifies imported authoritative receipts without new ledger credits. Historical cash/POS status uses the folio balance at migration time. Current state must always come from the status projection.
+
+Customer portal booking results now include canonical `paymentStatus` and a `payment` object containing the same status/paid/remaining fields aggregated over the booking's folios. Booking lifecycle status does not imply a payment state.
+
+Cash/POS collection continues through POST `/folios/{id}/pay` with UUIDv4 `Idempotency-Key`, `amount`, `payment_method` and optional `checkout`. Transfers cannot be manually recorded with this route. Verified payments atomically queue in-app notifications and an email outbox record; replays never create duplicate events. Email states: PENDING, SENDING, RETRY, SENT (accepted by SMTP), FAILED, UNKNOWN (ambiguous acceptance; no blind resend), SKIPPED. Event types add booking_created, payment_paid, payment_partial, payment_error, checkin_reminder and checkout_reminder to existing lifecycle types. Reminder defaults are 24 hours before check-in and 2 hours before checkout, Vietnam time.
+
+The gateway extension boundary is `PaymentGateway` plus a provider-specific authenticated webhook adapter producing `VerifiedPayment`. New providers must never trust unsigned browser redirects or reuse another provider's signature algorithm. Shared audit/outbox tables are provider-independent; future refunds/outgoing transactions still need their own accounting and authorization rules.
+
 > **Contract Freeze Status:** FROZEN (OpenAPI 3.0.3 Contract Parity Verified)
 > **Target Document:** [`openapi-p1.json`](file:///c:/Users/Admin/OneDrive/Documents/NetBeansProjects/QL_KhachSan_main/docs/dev-spec/openapi-p1.json)
 > **Server Base URL:** `http://localhost:8081`

@@ -10,6 +10,7 @@ import { renderConcierge } from "./customer/concierge.js?v=3.6.20";
 import { renderSupport } from "./customer/support.js";
 import { api, getAuthSession } from "../api.js";
 import { getLegacyTierInfo, membershipPoints } from "./customer/tier-helper.js";
+import { renderPaymentOperations } from './shared/payment-operations.js';
 
 let navigationVersion = 0;
 
@@ -52,7 +53,9 @@ export async function loadCustomerView(tab = "dashboard") {
   if (navigation !== navigationVersion || getAuthSession()?.token !== session.token) return;
 
   try {
-    if (tab === "dashboard") {
+    if (tab === 'payment-operations') {
+      await renderPaymentOperations(container, session);
+    } else if (tab === "dashboard") {
       await renderDashboard(container, session);
     } else if (tab === "bookings") {
       await renderBookings(container, session);

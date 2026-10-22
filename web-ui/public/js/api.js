@@ -159,7 +159,8 @@ function messageFor(status) {
 export async function apiFetch(path, init = {}) {
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn yêu cầu không hợp lệ.');
   const cleanPath = path.startsWith('/') ? path : '/' + path;
-  const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/');
+  const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/')
+    || cleanPath.startsWith('/public/room-types') || cleanPath.startsWith('/public/landing-content');
   const session = getAuthSession();
   const token = (typeof session?.token === 'string' && session.token) ? session.token : getStoredCustomerToken();
   const headers = new Headers(init.headers || {});
@@ -438,6 +439,7 @@ export function mapRoomCategory(roomTypeId, rawCategory, rawName) {
     if (n.includes('suite')) return 'Suite';
     if (n.includes('presidential') || n.includes('villa') || n.includes('penthouse')) return 'Presidential';
     if (n.includes('family')) return 'Family';
+    if (rawName.trim()) return rawName.trim();
   }
   const idNum = Number(roomTypeId);
   if (idNum === 2) return 'Suite';
@@ -509,10 +511,19 @@ export async function getRooms(filterParams = {}) {
 
       if (rawRooms.length === 0) return { rooms: [], source: 'api' };
       if (rawRooms.length > 0) {
-        const rooms = rawRooms.map((r, index) => {
+        const catalogueResponse = await fetch(`${root}/public/room-types`, {
+          method: 'GET', headers: { 'Accept': 'application/json', 'X-User-Role': 'guest' }, signal: AbortSignal.timeout(4000)
+        });
+        if (!catalogueResponse.ok) throw new ApiError('Không thể tải danh mục hạng phòng.', catalogueResponse.status);
+        const cataloguePayload = await catalogueResponse.json();
+        const publicTypes = Array.isArray(cataloguePayload?.data) ? cataloguePayload.data : [];
+        const typesById = new Map(publicTypes.map(type => [Number(type.id), type]));
+        const visibleRooms = rawRooms.filter(room => typesById.has(Number(room.room_type_id || room.roomTypeId || room.roomType)));
+        const rooms = visibleRooms.map((r, index) => {
           if (!Number.isInteger(r.id) || r.id < 1 || r.price == null || !Number.isFinite(Number(r.price)) || Number(r.price) < 0) throw new Error('Invalid room inventory');
           const typeId = r.roomTypeId || r.room_type_id || r.roomType || (index % 5 + 1);
-          const typeName = r.room_type_name || r.roomTypeName || r.name || '';
+          const managedType = typesById.get(Number(typeId));
+          const typeName = managedType?.name || r.room_type_name || r.roomTypeName || r.name || '';
           const category = mapRoomCategory(typeId, r.category, typeName);
           const fallback = LUXURY_ROOMS_CATALOG.find(room => 
             room.category.toLowerCase() === category.toLowerCase() ||
@@ -528,22 +539,26 @@ export async function getRooms(filterParams = {}) {
             category: category,
             price: Number(r.price),
             area: r.area || fallback.area,
-            capacity: r.capacity || fallback.capacity,
+            capacity: managedType?.capacity || r.capacity || fallback.capacity,
             childrenCapacity: fallback.childrenCapacity,
             bedType: r.bedType || fallback.bedType,
             view: r.view || fallback.view,
             rating: fallback.rating,
             reviewsCount: fallback.reviewsCount,
             badge: fallback.badge,
-            image: r.image_url || r.imageUrl || fallback.image,
+            image: managedType?.image_url || r.image_url || r.imageUrl || '',
+            imageAlt: managedType?.image_alt || typeName,
             gallery: fallback.gallery,
-            amenities: r.amenities ? (Array.isArray(r.amenities) ? r.amenities : String(r.amenities).split(',').map(v => v.trim()).filter(Boolean)) : fallback.amenities,
-            description: r.description || fallback.description,
+            amenities: managedType ? String(managedType.amenities || '').split(',').map(v => v.trim()).filter(Boolean)
+              : r.amenities ? (Array.isArray(r.amenities) ? r.amenities : String(r.amenities).split(',').map(v => v.trim()).filter(Boolean)) : fallback.amenities,
+            description: managedType ? (managedType.description || '') : (r.description || fallback.description),
+            displayOrder: managedType?.display_order ?? 0,
             isDemoCatalog: false,
             status: r.status || 'unknown',
             version: r.version ?? 0
           };
         });
+        rooms.sort((a, b) => Number(a.displayOrder) - Number(b.displayOrder) || Number(a.id) - Number(b.id));
         return { rooms, source: 'api' };
       }
     }

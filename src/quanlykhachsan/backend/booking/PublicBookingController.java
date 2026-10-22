@@ -7,6 +7,8 @@ import java.time.format.*;
 import quanlykhachsan.backend.utils.*;
 import quanlykhachsan.backend.customer.GuestIngestionService;
 import quanlykhachsan.backend.room.OptimisticLockException;
+import quanlykhachsan.backend.room.RentalType;
+import quanlykhachsan.backend.room.StayWindow;
 
 public final class PublicBookingController implements HttpHandler {
     private final boolean walkIn;
@@ -29,9 +31,9 @@ public final class PublicBookingController implements HttpHandler {
             String voucher=PortalValidation.text(b,"voucher_code",50,false);
             var format=DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT);
             LocalDateTime in=LocalDateTime.parse(PortalValidation.text(b,"check_in_date",19,true),format),out=LocalDateTime.parse(PortalValidation.text(b,"check_out_date",19,true),format);
-            if(!in.toLocalTime().equals(LocalTime.of(14,0)) || !out.toLocalTime().equals(LocalTime.NOON))throw new IllegalArgumentException();
-            var range=PortalValidation.range(in.toLocalDate().toString(),out.toLocalDate().toString());
-            if(walkIn && !range.checkIn().equals(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"))))throw new IllegalArgumentException();
+            RentalType requestedType=RentalType.parse(PortalValidation.text(b,"rental_type",20,false));
+            StayWindow stay=StayWindow.resolve(requestedType,in,out);
+            if(walkIn && !stay.checkIn().toLocalDate().equals(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"))))throw new IllegalArgumentException();
             int roomId=PortalValidation.integer(b,"room_id",1),roomVersion=PortalValidation.integer(b,"room_version",0);
             int guestCount=b.has("guest_count")?PortalValidation.integer(b,"guest_count",1):1;
             java.math.BigDecimal expectedTotal=null;
@@ -42,7 +44,10 @@ public final class PublicBookingController implements HttpHandler {
             }
             int customer=new GuestIngestionService().ingest(name,phone,email,identity);
             if(role.equals("guest") && e.getAttribute("userId")!=null && (!(e.getAttribute("customer_id") instanceof Number) || ((Number)e.getAttribute("customer_id")).intValue()!=customer))throw new SecurityException();
-            var result=new PublicBookingService().reserve(key.toLowerCase(java.util.Locale.ROOT),new PublicBookingService.Request(name,phone,email,roomId,roomVersion,range.checkIn(),range.checkOut(),voucher,guestCount,expectedTotal),customer,walkIn?"Walk-in":"Web");
+            var request=new PublicBookingService.Request(name,phone,email,roomId,roomVersion,
+                stay.checkIn().toLocalDate(),stay.checkOut().toLocalDate(),voucher,guestCount,expectedTotal,
+                stay.rentalType(),stay.checkIn().toLocalTime(),stay.checkOut().toLocalTime());
+            var result=new PublicBookingService().reserve(key.toLowerCase(java.util.Locale.ROOT),request,customer,walkIn?"Walk-in":"Web");
             ApiResponseUtil.write(e,result.status(),result.body());
         }catch(SecurityException ex){ApiResponseUtil.write(e,403,ApiResponseUtil.error("Role or guest identity is not authorized"));}
         catch(IllegalArgumentException | DateTimeException ex){ApiResponseUtil.write(e,400,ApiResponseUtil.error("Invalid booking data or Idempotency-Key"));}

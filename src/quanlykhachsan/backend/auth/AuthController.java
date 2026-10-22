@@ -61,6 +61,8 @@ public class AuthController implements HttpHandler {
                     quanlykhachsan.backend.auth.dto.AuthUserInfo userInfo = AuthMapper.toUserInfo(user, roleStr);
                     try { LoginDeviceService.recordLogin(exchange, user.getId()); }
                     catch (java.sql.SQLException ex) {
+                        org.slf4j.LoggerFactory.getLogger(AuthController.class).error(
+                            "[LOGIN DEVICE_FAILURE] SQLState={} code={}", ex.getSQLState(), ex.getErrorCode());
                         ApiResponseUtil.write(exchange,503,ApiResponseUtil.error("Chưa thể ghi nhận thiết bị đăng nhập. Vui lòng thử lại.")); return;
                     }
                     userInfo.setToken(quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(
@@ -68,6 +70,7 @@ public class AuthController implements HttpHandler {
                     response = AuthMapper.success("Đăng nhập thành công", userInfo);
                 } else {
                     statusCode = 401;
+                    org.slf4j.LoggerFactory.getLogger(AuthController.class).info("[LOGIN REJECTED] Credentials did not match");
                     response = AuthMapper.error("Sai tên đăng nhập hoặc mật khẩu");
                 }
             } else if ("/api/v1/auth/register".equals(path) || path.endsWith("/auth/register")) {

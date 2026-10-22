@@ -9,12 +9,21 @@ import { renderInvoices } from "./admin/invoices.js?v=3.6.4";
 import { renderAdminCustomers } from "./admin/customers.js?v=3.6.4";
 import { renderAdminMembership } from "./admin/loyalty.js?v=3.6.21";
 import { renderAiSettings } from "./admin/ai-settings.js?v=7";
+import { renderPaymentOperations } from './shared/payment-operations.js';
+import { renderRentalPolicy } from './admin/rental-policy.js';
+import { renderCatalogContent } from './admin/catalog-content.js?v=1';
 
 export function loadAdminView(tab = "dashboard") {
     const container = document.getElementById("view-container");
     const session = JSON.parse(localStorage.getItem("hotel_auth_session"));
     
-    if (tab === "ai-settings") {
+    if (tab === 'payment-operations') {
+        renderPaymentOperations(container, session);
+    } else if (tab === "rental-policy") {
+        renderRentalPolicy(container);
+    } else if (tab === "catalog-content") {
+        renderCatalogContent(container, session);
+    } else if (tab === "ai-settings") {
         renderAiSettings(container, session);
     } else if (tab === "dashboard") {
         renderDashboard(container, session);

@@ -344,13 +344,13 @@
   * **Module:** Đóng gói Ứng dụng & Phát hành Máy trạm
   * **Người thực hiện:** Dev C
   * **Phụ thuộc (DAG):** Toàn bộ các task Dev C trước đó
-  * **Tệp mục tiêu:** `src/quanlykhachsan/frontend/view/SplashScreen.java`, `pom.xml` (Cấu hình Maven Shade & JPackage), `build_desktop_dist.bat`.
+  * **Tệp mục tiêu:** `src/quanlykhachsan/frontend/view/SplashScreen.java`, `pom.xml` (Cấu hình Maven Shade & JPackage), `scripts/build-desktop.ps1`.
   * **Định nghĩa Hoàn thành (DoD):**
     - Màn hình khởi động (Splash Screen) hiển thị trong $< 300\text{ms}$ với thanh tiến trình tải mượt mà và nạp trước Look and Feel FlatLaf Dark theme.
     - Đóng gói bộ cài tự chạy độc lập (Self-contained distribution) cho Windows: Tích hợp sẵn JRE 17 rút gọn, người dùng không cần cài đặt Java trên máy trạm.
     - Đo kiểm mức chiếm dụng bộ nhớ của client Desktop: RAM ở chế độ nghỉ (Idle) strictly $< 180\text{MB}$; RAM ở chế độ cao điểm khi mở lưới 200 phòng và camera strictly $< 350\text{MB}$.
     - Thời gian khởi động lạnh (Cold start) từ lúc bấm icon đến khi mở form đăng nhập hoàn tất trong $< 2.0\text{s}$.
-  * **Phương thức xác minh:** Chạy script `build_desktop_dist.bat`; kích hoạt ứng dụng trên máy trạm Windows sạch; đo thời gian khởi động và giám sát RAM qua Task Manager.
+  * **Phương thức xác minh:** Chạy script `scripts/build-desktop.ps1`; kích hoạt ứng dụng trên máy trạm Windows sạch; đo thời gian khởi động và giám sát RAM qua Task Manager.
 
 #### Dev D — DevOps, Kiểm thử Tự động & Phân hệ AI
 * **TASK-D12.1: Kiểm thử Ứng suất Ngâm tải 200 CCU trong 2 Giờ (JMeter)**

@@ -8,4 +8,8 @@ v3_2_phase2_1_schema.sql
 v3_3_revenue_views.sql
 v3_4_audit_compliance.sql
 v4_0_phase4_integrity.sql
+v4_2_payments_notifications.sql
+v4_3_rental_types_dynamic_buffers.sql
+v4_4_room_catalog_content_media.sql
+04_social_auth.sql
 v4_1_login_devices.sql

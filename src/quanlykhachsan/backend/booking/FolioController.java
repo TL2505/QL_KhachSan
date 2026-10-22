@@ -35,7 +35,8 @@ public final class FolioController implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
-        if(path.matches("/api/v1/folios/[^/]+/vietqr")){new VietQrController().handle(exchange);return;}
+        if(path.matches("/api/v1/folios/[^/]+/(vietqr|payment-qr)")){new VietQrController().handle(exchange);return;}
+        if(path.matches("/api/v1/folios/[^/]+/payment-history")){new PaymentHistoryController().handle(exchange);return;}
         if(path.matches("/api/v1/folios/[^/]+/payment-status")){new PaymentPollController().handle(exchange);return;}
         try {
             if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {

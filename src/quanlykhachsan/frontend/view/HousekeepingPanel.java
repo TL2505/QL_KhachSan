@@ -10,8 +10,10 @@ import quanlykhachsan.frontend.utils.SessionManagerUtil;
 public final class HousekeepingPanel extends JPanel {
     private final JCheckBox dirtyOnly = new JCheckBox("Phòng bẩn cần dọn", true);
     private final JPanel grid = new JPanel(new GridLayout(0, 5, 10, 10));
+    private final JPanel taskGrid = new JPanel(new GridLayout(0, 1, 8, 8));
     private final JLabel message = new JLabel(" ");
     private JsonArray rooms = new JsonArray();
+    private JsonArray tasks = new JsonArray();
     private int generation;
 
     public HousekeepingPanel() {
@@ -23,15 +25,20 @@ public final class HousekeepingPanel extends JPanel {
         tools.add(dirtyOnly);
         tools.add(refresh);
         add(tools, BorderLayout.NORTH);
-        add(new JScrollPane(grid), BorderLayout.CENTER);
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("Phòng", new JScrollPane(grid));
+        tabs.addTab("Hàng đợi dọn phòng", new JScrollPane(taskGrid));
+        add(tabs, BorderLayout.CENTER);
         add(message, BorderLayout.SOUTH);
 
         dirtyOnly.addActionListener(e -> render());
         refresh.addActionListener(e -> refresh());
+        refreshTasks();
         refresh();
     }
 
     public void refresh() {
+        refreshTasks();
         int current = ++generation;
         message.setText("Đang tải phòng…");
         Phase2UiApi.request("GET", "/v1/rooms", null, null, data -> {
@@ -42,6 +49,50 @@ public final class HousekeepingPanel extends JPanel {
         }, error -> {
             if (current == generation) message.setText("Chưa thể tải dữ liệu phòng. Vui lòng thử lại.");
         });
+    }
+
+    private void refreshTasks() {
+        Phase2UiApi.request("GET", "/v1/housekeeping/tasks", null, null, data -> {
+            tasks = data.getAsJsonArray(); renderTasks();
+        }, error -> {
+            taskGrid.removeAll(); taskGrid.add(new JLabel("Chưa tải được hàng đợi dọn phòng.")); taskGrid.revalidate(); taskGrid.repaint();
+        });
+    }
+
+    private void renderTasks() {
+        taskGrid.removeAll();
+        for (JsonElement element : tasks) {
+            JsonObject task = element.getAsJsonObject();
+            String status = task.get("status").getAsString();
+            String type = switch (task.get("rental_type").getAsString()) {
+                case "HOURLY" -> "Theo giờ"; case "OVERNIGHT" -> "Qua đêm"; default -> "Theo ngày";
+            };
+            JPanel card = new JPanel(new BorderLayout(8, 6));
+            card.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(
+                task.has("overdue") && task.get("overdue").getAsBoolean() || task.has("turnaround_conflict") && task.get("turnaround_conflict").getAsBoolean()
+                    ? new Color(205, 70, 60) : new Color(190, 160, 95), 1),
+                BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+            String due = task.get("due_at").isJsonNull() ? "Chưa có lượt kế tiếp" : "Cần sẵn sàng trước " + task.get("due_at").getAsString().replace('T', ' ');
+            String eta = task.get("expected_finish_at").isJsonNull() ? "Chưa ước tính" : "Dự kiến hoàn tất " + task.get("expected_finish_at").getAsString().replace('T', ' ');
+            JLabel details = new JLabel("Phòng " + task.get("room_number").getAsString() + " · " + type + " · "
+                + task.get("estimated_duration_minutes").getAsInt() + " phút · " + due + " · " + eta
+                + (task.has("overdue") && task.get("overdue").getAsBoolean() ? " · QUÁ HẠN" : "")
+                + (task.has("turnaround_conflict") && task.get("turnaround_conflict").getAsBoolean() ? " · ETA TRỄ HƠN LƯỢT NHẬN KẾ TIẾP" : ""));
+            card.add(details, BorderLayout.CENTER);
+            if (status.equals("pending")) {
+                JButton start = new JButton("Nhận dọn phòng");
+                start.addActionListener(e -> {
+                    start.setEnabled(false);
+                    Phase2UiApi.request("POST", "/v1/housekeeping/tasks/" + task.get("id").getAsLong() + "/start", "{}", UUID.randomUUID().toString(), data -> refresh(), error -> {
+                        message.setText("Chưa thể bắt đầu task; kiểm tra lại trạng thái phòng và thời gian buffer."); start.setEnabled(true);
+                    });
+                });
+                card.add(start, BorderLayout.EAST);
+            } else card.add(new JLabel("Đang dọn"), BorderLayout.EAST);
+            taskGrid.add(card);
+        }
+        if (tasks.size() == 0) taskGrid.add(new JLabel("Không có task dọn phòng đang chờ."));
+        taskGrid.revalidate(); taskGrid.repaint();
     }
 
     private void render() {

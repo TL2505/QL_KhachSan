@@ -8,9 +8,13 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.UUID;
 import quanlykhachsan.backend.booking.PublicBookingService;
 import quanlykhachsan.backend.room.OptimisticLockException;
+import quanlykhachsan.backend.room.RentalType;
+import quanlykhachsan.backend.room.StayWindow;
 import quanlykhachsan.backend.utils.ApiResponseUtil;
 import quanlykhachsan.backend.utils.DatabaseConnection;
 import quanlykhachsan.backend.utils.PortalValidation;
@@ -93,7 +97,7 @@ public final class CustomerPortalController implements HttpHandler {
                 var result = CustomerProfileService.save(c,user.intValue(),update,GuestIdentityVaultDao.configured());
                 ApiResponseUtil.write(exchange,200,ApiResponseUtil.successWithData(result));
             }
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | java.time.DateTimeException ex) {
             ApiResponseUtil.write(exchange,400,ApiResponseUtil.error("Thông tin hồ sơ không hợp lệ. Kiểm tra số điện thoại, email, CCCD và ngày sinh."));
         } catch (java.sql.SQLException ex) {
             boolean conflict = ex.getSQLState()!=null && ex.getSQLState().startsWith("23");
@@ -133,9 +137,12 @@ public final class CustomerPortalController implements HttpHandler {
             int roomId = PortalValidation.integer(body, "room_id", 1);
             int roomVersion = PortalValidation.integer(body, "room_version", 0);
             int guestCount = PortalValidation.integer(body, "guest_count", 1);
-            var dates = PortalValidation.range(
-                PortalValidation.text(body, "check_in_date", 10, true),
-                PortalValidation.text(body, "check_out_date", 10, true));
+            LocalDate checkIn=LocalDate.parse(PortalValidation.text(body,"check_in_date",10,true));
+            LocalDate checkOut=LocalDate.parse(PortalValidation.text(body,"check_out_date",10,true));
+            RentalType requestedType=RentalType.parse(PortalValidation.text(body,"rental_type",20,false));
+            LocalTime checkInTime=parseStayTime(body,"check_in_time",LocalTime.of(14,0));
+            LocalTime checkOutTime=parseStayTime(body,"check_out_time",LocalTime.NOON);
+            StayWindow stay=StayWindow.resolve(requestedType,checkIn.atTime(checkInTime),checkOut.atTime(checkOutTime));
             Integer customerId;
             try (Connection connection = DatabaseConnection.getConnection()) {
                 customerId = customerId(connection, ((Number) rawUserId).intValue());
@@ -146,7 +153,8 @@ public final class CustomerPortalController implements HttpHandler {
             }
             String voucherCode = PortalValidation.text(body, "voucher_code", 50, false);
             var request = new PublicBookingService.Request(
-                null, null, null, roomId, roomVersion, dates.checkIn(), dates.checkOut(), voucherCode, guestCount, quotedTotal);
+                null, null, null, roomId, roomVersion, stay.checkIn().toLocalDate(), stay.checkOut().toLocalDate(),
+                voucherCode, guestCount, quotedTotal, stay.rentalType(), stay.checkIn().toLocalTime(), stay.checkOut().toLocalTime());
             var result = new PublicBookingService().reserve(
                 key.toLowerCase(java.util.Locale.ROOT), request, customerId, "Web");
             ApiResponseUtil.write(exchange, result.status(), result.body());
@@ -158,6 +166,13 @@ public final class CustomerPortalController implements HttpHandler {
             System.err.println("Customer booking failed: " + ex.getClass().getSimpleName());
             ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("Booking is unavailable; please retry with the same Idempotency-Key or contact the Front Desk"));
         }
+    }
+
+    private static LocalTime parseStayTime(JsonObject body,String name,LocalTime fallback) {
+        String value=PortalValidation.text(body,name,5,false);
+        if(value==null)return fallback;
+        try{return LocalTime.parse(value,java.time.format.DateTimeFormatter.ofPattern("HH:mm").withResolverStyle(java.time.format.ResolverStyle.STRICT));}
+        catch(java.time.DateTimeException ex){throw new IllegalArgumentException("Invalid "+name);}
     }
 
     private static Integer customerId(Connection c, int userId) throws Exception {
@@ -299,7 +314,7 @@ public final class CustomerPortalController implements HttpHandler {
                 x.addProperty("roomId",r.getInt(2));x.addProperty("roomNumber",r.getString(3));
                 x.addProperty("checkInDate",r.getTimestamp(4).toString());x.addProperty("checkOutDate",r.getTimestamp(5).toString());
                 x.addProperty("totalPrice",r.getBigDecimal(6));x.addProperty("status",r.getString(7));
-                var balance=r.getBigDecimal(8);x.addProperty("paymentStatus",balance==null?"unavailable":balance.signum()<=0?"paid":"pending");
+                var payment=quanlykhachsan.backend.payment.PaymentStatus.forBooking(c,id);x.addProperty("paymentStatus",payment.get("payment_status").getAsString());x.add("payment",payment);
                 int invoiceId=r.getInt(9);if(!r.wasNull())x.addProperty("invoiceId",invoiceId);
                 boolean hasReview=r.getBoolean(10);x.addProperty("hasReview",hasReview);
                 x.addProperty("canReview","checked_out".equals(r.getString(7))&&!hasReview);
