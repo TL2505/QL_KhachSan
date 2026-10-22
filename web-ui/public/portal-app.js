@@ -111,6 +111,7 @@ const menus = {
 const titles = Object.fromEntries(Object.values(menus).flat().map(([key, title]) => [key, title]));
 titles['dashboard'] = 'Tổng quan & Hạng thẻ';
 titles['bookings'] = 'Lịch sử đặt phòng';
+titles['discovery'] = 'Đặt phòng mới';
 titles['concierge'] = 'Dịch vụ & Ví ưu đãi';
 titles['profile'] = 'Thông tin cá nhân';
 titles['security'] = 'Bảo mật & Mật khẩu';
@@ -407,10 +408,11 @@ function renderNav(session, activeTab) {
 
 function openView(session, role, tab) {
   try {
-    if (!menus[role]?.some(([key]) => key === tab)) {
+    const isCustomerBooking = role === 'CUSTOMER' && tab === 'discovery';
+    if (!isCustomerBooking && !menus[role]?.some(([key]) => key === tab)) {
       tab = menus[role]?.[0]?.[0] || 'dashboard';
     }
-    renderNav(session, tab);
+    renderNav(session, isCustomerBooking ? 'bookings' : tab);
 
     const heading = byId('portal-heading');
     if (heading) heading.textContent = (role === 'CUSTOMER' ? titles[tab] : menus[role]?.find(([key]) => key === tab)?.[1]) || 'Tổng quan';
@@ -423,7 +425,7 @@ function openView(session, role, tab) {
     const view = byId('view-container');
     if (view) {
       view.setAttribute('role', 'tabpanel');
-      view.setAttribute('aria-labelledby', `tab-${tab}`);
+      view.setAttribute('aria-labelledby', `tab-${isCustomerBooking ? 'bookings' : tab}`);
     }
 
     if (role === 'CUSTOMER') {

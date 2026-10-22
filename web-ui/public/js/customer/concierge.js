@@ -1,3 +1,4 @@
+import { renderBookingAction } from '../shared/booking-action.js';
 import { api } from "../../api.js";
 import { resolveServiceSchedule } from "./service-order.js";
 
@@ -145,9 +146,7 @@ export async function renderConcierge(container, session) {
           <a href="portal.html?view=bookings" class="px-3.5 py-2 rounded-xl customer-secondary-surface hover:bg-slate-700 customer-text text-xs font-semibold transition-all">
             Tra cứu đặt phòng
           </a>
-          <a href="index.html#rooms" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 text-xs font-bold hover:brightness-110 transition-all shadow">
-            Đặt phòng mới
-          </a>
+          ${renderBookingAction()}
         </div>
       </div>
     `}
@@ -218,10 +217,7 @@ export async function renderConcierge(container, session) {
             <p class="text-xs customer-muted">Sao chép mã ưu đãi hoặc áp dụng trực tiếp khi đặt phòng / gọi dịch vụ phòng</p>
           </div>
         </div>
-        <a href="index.html#rooms" class="btn portal-primary text-xs px-4 py-2 rounded-xl font-bold flex items-center gap-2 self-start sm:self-auto">
-          <i data-lucide="bed-double" class="w-4 h-4"></i>
-          <span>Đặt phòng dùng voucher</span>
-        </a>
+        ${renderBookingAction({ label: 'Đặt phòng dùng voucher' })}
       </div>
 
       <!-- Voucher Grid -->

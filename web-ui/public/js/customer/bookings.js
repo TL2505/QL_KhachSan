@@ -1,3 +1,4 @@
+import { renderBookingAction } from '../shared/booking-action.js';
 import { api } from "../../api.js";
 
 function refreshIcons() {
@@ -37,10 +38,7 @@ export async function renderBookings(container, session) {
         <p class="text-xs md:text-sm text-slate-400 mt-1">Danh sách tất cả các kỳ nghỉ và giao dịch phòng của bạn tại Aurelia Grand Palace</p>
       </div>
       <div class="flex items-center gap-3">
-        <a href="index.html#rooms" class="btn portal-primary text-xs px-4 py-2.5 rounded-xl font-bold flex items-center gap-2">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i>
-          <span>Đặt phòng mới</span>
-        </a>
+        ${renderBookingAction()}
       </div>
     </div>
 
@@ -304,10 +302,7 @@ export async function renderBookings(container, session) {
               </div>
               <h4 class="text-base font-bold text-white mb-1">Chưa có đơn đặt phòng nào</h4>
               <p class="text-xs text-slate-400 max-w-sm mx-auto mb-4">Bạn chưa có lịch sử đặt phòng tại khách sạn. Hãy lựa chọn hạng phòng yêu thích và trải nghiệm dịch vụ nghỉ dưỡng 5 sao ngay hôm nay!</p>
-              <a href="index.html#rooms" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider hover:brightness-110 shadow-md">
-                <i data-lucide="bed-double" class="w-4 h-4"></i>
-                <span>Khám phá phòng ngay</span>
-              </a>
+              ${renderBookingAction({ label: 'Khám phá phòng ngay' })}
             </td>
           </tr>
         `;

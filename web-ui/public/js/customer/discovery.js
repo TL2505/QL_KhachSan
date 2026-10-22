@@ -1,5 +1,6 @@
 import { api } from '../../api.js';
 import { bookingKey } from '../booking-api.js';
+import { bindRoomImageFallbacks } from '../shared/room-images.js';
 
 const money = value => value == null || value === '' || !Number.isFinite(Number(value))
   ? 'Chưa có giá'
@@ -241,6 +242,7 @@ export async function renderDiscovery(container, session) {
     }).join('') : rooms.length && Number.isInteger(guests) && guests > 0
       ? `<p class="customer-empty">Không có phòng đủ sức chứa cho ${guests} khách trong kết quả tìm kiếm.</p>`
       : '<p class="customer-empty">Không có phòng phù hợp với bộ lọc đã chọn.</p>';
+    bindRoomImageFallbacks(byId('search-rooms-grid'));
   };
 
   const load = async ({preferredType = ''} = {}) => {
@@ -332,6 +334,7 @@ export async function renderDiscovery(container, session) {
       </div>
       <section class="discovery-detail-section"><h3>Mô tả</h3><p>${esc(room.description || 'Chưa có mô tả cho phòng này.')}</p></section>
       <section class="discovery-detail-section"><h3>Tiện nghi</h3>${amenities.length ? `<ul>${amenities.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : '<p>Chưa có thông tin tiện nghi.</p>'}</section>`;
+    bindRoomImageFallbacks(byId('room-detail-content'));
     byId('room-detail-dialog').showModal();
   };
 
