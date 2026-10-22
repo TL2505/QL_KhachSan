@@ -1,3 +1,4 @@
+import { renderBookingAction } from '../shared/booking-action.js';
 import { escapeHtml } from '../shared/ui.js';
 import { api } from "../../api.js";
 import { getLegacyTierInfo, membershipPoints } from "./tier-helper.js";
@@ -30,7 +31,7 @@ export async function renderDashboard(container, session) {
   container.classList.add('customer-dashboard-view');
   container.innerHTML = `
     <!-- Top Greeting Banner -->
-    <div class="greeting-banner mb-6 p-6 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-950/90 border border-amber-500/20 flex items-center justify-between shadow-xl backdrop-blur-md">
+    <div class="greeting-banner mb-6 p-6 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-950/90 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl backdrop-blur-md">
       <div class="flex items-center gap-4">
         <div class="greeting-avatar w-14 h-14 rounded-2xl font-bold flex items-center justify-center text-xl shadow-lg shrink-0">
           ${escapeHtml(initials)}
@@ -40,11 +41,8 @@ export async function renderDashboard(container, session) {
           <p class="text-xs md:text-sm customer-muted mt-1">Cổng thành viên đặc quyền Aurelia Grand Palace. Chúc bạn có kỳ nghỉ trọn vẹn.</p>
         </div>
       </div>
-      <div class="hidden sm:flex items-center gap-2">
-        <a href="index.html#rooms" class="btn portal-primary customer-booking-action">
-          <i data-lucide="calendar" class="w-4 h-4"></i>
-          <span>Đặt phòng mới</span>
-        </a>
+      <div class="flex items-center gap-2">
+        ${renderBookingAction()}
       </div>
     </div>
 
