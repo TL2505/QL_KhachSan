@@ -51,6 +51,7 @@ test('customer profile edits personal information without duplicating password o
     assert.equal($('.account-settings-view h1').textContent,'Hồ sơ cá nhân');
     assert.equal($('#account-password-request'),null);assert.equal($('#account-email-verify'),null);
     assert.equal($('#account-email-send'),null);assert.ok($('.account-identity'));
+    assert.equal($('#account-devices-list'),null);
     $('#account-fullname').value='Tên mới';submit('#account-profile-form');await settle();
     assert.equal(calls[0].path,'/account/profile');assert.equal(calls[0].body.fullName,'Tên mới');
     assert.equal($('a[href="portal.html?view=security"]').textContent,'Đến Bảo mật & xác minh email');
@@ -60,6 +61,7 @@ test('customer security verifies a read-only email and unlocks password without 
     const {$,submit,calls}=await setup(t,'CUSTOMER',false,null,{mode:'security',showIdentity:false});
     assert.equal($('.account-settings-view h1').textContent,'Bảo mật tài khoản');
     assert.equal($('#account-profile-form'),null);assert.equal($('#account-fullname'),null);assert.equal($('#account-phone'),null);
+    assert.match($('#account-devices-list').textContent,/Chrome · Windows/);
     assert.equal($('#account-email').readOnly,true);assert.equal($('#account-email').value,'guest@example.invalid');
     $('#account-email-send').click();await settle();$('#account-email-code').value='123456';submit('#account-email-verify');await settle();
     assert.equal($('#account-password-fields').disabled,false);assert.equal(calls[1].path,'/account/email/verify');

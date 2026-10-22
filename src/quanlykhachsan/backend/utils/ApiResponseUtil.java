@@ -112,7 +112,11 @@ public class ApiResponseUtil {
 
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        // Keep the origin selected by CorsFilter: replacing it with '*' makes
+        // browsers discard credentialed responses after the handler has run.
+        if (!exchange.getResponseHeaders().containsKey("Access-Control-Allow-Origin")) {
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        }
         exchange.sendResponseHeaders(statusCode, bytes.length);
 
         try (OutputStream os = exchange.getResponseBody()) {

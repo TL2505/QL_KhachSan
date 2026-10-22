@@ -51,13 +51,13 @@ export async function renderAccountSettings(container, session = getAuthSession(
         </div></section>
         ` : ''}
       </div>
-      <section class="ais-card ais-card-border account-card mt-6" aria-labelledby="account-devices-title">
+      ${mode !== 'profile' ? `<section class="ais-card ais-card-border account-card mt-6" aria-labelledby="account-devices-title">
         <div class="ais-card-body">
           <div class="account-card-heading"><h2 id="account-devices-title">Thiết bị đã đăng nhập</h2><p>Các trình duyệt đã được ghi nhận với tài khoản của bạn.</p></div>
           <div id="account-devices-list" role="status" aria-live="polite">Đang tải thiết bị…</div>
           <div class="ais-card-actions"><button class="ais-btn ais-btn-outline ais-btn-sm" id="account-devices-reload" type="button">Làm mới thiết bị</button></div>
         </div>
-      </section>
+      </section>` : ''}
       ${options.showIdentity ? '<details class="ais-collapse ais-collapse-arrow account-identity"><summary class="ais-collapse-title">Hồ sơ lưu trú & giấy tờ định danh</summary><div class="ais-collapse-content"><div id="account-identity-content"></div></div></details>' : ''}
     </section>`;
     if (!document.getElementById('account-settings-ui')) {
@@ -73,7 +73,7 @@ export async function renderAccountSettings(container, session = getAuthSession(
     const message = (target, text, error = false) => { $(target).textContent = text; $(target).classList.toggle('account-error', error); };
     const post = (path, body = {}) => api.post('/account/' + path, body, transport);
     async function loadDevices() {
-        if (!active()) return;
+        if (!active() || mode === 'profile') return;
         const button = $('#account-devices-reload');
         button.disabled = true;
         try {

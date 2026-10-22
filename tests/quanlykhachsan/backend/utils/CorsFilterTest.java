@@ -10,7 +10,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,11 +26,7 @@ class CorsFilterTest {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         var context = server.createContext("/api/v1/test", exchange -> {
             handlerInvoked.set(true);
-            byte[] response = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(200, response.length);
-            try (var os = exchange.getResponseBody()) {
-                os.write(response);
-            }
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("ok"));
         });
         context.getFilters().add(new CorsFilter());
         server.start();
@@ -60,7 +55,8 @@ class CorsFilterTest {
 
         assertEquals(204, response.statusCode());
         assertTrue(!handlerInvoked.get(), "Handler should not be reached for OPTIONS preflight");
-        assertEquals("*", response.headers().firstValue("Access-Control-Allow-Origin").orElse(null));
+        assertEquals("http://localhost:3000", response.headers().firstValue("Access-Control-Allow-Origin").orElse(null));
+        assertEquals("true", response.headers().firstValue("Access-Control-Allow-Credentials").orElse(null));
         String allowedHeaders = response.headers().firstValue("Access-Control-Allow-Headers").orElse("");
         assertTrue(allowedHeaders.contains("Idempotency-Key"), "Must allow Idempotency-Key header");
         assertTrue(allowedHeaders.contains("X-User-Role"), "Must allow X-User-Role header");
@@ -80,6 +76,15 @@ class CorsFilterTest {
 
         assertEquals(200, response.statusCode());
         assertTrue(handlerInvoked.get(), "Handler must be executed for normal GET request");
+        assertEquals("http://localhost:3000", response.headers().firstValue("Access-Control-Allow-Origin").orElse(null));
+        assertEquals("true", response.headers().firstValue("Access-Control-Allow-Credentials").orElse(null));
+        assertTrue(response.headers().allValues("Vary").contains("Origin"));
+    }
+
+    @Test void unrecognizedOriginDoesNotReceiveCredentialPermission() throws Exception {
+        var response = HttpClient.newHttpClient().send(HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/test"))
+                .header("Origin", "https://untrusted.example").GET().build(), HttpResponse.BodyHandlers.ofString());
         assertEquals("*", response.headers().firstValue("Access-Control-Allow-Origin").orElse(null));
+        assertTrue(response.headers().firstValue("Access-Control-Allow-Credentials").isEmpty());
     }
 }

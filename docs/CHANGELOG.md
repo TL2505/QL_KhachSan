@@ -1,5 +1,12 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-22] — @codex — CORS response pipeline — Restore Google OTP login from localhost:3000
+
+- Fixed `ApiResponseUtil` overwriting the origin selected by `CorsFilter` with `*`. Credentialed Google requests from port 3000 could send an OTP email successfully while the browser rejected the response, leaving the OTP form hidden and preventing device verification from completing. JSON responses now preserve the selected origin; dynamic CORS responses include `Vary: Origin`.
+- Updated HTTP regression tests to exercise the JSON response writer and the Google controller through CORS/JWT filters with `Origin: http://localhost:3000`. Covered preflight, OTP challenge/verification, recognized-device login without another OTP, rejected Google identity and unrecognized origins without credential permission.
+- Validation: **7 focused backend tests and 11 Google sign-in web tests passed**, using Google/SMTP test doubles. A browser without a completed device verification still requires one successful OTP confirmation; the fix does not bypass that check or the password-change OTP requirement.
+- Removed the duplicate signed-in device inventory from the customer Profile view; it remains in Security and the combined admin/staff account view. Profile no longer requests the device list. All 11 account-settings web tests passed, and live checks confirmed the Profile/Security separation.
+
 ## [2026-10-22] — @codex — Backend/web-ui — Booking navigation, trusted devices, walk-in reception and customer support
 
 - Unified customer booking entry actions through the shared booking-link helper. Separated room discovery/booking from booking history in the customer navigation, so returning to Booking opens the booking interface. Corrected room-image loading and provided local room-image fallbacks.

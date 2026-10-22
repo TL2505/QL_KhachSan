@@ -39,6 +39,7 @@ public class CorsFilter extends Filter {
         // Set standard CORS response headers
         String origin = resolveOrigin(exchange);
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", origin);
+        exchange.getResponseHeaders().add("Vary", "Origin");
         if (!ALLOWED_ORIGIN.equals(origin)) {
             exchange.getResponseHeaders().set("Access-Control-Allow-Credentials", "true");
         }

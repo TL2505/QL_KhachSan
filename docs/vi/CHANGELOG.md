@@ -1,5 +1,12 @@
 # NHẬT KÝ THAY ĐỔI (CHANGELOG) — Tài liệu hệ thống PMS Khách sạn
 
+## [2026-10-22] — @codex — Luồng phản hồi CORS — Sửa đăng nhập Google/OTP từ localhost:3000
+
+- Sửa `ApiResponseUtil` ghi đè origin đã được `CorsFilter` chọn thành `*`. Khi trang ở cổng 3000 gửi yêu cầu Google kèm cookie, backend vẫn gửi OTP nhưng trình duyệt chặn phản hồi, khiến ô nhập OTP không xuất hiện và việc xác minh thiết bị chưa hoàn tất. Phản hồi JSON nay giữ nguyên origin được cho phép; CORS động bổ sung `Vary: Origin`.
+- Cập nhật kiểm thử HTTP đi qua hàm trả JSON và controller Google cùng bộ lọc CORS/JWT với `Origin: http://localhost:3000`. Bao phủ preflight, nhận phiên OTP, xác nhận OTP, đăng nhập thiết bị đã nhận diện không gửi thêm OTP, danh tính Google bị từ chối và origin lạ không được cấp quyền gửi cookie.
+- Xác minh: **7 kiểm thử backend tập trung và 11 kiểm thử web Google đạt**, dùng Google/SMTP giả lập. Trình duyệt chưa hoàn tất xác minh thiết bị vẫn cần nhập OTP thành công một lần; bản sửa không bỏ qua bước này hoặc OTP đổi mật khẩu.
+- Bỏ danh sách thiết bị đăng nhập bị lặp trong Hồ sơ customer, giữ tại Bảo mật và màn hình tài khoản dùng chung của admin/staff. Hồ sơ không còn gọi API tải thiết bị. Cả 11 kiểm thử web tài khoản đạt; đã kiểm tra trực tiếp việc tách nội dung Hồ sơ/Bảo mật.
+
 ## [2026-10-22] — @codex — Backend/web-ui và tài liệu nghiệp vụ — Đặt phòng, thiết bị đăng nhập, tiếp nhận tại quầy và hỗ trợ khách hàng
 
 - Thống nhất các nút đặt phòng của customer qua helper liên kết dùng chung. Tách **Đặt phòng** (khám phá/chọn phòng) và **Lịch sử đặt phòng** thành hai mục riêng; quay lại Đặt phòng vẫn mở giao diện đặt phòng. Sửa tải ảnh phòng và bổ sung ảnh dự phòng cục bộ.
