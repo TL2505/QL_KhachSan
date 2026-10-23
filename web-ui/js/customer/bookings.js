@@ -1,6 +1,6 @@
 import { renderBookingAction } from '../shared/booking-action.js';
-import { api } from "../../api.js";
-import { paymentLabel,paymentBadge } from '../shared/payment-state.js';
+import { api, fetchAuthenticatedFile } from "../../api.js";
+import { paymentLabel,paymentBadge,paymentState } from '../shared/payment-state.js?v=1.0.6';
 
 function refreshIcons() {
   if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -18,11 +18,147 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+async function savePdf(path, filename, button) {
+  const original = button.innerHTML;
+  button.disabled = true;
+  try {
+    const blob = await fetchAuthenticatedFile(path);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) { await window.showCustomAlert(error.message || 'Không tải được PDF.', { title: 'Không thể tải chứng từ' }); }
+  finally { button.disabled = false; button.innerHTML = original; }
+}
+
+function openBookingQrPayment(folioId) {
+  if (!Number.isInteger(Number(folioId)) || Number(folioId) < 1) return;
+  const dialog = document.createElement('dialog');
+  dialog.className = 'modal';
+  dialog.setAttribute('aria-labelledby', 'customer-qr-title');
+  dialog.innerHTML = `
+    <div class="modal-box max-w-md">
+      <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" aria-label="Đóng">✕</button></form>
+      <h2 id="customer-qr-title" class="font-serif text-xl font-bold">Thanh toán bằng mã QR</h2>
+      <p id="customer-qr-status" class="py-2" role="status" aria-live="polite">Đang mở phiên thanh toán…</p>
+      <div id="customer-qr-details" class="grid gap-2"></div>
+      <p id="customer-qr-countdown" class="font-semibold text-amber-300"></p>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>Đóng</button></form>`;
+  document.body.append(dialog);
+  const status = dialog.querySelector('#customer-qr-status');
+  const details = dialog.querySelector('#customer-qr-details');
+  const countdown = dialog.querySelector('#customer-qr-countdown');
+  let ticker = null, poller = null, sessionGeneration = 0, image = null, simulate = null;
+  const clearTimers = () => { clearInterval(ticker); clearTimeout(poller); ticker = poller = null; };
+  const close = () => { clearTimers(); dialog.remove(); };
+  const expired = (final = false, reconciling = true) => {
+    clearInterval(ticker); ticker = null;
+    if (image) image.hidden = true;
+    if (simulate) simulate.disabled = true;
+    status.textContent = final
+      ? 'Booking đã kết thúc vì phiên QR hết hạn. Phòng đã được trả lại.'
+      : reconciling
+        ? 'QR đã hết hạn. Hệ thống đang chờ tối đa 2 phút để nhận callback giao dịch đã bắt đầu trước hạn.'
+        : 'Đã hết thời gian đối soát. Hệ thống đang hoàn tất việc kết thúc booking và trả phòng.';
+    countdown.textContent = final ? 'Bạn có thể đặt lại nếu vẫn muốn lưu trú.' : 'Bạn có thể đóng cửa sổ này; trạng thái sẽ được cập nhật trong Lịch sử đặt phòng.';
+    details.querySelector('.customer-qr-rebook')?.remove();
+    if (final) {
+      const rebook = document.createElement('a'); rebook.href = 'portal.html?view=discovery'; rebook.className = 'btn btn-primary btn-sm customer-qr-rebook'; rebook.textContent = 'Đặt phòng mới';
+      details.append(rebook); clearTimers();
+    }
+  };
+  const start = async () => {
+    const generation = ++sessionGeneration;
+    clearTimers(); details.replaceChildren(); image = simulate = null;
+    status.textContent = 'Đang mở phiên thanh toán…';
+    countdown.textContent = '';
+    try {
+      const path = `/folios/${Number(folioId)}/payment-qr`;
+      const qr = await api.get(path);
+      if (generation !== sessionGeneration) return;
+      const bytes = String(qr.qr_image_base64 || '').replace(/^data:image\/png;base64,/, '');
+      if (!/^[A-Za-z0-9+/]+={0,2}$/.test(bytes)) throw new Error('Ảnh mã QR không hợp lệ.');
+      image = document.createElement('img'); image.src = `data:image/png;base64,${bytes}`; image.alt = 'Mã QR thanh toán'; image.className = 'mx-auto max-h-64 rounded-xl';
+      const line = text => { const item = document.createElement('p'); item.textContent = text; return item; };
+      details.append(image, line(new Intl.NumberFormat('vi-VN').format(Number(qr.amount)) + ' đ'), line(`${qr.beneficiary_bank || ''} · ${qr.account_number || ''} · ${qr.account_holder || ''}`), line(`Nội dung chuyển khoản: ${qr.reference_code || ''}`));
+      if (qr.checkout_url) {
+        try {
+          const target = new URL(qr.checkout_url, window.location.href);
+          if (target.protocol === 'https:' && !target.username && !target.password) {
+            const checkout = document.createElement('a'); checkout.href = target.href; checkout.target = '_blank'; checkout.rel = 'noopener noreferrer'; checkout.className = 'btn btn-outline btn-sm'; checkout.textContent = 'Mở trang thanh toán của nhà cung cấp'; details.append(checkout);
+          }
+        } catch { /* Ignore malformed provider checkout URLs; the QR remains usable. */ }
+      }
+      if (qr.provider === 'mock') {
+        simulate = document.createElement('button'); simulate.type = 'button'; simulate.className = 'btn btn-primary btn-sm'; simulate.textContent = 'Mô phỏng thanh toán thành công';
+        simulate.addEventListener('click', async () => {
+          simulate.disabled = true; status.textContent = 'Đang xử lý thanh toán mô phỏng…';
+          try {
+            const result = await api.post(`/folios/${Number(folioId)}/mock-payment`, {});
+            if (paymentState(result) === 'PAID') { clearTimers(); status.textContent = 'Đã nhận thanh toán mô phỏng. Đặt phòng đã được xác nhận.'; simulate.textContent = 'Đã thanh toán'; }
+            else { status.textContent = paymentLabel(result); simulate.disabled = false; }
+          } catch (error) { status.textContent = error.message || 'Không thể hoàn tất thanh toán mô phỏng.'; simulate.disabled = false; }
+        });
+        details.append(simulate, line('Chế độ thử nghiệm: thao tác này không chuyển tiền thật.'));
+      }
+      const seconds = Math.max(0, Math.min(3600, Number(qr.expires_in_seconds ?? 3600)));
+      const until = Date.now() + seconds * 1000;
+      status.textContent = 'Mã QR đang hoạt động. Bạn có thể đóng màn hình và tiếp tục từ Lịch sử đặt phòng.';
+      const tick = () => {
+        const left = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+        if (!left) { expired(false, true); return; }
+        countdown.textContent = `Còn ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} trong phiên QR này.`;
+      };
+      tick(); ticker = setInterval(tick, 1000);
+      const poll = async () => {
+        if (generation !== sessionGeneration || !dialog.open) return;
+        try {
+          const result = await api.get(`/folios/${Number(folioId)}/payment-status`);
+          if (generation !== sessionGeneration) return;
+          const state = paymentState(result);
+          if (state === 'PAID') { clearTimers(); status.textContent = 'Đã nhận thanh toán thành công. Đặt phòng đã được xác nhận.'; if (simulate) { simulate.disabled = true; simulate.textContent = 'Đã thanh toán'; } return; }
+          if (state === 'QR_EXPIRED') {
+            const bookingStatus = String(result.booking_status || '').toLowerCase();
+            if (bookingStatus === 'cancelled') { expired(true, false); return; }
+            expired(false, Boolean(result.payment_reconciliation_pending));
+          }
+          if (state === 'RECONCILIATION_ERROR') status.textContent = 'Giao dịch cần lễ tân đối soát trước khi xác nhận.';
+        } catch { /* Keep the QR visible; reopening the booking will recheck the server session. */ }
+        if (generation === sessionGeneration && dialog.open) poller = setTimeout(poll, 2500);
+      };
+      poller = setTimeout(poll, 2500);
+    } catch (error) {
+      if (generation !== sessionGeneration) return;
+      if (error.status === 409 || /hết hạn|expired/i.test(error.message || '')) {
+        expired(false, true);
+        const pollExpired = async () => {
+          if (generation !== sessionGeneration || !dialog.open) return;
+          try {
+            const result = await api.get(`/folios/${Number(folioId)}/payment-status`);
+            if (paymentState(result) === 'PAID') { clearTimers(); status.textContent = 'Đã nhận thanh toán thành công. Đặt phòng đã được xác nhận.'; return; }
+            if (String(result.booking_status || '').toLowerCase() === 'cancelled') { expired(true, false); return; }
+            expired(false, Boolean(result.payment_reconciliation_pending));
+          } catch { /* Keep checking while the payment service is reconciling. */ }
+          if (generation === sessionGeneration && dialog.open) poller = setTimeout(pollExpired, 2500);
+        };
+        poller = setTimeout(pollExpired, 0);
+        return;
+      }
+      status.textContent = error.message || 'Chưa thể mở mã QR. Hãy kiểm tra lại kết nối rồi mở lại từ Lịch sử đặt phòng.';
+    }
+  };
+  dialog.addEventListener('close', close, { once: true });
+  dialog.addEventListener('cancel', close, { once: true });
+  dialog.showModal();
+  start();
+}
+
 const statusMap = {
   pending: { text: "Chờ xác nhận", cls: "bg-amber-500/10 text-amber-300 border-amber-500/30", dot: "#f59e0b" },
-  confirmed: { text: "Đã đặt cọc / Xác nhận", cls: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30", dot: "#10b981" },
+  confirmed: { text: "Đã xác nhận", cls: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30", dot: "#10b981" },
   reserved: { text: "Đã giữ phòng", cls: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30", dot: "#10b981" },
   checked_in: { text: "Đang lưu trú", cls: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30", dot: "#06b6d4" },
+  overdue: { text: "Quá hạn trả phòng", cls: "bg-rose-500/10 text-rose-300 border-rose-500/30", dot: "#f43f5e" },
   checked_out: { text: "Đã hoàn thành", cls: "bg-slate-500/10 text-slate-300 border-slate-500/30", dot: "#94a3b8" },
   cancelled: { text: "Đã hủy", cls: "bg-rose-500/10 text-rose-300 border-rose-500/30", dot: "#f43f5e" }
 };
@@ -30,7 +166,6 @@ const statusMap = {
 export async function renderBookings(container, session) {
   if (!container) return;
   session = session || {};
-  const customerId = session.customerId || session.userId || session.id || 1;
 
   container.innerHTML = `
     <div class="page-header mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -55,8 +190,9 @@ export async function renderBookings(container, session) {
         </div>
       </div>
 
+      <p class="booking-table-scroll-hint">Cuộn ngang bảng để xem đầy đủ trạng thái và thao tác.</p>
       <div class="table-container overflow-x-auto">
-        <table class="table w-full text-left">
+        <table class="table w-full text-left bookings-history-table">
           <thead>
             <tr class="border-b border-slate-800 text-[11px] uppercase tracking-wider text-amber-400/90 font-bold">
               <th class="py-3 px-4">Mã Đặt Phòng</th>
@@ -117,7 +253,7 @@ export async function renderBookings(container, session) {
           <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-2">
             <i data-lucide="receipt" class="w-6 h-6"></i>
           </div>
-          <h3 class="font-serif text-xl font-bold text-white">Hóa Đơn Điện Tử E-Folio</h3>
+          <h3 class="font-serif text-xl font-bold text-white">Chứng từ thanh toán & hóa đơn điện tử</h3>
           <p class="text-xs text-amber-400 mt-0.5">AURELIA GRAND PALACE LUXURY RESORT</p>
           <p id="folio-booking-ref" class="text-xs font-mono text-slate-400 mt-1">#BK-00000</p>
         </div>
@@ -128,10 +264,7 @@ export async function renderBookings(container, session) {
           <button type="button" class="close-modal-btn px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium">
             Đóng
           </button>
-          <button type="button" onclick="window.print()" class="btn portal-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
-            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-            <span>In Hóa Đơn</span>
-          </button>
+          <div id="folio-document-actions" class="flex items-center gap-2"></div>
         </div>
       </div>
     </div>
@@ -272,7 +405,7 @@ export async function renderBookings(container, session) {
   });
 
   try {
-    const rawList = await api.get(`/bookings/customer/${customerId}`).catch(() => []);
+    const rawList = await api.get('/customer-portal/bookings').catch(() => []);
     let bookings = Array.isArray(rawList) ? rawList : (rawList?.data && Array.isArray(rawList.data) ? rawList.data : []);
 
     // Load set of already reviewed booking IDs from local storage or session
@@ -312,7 +445,21 @@ export async function renderBookings(container, session) {
       }
 
       tableBody.innerHTML = list.map(b => {
-        const st = statusMap[b.status] || { text: b.status || "Chờ xác nhận", cls: "bg-slate-700/30 text-slate-300 border-slate-700", dot: "#94a3b8" };
+        const bookingStatus = String(b.status || '').toLowerCase();
+        const qrState = paymentState(b);
+        const payment = b.payment && typeof b.payment === 'object' ? b.payment : b;
+        const reconciliationPending = Boolean(payment.payment_reconciliation_pending);
+        const qrNeedsRebooking = qrState === 'QR_EXPIRED' && !reconciliationPending;
+        const st = bookingStatus === 'pending' && qrState === 'QR_EXPIRED' && reconciliationPending
+          ? { text: 'Đang đối soát giao dịch QR', cls: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30', dot: '#22d3ee' }
+          : bookingStatus === 'pending' && qrState === 'QR_EXPIRED'
+          ? { text: 'Đang kết thúc booking', cls: 'bg-amber-500/10 text-amber-300 border-amber-500/30', dot: '#f59e0b' }
+          : bookingStatus === 'cancelled' && qrState === 'QR_EXPIRED'
+          ? { text: 'Đã kết thúc do QR hết hạn', cls: 'bg-amber-500/10 text-amber-300 border-amber-500/30', dot: '#f59e0b' }
+          : statusMap[b.status] || { text: b.status || "Chờ xác nhận", cls: "bg-slate-700/30 text-slate-300 border-slate-700", dot: "#94a3b8" };
+        const canResumeQr = bookingStatus === 'pending' && qrState === 'QR_PENDING' && Number(b.folioId) > 0;
+        const canRebook = bookingStatus === 'cancelled' && qrState === 'QR_EXPIRED';
+        const canCancelBooking = Boolean(b.canCancel);
         const price = Number(b.totalPrice || b.priceAtBooking || 0).toLocaleString('vi-VN');
         const roomName = b.roomTypeName || b.roomName || (b.roomId ? `Phòng #${b.roomId}` : 'Hạng phòng cao cấp');
         const bookingCode = `BK-${String(b.id || '').padStart(5, '0')}`;
@@ -333,20 +480,42 @@ export async function renderBookings(container, session) {
             <td class="py-4 px-4 text-slate-300 font-medium">${b.checkInDate || '---'}</td>
             <td class="py-4 px-4 text-slate-300 font-medium">${b.checkOutDate || '---'}</td>
             <td class="py-4 px-4 text-right font-bold text-white font-serif text-sm">${price} đ</td>
-            <td class="py-4 px-4 text-center">
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border ${st.cls}">
-                <span class="w-1.5 h-1.5 rounded-full" style="background:${st.dot};"></span>
-                <span>${st.text}</span>
-              </span>
-              <span class="${paymentBadge(b)}">${paymentLabel(b)}</span>
+            <td class="py-4 px-4 text-center booking-status-cell">
+              <div class="booking-status-stack">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border ${st.cls}">
+                  <span class="w-1.5 h-1.5 rounded-full" style="background:${st.dot};"></span>
+                  <span>${st.text}</span>
+                </span>
+                <span class="${paymentBadge(b)}">${paymentLabel(b)}</span>
+                ${bookingStatus === 'overdue' ? `<small class="text-rose-300">Vui lòng liên hệ lễ tân để thanh toán và hoàn tất trả phòng. Phụ thu trễ được tính sau 30 phút miễn phí.</small>` : ''}
+                ${b.refundStatus === 'MANUAL_REQUIRED' ? '<span class="badge badge-warning badge-sm">Đang chờ xử lý hoàn tiền</span>' : b.refundStatus === 'REFUNDED' ? '<span class="badge badge-success badge-sm">Đã hoàn tiền</span>' : ''}
+              </div>
             </td>
-            <td class="py-4 px-4 text-center">
+            <td class="py-4 px-4 text-center booking-action-cell">
               <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                ${b.status === 'pending' ? `
-                  <button type="button" class="btn-cancel-booking px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1" data-id="${b.id}" title="Hủy đặt phòng này">
+                ${canResumeQr ? `
+                  <button type="button" class="btn btn-xs btn-resume-qr px-2 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1" data-folio="${Number(b.folioId)}" title="Mở lại phiên QR còn hạn">
+                    <i data-lucide="qr-code" class="w-3 h-3"></i>
+                    <span>Tiếp tục thanh toán</span>
+                  </button>
+                ` : ''}
+                ${canRebook ? `
+                  <a class="px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1" href="portal.html?view=discovery" title="Đặt lại sau khi phiên QR hết hạn">
+                    <i data-lucide="rotate-cw" class="w-3 h-3"></i>
+                    <span>Đặt lại</span>
+                  </a>
+                ` : ''}
+                ${canCancelBooking ? `
+                  <button type="button" class="btn btn-xs btn-cancel-booking px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1" data-id="${b.id}" title="Hủy đặt phòng này">
                     <i data-lucide="x-circle" class="w-3 h-3"></i>
                     <span>Hủy phòng</span>
                   </button>
+                ` : ''}
+                ${b.cancelViaSupport ? `
+                  <a class="btn btn-xs btn-outline px-2 py-1 rounded-lg text-[10px] font-semibold" href="portal.html?view=support" title="Đã đến giờ nhận phòng; liên hệ bộ phận hỗ trợ nếu cần hủy">
+                    <i data-lucide="life-buoy" class="w-3 h-3"></i>
+                    <span>Liên hệ hỗ trợ</span>
+                  </a>
                 ` : ''}
                 ${['confirmed', 'reserved', 'checked_in'].includes(b.status) ? `
                   <button type="button" class="btn-qr-pass px-2 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1" data-id="${b.id}" title="Xem mã nhận phòng nhanh">
@@ -354,9 +523,9 @@ export async function renderBookings(container, session) {
                     <span>QR Pass</span>
                   </button>
                 ` : ''}
-                <button type="button" class="btn-view-folio px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1" data-id="${b.id}" title="Xem chi tiết hóa đơn điện tử">
+                <button type="button" class="btn-view-folio px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1" data-id="${b.id}" title="Xem trạng thái chứng từ và hóa đơn điện tử">
                   <i data-lucide="receipt" class="w-3 h-3"></i>
-                  <span>E-Folio</span>
+                  <span>Chứng từ</span>
                 </button>
 
                 <!-- TASK 15: REVIEW-TO-REWARD BUTTON FOR CHECKED_OUT BOOKINGS -->
@@ -383,26 +552,38 @@ export async function renderBookings(container, session) {
       refreshIcons();
 
       // Attach row action handlers
+      tableBody.querySelectorAll('.btn-resume-qr').forEach(btn => {
+        btn.addEventListener('click', () => openBookingQrPayment(btn.getAttribute('data-folio')));
+      });
+
       // 1. Cancel Booking Handler
       tableBody.querySelectorAll('.btn-cancel-booking').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = btn.getAttribute('data-id');
           if (!id) return;
-          if (!confirm(`Quý khách có chắc chắn muốn hủy đơn đặt phòng #${id} không?`)) return;
+          const confirmed = await window.showCustomConfirm(`Quý khách có chắc chắn muốn hủy đơn đặt phòng #${id} không?`, {
+            title: 'Xác nhận hủy đặt phòng', cancelLabel: 'Giữ đặt phòng', confirmLabel: 'Hủy đặt phòng'
+          });
+          if (!confirmed) return;
 
           btn.disabled = true;
           const origHtml = btn.innerHTML;
           btn.innerHTML = `<span class="inline-block w-3 h-3 border border-rose-400 border-t-transparent rounded-full animate-spin"></span>`;
 
           try {
-            await api.post(`/bookings/${id}/cancel`, {}).catch(() => api.delete(`/bookings/${id}`));
+            const result = await api.post(`/customer-portal/bookings/${id}/cancel`, {});
             const found = bookings.find(x => String(x.id) === String(id));
-            if (found) found.status = 'cancelled';
+            if (found) {
+              found.status = 'cancelled';
+              found.canCancel = false;
+              found.refundAmount = Number(result?.refund_amount || 0);
+              found.refundStatus = result?.refund_status || 'NOT_REQUIRED';
+            }
             renderRows(bookings);
-            alert(`Đã hủy đặt phòng #${id} thành công.`);
+            await window.showCustomAlert(result?.message || `Đã hủy đặt phòng #${id} thành công.`, { title: 'Đã hủy đặt phòng', kind: 'success' });
           } catch (err) {
             console.error('Lỗi khi hủy đặt phòng:', err);
-            alert('Không thể hủy đặt phòng. Vui lòng liên hệ quầy lễ tân để được hỗ trợ.');
+            await window.showCustomAlert(err?.message || 'Không thể hủy đặt phòng. Vui lòng liên hệ quầy lễ tân để được hỗ trợ.', { title: 'Không thể hủy đặt phòng' });
           } finally {
             btn.disabled = false;
             btn.innerHTML = origHtml;
@@ -435,7 +616,7 @@ export async function renderBookings(container, session) {
             if (!pass?.qr_svg) throw new Error('Missing pass');
             if (qrImg) qrImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(pass.qr_svg);
           } catch (error) {
-            alert('Không tạo được QR check-in. Vui lòng liên hệ Lễ tân để xác minh đặt phòng.');
+            await window.showCustomAlert('Không tạo được QR check-in. Vui lòng liên hệ Lễ tân để xác minh đặt phòng.', { title: 'Không thể tạo QR check-in' });
             return;
           }
 
@@ -457,10 +638,19 @@ export async function renderBookings(container, session) {
           const codeStr = `BK-${String(booking.id || '').padStart(5, '0')}`;
           if (bookingRef) bookingRef.textContent = `Mã đặt phòng: #${codeStr}`;
 
-          const total = Number(booking.totalPrice || 0);
-          const roomCharge = Math.round(total * 0.87);
-          const vat = Math.round(roomCharge * 0.08);
-          const serviceFee = Math.round(roomCharge * 0.05);
+          const total = Number(booking.internalInvoiceTotal ?? booking.totalPrice ?? 0);
+          const einvoiceStatus = String(booking.electronicInvoiceStatus || 'not_issued');
+          const einvoiceLabels = {
+            issued: 'Đã phát hành từ MISA', submitting: 'Đang gửi nhà cung cấp', sync_required: 'Cần đồng bộ trước khi xác nhận',
+            rejected: 'Nhà cung cấp từ chối', cancel_pending: 'Đang chờ xác nhận hủy', cancelled: 'Đã hủy tại nhà cung cấp', ready: 'Chưa phát hành'
+          };
+          const taxCode = Number(booking.electronicInvoiceTaxStatus);
+          const taxLabels = booking.electronicInvoiceProviderMode === 'HSM_NO_CODE'
+            ? ['Chưa gửi CQT', 'Đã gửi CQT', 'CQT tiếp nhận', 'CQT không tiếp nhận', 'Gửi CQT lỗi']
+            : ['Chờ cấp mã', 'Gửi cấp mã lỗi', 'Đã cấp mã', 'CQT từ chối cấp mã', 'Gửi CQT lỗi'];
+          const taxLabel = booking.electronicInvoiceTaxStatus == null ? 'Chưa đồng bộ với CQT' : (taxLabels[taxCode] || `CQT: ${booking.electronicInvoiceTaxStatus}`);
+          const taxFailed = booking.electronicInvoiceProviderMode === 'HSM_NO_CODE' ? [3,4].includes(taxCode) : [1,3,4].includes(taxCode);
+          const einvoiceBadgeClass = ['cancelled', 'rejected'].includes(booking.electronicInvoiceStatus) || taxFailed ? 'badge-error' : (booking.electronicInvoiceStatus === 'issued' && taxCode === 2 ? 'badge-success' : 'badge-warning');
 
           if (body) {
             body.innerHTML = `
@@ -476,27 +666,35 @@ export async function renderBookings(container, session) {
                 <span class="text-slate-400">Thời gian lưu trú:</span>
                 <span>${booking.checkInDate || '---'} đến ${booking.checkOutDate || '---'}</span>
               </div>
-              <div class="flex justify-between py-2 border-b border-slate-800">
-                <span class="text-slate-400">Tiền phòng (Room Subtotal):</span>
-                <span>${roomCharge.toLocaleString('vi-VN')} đ</span>
-              </div>
-              <div class="flex justify-between py-2 border-b border-slate-800">
-                <span class="text-slate-400">Thuế GTGT (VAT 8%):</span>
-                <span>${vat.toLocaleString('vi-VN')} đ</span>
-              </div>
-              <div class="flex justify-between py-2 border-b border-slate-800">
-                <span class="text-slate-400">Phí phục vụ 5★ (Service Charge 5%):</span>
-                <span>${serviceFee.toLocaleString('vi-VN')} đ</span>
-              </div>
               <div class="flex justify-between py-3 text-sm font-bold border-t border-amber-500/30">
-                <span class="text-amber-300">Tổng cộng (Total Due):</span>
+                <span class="text-amber-300">${booking.invoiceId ? 'Tổng chứng từ nội bộ' : 'Tổng giá đặt phòng'}:</span>
                 <span class="text-amber-400 font-serif text-base">${total.toLocaleString('vi-VN')} đ</span>
               </div>
-              <div class="flex justify-between py-2 bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+              <div class="flex justify-between py-2 border-b border-slate-800">
                 <span class="text-slate-400">Trạng thái thanh toán:</span>
-                <span class="font-bold uppercase tracking-wider text-emerald-400">ĐÃ XÁC NHẬN</span>
+                <span class="font-semibold text-white">${escapeHtml(booking.internalInvoiceStatus === 'paid' ? 'Đã thanh toán' : (booking.paymentStatus || 'Chưa đối soát'))}</span>
               </div>
+              <div class="flex justify-between items-center gap-3 py-2 bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+                <span class="text-slate-400">Hóa đơn điện tử:</span>
+                <span class="badge badge-outline ${einvoiceBadgeClass}">${escapeHtml(einvoiceLabels[einvoiceStatus] || 'Chưa phát hành')}</span>
+              </div>
+              ${booking.electronicInvoiceId ? `<div class="flex justify-between items-center gap-3 text-[11px]"><span class="text-slate-400">Cơ quan thuế:</span><span>${escapeHtml(taxLabel)}</span></div>` : ''}
+              ${booking.electronicInvoiceNumber ? `<div class="text-right text-[11px] text-slate-400">Số hóa đơn: ${escapeHtml(booking.electronicInvoiceNumber)}</div>` : ''}
+              <p class="text-[10px] text-amber-200/80">${booking.invoiceId ? 'Bảng kê tải xuống là bản nội bộ để xem/in; chỉ tài liệu được phát hành qua nhà cung cấp mới là hóa đơn điện tử.' : 'Chưa có bảng kê nội bộ hoặc hóa đơn điện tử cho booking này.'}</p>
             `;
+          }
+
+          const actions = document.getElementById('folio-document-actions');
+          if (actions) {
+            const docs = [];
+            if (booking.invoiceId) docs.push(`<button type="button" id="download-internal-statement" class="btn btn-sm btn-outline">Tải bảng kê nội bộ</button>`);
+            if (booking.electronicInvoiceStatus === 'issued' && booking.electronicInvoiceId) docs.push(`<button type="button" id="download-electronic-invoice" class="btn btn-sm btn-primary">Tải hóa đơn điện tử</button>`);
+            if (booking.electronicInvoiceStatus === 'issued' && /^https:\/\/(?:[a-z0-9-]+\.)?meinvoice\.vn\//i.test(booking.electronicInvoiceViewUrl || '')) docs.push(`<a class="btn btn-sm btn-outline" href="${escapeHtml(booking.electronicInvoiceViewUrl)}" target="_blank" rel="noopener noreferrer">Tra cứu MISA</a>`);
+            actions.innerHTML = docs.join('');
+            const internalButton = document.getElementById('download-internal-statement');
+            if (internalButton) internalButton.addEventListener('click', async () => savePdf(`/invoices/${booking.invoiceId}/pdf`, `bang-ke-noi-bo-${booking.invoiceId}.pdf`, internalButton));
+            const electronicButton = document.getElementById('download-electronic-invoice');
+            if (electronicButton) electronicButton.addEventListener('click', async () => savePdf(`/invoices/${booking.invoiceId}/electronic/${booking.electronicInvoiceId}/pdf`, `hoa-don-dien-tu-${booking.electronicInvoiceNumber || booking.electronicInvoiceId}.pdf`, electronicButton));
           }
 
           if (modal) modal.classList.remove('hidden');
@@ -667,7 +865,7 @@ export async function renderBookings(container, session) {
           }
 
           if (typeof alert !== 'undefined') {
-            alert('🎉 Chúc mừng Quý khách! Đánh giá kỳ nghỉ thành công và đã nhận ngay 200 điểm thưởng hội viên.');
+            await window.showCustomAlert('Đánh giá kỳ nghỉ thành công. Quý khách đã nhận 200 điểm thưởng hội viên.', { title: 'Cảm ơn Quý khách', kind: 'success' });
           }
 
           // Re-render table rows with updated Reviewed status

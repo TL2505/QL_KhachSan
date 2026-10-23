@@ -2,7 +2,7 @@
 import { renderDashboard } from "./admin/dashboard.js?v=3.6.4";
 import { renderRooms } from "./admin/rooms.js?v=3.6.4";
 import { renderBookings } from "./staff/bookings.js";
-import { renderUsers } from "./admin/users.js?v=3.6.4";
+import { renderUsers } from "./admin/users.js?v=1.0.3";
 import { renderPromotions } from "./admin/promotions.js?v=3.6.4";
 import { renderReviews } from "./admin/reviews.js?v=3.6.4";
 import { renderInvoices } from "./admin/invoices.js?v=3.6.4";

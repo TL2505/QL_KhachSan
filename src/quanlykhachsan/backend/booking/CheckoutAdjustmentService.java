@@ -27,13 +27,13 @@ public final class CheckoutAdjustmentService {
         BookingState b;
         try (PreparedStatement q = c.prepareStatement(
                 "SELECT b.rental_type,b.check_in_date,b.check_out_date,COALESCE(b.check_in_actual,b.check_in_date),"
-              + "r.room_type_id,r.buffer_hourly,r.buffer_overnight,r.buffer_daily "
-              + "FROM bookings b JOIN rooms r ON r.id=b.room_id WHERE b.id=? AND b.status='checked_in' FOR UPDATE")) {
+              + "r.room_type_id,r.buffer_hourly,r.buffer_overnight,r.buffer_daily,t.hourly_extra_hour_price "
+              + "FROM bookings b JOIN rooms r ON r.id=b.room_id JOIN room_types t ON t.id=r.room_type_id WHERE b.id=? AND b.status='checked_in' FOR UPDATE")) {
             q.setInt(1, bookingId); try (ResultSet r = q.executeQuery()) {
                 if (!r.next()) throw new CheckoutAdjustmentException("Only checked-in bookings can check out");
                 b = new BookingState(RentalType.parse(r.getString(1)), r.getTimestamp(2).toLocalDateTime(),
                     r.getTimestamp(3).toLocalDateTime(), r.getTimestamp(4).toLocalDateTime(), r.getInt(5),
-                    r.getInt(6), r.getInt(7), r.getInt(8));
+                    r.getInt(6), r.getInt(7), r.getInt(8), r.getBigDecimal(9));
             }
         }
         LocalDateTime actualOut;
@@ -47,8 +47,17 @@ public final class CheckoutAdjustmentService {
             converted = true;
         }
 
-        if (converted) assessConvertedPackage(c, bookingId, b, finalType, actualOut);
-        else assessActualExtensions(c, bookingId, b, actualOut);
+        if (converted) {
+            // The package quote covers the extended stay. Reverse interim hourly
+            // overstay charges already accrued by the background lifecycle job,
+            // while retaining the one-time six-hour penalty if it is due.
+            OverstayChargeService.reverseHourlyForPackageConversion(c, bookingId);
+            assessConvertedPackage(c, bookingId, b, finalType, actualOut);
+            OverstayChargeService.reconcile(c, bookingId, b.plannedOut(), actualOut, b.hourlyRate(), false);
+        } else {
+            assessActualExtensions(c, bookingId, b, actualOut);
+            OverstayChargeService.reconcile(c, bookingId, b.plannedOut(), actualOut, b.hourlyRate(), true);
+        }
         int buffer = switch (finalType) {
             case HOURLY -> b.bufferHourly(); case OVERNIGHT -> b.bufferOvernight(); case DAILY -> b.bufferDaily();
         };
@@ -72,19 +81,13 @@ public final class CheckoutAdjustmentService {
     }
 
     private static void assessActualExtensions(Connection c, int booking, BookingState b, LocalDateTime out) throws SQLException {
-        long extraHours = 0;
-        if (b.actualIn().isBefore(b.plannedIn())) extraHours += ceilHours(Duration.between(b.actualIn(), b.plannedIn()).toMinutes());
-        if (out.isAfter(b.plannedOut())) extraHours += ceilHours(Duration.between(b.plannedOut(), out).toMinutes());
-        if (extraHours == 0) return;
-        BigDecimal hourlyRate;
-        try (PreparedStatement q = c.prepareStatement("SELECT hourly_extra_hour_price FROM room_types WHERE id=?")) {
-            q.setInt(1, b.roomTypeId()); try (ResultSet r = q.executeQuery()) {
-                if (!r.next() || r.getBigDecimal(1) == null || r.getBigDecimal(1).signum() <= 0)
-                    throw new CheckoutAdjustmentException("Hourly extra rate must be configured before checkout can be completed");
-                hourlyRate = r.getBigDecimal(1);
-            }
-        }
-        var charges = FinancialCalculator.calculate(hourlyRate.multiply(BigDecimal.valueOf(extraHours)), BigDecimal.ZERO, TaxConfig.fromRuntimeConfiguration());
+        long earlyHours = b.actualIn().isBefore(b.plannedIn())
+                ? ceilHours(Duration.between(b.actualIn(), b.plannedIn()).toMinutes()) : 0;
+        if (earlyHours == 0) return;
+        BigDecimal hourlyRate = b.hourlyRate();
+        if (hourlyRate == null || hourlyRate.signum() <= 0)
+            throw new CheckoutAdjustmentException("Hourly extra rate must be configured before checkout can be completed");
+        var charges = FinancialCalculator.calculate(hourlyRate.multiply(BigDecimal.valueOf(earlyHours)), BigDecimal.ZERO, TaxConfig.fromRuntimeConfiguration());
         postDesired(c, booking, "room_rate", charges.getRoomFee());
         postDesired(c, booking, "service_charge", charges.getServiceFee());
         postDesired(c, booking, "vat", charges.getVat());
@@ -134,7 +137,8 @@ public final class CheckoutAdjustmentService {
     private static long ceilHours(long minutes) { return (minutes + 59) / 60; }
 
     private record BookingState(RentalType rentalType, LocalDateTime plannedIn, LocalDateTime plannedOut,
-            LocalDateTime actualIn, int roomTypeId, int bufferHourly, int bufferOvernight, int bufferDaily) { }
+            LocalDateTime actualIn, int roomTypeId, int bufferHourly, int bufferOvernight, int bufferDaily,
+            BigDecimal hourlyRate) { }
     public record CheckoutPlan(RentalType rentalType, int bufferMinutes, LocalDateTime assessedAt) { }
     public static final class CheckoutAdjustmentException extends RuntimeException {
         public CheckoutAdjustmentException(String message) { super(message); }

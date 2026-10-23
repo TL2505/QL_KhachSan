@@ -1,8 +1,8 @@
 import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.36';
-import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.35';
+import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.36';
 import { loadAdminView } from './js/view-admin.js?v=3.6.14';
-import { loadStaffView } from './js/view-staff.js';
-import { loadCustomerView } from './js/view-customer.js?v=3.6.20';
+import { loadStaffView } from './js/view-staff.js?v=3.6.51';
+import { loadCustomerView } from './js/view-customer.js?v=3.6.27';
 import { loadProfileView } from './js/view-shared.js';
 import './js/shared/theme.js';
 import './js/shared/pagination.js?v=3.6.4';
@@ -18,10 +18,60 @@ const closeGlobalModal = (modalId = 'global-modal') => {
 
 window.closeModal = closeGlobalModal;
 
+const getGlobalModalParts = () => {
+  let modal = document.getElementById('global-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'global-modal';
+    modal.className = 'portal-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('aria-label', 'Hộp thoại thao tác');
+    document.body.append(modal);
+  }
+  let content = document.getElementById('global-modal-content');
+  if (!content || !modal.contains(content)) {
+    content = document.createElement('div');
+    content.id = 'global-modal-content';
+    content.className = 'modal-content';
+    content.setAttribute('role', 'document');
+    modal.replaceChildren(content);
+  }
+  return { modal, content };
+};
+
+const activateGlobalModal = (modal, focusTarget, finish, cancelValue) => {
+  let settled = false;
+  const previousFocus = document.activeElement;
+  const settle = value => {
+    if (settled) return;
+    settled = true;
+    document.removeEventListener('keydown', onKeyDown);
+    modal.removeEventListener('click', onBackdropClick);
+    closeGlobalModal();
+    if (previousFocus?.isConnected && typeof previousFocus.focus === 'function') previousFocus.focus();
+    finish(value);
+  };
+  const onKeyDown = event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      settle(cancelValue);
+    }
+  };
+  const onBackdropClick = event => {
+    if (event.target === modal) settle(cancelValue);
+  };
+  modal.addEventListener('click', onBackdropClick);
+  document.addEventListener('keydown', onKeyDown);
+  modal.classList.add('active');
+  modal.setAttribute('aria-hidden', 'false');
+  focusTarget?.focus();
+  return settle;
+};
+
 window.showCustomConfirm = (message, options = {}) => new Promise(resolve => {
-  const modal = document.getElementById('global-modal');
-  const content = document.getElementById('global-modal-content');
-  if (!modal || !content) { resolve(window.confirm(message)); return; }
+  const { modal, content } = getGlobalModalParts();
   content.replaceChildren();
   const heading = document.createElement('div');
   heading.className = 'modal-header';
@@ -32,26 +82,23 @@ window.showCustomConfirm = (message, options = {}) => new Promise(resolve => {
   heading.append(title, close);
   const text = document.createElement('p');
   text.textContent = message;
-  text.style.cssText = 'margin:0;color:var(--portal-muted);line-height:1.65';
+  text.style.cssText = 'margin:0;color:var(--portal-muted);line-height:1.65;white-space:pre-line';
   const actions = document.createElement('div');
-  actions.className = 'flex-row'; actions.style.justifyContent = 'flex-end'; actions.style.marginTop = '22px';
+  actions.className = 'modal-actions';
   const cancel = document.createElement('button');
-  cancel.type = 'button'; cancel.className = 'btn btn-secondary'; cancel.textContent = 'Hủy';
+  cancel.type = 'button'; cancel.className = 'btn btn-secondary'; cancel.textContent = options.cancelLabel || 'Hủy';
   const accept = document.createElement('button');
   accept.type = 'button'; accept.className = `btn ${options.kind === 'primary' ? 'btn-primary' : 'btn-danger'}`; accept.textContent = options.confirmLabel || 'Xác nhận';
   actions.append(cancel, accept); content.append(heading, text, actions);
-  const finish = value => { closeGlobalModal(); resolve(value); };
+  const finish = activateGlobalModal(modal, accept, resolve, false);
   close.addEventListener('click', () => finish(false));
   cancel.addEventListener('click', () => finish(false));
   accept.addEventListener('click', () => finish(true));
-  modal.classList.add('active'); modal.setAttribute('aria-hidden', 'false'); accept.focus();
 });
 
 // Shared feedback dialog: modules can show API errors instead of failing silently.
 window.showCustomAlert = (message, options = {}) => new Promise(resolve => {
-  const modal = document.getElementById('global-modal');
-  const content = document.getElementById('global-modal-content');
-  if (!modal || !content) { window.alert(message); resolve(); return; }
+  const { modal, content } = getGlobalModalParts();
   content.replaceChildren();
   const heading = document.createElement('div');
   heading.className = 'modal-header';
@@ -63,15 +110,71 @@ window.showCustomAlert = (message, options = {}) => new Promise(resolve => {
   const text = document.createElement('p');
   text.textContent = message || 'Đã xảy ra lỗi không xác định.';
   text.style.cssText = 'margin:0;color:var(--portal-muted);line-height:1.65';
+  const detailItems = Array.isArray(options.details)
+    ? options.details.filter(item => item && item.label != null && item.value != null && String(item.value).trim())
+    : [];
+  let detailList = null;
+  if (detailItems.length) {
+    detailList = document.createElement('dl');
+    detailList.className = 'modal-detail-list';
+    for (const item of detailItems) {
+      const row = document.createElement('div');
+      row.className = 'modal-detail-row';
+      const label = document.createElement('dt');
+      label.className = 'modal-detail-label';
+      label.textContent = item.label;
+      const value = document.createElement('dd');
+      value.className = 'modal-detail-value';
+      value.textContent = item.value;
+      row.append(label, value);
+      detailList.append(row);
+    }
+  }
   const actions = document.createElement('div');
-  actions.className = 'flex-row'; actions.style.justifyContent = 'flex-end'; actions.style.marginTop = '22px';
+  actions.className = 'modal-actions';
   const acknowledge = document.createElement('button');
   acknowledge.type = 'button'; acknowledge.className = `btn ${options.kind === 'success' ? 'btn-primary' : 'btn-secondary'}`; acknowledge.textContent = 'Đã hiểu';
-  actions.append(acknowledge); content.append(heading, text, actions);
-  const finish = () => { closeGlobalModal(); resolve(); };
-  close.addEventListener('click', finish);
-  acknowledge.addEventListener('click', finish);
-  modal.classList.add('active'); modal.setAttribute('aria-hidden', 'false'); acknowledge.focus();
+  actions.append(acknowledge); content.append(heading, text);
+  if (detailList) content.append(detailList);
+  content.append(actions);
+  const finish = activateGlobalModal(modal, acknowledge, resolve, undefined);
+  close.addEventListener('click', () => finish());
+  acknowledge.addEventListener('click', () => finish());
+});
+
+window.showCustomPrompt = (message, options = {}) => new Promise(resolve => {
+  const { modal, content } = getGlobalModalParts();
+  content.replaceChildren();
+  const heading = document.createElement('div');
+  heading.className = 'modal-header';
+  const title = document.createElement('h2');
+  title.textContent = options.title || 'Thông tin bổ sung';
+  const close = document.createElement('button');
+  close.type = 'button'; close.className = 'modal-close'; close.setAttribute('aria-label', 'Đóng'); close.textContent = '×';
+  heading.append(title, close);
+  const text = document.createElement('p');
+  text.textContent = message || '';
+  text.style.cssText = 'margin:0 0 14px;color:var(--portal-muted);line-height:1.65;white-space:pre-line';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = options.defaultValue || '';
+  input.placeholder = options.placeholder || '';
+  input.setAttribute('aria-label', options.inputLabel || message || 'Thông tin bổ sung');
+  input.style.cssText = 'width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--portal-border);border-radius:10px;background:rgba(8,14,25,.6);color:var(--portal-text)';
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  const cancel = document.createElement('button');
+  cancel.type = 'button'; cancel.className = 'btn btn-secondary'; cancel.textContent = options.cancelLabel || 'Hủy';
+  const accept = document.createElement('button');
+  accept.type = 'button'; accept.className = 'btn btn-primary'; accept.textContent = options.confirmLabel || 'Tiếp tục';
+  actions.append(cancel, accept); content.append(heading, text, input, actions);
+  const finish = activateGlobalModal(modal, input, resolve, null);
+  close.addEventListener('click', () => finish(null));
+  cancel.addEventListener('click', () => finish(null));
+  accept.addEventListener('click', () => finish(input.value));
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); finish(input.value); }
+  });
 });
 
 const menus = {
@@ -82,7 +185,7 @@ const menus = {
     ['catalog-content', 'Danh mục & landing page', 'images'],
     ['rental-policy', 'Giá loại hình lưu trú', 'badge-dollar-sign'],
     ['bookings', 'Đặt phòng', 'calendar-check'],
-    ['users', 'Tài khoản nhân viên', 'users'],
+    ['users', 'Quản lý phân quyền', 'users'],
     ['customers', 'Khách hàng', 'contact-round'],
     ['loyalty', 'Thành viên', 'award'],
     ['promotions', 'Khuyến mãi', 'ticket-percent'],
@@ -134,7 +237,7 @@ const roleOf = value => {
   const role = String(value || '').toUpperCase().replace(/[ -]/g, '_');
   if (role === 'ADMIN') return 'ADMIN';
   if (role === 'CUSTOMER' || role === 'GUEST') return 'CUSTOMER';
-  if (['STAFF', 'FRONT_DESK', 'HOUSEKEEPING', 'MAINTENANCE', 'F&B', 'FB'].includes(role)) return 'STAFF';
+  if (['STAFF', 'FRONT_DESK', 'HOUSEKEEPING', 'MAINTENANCE', 'F&B', 'FB', 'MANAGER', 'GM', 'REVENUE_MANAGER'].includes(role)) return 'STAFF';
   return null;
 };
 const byId = id => (typeof document !== 'undefined' ? document.getElementById(id) : null);
@@ -483,11 +586,17 @@ export async function initNotificationTray(session) {
   const markAllBtn = byId('btn-mark-all-read');
 
   if (!bellBtn || !dropdown) return;
-  // Lifecycle notifications belong to customer profiles, not staff/admin accounts.
   const isCustomer = roleOf(session?.role) === 'CUSTOMER';
-  bellBtn.hidden = !isCustomer;
-  bellBtn.style.display = isCustomer ? '' : 'none';
-  if (!isCustomer) {
+  const isStaff = ['ADMIN', 'STAFF'].includes(roleOf(session?.role));
+  const isVisible = isCustomer || isStaff;
+  const endpoint = isStaff ? '/staff-notifications' : '/notifications';
+  bellBtn.hidden = !isVisible;
+  bellBtn.style.display = isVisible ? '' : 'none';
+  bellBtn.setAttribute('aria-label', isStaff ? 'Thông báo nhân viên' : 'Thông báo vòng đời');
+  bellBtn.title = isStaff ? 'Thông báo nhân viên' : 'Thông báo vòng đời';
+  const title = dropdown.querySelector('.notification-title');
+  if (title) title.textContent = isStaff ? 'Thông báo nhân viên' : 'Thông báo vòng đời';
+  if (!isVisible) {
     dropdown.classList.add('hidden');
     return;
   }
@@ -513,7 +622,7 @@ export async function initNotificationTray(session) {
   async function loadNotifications() {
     if (!listEl) return;
     try {
-      const resp = await api.get('/notifications?limit=20');
+      const resp = await api.get(`${endpoint}?limit=20`);
       let notifs = [];
       let unread = 0;
 
@@ -541,7 +650,7 @@ export async function initNotificationTray(session) {
         listEl.innerHTML = `
           <div class="notification-empty p-6 text-center text-xs text-slate-400">
             <i data-lucide="bell-off" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
-            <p>Quý khách chưa có thông báo mới.</p>
+            <p>${isStaff ? 'Hiện chưa có thông báo nghiệp vụ.' : 'Quý khách chưa có thông báo mới.'}</p>
           </div>
         `;
         if (typeof window !== 'undefined' && window.lucide?.createIcons) window.lucide.createIcons();
@@ -554,6 +663,7 @@ export async function initNotificationTray(session) {
         const safeTitle = escapeHtml(n.title || 'Thông báo');
         const safeMsg = escapeHtml(n.message || '');
         const voucher = n.voucher_code ? escapeHtml(n.voucher_code) : '';
+        const actionUrl = isStaff && typeof n.action_url === 'string' && n.action_url.startsWith('portal.html?view=checkout') ? n.action_url : '';
         const timeStr = n.created_at ? new Date(n.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : 'Vừa xong';
 
         return `
@@ -563,6 +673,7 @@ export async function initNotificationTray(session) {
               <span class="notification-time text-[10px] text-slate-500 shrink-0 font-mono">${timeStr}</span>
             </div>
             <p class="text-[11px] text-slate-400 leading-relaxed mb-2">${safeMsg}</p>
+            ${actionUrl ? `<a href="${escapeHtml(actionUrl)}" class="notification-action btn btn-sm btn-primary">Mở thanh toán & trả phòng</a>` : ''}
             ${voucher ? `
               <div class="notification-voucher p-2 rounded-lg bg-slate-900 border border-amber-500/20 flex items-center justify-between gap-2 mt-1.5">
                 <span class="font-mono text-xs font-bold text-amber-400 select-all">${voucher}</span>
@@ -608,7 +719,7 @@ export async function initNotificationTray(session) {
           const id = item.getAttribute('data-id');
           if (!id) return;
           try {
-            await api.put(`/notifications/${id}/read`, {});
+            await api.put(`${endpoint}/${id}/read`, {});
             item.classList.remove('bg-amber-500/5', 'border-l-2', 'border-amber-400');
             item.classList.add('bg-slate-950/40');
             const unreadItems = listEl.querySelectorAll('.border-l-2').length;
@@ -637,7 +748,7 @@ export async function initNotificationTray(session) {
       listEl.querySelectorAll('.notif-item').forEach(async item => {
         const id = item.getAttribute('data-id');
         if (id) {
-          api.put(`/notifications/${id}/read`, {}).catch(() => { });
+          api.put(`${endpoint}/${id}/read`, {}).catch(() => { });
           item.classList.remove('bg-amber-500/5', 'border-l-2', 'border-amber-400');
           item.classList.add('bg-slate-950/40');
         }
@@ -648,6 +759,10 @@ export async function initNotificationTray(session) {
 
   // Initial load
   loadNotifications();
+  const notificationRefreshTimer = window.setInterval(() => {
+    if (!bellBtn.isConnected) { window.clearInterval(notificationRefreshTimer); return; }
+    if (document.visibilityState === 'visible') loadNotifications();
+  }, 30000);
 }
 
 function enterPortal(session) {
@@ -658,8 +773,8 @@ function enterPortal(session) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('customer_token');
       localStorage.removeItem('token');
-      alert('Tài khoản này chưa được cấp quyền truy cập cổng web.');
-      window.location.href = 'index.html#login';
+      window.showCustomAlert('Tài khoản này chưa được cấp quyền truy cập cổng web.', { title: 'Chưa được cấp quyền' })
+        .then(() => { window.location.href = 'index.html#login'; });
       return;
     }
 
@@ -817,37 +932,139 @@ export async function handleLoginSubmit(e) {
   }
 }
 
+function getRegistrationFields() {
+  return {
+    fullName: byId('reg-fullname') || byId('register-name'),
+    email: byId('reg-email') || byId('register-email'),
+    phone: byId('reg-phone') || byId('register-phone'),
+    password: byId('reg-password') || byId('register-password'),
+    confirmPassword: byId('reg-confirm-password')
+  };
+}
+
+const registrationInputBindings = new WeakSet();
+
+function registrationErrorNode(input) {
+  if (!input || typeof document === 'undefined' || typeof document.createElement !== 'function') return null;
+  const id = `${input.id || input.name || 'registration-field'}-error`;
+  let node = input.__authFieldErrorNode || null;
+  if (!node) {
+    node = document.createElement('p');
+    node.id = id;
+    node.className = 'auth-field-error';
+    node.hidden = true;
+    node.setAttribute('aria-live', 'polite');
+    if (typeof input.insertAdjacentElement === 'function') input.insertAdjacentElement('afterend', node);
+    else if (input.parentNode?.insertBefore) input.parentNode.insertBefore(node, input.nextSibling);
+    input.__authFieldErrorNode = node;
+  }
+  const describedBy = (input.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+  if (!describedBy.includes(id)) {
+    describedBy.push(id);
+    input.setAttribute('aria-describedby', describedBy.join(' '));
+  }
+  return node;
+}
+
+function setRegistrationFieldError(input, message) {
+  if (!input) return;
+  const node = registrationErrorNode(input);
+  input.setAttribute('aria-invalid', 'true');
+  input.classList?.add('auth-input-invalid');
+  if (node) {
+    node.textContent = message;
+    node.hidden = false;
+  }
+}
+
+function clearRegistrationFieldError(input) {
+  if (!input) return;
+  const node = input.__authFieldErrorNode || null;
+  if (node) {
+    node.textContent = '';
+    node.hidden = true;
+  }
+  input.removeAttribute('aria-invalid');
+  input.classList?.remove('auth-input-invalid');
+}
+
+function validateRegistrationFields(fields) {
+  const values = {
+    fullName: fields.fullName?.value.trim() || '',
+    email: fields.email?.value.trim() || '',
+    phone: fields.phone?.value.trim() || '',
+    password: fields.password?.value || '',
+    confirmPassword: fields.confirmPassword?.value || ''
+  };
+  const errors = {};
+  if (fields.fullName && !values.fullName) errors.fullName = 'Vui lòng nhập họ và tên.';
+  else if (values.fullName.length > 100) errors.fullName = 'Họ và tên không được vượt quá 100 ký tự.';
+
+  if (!values.email) errors.email = 'Vui lòng nhập email hoặc tên đăng nhập.';
+  else if (values.email.length > 50) errors.email = 'Email/tên đăng nhập không được vượt quá 50 ký tự.';
+  else if (/\s/.test(values.email)) errors.email = 'Email/tên đăng nhập không được chứa khoảng trắng.';
+  else if (values.email.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+    errors.email = 'Vui lòng nhập địa chỉ email hợp lệ.';
+  }
+
+  if (values.phone) {
+    const digits = values.phone.replace(/\D/g, '');
+    if (!/^\+?[\d\s().-]+$/.test(values.phone) || digits.length < 8 || digits.length > 15) {
+      errors.phone = 'Số điện thoại cần có từ 8 đến 15 chữ số.';
+    }
+  }
+
+  if (fields.password && !values.password) errors.password = 'Vui lòng nhập mật khẩu.';
+  else if (values.password.length < 8) errors.password = 'Mật khẩu phải chứa ít nhất 8 ký tự.';
+  else if (values.password.length > 200) errors.password = 'Mật khẩu không được vượt quá 200 ký tự.';
+
+  if (fields.confirmPassword && !values.confirmPassword) errors.confirmPassword = 'Vui lòng nhập lại mật khẩu.';
+  else if (fields.confirmPassword && values.password !== values.confirmPassword) {
+    errors.confirmPassword = 'Mật khẩu xác nhận không khớp.';
+  }
+  return { values, errors };
+}
+
+function renderRegistrationErrors(fields, errors) {
+  for (const [key, input] of Object.entries(fields)) {
+    clearRegistrationFieldError(input);
+    if (errors[key]) setRegistrationFieldError(input, errors[key]);
+  }
+  const firstInvalid = Object.keys(errors).map(key => fields[key]).find(Boolean);
+  firstInvalid?.focus?.();
+}
+
+function bindRegistrationFieldValidation(fields) {
+  for (const input of Object.values(fields)) {
+    if (!input || registrationInputBindings.has(input)) continue;
+    registrationInputBindings.add(input);
+    input.addEventListener?.('input', () => {
+      const { errors } = validateRegistrationFields(getRegistrationFields());
+      for (const [key, field] of Object.entries(getRegistrationFields())) {
+        if (field?.getAttribute('aria-invalid') === 'true') {
+          clearRegistrationFieldError(field);
+          if (errors[key]) setRegistrationFieldError(field, errors[key]);
+        }
+      }
+    });
+  }
+}
+
 export async function handleRegisterSubmit(e) {
   if (e && typeof e.preventDefault === 'function') {
     e.preventDefault();
   }
 
-  const fullNameInput = byId('reg-fullname') || byId('register-name');
-  const emailInput = byId('reg-email') || byId('register-email');
-  const phoneInput = byId('reg-phone') || byId('register-phone');
-  const passwordInput = byId('reg-password') || byId('register-password');
-  const confirmPasswordInput = byId('reg-confirm-password');
-
-  const fullName = fullNameInput ? fullNameInput.value.trim() : '';
-  const email = emailInput ? emailInput.value.trim() : '';
-  const phone = phoneInput ? phoneInput.value.trim() : '';
-  const password = passwordInput ? passwordInput.value : '';
-  const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
-
-  if (!email || !password) {
-    status('Vui lòng nhập đầy đủ email/tên đăng nhập và mật khẩu.');
+  const fields = getRegistrationFields();
+  bindRegistrationFieldValidation(fields);
+  const { values, errors } = validateRegistrationFields(fields);
+  renderRegistrationErrors(fields, errors);
+  if (Object.keys(errors).length) {
+    status('Vui lòng sửa các thông tin được đánh dấu bên dưới.');
     return;
   }
 
-  if (confirmPasswordInput && password !== confirmPassword) {
-    status('Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại.');
-    return;
-  }
-
-  if (password.length < 8) {
-    status('Mật khẩu phải chứa ít nhất 8 ký tự.');
-    return;
-  }
+  const { fullName, email, phone, password } = values;
 
   const registerForm = byId('register-form');
   const submitBtn = registerForm ? registerForm.querySelector('button[type="submit"]') : null;
@@ -865,9 +1082,7 @@ export async function handleRegisterSubmit(e) {
       fullName: fullName || email,
       email: email,
       phone: phone || '',
-      password: password,
-      identityCard: 'TEMP-' + Date.now(),
-      identity_card: 'TEMP-' + Date.now()
+      password: password
     };
 
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -883,10 +1098,22 @@ export async function handleRegisterSubmit(e) {
 
     if (!res.ok || (data && (data.status === 'error' || data.status === 'failed'))) {
       const errorMsg = data?.message || 'Đăng ký không thành công. Vui lòng thử lại.';
-      status(errorMsg);
+      const fieldAliases = { full_name: 'fullName', fullName: 'fullName', username: 'email', email: 'email', phone: 'phone', password: 'password', confirm_password: 'confirmPassword', confirmPassword: 'confirmPassword', identity_card: 'identityCard', identityCard: 'identityCard' };
+      const fieldErrors = data?.fieldErrors || data?.errors || {};
+      const mappedErrors = {};
+      for (const [key, message] of Object.entries(fieldErrors)) {
+        const fieldKey = fieldAliases[key];
+        if (fieldKey && fields[fieldKey]) mappedErrors[fieldKey] = message;
+      }
+      if (!Object.keys(mappedErrors).length && /tên đăng nhập đã tồn tại/i.test(errorMsg)) {
+        mappedErrors.email = errorMsg;
+      }
+      if (Object.keys(mappedErrors).length) renderRegistrationErrors(fields, mappedErrors);
+      status(Object.keys(mappedErrors).length ? 'Vui lòng sửa thông tin được đánh dấu.' : errorMsg);
       return;
     }
 
+    renderRegistrationErrors(fields, {});
     status('Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.', 'success');
 
     // Automatically switch back to the Login tab and pre-fill the email/username field
@@ -960,7 +1187,7 @@ try {
   const token = getStoredCustomerToken() || (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null) || getAuthSession()?.token;
 
   if (!token) {
-    // If no token is present: display auth-card on portal.html without blocking alert()
+    // If no token is present: display the login card without a blocking dialog.
     const authView = byId('auth-view');
     const appView = byId('app-view');
     if (authView) authView.hidden = false;

@@ -9,4 +9,7 @@ public interface PaymentGateway {
     Beneficiary beneficiary();
     void requireConfigured();
     JsonObject createLink(long orderCode,long amount,String reference,long expiresAt)throws Exception;
+
+    /** Close an unpaid link. Returns the provider's authoritative state (for example CANCELLED or PAID). */
+    default String cancelLink(long orderCode,String reason)throws Exception { return "UNSUPPORTED"; }
 }

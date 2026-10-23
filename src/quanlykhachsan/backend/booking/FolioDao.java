@@ -102,7 +102,7 @@ public final class FolioDao {
             q.setInt(1, bookingId);q.setInt(2,roomId);
             try(ResultSet r=q.executeQuery()){if(!r.next())return false;}
         }
-        try (PreparedStatement q = c.prepareStatement("UPDATE bookings SET status='checked_out',rental_type=COALESCE(?,rental_type),buffer_minutes=COALESCE(?,buffer_minutes),check_out_actual=CURRENT_TIMESTAMP(6) WHERE id=? AND room_id=? AND status='checked_in'")) {
+        try (PreparedStatement q = c.prepareStatement("UPDATE bookings SET status='checked_out',checkout_overdue_at=NULL,rental_type=COALESCE(?,rental_type),buffer_minutes=COALESCE(?,buffer_minutes),check_out_actual=CURRENT_TIMESTAMP(6) WHERE id=? AND room_id=? AND status='checked_in'")) {
             if(finalType==null)q.setNull(1,Types.VARCHAR);else q.setString(1,finalType.databaseValue());
             if(finalBuffer==null)q.setNull(2,Types.SMALLINT);else q.setInt(2,finalBuffer);
             q.setInt(3, bookingId);q.setInt(4,roomId);if(q.executeUpdate()!=1)return false;
@@ -123,8 +123,11 @@ public final class FolioDao {
               + "FROM bookings b WHERE b.id=?")){
             q.setInt(1,bookingId);if(q.executeUpdate()!=1)throw new SQLException("Cleaning task could not be created");
         }
-        quanlykhachsan.backend.invoice.InvoiceFinalizationService.finalizePaid(c,bookingId);
-        quanlykhachsan.backend.notification.LifecycleNotifications.booking(c,bookingId,"checkout_gratitude","checkout:"+bookingId,"Đã trả phòng","Bạn đã hoàn tất trả phòng. Cảm ơn bạn đã lưu trú tại Aurelia.");
+        // Physical checkout and room turnover may complete while a posted
+        // incidental charge is still open. Finalize the invoice only after all
+        // folios settle; FolioService will finalize it after a later payment.
+        if(bookingBalance(c,bookingId).signum()==0)quanlykhachsan.backend.invoice.InvoiceFinalizationService.finalizePaid(c,bookingId);
+        quanlykhachsan.backend.notification.LifecycleNotifications.booking(c,bookingId,"checkout_gratitude","checkout:"+bookingId,"Đã hoàn tất kỳ lưu trú","Hệ thống đã ghi nhận trả phòng và chuyển phòng sang trạng thái cần dọn dẹp. Quý khách có thể đánh giá kỳ lưu trú để nhận 200 điểm thành viên.");
         return true;
     }
 

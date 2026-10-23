@@ -76,6 +76,10 @@ export async function renderCheckout(container, session) {
         filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).forEach(b => {
             const card = document.createElement('article');
             card.className = 'card checkout-card';
+            const counterPayment = String(b.paymentChoice ?? b.payment_choice ?? '').toLowerCase() === 'counter';
+            const overdue = String(b.status || '').toLowerCase() === 'overdue';
+            const phone = String(b.customerPhone || '').trim();
+            const safePhone = phone.replace(/[^+\d]/g, '');
             card.innerHTML = `
                 <div class="card-body">
                     <div class="checkout-card-heading">
@@ -83,17 +87,18 @@ export async function renderCheckout(container, session) {
                             <span class="checkout-room-icon"><i data-lucide="door-open" aria-hidden="true"></i></span>
                             <div><h2 class="card-title">Phòng ${escapeHtml(b.roomNumber || 'N/A')}</h2><span class="checkout-booking-id">Đặt phòng #${escapeHtml(b.id)}</span></div>
                         </div>
-                        <span class="badge room-badge badge-occupied">Đang lưu trú</span>
+                        <span class="badge room-badge ${overdue ? 'badge-maintenance' : 'badge-occupied'}">${overdue ? 'Quá hạn trả phòng' : 'Đang lưu trú'}</span>
                     </div>
                     <dl class="checkout-details">
-                        <div class="checkout-guest"><dt>Khách hàng</dt><dd>${escapeHtml(b.customerName || 'Khách vãng lai')}</dd></div>
+                        <div class="checkout-guest"><dt>Khách hàng</dt><dd>${escapeHtml(b.customerName || 'Khách vãng lai')}${phone ? `<small>${escapeHtml(phone)}</small>` : ''}</dd></div>
                         <div><dt>Nhận phòng</dt><dd>${formatDate(b.checkInDate)}</dd></div>
                         <div><dt>Trả phòng dự kiến</dt><dd>${formatDate(b.checkOutDate)}</dd></div>
                     </dl>
                     <div class="card-actions checkout-card-actions">
                         <div class="checkout-amount"><span>Giá trị đặt phòng</span><strong>${formatCurrency(b.totalPrice)}</strong></div>
+                        ${overdue ? `<small class="checkout-overdue-note">Đã quá hạn 30 phút. Gọi khách, thu đủ số dư ${formatCurrency(b.payment?.remaining_amount)} rồi hoàn tất trả phòng.${safePhone ? ` <a href="tel:${escapeHtml(safePhone)}">Gọi ${escapeHtml(phone)}</a>` : ''}</small>` : counterPayment ? '<small class="checkout-counter-note">Thu tiền tại quầy trước khi hoàn tất trả phòng.</small>' : ''}
                         <button class="btn btn-primary btn-pay" type="button" data-id="${escapeHtml(b.id)}" aria-label="Thanh toán phòng ${escapeHtml(b.roomNumber || 'N/A')}, đơn ${escapeHtml(b.id)}">
-                            <span>Thanh toán</span><i data-lucide="arrow-right" aria-hidden="true"></i>
+                            <span>${counterPayment ? 'Thu tiền & trả phòng' : 'Thanh toán & trả phòng'}</span><i data-lucide="arrow-right" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>`;
@@ -116,10 +121,10 @@ export async function renderCheckout(container, session) {
         try {
             const [response, rooms, customers] = await Promise.all([api.get('/bookings'), api.get('/rooms'), api.get('/customers')]);
             if (!grid.isConnected) return;
-            activeBookings = response.filter(b => b.status === 'checked_in').map(b => {
+            activeBookings = response.filter(b => ['checked_in','overdue'].includes(String(b.status || '').toLowerCase())).map(b => {
                 const room = rooms.find(r => r.id === b.roomId);
                 const customer = customers.find(c => c.id === b.customerId);
-                return { ...b, roomNumber: room?.roomNumber || 'N/A', customerName: customer?.fullName || 'Khách vãng lai' };
+                return { ...b, roomNumber: room?.roomNumber || 'N/A', customerName: customer?.fullName || 'Khách vãng lai', customerPhone: customer?.phone || '' };
             });
             currentPage = 1;
             renderCards();
@@ -140,6 +145,12 @@ export async function renderCheckout(container, session) {
     refresh.addEventListener('click', loadData);
     refreshIcons();
 
+    const checkoutRefreshTimer = window.setInterval(() => {
+        if (!grid.isConnected) { window.clearInterval(checkoutRefreshTimer); return; }
+        const modal = document.getElementById('global-modal');
+        if (document.visibilityState === 'visible' && !modal?.classList.contains('active')) loadData();
+    }, 30000);
+
     const openModal = (bookingId) => {
         const b = activeBookings.find(x => x.id == bookingId);
         if (!b) return;
@@ -150,7 +161,7 @@ export async function renderCheckout(container, session) {
 
         content.innerHTML = `
             <div class="modal-header">
-                <h2>Xác nhận Thanh toán</h2>
+                <h2>${String(currentProcessBooking.paymentChoice ?? currentProcessBooking.payment_choice ?? '').toLowerCase() === 'counter' ? 'Thu tiền tại quầy & trả phòng' : 'Thanh toán & trả phòng'}</h2>
                 <button class="modal-close" onclick="closeModal('global-modal')">&times;</button>
             </div>
             <div class="modal-body" id="modal-checkout-form" style="padding-top:10px;">
@@ -239,7 +250,7 @@ export async function renderCheckout(container, session) {
             const method = document.getElementById("pay-method").value;
             
             if (!amount || amount < 0) {
-                alert("Vui lòng nhập số tiền hợp lệ!");
+                await window.showCustomAlert("Vui lòng nhập số tiền hợp lệ!", { title: 'Số tiền không hợp lệ' });
                 return;
             }
 
@@ -268,7 +279,7 @@ export async function renderCheckout(container, session) {
                     if(method==='Chuyển khoản'){transferPaid=false;await updateQRCode();}
                     else payAmountInput.value=due.toFixed(2);
                     const message=result.checked_out?'Phòng đã được trả.':'Đã ghi nhận khoản thu; chưa thể hoàn tất trả phòng.';
-                    alert(`${message} Còn ${Number(result.booking_balance||due).toLocaleString('vi-VN')} đ trên các folio. Số tiền kế tiếp là folio ${due.toLocaleString('vi-VN')} đ.`);
+                    await window.showCustomAlert(`${message} Còn ${Number(result.booking_balance||due).toLocaleString('vi-VN')} đ trên các folio. Số tiền kế tiếp là folio ${due.toLocaleString('vi-VN')} đ.`, { title: 'Chưa thể hoàn tất trả phòng' });
                     return;
                 }
                 
@@ -285,7 +296,7 @@ export async function renderCheckout(container, session) {
                         if (invoice) {
                             window.open(getApiBaseUrl() + "/invoices/" + invoice.id + "/pdf", "_blank");
                         } else {
-                            alert("Không tìm thấy hóa đơn cho đơn đặt phòng này!");
+                            await window.showCustomAlert("Không tìm thấy hóa đơn cho đơn đặt phòng này!", { title: 'Không tìm thấy hóa đơn' });
                         }
                     } catch (err) {
                         console.error(err);
@@ -295,7 +306,7 @@ export async function renderCheckout(container, session) {
                 };
             } catch (e) {
                 console.error(e);
-                alert("Lỗi thanh toán: " + e.message);
+                await window.showCustomAlert("Lỗi thanh toán: " + e.message, { title: 'Không thể ghi nhận thanh toán' });
             } finally {
                 btnConfirm.disabled = false;
                 btnConfirm.textContent = "Hoàn tất Thanh toán";

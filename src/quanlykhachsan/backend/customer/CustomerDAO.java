@@ -30,6 +30,8 @@ public interface CustomerDAO {
     public Customer findById(int id);
     public boolean insert(Customer customer) throws Exception;
     public int addAndReturnId(Customer customer) throws Exception;
+    /** Inserts on a caller-owned transaction; identity is stored only in the encrypted vault. */
+    public int addAndReturnId(java.sql.Connection connection, Customer customer) throws Exception;
     public void updateLoyaltyPoints(int customerId, int currentPointsChange, int totalPointsChange, String newLevel) throws Exception;
 
     // TASK-A2.2: Customer Profile Management & Fast Lookup

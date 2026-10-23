@@ -23,6 +23,15 @@ Cash/POS collection continues through POST `/folios/{id}/pay` with UUIDv4 `Idemp
 
 The gateway extension boundary is `PaymentGateway` plus a provider-specific authenticated webhook adapter producing `VerifiedPayment`. New providers must never trust unsigned browser redirects or reuse another provider's signature algorithm. Shared audit/outbox tables are provider-independent; future refunds/outgoing transactions still need their own accounting and authorization rules.
 
+## 2026-10-23 staff overdue notification and checkout lifecycle
+
+| Route | Access | Result |
+| --- | --- | --- |
+| GET `/api/v1/staff-notifications?limit=20&unread_only=false` | Admin or staff | Latest operational notices with per-user `is_read`, `unread_count`, linked booking and an allowlisted action URL. `limit` is clamped to 1–100. |
+| PUT `/api/v1/staff-notifications/{id}/read` | Admin or staff | Marks that notice read for the signed-in staff member only. |
+
+When a Web booking selected counter payment and still has a balance after scheduled checkout, it remains checked in. After a 30-minute grace period, the lifecycle worker marks it overdue and inserts one durable staff alert in the same transaction. The alert includes the booking, room, guest, phone number and folio balance, and links to checkout collection. Reading the alert is per staff account. Re-running the worker does not create duplicates. Late checkout is free for the first 30 minutes, then adds one `hourly_extra_hour_price` for each started hour and one extra hourly amount after six hours. A stable folio reference prevents duplicate charges between worker cycles and staff checkout. QR-paid Web bookings continue through automatic checkout.
+
 > **Contract Freeze Status:** FROZEN (OpenAPI 3.0.3 Contract Parity Verified)
 > **Target Document:** [`openapi-p1.json`](file:///c:/Users/Admin/OneDrive/Documents/NetBeansProjects/QL_KhachSan_main/docs/dev-spec/openapi-p1.json)
 > **Server Base URL:** `http://localhost:8081`
@@ -938,3 +947,21 @@ These public routes use the standard success/error envelope. The portal uses one
 | `POST /api/v1/auth/facebook` | Removed login route: returns 410 and never creates an account/session. |
 
 Unavailable Google/SMTP configuration or transport returns 503. Invalid input/credentials or a wrong code return 400/401. An expired code returns 422 and can be resent within fifteen minutes of the most recent successful send. Missing, used or expired sessions return 410 and the portal restores the Google button. Exhausted attempts/resends return 429. Code validity starts after successful SMTP delivery; failed resend delivery preserves the previous code and resend budget. Challenges are process-local and do not survive a backend restart. Frontend stores only the final hotel session, including `customerId`; Google credentials remain transient.
+
+### Electronic invoices — 2026-10-23
+
+The internal invoice remains a payment statement. Provider-issued MISA meInvoice documents use a separate record and are created only by an explicit staff action after payment, checkout, ledger, buyer, and VAT checks pass. These operations do not create bookings or change payments.
+
+| Method and route | Access and behavior |
+| --- | --- |
+| `POST /api/v1/invoices/{invoiceId}/electronic/issue` | Admin, staff, or front desk. Issues an original invoice after validating the paid internal statement and its ledger. A request already in progress or with an uncertain result must be synchronized before another attempt. |
+| `POST /api/v1/invoices/{invoiceId}/electronic/adjust` | Admin, staff, or front desk. Accepts `{parent_einvoice_id, document_type, reason}`. `document_type` is `adjustment` or `replacement`; only an issued original belonging to this statement may be referenced. |
+| `POST /api/v1/invoices/{invoiceId}/electronic/{electronicId}/sync` | Admin, staff, or front desk. Reconciles an uncertain publish result by provider reference and refreshes provider/tax-authority status. |
+| `POST /api/v1/invoices/{invoiceId}/electronic/{electronicId}/cancel` | Admin, staff, or front desk. Accepts `{reason}` and records `cancel_pending`; the invoice becomes `cancelled` only after provider status confirms deletion/cancellation. |
+| `GET /api/v1/invoices/{invoiceId}/electronic/{electronicId}/pdf` | Admin, staff, front desk, or the owning customer/guest. Returns the provider PDF only for a confirmed issued or cancelled record, with `Cache-Control: private, no-store`. |
+
+Successful JSON operations use the existing `{status:"success",data:...}` envelope. The returned e-invoice projection contains `id`, `internalInvoiceId`, `bookingId`, `documentType`, `status`, `environment`, `providerMode`, `transactionId`, `templateNo`, `series`, `number`, `taxAuthorityCode`, `sendTaxStatus`, `invoiceDate`, `amountWithoutVat`, `vatAmount`, `totalAmount`, `viewUrl`, sanitized `errorCode`/`errorMessage`, `lastSyncedAt`, `parentId`, and operation `events`.
+
+The MISA adapter supports `POS`, `HSM_CODE`, and `HSM_NO_CODE`. POS requests use `/api/v3/code/itg/invoice-calculating/invoiceandpublish`, place the reference inside `OrgInvoiceData`, and set `IsInvoiceCalculatingMachine: true`. HSM requests use `/api/v3/code/itg/invoicepublishing/publishhsm` for coded invoices and `/api/v3/itg/invoicepublishing/publishhsm` for uncoded invoices. The adapter uses the corresponding code/no-code status, view-link and PDF routes. Provider credentials are sent only to token endpoints; cancellation uses MISA's separate integration token.
+
+Invalid requests return 400; authorization failures return 403; business conflicts and uncertain provider outcomes return 409; definite provider rejection returns 502; missing provider configuration or persistence/transport availability failures return 503. Provider credentials and raw customer request data are not included in events or responses. See [the operations guide](../electronic-invoices.md) for configuration and staff workflow.

@@ -75,6 +75,60 @@ class PaymentsNotificationsIntegrationTest {
         enqueue(f,"lease-test");execute("UPDATE notification_outbox SET state='SENDING',attempts=1,lease_until=DATE_SUB(CURRENT_TIMESTAMP,INTERVAL 1 MINUTE) WHERE event_key='lease-test'");execute("INSERT INTO notification_delivery_attempts(outbox_id,attempt_number,state) SELECT id,1,'SENDING' FROM notification_outbox WHERE event_key='lease-test'");
         try(var w=worker(mail->new NotificationWorker.Outcome("SENT",null))){w.recoverExpiredLeases();}assertEquals("UNKNOWN",text("SELECT state FROM notification_outbox WHERE event_key='lease-test'"));
     }
+    @Test void webStayLifecycleBindsLocalDateTimeAndQueuesNinetyPercentCheckoutReminder()throws Exception {
+        var f=fixture();ZoneId zone=ZoneId.of("Asia/Ho_Chi_Minh");
+        LocalDateTime checkIn=LocalDateTime.now(zone).plusHours(2).withSecond(0).withNano(0),checkOut=checkIn.plusDays(1);
+        try(Connection c=DatabaseConnection.getConnection();PreparedStatement q=c.prepareStatement("UPDATE bookings SET status='confirmed',check_in_date=?,check_out_date=?,check_in_actual=NULL,check_out_actual=NULL WHERE id=?")){
+            q.setObject(1,checkIn);q.setObject(2,checkOut);q.setInt(3,f.booking);assertEquals(1,q.executeUpdate());
+        }
+        Clock afterCheckIn=Clock.fixed(checkIn.plusMinutes(5).atZone(zone).toInstant(),zone);
+        assertEquals(1,new WebBookingLifecycleEngine(DatabaseConnection::getConnection,afterCheckIn).processDue());
+        assertEquals("checked_in",text("SELECT status FROM bookings WHERE id="+f.booking));
+        assertEquals(checkIn.plusMinutes(5).format(java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")),text("SELECT DATE_FORMAT(check_in_actual,'%Y-%m-%d %H:%i:%s') FROM bookings WHERE id="+f.booking));
+
+        Clock checkoutReminder=Clock.fixed(checkOut.minusHours(1).atZone(zone).toInstant(),zone);
+        new WebBookingLifecycleEngine(DatabaseConnection::getConnection,checkoutReminder).processDue();
+        assertEquals(1,count("notification_outbox WHERE booking_id="+f.booking+" AND event_type='checkout_reminder'"));
+
+        Clock afterCheckOut=Clock.fixed(checkOut.plusMinutes(1).atZone(zone).toInstant(),zone);
+        assertEquals(1,new WebBookingLifecycleEngine(DatabaseConnection::getConnection,afterCheckOut).processDue());
+        assertEquals("checked_out",text("SELECT status FROM bookings WHERE id="+f.booking));
+        assertEquals("vacant_dirty",text("SELECT r.status FROM bookings b JOIN rooms r ON r.id=b.room_id WHERE b.id="+f.booking));
+        assertEquals(1,count("cleaning_tasks WHERE booking_id="+f.booking+" AND status='pending'"));
+    }
+    @Test void unpaidWebCounterStayWaitsForStaffCollectionAndNotifiesAfterThirtyMinutes()throws Exception {
+        var f=fixture();ZoneId zone=ZoneId.of("Asia/Ho_Chi_Minh");LocalDateTime databaseNow;
+        try(Connection c=DatabaseConnection.getConnection();Statement q=c.createStatement();ResultSet r=q.executeQuery("SELECT CURRENT_TIMESTAMP(6)")){
+            r.next();databaseNow=r.getTimestamp(1).toLocalDateTime();
+        }
+        LocalDateTime checkIn=databaseNow.minusDays(1),checkOut=databaseNow.minusMinutes(40);
+        try(Connection c=DatabaseConnection.getConnection();PreparedStatement q=c.prepareStatement(
+                "UPDATE bookings SET status='checked_in',customer_type='Web',payment_choice='counter',check_in_date=?,check_out_date=?,check_in_actual=?,check_out_actual=NULL WHERE id=?")){
+            q.setObject(1,checkIn);q.setObject(2,checkOut);q.setObject(3,checkIn);q.setInt(4,f.booking);assertEquals(1,q.executeUpdate());
+        }
+        execute("UPDATE rooms SET status='occupied_clean' WHERE id=(SELECT room_id FROM bookings WHERE id="+f.booking+")");
+
+        Clock due=Clock.fixed(databaseNow.atZone(zone).toInstant(),zone);
+        assertEquals(1,new WebBookingLifecycleEngine(DatabaseConnection::getConnection,due).processDue());
+        // The engine leaves the stay in-house and marks it for staff.
+        assertEquals("checked_in",text("SELECT status FROM bookings WHERE id="+f.booking));
+        assertNotNull(text("SELECT checkout_overdue_at FROM bookings WHERE id="+f.booking));
+        assertEquals("occupied_clean",text("SELECT r.status FROM rooms r JOIN bookings b ON b.room_id=r.id WHERE b.id="+f.booking));
+        assertEquals(0,count("cleaning_tasks WHERE booking_id="+f.booking+" AND status='pending'"));
+        assertEquals("1050.00",text("SELECT balance FROM folios WHERE id="+f.folio));
+        assertEquals(1,count("folio_transactions WHERE folio_id="+f.folio+" AND reference_id='OVERTIME-HOURLY-"+f.booking+"' AND transaction_type='debit'"));
+        assertEquals(1,count("staff_notifications WHERE booking_id="+f.booking+" AND event_key LIKE 'checkout-overdue:%'"));
+        assertEquals(0,new WebBookingLifecycleEngine(DatabaseConnection::getConnection,due).processDue());
+        assertEquals("1050.00",text("SELECT balance FROM folios WHERE id="+f.folio));
+
+        String key=UUID.randomUUID().toString();
+        var payment=new FolioDao.PaymentRequest(f.folio,key,"counter-checkout-"+key,new BigDecimal("1050.00"),"cash",true,zone,1);
+        try(Connection c=DatabaseConnection.getConnection()) { assertEquals(200,new FolioService().pay(c,payment).statusCode()); }
+        assertEquals("checked_out",text("SELECT status FROM bookings WHERE id="+f.booking));
+        assertEquals("vacant_dirty",text("SELECT r.status FROM rooms r JOIN bookings b ON b.room_id=r.id WHERE b.id="+f.booking));
+        assertEquals(1,count("cleaning_tasks WHERE booking_id="+f.booking+" AND status='pending'"));
+        assertEquals(1,count("staff_collections WHERE folio_id="+f.folio+" AND reference_id='"+key+"'"));
+    }
     @Test void anotherGatewayUsesTheSameLinksSettlementAndNotificationTables()throws Exception {
         var f=fixture();AtomicInteger creates=new AtomicInteger();
         PaymentGateway gateway=new PaymentGateway(){
@@ -115,7 +169,7 @@ class PaymentsNotificationsIntegrationTest {
     private static Fixture fixture()throws Exception {
         String u=UUID.randomUUID().toString().replace("-","").substring(0,10);
         try(var c=DatabaseConnection.getConnection()){
-            int type=(int)insert(c,"INSERT INTO room_types(name,base_price,capacity) VALUES('Synthetic-"+u+"',1000,2)");int room=(int)insert(c,"INSERT INTO rooms(room_number,room_type_id,price,status) VALUES('T-"+u+"',"+type+",1000,'reserved')");int customer=(int)insert(c,"INSERT INTO customers(full_name,identity_card,phone,email) VALUES('Synthetic',NULL,'0000000000','dev@example.test')");
+            int type=(int)insert(c,"INSERT INTO room_types(name,base_price,hourly_extra_hour_price,capacity) VALUES('Synthetic-"+u+"',1000,50,2)");int room=(int)insert(c,"INSERT INTO rooms(room_number,room_type_id,price,status) VALUES('T-"+u+"',"+type+",1000,'reserved')");int customer=(int)insert(c,"INSERT INTO customers(full_name,identity_card,phone,email) VALUES('Synthetic',NULL,'0000000000','dev@example.test')");
             int booking=(int)insert(c,"INSERT INTO bookings(customer_id,room_id,check_in_date,check_out_date,total_price,status,customer_type) VALUES("+customer+","+room+",DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 1 DAY),DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 2 DAY),1000,'pending','Web')");long folio=insert(c,"INSERT INTO folios(booking_id,folio_type,balance,status,code) VALUES("+booking+",'master',1000,'open','FOLIO-T-"+u+"')");
             execute(c,"INSERT INTO folio_transactions(folio_id,transaction_type,charge_type,amount,business_date) SELECT "+folio+",'debit','room_rate',1000,business_date FROM hotel_business_state WHERE id=1");String reference="AH"+u.substring(0,7),link="link-"+u;
             long order=insert(c,"INSERT INTO payment_links(folio_id,amount,reference_code,account_number,account_name,bank_bin,payment_link_id,state,expires_at) VALUES("+folio+",1000,'"+reference+"','12345678','SYNTHETIC','970422','"+link+"','PENDING',DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 15 MINUTE))");return new Fixture(booking,folio,order,reference,link);

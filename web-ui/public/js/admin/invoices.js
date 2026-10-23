@@ -1,4 +1,21 @@
-import { api, getApiBaseUrl } from "../../api.js";
+import { api, fetchAuthenticatedFile } from "../../api.js";
+
+const eInvoiceLabel = status => ({issued:'Đã phát hành',submitting:'Đang gửi',sync_required:'Cần đồng bộ',rejected:'Bị từ chối',cancel_pending:'Chờ xác nhận hủy',cancelled:'Đã hủy',ready:'Chưa phát hành'}[status] || 'Chưa phát hành');
+const taxStatusLabel = (mode,status) => {
+    if(status==null||status==='')return 'Chưa đồng bộ CQT';
+    const labels=mode==='HSM_NO_CODE'?['Chưa gửi CQT','Đã gửi CQT','CQT tiếp nhận','CQT không tiếp nhận','Gửi CQT lỗi']:['Chờ cấp mã','Gửi cấp mã lỗi','Đã cấp mã','CQT từ chối cấp mã','Gửi CQT lỗi'];
+    return labels[Number(status)] || `CQT: ${status}`;
+};
+const eInvoiceBadgeClass = invoice => {
+    const code=Number(invoice.electronicInvoiceTaxStatus), mode=invoice.electronicInvoiceProviderMode;
+    if(invoice.electronicInvoiceStatus==='cancelled'||invoice.electronicInvoiceStatus==='rejected'||(Number.isFinite(code)&&(mode==='HSM_NO_CODE'?[3,4]:[1,3,4]).includes(code)))return 'badge-error';
+    if(invoice.electronicInvoiceStatus==='issued'&&code===2)return 'badge-success';
+    return 'badge-warning';
+};
+async function downloadInvoiceFile(path, filename) {
+    const blob = await fetchAuthenticatedFile(path); const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href=url; link.download=filename; link.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 
 
 
@@ -67,6 +84,7 @@ export async function renderInvoices(container, session) {
                             <th>Phòng</th>
                             <th>Khách hàng</th>
                             <th>Thanh toán</th>
+                            <th>Hóa đơn điện tử</th>
                             <th>Ngày xuất</th>
                             <th style="text-align: center;">Hành động</th>
                         </tr>
@@ -99,7 +117,7 @@ export async function renderInvoices(container, session) {
         const tbody = document.getElementById("admin-invoices-body") || document.getElementById("admin-payments-body");
         tbody.innerHTML = "";
         if (!list || list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">Không tìm thấy hóa đơn nào.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 20px;">Không tìm thấy hóa đơn nào.</td></tr>`;
             const paginationContainer = document.getElementById("pagination-invoices");
             if (paginationContainer) paginationContainer.innerHTML = '';
             return;
@@ -119,6 +137,11 @@ export async function renderInvoices(container, session) {
             
             const dateStr = i.issueDate ? new Date(i.issueDate).toLocaleDateString('vi-VN') : 'N/A';
             const methodStr = (i.paymentMethod || 'CASH').toUpperCase();
+            const eStatus = i.electronicInvoiceStatus;
+            const eInvoiceCell = `<td><span class="badge badge-outline ${eInvoiceBadgeClass(i)}">${eInvoiceLabel(eStatus)}</span>${i.electronicInvoiceNumber?`<br><small>Số ${i.electronicInvoiceNumber}</small>`:''}${i.electronicInvoiceId?`<br><small>${taxStatusLabel(i.electronicInvoiceProviderMode,i.electronicInvoiceTaxStatus)}</small>`:''}<br><small>Bảng kê nội bộ #${i.id}</small></td>`;
+            const eActions = !i.electronicInvoiceId && i.status==='paid'
+                ? `<button class="btn btn-xs btn-primary btn-einvoice-action" data-action="issue" data-id="${i.id}">Phát hành</button>`
+                : i.electronicInvoiceId ? `<button class="btn btn-xs btn-outline btn-einvoice-action" data-action="sync" data-id="${i.id}" data-eid="${i.electronicInvoiceId}">Đồng bộ</button>${eStatus==='issued'&&i.electronicInvoiceDocumentType==='original'?` <button class="btn btn-xs btn-outline btn-einvoice-action" data-action="adjust" data-id="${i.id}" data-eid="${i.electronicInvoiceId}">Điều chỉnh</button>`:''}${eStatus==='issued'?` <button class="btn btn-xs btn-error btn-einvoice-action" data-action="cancel" data-id="${i.id}" data-eid="${i.electronicInvoiceId}">Hủy HĐ</button>`:''}` : '';
             
             const idColHTML = `admin` === 'admin' 
                 ? `<td><strong style="color: var(--warning);">#${i.id}</strong></td>` 
@@ -134,8 +157,10 @@ export async function renderInvoices(container, session) {
                 <td><strong>${i.roomNumber || 'Phòng undefined'}</strong></td>
                 <td>${i.customerName || 'Khách vãng lai'}</td>
                 <td style="font-weight: 600; color: var(--success);">${formatCurrency(i.finalTotal)}<br><span style="font-size:0.75rem;color:var(--text-muted);font-weight:normal;">${statusBadge}</span></td>
+                ${eInvoiceCell}
                 <td>${dateStr}<br><span style="font-size:0.75rem;color:var(--text-muted);">${methodStr}</span></td>
                 <td style="text-align: center;">
+                    ${eActions}<br>
                     <button class="btn-icon btn-view-invoice" data-id="${i.id}" title="Chi tiết"><i data-lucide="file-text" style="width:14px;height:14px;pointer-events:none;"></i></button>
                 </td>
             `;
@@ -148,6 +173,15 @@ export async function renderInvoices(container, session) {
                 if(typeof openModal === 'function') openModal(e.target.dataset.id);
             });
         });
+        document.querySelectorAll('.btn-einvoice-action').forEach(btn => btn.addEventListener('click', async () => {
+            const action=btn.dataset.action, invoiceId=btn.dataset.id, einvoiceId=btn.dataset.eid;
+            let path=`/invoices/${invoiceId}/electronic/${action}`; let body={};
+            if(action==='issue') { if(!await window.showCustomConfirm(`Gửi chứng từ #${invoiceId} sang MISA để phát hành hóa đơn điện tử?`, { title: 'Phát hành hóa đơn điện tử', confirmLabel: 'Gửi phát hành' }))return; }
+            if(action==='sync') path=`/invoices/${invoiceId}/electronic/${einvoiceId}/sync`;
+            if(action==='cancel') { const reason=await window.showCustomPrompt('Lý do đề nghị hủy hóa đơn:', { title: 'Đề nghị hủy hóa đơn', confirmLabel: 'Tiếp tục' }); if(!reason?.trim())return; path=`/invoices/${invoiceId}/electronic/${einvoiceId}/cancel`;body={reason:reason.trim()}; }
+            if(action==='adjust') { const type=await window.showCustomPrompt('Nhập adjustment hoặc replacement:', { title: 'Loại chứng từ điều chỉnh', defaultValue: 'adjustment' });if(!['adjustment','replacement'].includes(type))return;const reason=await window.showCustomPrompt('Lý do điều chỉnh/thay thế:', { title: 'Lý do điều chỉnh hóa đơn' });if(!reason?.trim())return;path=`/invoices/${invoiceId}/electronic/adjust`;body={parent_einvoice_id:Number(einvoiceId),document_type:type,reason:reason.trim()}; }
+            btn.disabled=true;try{await api.post(path,body);await window.showCustomAlert('Đã ghi nhận thao tác. Trạng thái nhà cung cấp đã được cập nhật.', { title: 'Đã ghi nhận', kind: 'success' });await loadData();}catch(error){await window.showCustomAlert(error.message||'Chưa hoàn tất. Hãy đồng bộ trạng thái trước khi thử lại.', { title: 'Chưa hoàn tất' });await loadData();}finally{btn.disabled=false;}
+        }));
 
         if (window.renderPaginationComponent) {
             window.renderPaginationComponent(
@@ -225,7 +259,7 @@ const getFilters = () => {
 
         content.innerHTML = `
             <div class="modal-header">
-                <h2>Chi Tiết Hóa Đơn #${inv.id}</h2>
+                <h2>Chứng từ nội bộ #${inv.id}</h2>
                 <button class="modal-close" onclick="closeModal('global-modal')">&times;</button>
             </div>
             <div class="modal-body" style="padding-top:10px;">
@@ -235,6 +269,7 @@ const getFilters = () => {
                     <div><span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;">Mã đơn thuê</span><br><strong>#${inv.bookingId}</strong></div>
                     <div><span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;">Trạng thái</span><br><strong>${statusText}</strong></div>
                     <div style="grid-column: span 2;"><span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;">Ngày xuất</span><br><strong>${dateStr}</strong></div>
+                    <div style="grid-column: span 2;"><span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;">Hóa đơn điện tử MISA</span><br><strong>${eInvoiceLabel(inv.electronicInvoiceStatus)}</strong>${inv.electronicInvoiceNumber?` · Số ${inv.electronicInvoiceNumber}`:''}</div>
                 </div>
                 <div style="background:var(--bg-input); padding:20px; border-radius:8px; border:1px solid var(--border);">
                     <div class="flex-row" style="justify-content:space-between; margin-bottom:12px; font-size:14px;"><span>Tiền phòng</span><strong>${formatCurrency(inv.totalRoomFee)}</strong></div>
@@ -247,17 +282,15 @@ const getFilters = () => {
             </div>
             <div class="flex-row" style="justify-content:flex-end; margin-top:20px;">
                 <button class="btn btn-secondary" onclick="closeModal('global-modal')">Đóng</button>
-                <button class="btn btn-primary" id="btn-print-pdf-real">
-                    <i data-lucide="printer" style="width:16px;height:16px;"></i> In Hóa Đơn PDF
-                </button>
+                <button class="btn btn-outline" id="btn-print-pdf-real">Tải bảng kê PDF nội bộ</button>
+                ${inv.electronicInvoiceStatus==='issued'&&inv.electronicInvoiceId?`<button class="btn btn-primary" id="btn-download-electronic">Tải HĐ điện tử</button>`:''}
             </div>
         `;
         if(window.lucide) lucide.createIcons();
         modal.classList.add('active');
         
-        document.getElementById('btn-print-pdf-real').addEventListener('click', () => {
-            window.open(getApiBaseUrl() + '/invoices/' + inv.id + '/pdf', '_blank');
-        });
+        document.getElementById('btn-print-pdf-real').addEventListener('click', () => downloadInvoiceFile(`/invoices/${inv.id}/pdf`,`bang-ke-noi-bo-${inv.id}.pdf`).catch(error=>window.showCustomAlert(error.message, { title: 'Không thể tải hóa đơn' })));
+        document.getElementById('btn-download-electronic')?.addEventListener('click', () => downloadInvoiceFile(`/invoices/${inv.id}/electronic/${inv.electronicInvoiceId}/pdf`,`hoa-don-dien-tu-${inv.electronicInvoiceNumber||inv.electronicInvoiceId}.pdf`).catch(error=>window.showCustomAlert(error.message, { title: 'Không thể tải hóa đơn điện tử' })));
     };
 
     const showSkeleton = () => {

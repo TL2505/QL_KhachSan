@@ -670,7 +670,7 @@ export async function renderConcierge(container, session) {
           orderStatusMsg.classList.remove('hidden');
         }
 
-        alert('🎉 Tiếp nhận yêu cầu thành công! Nhân viên khách sạn sẽ phục vụ lên phòng #' + activeRoom + ' trong giây lát.');
+        await window.showCustomAlert('Yêu cầu dịch vụ đã được gửi. Nhân viên khách sạn sẽ phục vụ tại phòng #' + activeRoom + '.', { title: 'Đã tiếp nhận yêu cầu', kind: 'success' });
         setTimeout(() => {
           if (orderModal) orderModal.classList.add('hidden');
         }, 1200);

@@ -1,6 +1,6 @@
 import {api, bookingKey} from './booking-api.js';
 import {createOtpFlow} from './guest-otp.js';
-import {paymentFlow} from './payment-qr.js';
+import {paymentFlow} from './payment-qr.js?v=1.0.1';
 import {pricingQuote,occupancyLabel} from './pricing-quote.js';
 import {voucherFlow} from './voucher.js';
 

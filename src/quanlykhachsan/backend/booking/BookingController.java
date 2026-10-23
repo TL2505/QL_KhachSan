@@ -28,7 +28,7 @@ public class BookingController implements HttpHandler {
     private static com.google.gson.JsonArray withPaymentStates(java.util.List<Booking> bookings)throws java.sql.SQLException {
         var rows=new com.google.gson.JsonArray();
         try(var c=quanlykhachsan.backend.utils.DatabaseConnection.getConnection()){
-            for(Booking b:bookings){var j=JsonUtil.getGson().toJsonTree(b).getAsJsonObject();var payment=quanlykhachsan.backend.payment.PaymentStatus.forBooking(c,b.getId());j.addProperty("paymentStatus",payment.get("payment_status").getAsString());j.add("payment",payment);rows.add(j);}
+            for(Booking b:bookings){var j=JsonUtil.getGson().toJsonTree(b).getAsJsonObject();if(b.getCheckoutOverdueAt()!=null)j.addProperty("status","overdue");var payment=quanlykhachsan.backend.payment.PaymentStatus.forBooking(c,b.getId());j.addProperty("paymentStatus",payment.get("payment_status").getAsString());j.add("payment",payment);rows.add(j);}
         }
         return rows;
     }

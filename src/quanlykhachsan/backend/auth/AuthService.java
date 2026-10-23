@@ -29,50 +29,52 @@ public class AuthService {
     }
 
     public boolean registerCustomer(User user, quanlykhachsan.backend.customer.Customer customer) throws Exception {
-        System.out.println("DEBUG: Đang đăng ký khách hàng mới [Service]...");
-        System.out.println("  - Username: " + user.getUsername());
-        System.out.println("  - IdentityCard: " + customer.getIdentityCard());
-
         if (userDAO.findByUsername(user.getUsername()) != null) {
-            System.out.println("  - [FAIL] Username đã tồn tại!");
             throw new IllegalStateException("T\u00ean \u0111\u0103ng nh\u1eadp \u0111\u00e3 t\u1ed3n t\u1ea1i.");
         }
-        
+
         quanlykhachsan.backend.customer.CustomerDAO customerDAO = new quanlykhachsan.backend.customer.CustomerDAOImpl();
         String identityCard = customer.getIdentityCard();
-        if (identityCard != null && !identityCard.isBlank()) {
-            boolean identityAlreadyUsed = customerDAO.findAll().stream()
-                .map(quanlykhachsan.backend.customer.Customer::getIdentityCard)
-                .filter(java.util.Objects::nonNull)
-                .anyMatch(identityCard.trim()::equals);
-            if (identityAlreadyUsed) {
-                throw new IllegalStateException("S\u1ed1 CCCD/H\u1ed9 chi\u1ebfu \u0111\u00e3 \u0111\u01b0\u1ee3c s\u1eed d\u1ee5ng.");
+        try (java.sql.Connection connection = quanlykhachsan.backend.utils.DatabaseConnection.getConnection()) {
+            boolean autoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                int roleId;
+                try (var query = connection.prepareStatement("SELECT id FROM roles WHERE LOWER(name)=?")) {
+                    query.setString(1, "customer");
+                    try (var rows = query.executeQuery()) {
+                        if (!rows.next()) throw new IllegalStateException("Không tìm thấy phân quyền khách hàng trong cơ sở dữ liệu.");
+                        roleId = rows.getInt(1);
+                    }
+                }
+
+                int customerId = customerDAO.addAndReturnId(connection, customer);
+                if (customerId <= 0) throw new java.sql.SQLException("Customer record was not created");
+                if (identityCard != null && !identityCard.isBlank()) {
+                    quanlykhachsan.backend.customer.GuestIdentityVaultDao.configured()
+                        .save(connection, customerId, identityCard, null, null);
+                }
+
+                user.setCustomerId(customerId);
+                user.setRoleId(roleId);
+                user.setStatus("active");
+                user.setPassword(SecurityUtil.hashPassword(user.getPassword()));
+                boolean inserted = userDAO.insert(connection, user);
+                if (!inserted) throw new java.sql.SQLException("User record was not created");
+                connection.commit();
+                return true;
+            } catch (Exception e) {
+                connection.rollback();
+                if (e instanceof java.sql.SQLException sql && "23000".equals(sql.getSQLState())) {
+                    String message = String.valueOf(sql.getMessage()).toLowerCase(java.util.Locale.ROOT);
+                    if (message.contains("identity_hash")) throw new IllegalStateException("Số CCCD/Hộ chiếu đã được sử dụng.", e);
+                    if (message.contains("username")) throw new IllegalStateException("Tên đăng nhập đã tồn tại.", e);
+                }
+                throw e;
+            } finally {
+                connection.setAutoCommit(autoCommit);
             }
         }
-        System.out.println("  - [STEP] Đang tạo hồ sơ khách hàng...");
-        int customerId = customerDAO.addAndReturnId(customer);
-        
-        if (customerId > 0) {
-            System.out.println("  - [SUCCESS] Tạo customer thành công ID: " + customerId);
-            user.setCustomerId(customerId);
-            
-            int roleId = userDAO.getRoleIdByName("customer");
-            if (roleId == -1) {
-                System.out.println("  - [FAIL] Không tìm thấy quyền 'customer' trong bảng roles!");
-                throw new Exception("Lỗi hệ thống: Không tìm thấy phân quyền khách hàng trong Database!");
-            }
-            user.setRoleId(roleId);
-            user.setStatus("active");
-            user.setPassword(SecurityUtil.hashPassword(user.getPassword()));
-            
-            System.out.println("  - [STEP] Đang tạo tài khoản người dùng với RoleID: " + roleId);
-            boolean ok = userDAO.insert(user);
-            if (ok) System.out.println("  - [DONE] Đăng ký hoàn tất.");
-            else System.out.println("  - [FAIL] Lỗi khi insert User!");
-            return ok;
-        }
-        System.out.println("  - [FAIL] Không tạo được hồ sơ khách hàng (ID <= 0)");
-        return false;
     }
 
     public boolean updateProfile(String username, String fullName, String email, String phone) throws Exception {

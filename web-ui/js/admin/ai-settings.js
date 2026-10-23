@@ -208,7 +208,7 @@ export async function renderAiSettings(container) {
     }));
     remove.addEventListener('click', async () => {
         if (busy || !saved?.has_key) return;
-        const confirmed = window.showCustomConfirm ? await window.showCustomConfirm('Xóa API key đã lưu và tắt kết nối nhà cung cấp AI?', { confirmLabel: 'Xóa key' }) : window.confirm('Xóa API key đã lưu và tắt chatbot?');
+        const confirmed = await window.showCustomConfirm('Xóa API key đã lưu và tắt kết nối nhà cung cấp AI?', { confirmLabel: 'Xóa key' });
         if (!confirmed || !active()) return;
         run(async () => { const data = await request('DELETE'); if (active()) { apply(data); feedback.textContent = 'Đã xóa API key và tắt kết nối nhà cung cấp.'; } });
     });

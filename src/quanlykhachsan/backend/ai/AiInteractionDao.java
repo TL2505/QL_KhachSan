@@ -16,7 +16,7 @@ public final class AiInteractionDao implements AutoCloseable {
     public CompletableFuture<Void> record(Event event){
         // Hash synchronously before enqueuing; unnecessary PII cannot linger in the audit queue.
         String fingerprint="sha256:"+hash(event.message());
-        if(!Double.isFinite(event.confidence())||!event.session().matches("[a-f0-9]{64}")||!Set.of("ANSWER","ESCALATED","BLOCKED","UNAVAILABLE","MONITOR").contains(event.decision()))throw new IllegalArgumentException("Invalid audit metadata");
+        if(!Double.isFinite(event.confidence())||!event.session().matches("[a-f0-9]{64}")||!Set.of("ANSWER","ESCALATED","BLOCKED","UNAVAILABLE","MONITOR","TOOL_SEARCH","TOOL_NO_RESULTS","TOOL_UNAVAILABLE").contains(event.decision()))throw new IllegalArgumentException("Invalid audit metadata");
         Event safe=new Event(event.session(),event.sender(),"",event.decision(),event.confidence(),event.correlation());
         var result=new CompletableFuture<Void>();
         try{executor.execute(()->{

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
@@ -36,6 +37,10 @@ public final class CustomerPortalController implements HttpHandler {
             createBooking(exchange);
             return;
         }
+        if ("POST".equalsIgnoreCase(exchange.getRequestMethod()) && path.matches("/api/v1/customer-portal/bookings/\\d+/cancel")) {
+            cancelBooking(exchange);
+            return;
+        }
         if ("POST".equalsIgnoreCase(exchange.getRequestMethod()) && path.equals("/api/v1/customer-portal/reviews")) {
             createReview(exchange);
             return;
@@ -58,6 +63,21 @@ public final class CustomerPortalController implements HttpHandler {
         } catch (Exception ex) {
             ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Unable to load customer portal data"));
         }
+    }
+
+    private static void cancelBooking(HttpExchange exchange)throws IOException {
+        Object rawUserId=exchange.getAttribute("userId");
+        if(!(rawUserId instanceof Number)){ApiResponseUtil.write(exchange,401,ApiResponseUtil.error("Invalid session"));return;}
+        try(Connection c=DatabaseConnection.getConnection()){
+            Integer customer=customerId(c,((Number)rawUserId).intValue());
+            if(customer==null){ApiResponseUtil.write(exchange,403,ApiResponseUtil.error("Customer profile is not linked"));return;}
+            String[] path=exchange.getRequestURI().getPath().split("/");int bookingId=Integer.parseInt(path[5]);
+            var result=new quanlykhachsan.backend.booking.CustomerBookingCancellationService().cancel(bookingId,customer);
+            JsonObject data=new JsonObject();data.addProperty("message",result.message());data.addProperty("refund_amount",result.refundAmount());data.addProperty("refund_status",result.refundStatus());
+            if(result.httpStatus()==200)ApiResponseUtil.write(exchange,200,ApiResponseUtil.successWithData(data));
+            else ApiResponseUtil.write(exchange,result.httpStatus(),ApiResponseUtil.error(result.message()));
+        }catch(NumberFormatException ex){ApiResponseUtil.write(exchange,400,ApiResponseUtil.error("Invalid booking reference"));}
+        catch(Exception ex){System.err.println("Customer booking cancellation failed: "+ex.getClass().getSimpleName());ApiResponseUtil.write(exchange,503,ApiResponseUtil.error("Không thể hủy đơn lúc này. Đơn vẫn giữ nguyên; vui lòng thử lại sau."));}
     }
 
     private static JsonArray vouchers(Connection c) throws java.sql.SQLException {
@@ -142,6 +162,10 @@ public final class CustomerPortalController implements HttpHandler {
             RentalType requestedType=RentalType.parse(PortalValidation.text(body,"rental_type",20,false));
             LocalTime checkInTime=parseStayTime(body,"check_in_time",LocalTime.of(14,0));
             LocalTime checkOutTime=parseStayTime(body,"check_out_time",LocalTime.NOON);
+            String paymentChoice=PortalValidation.text(body,"payment_choice",16,false);
+            if(paymentChoice==null)paymentChoice="counter";
+            paymentChoice=paymentChoice.toLowerCase(java.util.Locale.ROOT);
+            if(!java.util.Set.of("counter","qr").contains(paymentChoice))throw new IllegalArgumentException("Invalid payment choice");
             StayWindow stay=StayWindow.resolve(requestedType,checkIn.atTime(checkInTime),checkOut.atTime(checkOutTime));
             Integer customerId;
             try (Connection connection = DatabaseConnection.getConnection()) {
@@ -154,7 +178,7 @@ public final class CustomerPortalController implements HttpHandler {
             String voucherCode = PortalValidation.text(body, "voucher_code", 50, false);
             var request = new PublicBookingService.Request(
                 null, null, null, roomId, roomVersion, stay.checkIn().toLocalDate(), stay.checkOut().toLocalDate(),
-                voucherCode, guestCount, quotedTotal, stay.rentalType(), stay.checkIn().toLocalTime(), stay.checkOut().toLocalTime());
+                voucherCode, guestCount, quotedTotal, stay.rentalType(), stay.checkIn().toLocalTime(), stay.checkOut().toLocalTime(), paymentChoice);
             var result = new PublicBookingService().reserve(
                 key.toLowerCase(java.util.Locale.ROOT), request, customerId, "Web");
             ApiResponseUtil.write(exchange, result.status(), result.body());
@@ -303,8 +327,17 @@ public final class CustomerPortalController implements HttpHandler {
     private static JsonArray bookings(Connection c,int customerId)throws Exception {
         JsonArray out=new JsonArray();
         String sql = "SELECT b.id,b.room_id,r.room_number,b.check_in_date,b.check_out_date,b.total_price,b.status,"
-            + "(SELECT SUM(f.balance) FROM folios f WHERE f.booking_id=b.id),i.id "
-            + ",EXISTS (SELECT 1 FROM reviews rv WHERE rv.customer_id=b.customer_id AND rv.room_id=b.room_id) "
+            + "(SELECT SUM(f.balance) FROM folios f WHERE f.booking_id=b.id),i.id,i.final_total,i.issue_date,i.status "
+            + ",EXISTS (SELECT 1 FROM reviews rv WHERE rv.customer_id=b.customer_id AND rv.room_id=b.room_id), "
+            + "(SELECT ei.id FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+            + "(SELECT ei.status FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+            + "(SELECT ei.invoice_number FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+            + "(SELECT ei.provider_view_url FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+            + "(SELECT ei.send_tax_status FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+            + "(SELECT ei.provider_mode FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+            + "(SELECT f.id FROM folios f WHERE f.booking_id=b.id AND f.folio_type='master' ORDER BY f.id LIMIT 1),b.customer_type, "
+            + "(SELECT COALESCE(SUM(br.amount),0) FROM booking_refunds br WHERE br.booking_id=b.id), "
+            + "(SELECT CASE WHEN SUM(br.status='MANUAL_REQUIRED')>0 THEN 'MANUAL_REQUIRED' WHEN SUM(br.status='REFUNDED')>0 THEN 'REFUNDED' ELSE 'NOT_REQUIRED' END FROM booking_refunds br WHERE br.booking_id=b.id),b.checkout_overdue_at "
             + "FROM bookings b JOIN rooms r ON r.id=b.room_id LEFT JOIN invoices i ON i.booking_id=b.id "
             + "WHERE b.customer_id=? ORDER BY b.id DESC";
         try(PreparedStatement q=c.prepareStatement(sql)){
@@ -313,19 +346,41 @@ public final class CustomerPortalController implements HttpHandler {
                 x.addProperty("id",id);x.addProperty("bookingCode","BKG-WEB-"+r.getTimestamp(4).toLocalDateTime().getYear()+"-"+id);
                 x.addProperty("roomId",r.getInt(2));x.addProperty("roomNumber",r.getString(3));
                 x.addProperty("checkInDate",r.getTimestamp(4).toString());x.addProperty("checkOutDate",r.getTimestamp(5).toString());
-                x.addProperty("totalPrice",r.getBigDecimal(6));x.addProperty("status",r.getString(7));
+                x.addProperty("totalPrice",r.getBigDecimal(6));
+                Timestamp overdueAt=r.getTimestamp(24);x.addProperty("status",overdueAt==null?r.getString(7):"overdue");
+                if(overdueAt!=null)x.addProperty("checkoutOverdueAt",overdueAt.toString());
                 var payment=quanlykhachsan.backend.payment.PaymentStatus.forBooking(c,id);x.addProperty("paymentStatus",payment.get("payment_status").getAsString());x.add("payment",payment);
                 int invoiceId=r.getInt(9);if(!r.wasNull())x.addProperty("invoiceId",invoiceId);
-                boolean hasReview=r.getBoolean(10);x.addProperty("hasReview",hasReview);
+                if(r.getBigDecimal(10)!=null)x.addProperty("internalInvoiceTotal",r.getBigDecimal(10));
+                if(r.getTimestamp(11)!=null)x.addProperty("internalInvoiceDate",r.getTimestamp(11).toString());
+                x.addProperty("internalInvoiceStatus",r.getString(12));
+                boolean hasReview=r.getBoolean(13);x.addProperty("hasReview",hasReview);
+                int einvoiceId=r.getInt(14);if(!r.wasNull())x.addProperty("electronicInvoiceId",einvoiceId);
+                x.addProperty("electronicInvoiceStatus",r.getString(15));x.addProperty("electronicInvoiceNumber",r.getString(16));x.addProperty("electronicInvoiceViewUrl",r.getString(17));
+                x.addProperty("electronicInvoiceTaxStatus",r.getString(18));x.addProperty("electronicInvoiceProviderMode",r.getString(19));
+                long folioId=r.getLong(20);if(!r.wasNull())x.addProperty("folioId",folioId);
                 x.addProperty("canReview","checked_out".equals(r.getString(7))&&!hasReview);
+                String channel=r.getString(21);String status=r.getString(7).toLowerCase(java.util.Locale.ROOT);
+                boolean beforeCheckIn=r.getTimestamp(4).toLocalDateTime().isAfter(java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
+                x.addProperty("canCancel","Web".equalsIgnoreCase(channel)&&beforeCheckIn&&java.util.Set.of("pending","confirmed").contains(status)&&!payment.get("payment_reconciliation_pending").getAsBoolean());
+                x.addProperty("customerType",channel);
+                x.addProperty("cancelViaSupport","Web".equalsIgnoreCase(channel)&&("checked_in".equals(status)||("confirmed".equals(status)&&!beforeCheckIn)));
+                x.addProperty("refundAmount",r.getBigDecimal(22));x.addProperty("refundStatus",r.getString(23)==null?"NOT_REQUIRED":r.getString(23));
                 out.add(x);
             }}}
         return out;
     }
     private static JsonArray invoices(Connection c,int customerId)throws Exception {
         JsonArray out=new JsonArray();
-        try(PreparedStatement q=c.prepareStatement("SELECT i.id,i.booking_id,i.final_total,i.issue_date,i.status,r.room_number FROM invoices i JOIN bookings b ON b.id=i.booking_id JOIN rooms r ON r.id=b.room_id WHERE b.customer_id=? ORDER BY i.issue_date DESC,i.id DESC")){
-            q.setInt(1,customerId);try(ResultSet r=q.executeQuery()){while(r.next()){JsonObject x=new JsonObject();x.addProperty("id",r.getInt(1));x.addProperty("bookingId",r.getInt(2));x.addProperty("finalTotal",r.getBigDecimal(3));x.addProperty("issueDate",r.getTimestamp(4).toString());x.addProperty("status",r.getString(5));x.addProperty("roomNumber",r.getString(6));out.add(x);}}}
+        try(PreparedStatement q=c.prepareStatement("SELECT i.id,i.booking_id,i.final_total,i.issue_date,i.status,r.room_number, "
+                + "(SELECT ei.id FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+                + "(SELECT ei.status FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+                + "(SELECT ei.invoice_number FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+                + "(SELECT ei.provider_view_url FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+                + "(SELECT ei.send_tax_status FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1), "
+                + "(SELECT ei.provider_mode FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) "
+                + "FROM invoices i JOIN bookings b ON b.id=i.booking_id JOIN rooms r ON r.id=b.room_id WHERE b.customer_id=? ORDER BY i.issue_date DESC,i.id DESC")){
+            q.setInt(1,customerId);try(ResultSet r=q.executeQuery()){while(r.next()){JsonObject x=new JsonObject();x.addProperty("id",r.getInt(1));x.addProperty("bookingId",r.getInt(2));x.addProperty("finalTotal",r.getBigDecimal(3));x.addProperty("issueDate",r.getTimestamp(4).toString());x.addProperty("status",r.getString(5));x.addProperty("roomNumber",r.getString(6));int eid=r.getInt(7);if(!r.wasNull())x.addProperty("electronicInvoiceId",eid);x.addProperty("electronicInvoiceStatus",r.getString(8));x.addProperty("electronicInvoiceNumber",r.getString(9));x.addProperty("electronicInvoiceViewUrl",r.getString(10));x.addProperty("electronicInvoiceTaxStatus",r.getString(11));x.addProperty("electronicInvoiceProviderMode",r.getString(12));out.add(x);}}}
         return out;
     }
 }

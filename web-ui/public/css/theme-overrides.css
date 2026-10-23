@@ -8,6 +8,7 @@
 .room-availability--reserved { color: #9a3412; background: #ffedd5; }
 .room-availability--occupied { color: #9f1239; background: #ffe4e6; }
 .room-availability--maintenance { color: #334155; background: #e2e8f0; }
+.room-availability--not-ready { color: #92400e; background: #fef3c7; }
 .room-availability--unknown { color: #334155; background: #e2e8f0; }
 .room-statistics { width: 100%; max-width: 1152px; margin: 24px auto 0; font-family: var(--font-sans); }
 .room-statistics-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }

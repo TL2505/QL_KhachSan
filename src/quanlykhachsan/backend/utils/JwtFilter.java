@@ -12,6 +12,20 @@ import org.slf4j.LoggerFactory;
 
 public class JwtFilter extends Filter {
     private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
+    @FunctionalInterface
+    public interface CurrentRoleValidator {
+        boolean matches(int userId, String tokenRole) throws java.sql.SQLException;
+    }
+
+    private final CurrentRoleValidator currentRoleValidator;
+
+    /** Used by isolated controller tests that provide synthetic user IDs. */
+    public JwtFilter() { this.currentRoleValidator = null; }
+
+    /** Production filter: checks the signed role against the current account record. */
+    public JwtFilter(CurrentRoleValidator currentRoleValidator) {
+        this.currentRoleValidator = java.util.Objects.requireNonNull(currentRoleValidator);
+    }
 
     private static final Set<String> PUBLIC_PATHS = Set.of(
         "/api/v1/auth/login",
@@ -148,6 +162,19 @@ public class JwtFilter extends Filter {
                     "Authentication token is invalid or expired"
             );
             return;
+        }
+
+        if (currentRoleValidator != null && userId > 0) {
+            try {
+                if (!currentRoleValidator.matches(userId, role)) {
+                    ApiResponseUtil.sendError(exchange, 401, "ERR_401_ROLE_CHANGED", "Account permissions changed; sign in again");
+                    return;
+                }
+            } catch (java.sql.SQLException e) {
+                logger.error("Current account role could not be checked for user [{}]", userId, e);
+                ApiResponseUtil.sendError(exchange, 503, "ERR_503_AUTHORIZATION_STATE", "Account permissions could not be verified");
+                return;
+            }
         }
 
         // Attach verified claims and continue exactly once.

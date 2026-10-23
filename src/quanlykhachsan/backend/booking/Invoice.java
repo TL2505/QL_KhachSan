@@ -16,6 +16,13 @@ public class Invoice {
     // Transient fields for UI Display
     private String customerName;
     private String roomNumber;
+    private Long electronicInvoiceId;
+    private String electronicInvoiceStatus;
+    private String electronicInvoiceNumber;
+    private String electronicInvoiceViewUrl;
+    private String electronicInvoiceDocumentType;
+    private String electronicInvoiceProviderMode;
+    private String electronicInvoiceTaxStatus;
 
     public Invoice() {}
 
@@ -51,4 +58,19 @@ public class Invoice {
 
     public String getRoomNumber() { return roomNumber; }
     public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
+
+    public Long getElectronicInvoiceId() { return electronicInvoiceId; }
+    public void setElectronicInvoiceId(Long electronicInvoiceId) { this.electronicInvoiceId = electronicInvoiceId; }
+    public String getElectronicInvoiceStatus() { return electronicInvoiceStatus; }
+    public void setElectronicInvoiceStatus(String electronicInvoiceStatus) { this.electronicInvoiceStatus = electronicInvoiceStatus; }
+    public String getElectronicInvoiceNumber() { return electronicInvoiceNumber; }
+    public void setElectronicInvoiceNumber(String electronicInvoiceNumber) { this.electronicInvoiceNumber = electronicInvoiceNumber; }
+    public String getElectronicInvoiceViewUrl() { return electronicInvoiceViewUrl; }
+    public void setElectronicInvoiceViewUrl(String electronicInvoiceViewUrl) { this.electronicInvoiceViewUrl = electronicInvoiceViewUrl; }
+    public String getElectronicInvoiceDocumentType() { return electronicInvoiceDocumentType; }
+    public void setElectronicInvoiceDocumentType(String electronicInvoiceDocumentType) { this.electronicInvoiceDocumentType = electronicInvoiceDocumentType; }
+    public String getElectronicInvoiceProviderMode() { return electronicInvoiceProviderMode; }
+    public void setElectronicInvoiceProviderMode(String electronicInvoiceProviderMode) { this.electronicInvoiceProviderMode = electronicInvoiceProviderMode; }
+    public String getElectronicInvoiceTaxStatus() { return electronicInvoiceTaxStatus; }
+    public void setElectronicInvoiceTaxStatus(String electronicInvoiceTaxStatus) { this.electronicInvoiceTaxStatus = electronicInvoiceTaxStatus; }
 }

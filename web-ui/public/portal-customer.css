@@ -1119,6 +1119,12 @@ html[data-theme="dark"] body.customer-portal {
   background: white;
 }
 
+.customer-portal .booking-payment-test-button {
+  display: flex;
+  width: 100%;
+  margin-top: 10px;
+}
+
 .customer-portal .booking-summary-line {
   display: flex;
   align-items: flex-start;
@@ -2488,4 +2494,288 @@ html[data-theme="dark"] body.customer-portal {
 @media (max-width: 640px) {
 .customer-portal .portal-view #cust-stats-grid > .stat-card-enhanced { min-height: 118px; }
 
+}
+
+/* Keep the booking history readable when the portal has limited width. */
+.customer-portal .portal-view .bookings-history-table {
+  width: 100%;
+  min-width: 1180px;
+  table-layout: auto;
+}
+
+.customer-portal .portal-view .booking-table-scroll-hint {
+  margin: 0 0 8px;
+  color: var(--portal-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.customer-portal .portal-view .bookings-history-table :is(th, td) {
+  white-space: nowrap;
+}
+
+.customer-portal .portal-view .booking-status-cell {
+  min-width: 188px;
+}
+
+.customer-portal .portal-view .booking-status-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: max-content;
+  margin-inline: auto;
+}
+
+.customer-portal .portal-view .booking-status-stack > :is(.badge, .inline-flex) {
+  flex: 0 0 auto;
+  max-width: none;
+  white-space: nowrap;
+}
+
+.customer-portal .portal-view .booking-action-cell {
+  min-width: 200px;
+}
+
+.customer-portal .portal-view .booking-action-cell button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Match the landing page's compact date, guest, promotion and availability bar. */
+.customer-portal .portal-view .booking-search-panel {
+  --booking-accent: #d4af37;
+  --booking-accent-soft: #f3e5ab;
+  display: grid;
+  gap: 16px;
+  padding: clamp(16px, 2vw, 24px);
+  border-color: color-mix(in srgb, var(--booking-accent) 24%, var(--portal-border));
+  border-radius: 20px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--customer-surface) 92%, var(--portal-gold) 8%), var(--customer-surface));
+  box-shadow: var(--customer-card-shadow);
+}
+
+.customer-portal .booking-search-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(176px, 1.15fr);
+  align-items: end;
+  gap: 14px;
+}
+
+.customer-portal .booking-search-field {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+}
+
+.customer-portal .booking-search-field > span {
+  color: var(--booking-accent, #d4af37);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.customer-portal .booking-search-field .booking-search-control {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--customer-input-border);
+  border-radius: 12px;
+  color: var(--portal-text);
+  background: var(--customer-secondary-bg);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  accent-color: #d4af37;
+}
+
+.customer-portal .booking-search-field .booking-promo-input { text-transform: uppercase; }
+
+.customer-portal .booking-search-field .booking-search-control:focus-visible {
+  border-color: var(--booking-accent, #d4af37);
+  outline: 3px solid color-mix(in srgb, var(--booking-accent, #d4af37) 24%, transparent);
+  outline-offset: 1px;
+}
+
+.customer-portal .booking-search-submit,
+.customer-portal .booking-dialog-confirm,
+.customer-portal .booking-room-select,
+.customer-portal .booking-payment-test-button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid #d4af37;
+  border-radius: 12px;
+  color: #0b0f17;
+  background: linear-gradient(135deg, var(--booking-accent-soft, #f3e5ab), var(--booking-accent, #d4af37) 58%, var(--booking-accent-soft, #f3e5ab));
+  box-shadow: 0 5px 18px rgba(212, 175, 55, .2);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.customer-portal .booking-search-submit:hover,
+.customer-portal .booking-dialog-confirm:hover,
+.customer-portal .booking-room-select:hover,
+.customer-portal .booking-payment-test-button:hover {
+  border-color: #f3e5ab;
+  filter: brightness(1.04);
+}
+
+.customer-portal .booking-search-submit:disabled,
+.customer-portal .booking-dialog-confirm:disabled,
+.customer-portal .booking-room-select:disabled,
+.customer-portal .booking-payment-test-button:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+.customer-portal .booking-search-submit svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.customer-portal .booking-advanced-filters {
+  overflow: visible;
+  border-top: 1px solid var(--portal-border);
+  border-radius: 0;
+  color: var(--portal-text);
+  background: transparent;
+}
+
+.customer-portal .booking-advanced-filters > .collapse-title {
+  display: flex;
+  min-height: 44px;
+  padding: 13px 32px 4px 0;
+  color: var(--booking-accent, #d4af37);
+  font-size: 12px;
+  font-weight: 700;
+  visibility: visible;
+  cursor: pointer;
+}
+
+.customer-portal .booking-advanced-filters > .collapse-title::after {
+  top: 20px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  color: var(--booking-accent, #d4af37);
+}
+
+.customer-portal .booking-advanced-filters > .collapse-content {
+  padding: 4px 0 0;
+  color: var(--portal-text);
+}
+
+.customer-portal .booking-advanced-filters[open] > .collapse-content {
+  visibility: visible;
+}
+
+.customer-portal .booking-advanced-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.customer-portal .booking-advanced-grid .booking-search-control { min-height: 44px; }
+
+.customer-portal .booking-search-field .booking-search-control:disabled {
+  cursor: not-allowed;
+  opacity: .68;
+}
+
+.customer-portal .booking-time-help {
+  display: block;
+  margin-top: 10px;
+  color: var(--portal-muted, #8b8278);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.customer-portal .booking-search-panel .discovery-feedback { margin: 0; }
+
+.customer-portal .booking-search-panel .discovery-status-overview {
+  padding-top: 14px;
+  border-top: 1px solid var(--portal-border);
+}
+
+.customer-portal .booking-search-panel .room-status-summary {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.customer-portal .customer-room-card {
+  --booking-accent: #d4af37;
+  border-color: color-mix(in srgb, var(--booking-accent) 22%, var(--portal-border));
+  border-radius: 18px;
+  background: var(--customer-surface);
+  box-shadow: var(--customer-card-shadow);
+}
+
+.customer-portal .booking-room-detail {
+  min-height: 44px;
+  border: 1px solid var(--booking-accent, #d4af37);
+  border-radius: 11px;
+  color: var(--booking-accent, #d4af37);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.customer-portal .booking-room-detail:hover {
+  background: color-mix(in srgb, var(--booking-accent, #d4af37) 10%, transparent);
+}
+
+.customer-portal .booking-room-select { min-height: 44px; font-size: 11px; }
+
+.customer-portal .booking-room-select:disabled {
+  color: var(--portal-muted);
+  border-color: var(--portal-border);
+  background: var(--customer-secondary-bg);
+  box-shadow: none;
+  text-transform: none;
+}
+
+.customer-portal .booking-dialog-confirm { padding: 10px 16px; }
+
+.customer-portal .booking-payment-test-button { width: 100%; }
+
+@media (max-width: 1100px) {
+  .customer-portal .booking-search-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .customer-portal .booking-search-submit { grid-column: 1 / -1; }
+  .customer-portal .booking-advanced-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .customer-portal .portal-view .booking-search-panel { padding: 16px; }
+  .customer-portal .booking-search-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .customer-portal .booking-search-field > span { font-size: 10px; }
+  .customer-portal .booking-search-submit { grid-column: 1 / -1; width: 100%; white-space: normal; }
+  .customer-portal .booking-advanced-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .customer-portal .customer-room-actions { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 420px) {
+  .customer-portal .booking-search-grid,
+  .customer-portal .booking-advanced-grid { grid-template-columns: minmax(0, 1fr); }
+  .customer-portal .booking-search-submit { grid-column: auto; }
+}
+
+.customer-portal .discovery-room-heading small,
+.customer-portal .discovery-room-price strong,
+.customer-portal .discovery-detail-section h3,
+.customer-portal .discovery-dialog-header .portal-eyebrow {
+  color: #d4af37;
+}
+
+.customer-portal .discovery-room-amenities span {
+  border-color: color-mix(in srgb, #d4af37 18%, var(--portal-border));
 }

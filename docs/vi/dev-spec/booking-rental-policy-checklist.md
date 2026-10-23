@@ -16,7 +16,8 @@ Nguồn nghiệp vụ: [Tái cấu trúc nghiệp vụ đặt phòng và buồng
 - [x] Đăng ký API danh sách cleaning task cho nhân viên buồng phòng.
 - [x] Thêm API/màn hình quản trị cấu hình ba đơn giá theo hạng phòng; chỉ role `admin` được đọc/lưu.
 - [x] Thêm hàng đợi cleaning task có thứ tự ưu tiên, cờ quá hạn và thao tác nhận task; không nhận dọn trước khi phòng được giải phóng.
-- [x] Tính phụ thu giờ theo mỗi giờ bắt đầu khi nhận sớm/trả muộn; không hoàn tiền tự động khi trả sớm.
+- [x] Tính phụ thu nhận sớm theo mỗi giờ bắt đầu. Khi trả muộn, miễn 30 phút đầu, sau đó mỗi giờ bắt đầu tính một phụ thu; quá 6 giờ tính thêm một lần bằng một giờ phụ thu. Dùng reference ổn định để tác vụ nền và checkout không ghi trùng.
+- [x] Đơn Web thanh toán tại quầy còn dư nợ sau checkout được giữ đang lưu trú; sau 30 phút quá hạn ghi dấu quá hạn và tạo một thông báo trong trung tâm thông báo nhân viên, kèm khách, phòng, số điện thoại, dư nợ và lối tắt thu tiền/trả phòng.
 - [x] Khi HOURLY lưu trú thực tế vượt 6 giờ, tính lại chênh lệch giá theo gói OVERNIGHT/DAILY, áp buffer của gói cuối và yêu cầu cấu hình giá đầy đủ.
 - [x] Checkout lưu khoản đã thu; đóng booking/tạo cleaning task khi các khoản cơ sở đã thanh toán. Phụ thu do thời gian thực tế còn dư nợ được giữ trên folio và có thể thu tiếp sau checkout.
 - [x] Bổ sung test cho khung giờ/chuyển gói và assert các cột/bảng rental policy trên cả schema cũ lẫn schema khởi tạo mới.
@@ -33,7 +34,8 @@ Nguồn nghiệp vụ: [Tái cấu trúc nghiệp vụ đặt phòng và buồng
 - Đơn giá HOURLY/OVERNIGHT phải được cấu hình riêng; không suy diễn từ đơn giá theo ngày.
 - Nếu các cột đơn giá theo giờ/qua đêm còn `NULL`, API báo giá và tạo booking từ chối loại hình đó cho đến khi quản trị viên nhập giá.
 - `room_release_at` là cột STORED được tính từ `COALESCE(check_out_actual, check_out_date) + buffer_minutes`; thao tác checkout cập nhật giờ thực tế để database tự cập nhật mốc giải phóng, đồng thời các insert cũ vẫn có giá trị hợp lệ.
-- Nhận phòng thực tế sớm hơn giờ đã đặt hoặc trả trễ hơn giờ đã đặt: mỗi giờ bắt đầu tính `hourly_extra_hour_price`; trả phòng sớm không tự sinh hoàn tiền. Phụ thu ghi thành `room_rate`, `service_charge`, `vat` trong folio và dùng reference ổn định để retry chỉ ghi phần chênh lệch mới.
+- Nhận phòng thực tế sớm hơn giờ đã đặt: mỗi giờ bắt đầu tính `hourly_extra_hour_price`; trả phòng sớm không tự sinh hoàn tiền. Trả muộn được miễn 30 phút đầu; sau đó mỗi giờ bắt đầu tính `hourly_extra_hour_price`, và một lần phụ thu bằng một giờ khi quá 6 giờ. Phụ thu nhận sớm ghi các thành phần `room_rate`, `service_charge`, `vat`; phụ thu quá giờ ghi vào folio bằng reference ổn định để tác vụ nền và checkout chỉ ghi phần chênh lệch mới.
+- Web đặt thanh toán tại quầy còn dư nợ ở giờ check-out thì ở lại trạng thái đang lưu trú. Sau 30 phút chưa thanh toán, hệ thống đánh dấu quá hạn và phát một sự kiện bền vững trong trung tâm thông báo nhân viên để lễ tân liên hệ và thu tiền; trả phòng chỉ hoàn tất sau khi nhân viên xác nhận thu.
 - HOURLY vượt 6 giờ khi checkout: gói cuối được xác định từ giờ thực tế; quote gói mới được so với các thành phần giá ban đầu, chỉ thu phần dương (không tự hoàn chênh lệch giảm), rồi snapshot `rental_type` và buffer được cập nhật khi checkout commit.
 - Nếu phụ thu mới làm folio còn dư nợ sau khoản thu hiện tại, API trả `checkout_required_payment` cùng số dư; checkout vẫn được ghi nhận khi các khoản cơ sở đã tất toán, task được tạo và folio còn mở để thu tiếp. Invoice chỉ hoàn tất khi toàn bộ balance bằng 0.
 - Hàng đợi dọn phòng ưu tiên task có `expected_finish_at > due_at`, sau đó task đang thực hiện và các task theo `due_at`; task trễ cũng được đánh dấu `overdue`. Task chỉ chuyển `pending` sang `in_progress` sau khi buffer phòng kết thúc.

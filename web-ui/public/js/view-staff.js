@@ -1,6 +1,6 @@
 // Staff Views Module Coordinator
 import { renderRoomMap } from "./staff/room-map.js";
-import { renderBookings } from "./staff/bookings.js";
+import { renderBookings } from "./staff/bookings.js?v=3.6.51";
 import { renderCustomers } from "./staff/customers.js";
 import { renderInvoices } from "./staff/invoices.js";
 import { renderCheckout } from "./staff/checkout.js";

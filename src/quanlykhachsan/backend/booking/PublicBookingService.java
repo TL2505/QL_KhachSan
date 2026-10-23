@@ -15,6 +15,10 @@ import quanlykhachsan.backend.utils.*;
 
 /** Booking, inventory, initial ledger and durable replay commit as one transaction. */
 public final class PublicBookingService {
+    static String initialStatus(String channel,String paymentChoice) {
+        return "Web".equalsIgnoreCase(channel)&&"counter".equalsIgnoreCase(paymentChoice)?"confirmed":"pending";
+    }
+
     public Result reserve(String key,Request request,int customerId,String channel) throws Exception {
         StayWindow stay=request.stay();
         String hash=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(
@@ -49,13 +53,19 @@ public final class PublicBookingService {
                 if(request.expectedTotal()!=null && request.expectedTotal().compareTo(quote.total_amount())!=0)
                     throw new IllegalStateException("Booking quote changed");
                 if(quote.total_amount().compareTo(new BigDecimal("99999999.99"))>0)throw new IllegalArgumentException("Stay exceeds booking amount limit");
+                String initialStatus=initialStatus(channel,request.paymentChoice());
                 int bookingId;
                 LocalDateTime roomReleaseAt=stay.releaseAt(bufferMinutes);
-                try(PreparedStatement q=c.prepareStatement("INSERT INTO bookings(customer_id,room_id,rental_type,check_in_date,check_out_date,buffer_minutes,total_price,status,customer_type) VALUES (?,?,?,?,?,?,?,?,?)",Statement.RETURN_GENERATED_KEYS)) {
+                try(PreparedStatement q=c.prepareStatement("INSERT INTO bookings(customer_id,room_id,rental_type,check_in_date,check_out_date,buffer_minutes,total_price,status,customer_type,payment_choice) VALUES (?,?,?,?,?,?,?,?,?,?)",Statement.RETURN_GENERATED_KEYS)) {
                     q.setInt(1,customerId);q.setInt(2,request.roomId());q.setString(3,stay.rentalType().databaseValue());
                     q.setTimestamp(4,Timestamp.valueOf(stay.checkIn()));q.setTimestamp(5,Timestamp.valueOf(stay.checkOut()));
-                    q.setInt(6,bufferMinutes);q.setBigDecimal(7,quote.total_amount());q.setString(8,"pending");q.setString(9,channel);q.executeUpdate();
+                    q.setInt(6,bufferMinutes);q.setBigDecimal(7,quote.total_amount());q.setString(8,initialStatus);q.setString(9,channel);q.setString(10,request.paymentChoice());q.executeUpdate();
                     try(ResultSet r=q.getGeneratedKeys()){if(!r.next())throw new SQLException("Booking ID missing");bookingId=r.getInt(1);}
+                }
+                LocalDateTime paymentDeadline=null;
+                if("qr".equals(request.paymentChoice())) {
+                    var window=quanlykhachsan.backend.payment.PaymentStatus.bookingWindow(c,bookingId);
+                    paymentDeadline=window.deadline();
                 }
                 long folioId;
                 try(PreparedStatement q=c.prepareStatement("INSERT INTO folios(booking_id,folio_type,balance,status,code) VALUES (?,'master',?,'open',?)",Statement.RETURN_GENERATED_KEYS)) {
@@ -65,7 +75,8 @@ public final class PublicBookingService {
                 post(c,folioId,bookingId,"room_rate",quote.room_subtotal(),"BOOKING-ROOM-"+bookingId);
                 post(c,folioId,bookingId,"service_charge",quote.service_charge(),"BOOKING-SERVICE-"+bookingId);
                 post(c,folioId,bookingId,"vat",quote.vat(),"BOOKING-VAT-"+bookingId);
-                JsonObject data=new JsonObject();data.addProperty("booking_id",bookingId);data.addProperty("bookingId",bookingId);data.addProperty("booking_code","BKG-"+(channel.equals("Web")?"WEB":"WALKIN")+"-"+stay.checkIn().getYear()+"-"+bookingId);data.addProperty("room_number",roomNumber);data.addProperty("room_version",request.version()+1);data.addProperty("status","pending");
+                JsonObject data=new JsonObject();data.addProperty("booking_id",bookingId);data.addProperty("bookingId",bookingId);data.addProperty("booking_code","BKG-"+(channel.equals("Web")?"WEB":"WALKIN")+"-"+stay.checkIn().getYear()+"-"+bookingId);data.addProperty("room_number",roomNumber);data.addProperty("room_version",request.version()+1);data.addProperty("status",initialStatus);data.addProperty("payment_choice",request.paymentChoice());
+                if(paymentDeadline!=null)data.addProperty("payment_deadline_at",paymentDeadline.toString());
                 data.addProperty("rental_type",stay.rentalType().databaseValue());data.addProperty("check_in_date",stay.checkIn().toString());data.addProperty("check_out_date",stay.checkOut().toString());data.addProperty("buffer_minutes",bufferMinutes);data.addProperty("room_release_at",roomReleaseAt.toString());
                 JsonObject folio=new JsonObject();folio.addProperty("id",folioId);folio.addProperty("code","FOLIO-MASTER-B"+bookingId);folio.addProperty("balance",quote.total_amount());folio.addProperty("status","open");data.add("folio",folio);
                 String bin=System.getenv("BANK_BIN"),account=System.getenv("BANK_ACCOUNT_NUMBER"),holder=System.getenv("BANK_ACCOUNT_HOLDER");
@@ -75,7 +86,13 @@ public final class PublicBookingService {
                 }
                 String body=ApiResponseUtil.successWithData(data);
                 try(PreparedStatement q=c.prepareStatement("INSERT INTO idempotency_keys(id,request_hash,response_body,status_code) VALUES (?,?,?,201)")){q.setString(1,key);q.setString(2,hash);q.setString(3,body);q.executeUpdate();}
-                quanlykhachsan.backend.notification.LifecycleNotifications.booking(c,bookingId,"booking_created","booking-created:"+bookingId,"Đã ghi nhận đặt phòng","Đặt phòng "+stay.rentalType().databaseValue()+" đang chờ thanh toán. Giá trị: "+quote.total_amount().toPlainString()+" VND. Nhận phòng: "+stay.checkIn()+"; trả phòng: "+stay.checkOut()+".");
+                String nextStep="Walk-in".equalsIgnoreCase(channel)
+                    ?"Nhân viên lễ tân sẽ ghi nhận thanh toán và nhận phòng tại quầy."
+                    :"qr".equals(request.paymentChoice())
+                        ?"Hệ thống tự theo dõi phiên VietQR trong 1 giờ và tự xác nhận booking khi nhận đủ tiền."
+                        :"Đơn đã được xác nhận; nhân viên sẽ thu tiền tại quầy trước khi hoàn tất check-out.";
+                String bookingMessageTitle="confirmed".equals(initialStatus)?"Đã xác nhận đặt phòng":"Đã ghi nhận đặt phòng";
+                quanlykhachsan.backend.notification.LifecycleNotifications.booking(c,bookingId,"booking_created","booking-created:"+bookingId,bookingMessageTitle,"Đặt phòng "+stay.rentalType().databaseValue()+" đã được ghi nhận. "+nextStep+" Giá trị: "+quote.total_amount().toPlainString()+" VND. Nhận phòng: "+stay.checkIn()+"; trả phòng: "+stay.checkOut()+".");
                 c.commit();PricingQuoteCache.invalidate();return new Result(201,body);
             } catch(Exception ex){c.rollback();throw ex;}
             finally {c.setAutoCommit(true);locks.releaseLock(c,key);}
@@ -87,8 +104,9 @@ public final class PublicBookingService {
         }
     }
     public record Request(String name,String phone,String email,int roomId,int version,LocalDate checkIn,LocalDate checkOut,
-            String voucherCode,int guestCount,BigDecimal expectedTotal,RentalType rentalType,LocalTime checkInTime,LocalTime checkOutTime) {
-        public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out,String voucherCode,int guestCount,BigDecimal expectedTotal){this(name,phone,email,roomId,version,in,out,voucherCode,guestCount,expectedTotal,RentalType.DAILY,LocalTime.of(14,0),LocalTime.NOON);}
+            String voucherCode,int guestCount,BigDecimal expectedTotal,RentalType rentalType,LocalTime checkInTime,LocalTime checkOutTime,String paymentChoice) {
+        public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out,String voucherCode,int guestCount,BigDecimal expectedTotal,RentalType rentalType,LocalTime checkInTime,LocalTime checkOutTime){this(name,phone,email,roomId,version,in,out,voucherCode,guestCount,expectedTotal,rentalType,checkInTime,checkOutTime,"counter");}
+        public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out,String voucherCode,int guestCount,BigDecimal expectedTotal){this(name,phone,email,roomId,version,in,out,voucherCode,guestCount,expectedTotal,RentalType.DAILY,LocalTime.of(14,0),LocalTime.NOON,"counter");}
         public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out,String voucherCode,int guestCount){this(name,phone,email,roomId,version,in,out,voucherCode,guestCount,null);}
         public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out){this(name,phone,email,roomId,version,in,out,null,1,null);}
         public Request(String name,String phone,String email,int roomId,int version,LocalDate in,LocalDate out,String voucherCode){this(name,phone,email,roomId,version,in,out,voucherCode,1,null);}
@@ -96,6 +114,9 @@ public final class PublicBookingService {
             if(rentalType==null)rentalType=RentalType.DAILY;
             if(checkInTime==null)checkInTime=LocalTime.of(14,0);
             if(checkOutTime==null)checkOutTime=LocalTime.NOON;
+            if(paymentChoice==null)paymentChoice="counter";
+            paymentChoice=paymentChoice.toLowerCase(java.util.Locale.ROOT);
+            if(!java.util.Set.of("counter","qr").contains(paymentChoice))throw new IllegalArgumentException("Invalid payment choice");
         }
         public StayWindow stay(){return StayWindow.resolve(rentalType,checkIn.atTime(checkInTime),checkOut.atTime(checkOutTime));}
     }

@@ -65,8 +65,12 @@ public class AuthController implements HttpHandler {
                             "[LOGIN DEVICE_FAILURE] SQLState={} code={}", ex.getSQLState(), ex.getErrorCode());
                         ApiResponseUtil.write(exchange,503,ApiResponseUtil.error("Chưa thể ghi nhận thiết bị đăng nhập. Vui lòng thử lại.")); return;
                     }
-                    userInfo.setToken(quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(
-                        user.getId(), user.getUsername(), roleStr));
+                    String token = "CUSTOMER".equals(roleStr) && user.getCustomerId() != null
+                        ? quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(
+                            user.getId(), user.getUsername(), roleStr, user.getPhone(), user.getCustomerId())
+                        : quanlykhachsan.backend.utils.JwtTokenUtil.issueToken(
+                            user.getId(), user.getUsername(), roleStr);
+                    userInfo.setToken(token);
                     response = AuthMapper.success("Đăng nhập thành công", userInfo);
                 } else {
                     statusCode = 401;
@@ -76,9 +80,15 @@ public class AuthController implements HttpHandler {
             } else if ("/api/v1/auth/register".equals(path) || path.endsWith("/auth/register")) {
                 RegisterRequest registerRequest = gson.fromJson(reqObj, RegisterRequest.class);
                 
-                if (registerRequest.getUsername() == null || registerRequest.getPassword() == null || registerRequest.getUsername().isEmpty() || registerRequest.getPassword().isEmpty()) {
+                if (registerRequest.getUsername() == null || registerRequest.getUsername().isBlank()) {
                     statusCode = 400;
-                    response = AuthMapper.error("Tên đăng nhập và mật khẩu không được trống.");
+                    response = AuthMapper.fieldError("Vui lòng kiểm tra thông tin đăng ký.", "email", "Vui lòng nhập email hoặc tên đăng nhập.");
+                } else if (registerRequest.getFullName() == null || registerRequest.getFullName().isBlank()) {
+                    statusCode = 400;
+                    response = AuthMapper.fieldError("Vui lòng kiểm tra thông tin đăng ký.", "fullName", "Vui lòng nhập họ và tên.");
+                } else if (registerRequest.getPassword() == null || registerRequest.getPassword().isEmpty()) {
+                    statusCode = 400;
+                    response = AuthMapper.fieldError("Vui lòng kiểm tra thông tin đăng ký.", "password", "Vui lòng nhập mật khẩu.");
                 } else {
                     User newUser = new User();
                     newUser.setUsername(registerRequest.getUsername());
@@ -92,10 +102,8 @@ public class AuthController implements HttpHandler {
                     customer.setEmail(newUser.getEmail());
                     customer.setPhone(newUser.getPhone());
                     
-                    String idCard = (registerRequest.getIdentityCard() != null && !registerRequest.getIdentityCard().trim().isEmpty())
-                                    ? registerRequest.getIdentityCard().trim()
-                                    : "TEMP-" + System.currentTimeMillis();
-                    customer.setIdentityCard(idCard);
+                    customer.setIdentityCard(registerRequest.getIdentityCard() == null || registerRequest.getIdentityCard().isBlank()
+                        ? null : registerRequest.getIdentityCard().trim());
                     customer.setAddress(registerRequest.getAddress() != null ? registerRequest.getAddress() : "");
 
                     try {
@@ -108,15 +116,29 @@ public class AuthController implements HttpHandler {
                         }
                     } catch (IllegalStateException e) {
                         statusCode = 409;
-                        response = AuthMapper.error(e.getMessage());
+                        String message = e.getMessage();
+                        String lower = message == null ? "" : message.toLowerCase(java.util.Locale.ROOT);
+                        if (lower.contains("tên đăng nhập") || lower.contains("username")) {
+                            response = AuthMapper.fieldError(message, "email", message);
+                        } else if (lower.contains("cccd") || lower.contains("hộ chiếu")) {
+                            response = AuthMapper.fieldError(message, "identityCard", message);
+                        } else response = AuthMapper.error(message);
                     } catch (java.sql.SQLException e) {
+                        org.slf4j.LoggerFactory.getLogger(AuthController.class).warn(
+                            "[REGISTER FAILED] SQLState={} vendorCode={}", e.getSQLState(), e.getErrorCode());
                         statusCode = 409;
                         String dbMsg = String.valueOf(e.getMessage()).toLowerCase(java.util.Locale.ROOT);
                         String userMsg = "Không thể tạo tài khoản. Vui lòng kiểm tra lại thông tin.";
-                        if (dbMsg.contains("username")) userMsg = "Tên đăng nhập đã tồn tại.";
-                        else if (dbMsg.contains("identity_card") || dbMsg.contains("cccd")) userMsg = "Số CCCD/Hộ chiếu đã được sử dụng.";
-                        response = AuthMapper.error(userMsg);
+                        if (dbMsg.contains("username")) {
+                            userMsg = "Tên đăng nhập đã tồn tại.";
+                            response = AuthMapper.fieldError(userMsg, "email", userMsg);
+                        } else if (dbMsg.contains("identity_hash") || dbMsg.contains("identity_card") || dbMsg.contains("cccd")) {
+                            userMsg = "Số CCCD/Hộ chiếu đã được sử dụng.";
+                            response = AuthMapper.fieldError(userMsg, "identityCard", userMsg);
+                        } else response = AuthMapper.error(userMsg);
                     } catch (Exception e) {
+                        org.slf4j.LoggerFactory.getLogger(AuthController.class).warn(
+                            "[REGISTER FAILED] errorType={}", e.getClass().getSimpleName());
                         statusCode = 500;
                         response = AuthMapper.error("Lỗi hệ thống: " + e.getMessage());
                     }

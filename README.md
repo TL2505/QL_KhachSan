@@ -22,6 +22,7 @@ Xem [hướng dẫn cấu hình chatbot AI riêng cho máy dev](docs/chatbot-ai-
      - `DB_USER`
      - `DB_PASSWORD`
    - Mức VAT được phê duyệt hiện tại là `HOTEL_VAT_RATE=0.08` (8%); cấu hình này được dùng khi báo giá, đặt phòng và lập hóa đơn. Nếu quy định áp dụng thay đổi, chỉ đổi sang `0.10` sau khi được phê duyệt. Booking không được tính giá nếu chưa có mức thuế hợp lệ.
+   - PDF bảng kê thanh toán được đánh dấu là tài liệu nội bộ. Tích hợp MISA meInvoice, hồ sơ cần xác nhận với kế toán/nhà cung cấp và luồng đồng bộ/hủy xem tại [docs/electronic-invoices.md](docs/electronic-invoices.md); phát hành production chưa bật khi chưa cấu hình tài khoản và chế độ đã đăng ký.
    - Chatbot trên trang chủ hỗ trợ nhà cung cấp cloud cấu hình tại **Admin > API key AI**: Gemini, Groq, Claude và OpenAI. Luồng này không cần chạy RAG/Python. Nếu dùng RAG nội bộ thay cho cloud, cấu hình `AI_SERVICE_URL` cùng mTLS theo `ai-service/README.md`; backend không chấp nhận HTTP ở cấu hình transport production hiện tại.
 
 3. Build và chạy backend

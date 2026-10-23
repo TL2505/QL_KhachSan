@@ -39,12 +39,12 @@ public class DesktopServerConnectionAndThemeTest {
     @Test
     @DisplayName("Verify configurable Desktop connection defaults without VM probing")
     public void testDesktopConnectionConfiguration() {
-        assertEquals("192.168.56.102", ApiConfig.DEFAULT_VM_IP);
+        assertEquals("localhost", ApiConfig.DEFAULT_SERVER_HOST);
         assertEquals("http://localhost:8081/api/v1", ApiConfig.DEFAULT_API_BASE_URL);
-        assertEquals("jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC", ApiConfig.DEFAULT_JDBC_URL);
+        assertEquals("jdbc:mysql://localhost:3306/hotel_runtime_20261022?useSSL=false&serverTimezone=UTC", ApiConfig.DEFAULT_JDBC_URL);
 
         assertEquals("http://localhost:8081/api/v1", DBConnection.DEFAULT_API_BASE_URL);
-        assertEquals("jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC", DBConnection.DEFAULT_JDBC_URL);
+        assertEquals("jdbc:mysql://localhost:3306/hotel_runtime_20261022?useSSL=false&serverTimezone=UTC", DBConnection.DEFAULT_JDBC_URL);
 
         String activeApiUrl = ApiConfig.getBaseUrl();
         assertNotNull(activeApiUrl);

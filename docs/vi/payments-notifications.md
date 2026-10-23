@@ -6,7 +6,7 @@ Tiền mặt, POS, webhook ngân hàng cũ và payOS ghi vào `payment_reconcili
 
 `PaymentGateway` là giao diện tạo link QR; `PaymentLinkService` quản lý tham chiếu, hạn thanh toán và cache trong DB. `PayOsGateway`/`PayOsWebhookController` là adapter đầu tiên. Thêm cổng mới bằng adapter kiểm chứng dữ liệu riêng, sau đó chuyển sự kiện đã xác thực thành `PaymentReconciliationService.VerifiedPayment`. Không gửi `VerifiedPayment` từ trình duyệt và không thêm một sổ tiền riêng cho mỗi cổng. Đăng ký adapter tại factory trong `PaymentLinkService` và route webhook riêng. Mỗi nhà cung cấp phải có kiểm thử chữ ký, phát lại, sai tài khoản, số tiền và thời điểm theo tài liệu của họ.
 
-`provider`, `payment_method`, `direction` là chuỗi để mở rộng. Hiện các luồng thu tiền ghi `IN`; hoàn tiền, chi tiền, phí và ngoại tệ cần quy tắc sổ tiền, quyền và adapter riêng trước khi bật. Không xem các loại giao dịch chưa tích hợp là đã hoạt động.
+`provider`, `payment_method`, `direction` là chuỗi để mở rộng. `booking_refunds` lưu riêng yêu cầu hoàn tiền và trạng thái xử lý; biên nhận thu tiền trong `payment_reconciliations` và sổ `folio_transactions` không bị xóa/sửa. Mock gateway đánh dấu hoàn tiền thành công để kiểm thử. Với PayOS, ứng dụng chỉ đóng được link QR chưa thanh toán; việc hoàn tiền giao dịch đã nhận cần kênh chi/hoàn tiền riêng hoặc xử lý qua bộ phận hỗ trợ. Không hiển thị trạng thái hoàn tiền thành công khi chưa có xác nhận từ kênh chi.
 
 ## Chuẩn bị payOS
 
@@ -48,7 +48,7 @@ Webhook payOS kiểm tra HMAC-SHA256 bằng [quy tắc chữ ký chính thức](
 
 Phần còn thiếu được trả bằng `remaining_amount`. Khi tất cả folio đã đủ tiền, booking pending tự được xác nhận trong cùng transaction. Thanh toán dư: chỉ áp dụng đủ dư nợ, phần dư ghi `credit_adjustment` riêng để xử lý công nợ/hoàn tiền. Không tính tiền dư là doanh thu phòng.
 
-Webhook trùng trả lại kết quả đã lưu và không thu tiền/thông báo lại, kể cả sau trả phòng. Cùng mã giao dịch nhưng khác dữ liệu được lưu lần nhận `CONFLICT`. Giao dịch đến sau khi booking bị hủy/no-show/trả phòng không mở lại booking. Giao dịch chuyển ngoài thời hạn QR cần đối soát; nhận webhook chậm nhưng giờ chuyển nằm trong hạn có thể được áp dụng nếu booking vẫn hợp lệ. Giao dịch chưa tìm thấy đơn lưu audit với folio trống để nhân viên tra cứu.
+Webhook trùng trả lại kết quả đã lưu và không thu tiền/thông báo lại, kể cả sau trả phòng. Cùng mã giao dịch nhưng khác dữ liệu được lưu lần nhận `CONFLICT`. Giao dịch đến sau khi booking bị hủy/no-show/trả phòng không mở lại booking. QR web có hạn khách thanh toán 60 phút; hệ thống giữ thêm tối đa 2 phút nội bộ để nhận webhook đã phát sinh đúng hạn, rồi tự hủy booking chưa trả và giải phóng phòng. Khách có thể mở lại đúng link còn hạn từ lịch sử. Khi khách tự hủy trước check-in, link QR đang mở phải được nhà cung cấp đóng trước khi booking bị hủy. Giao dịch ngoài hạn cần đối soát; webhook đến chậm nhưng giờ chuyển nằm trong hạn có thể được áp dụng nếu booking còn hợp lệ. Giao dịch chưa tìm thấy đơn lưu audit với folio trống để nhân viên tra cứu.
 
 Lỗi nghiệp vụ đã lưu trả HTTP 200 để dừng gửi lặp; 200 không đồng nghĩa PAID. Chữ ký sai trả 401, payload sai trả 400/413, chưa cấu hình hoặc DB tạm lỗi trả 503 để nhà cung cấp có thể gửi lại. Khi mất callback, kiểm tra cấu hình webhook và yêu cầu nhà cung cấp gửi lại sự kiện gốc. Hiện không có job tự xác nhận dựa riêng trên tổng tiền từ API tra cứu.
 
@@ -56,7 +56,7 @@ Link có mã order lưu trước khi gọi cổng, cùng folio/mức tiền ch�
 
 ## Thông báo và email
 
-Các sự kiện booking_created, booking_confirmed, payment_paid/payment_partial/payment_error, checkin_welcome, checkout_gratitude tạo thông báo trong ứng dụng và một email trong `notification_outbox`, cùng transaction nghiệp vụ. Nhắc nhận phòng 24 giờ trước giờ dự kiến cho booking confirmed; nhắc trả phòng 2 giờ trước cho booking checked_in. Worker quét mỗi 30 giây và giữ khóa sự kiện theo booking + lịch hẹn để không gửi lặp. Lịch hẹn đã qua hoặc thay đổi sẽ bỏ qua email nhắc đang chờ cũ.
+Các sự kiện booking_created, booking_confirmed, payment_paid/payment_partial/payment_error, checkin_welcome, checkout_gratitude, booking_cancelled tạo thông báo trong ứng dụng và một email trong `notification_outbox`, cùng transaction nghiệp vụ. Nhắc nhận phòng 24 giờ trước giờ dự kiến; nhắc trả phòng khi còn 10% thời lượng lưu trú. Worker quét mỗi 30 giây và giữ khóa sự kiện theo booking + lịch hẹn để không gửi lặp. Chỉ booking `Web` được tự động nhận/trả phòng: check-in đúng giờ nhận phòng nếu phòng sẵn sàng; check-out đúng giờ kết thúc, chuyển phòng thành bẩn và tạo cleaning task. Booking tại quầy vẫn do nhân viên thao tác. Review sau khi checked_out hiện đã cộng 200 điểm trong transaction tạo đánh giá.
 
 Email dùng `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_APP_PASSWORD`, `SMTP_FROM` hiện có. Hỗ trợ TLS trực tiếp cổng 465 hoặc STARTTLS 587, kiểm tra hostname/chứng chỉ. Dùng địa chỉ email của hồ sơ khách. Thiếu email được ghi SKIPPED/MISSING_EMAIL. Chỉ bật `NOTIFICATION_EMAIL_ENABLED=true` sau khi kiểm tra SMTP và địa chỉ khách; mặc định false vẫn tạo thông báo trong ứng dụng và giữ hàng đợi.
 

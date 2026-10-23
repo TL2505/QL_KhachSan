@@ -17,6 +17,8 @@ class Phase4BootstrapTest {
         }
         String init=Files.readString(Path.of("database/bootstrap/00-init.sh"));
         assertTrue(init.contains("set -euo pipefail"));assertTrue(init.contains("-- SEED DATA FROM PRODUCTION"));
+        assertTrue(Files.readString(Path.of("src/quanlykhachsan/backend/utils/UpdateDbUtility.java")).contains("v4_7_web_booking_lifecycle.sql"),
+                "The local backend updater must apply the web-booking lifecycle migration too");
         for(String compose:List.of("docker-compose.yml","docker-compose.prod.yml"))assertTrue(Files.readString(Path.of(compose)).contains("./database/bootstrap/00-init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro"));
     }
     @Test void freshConfiguredMariaDbAppliesBaseAndAllMigrationsWithoutSeeds()throws Exception {
@@ -121,14 +123,17 @@ class Phase4BootstrapTest {
         assertEquals(1,scalar(c,"SELECT COUNT(*) FROM folio_transactions WHERE reference_id LIKE 'CANCEL-SERVICE-ORDER-%'").intValueExact());
         assertThrows(IllegalStateException.class,()->dao.updateOrderStatus(orderId,"ACCEPTED"));
         try(var s=c.createStatement()){
-            s.execute("INSERT INTO bookings(id,customer_id,room_id,check_in_date,check_out_date,total_price,status,customer_type,created_at) VALUES(3,1,1,DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 5 DAY),DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 6 DAY),5,'pending','Web',DATE_SUB(CURRENT_TIMESTAMP,INTERVAL 20 MINUTE))");
+            s.execute("INSERT INTO bookings(id,customer_id,room_id,check_in_date,check_out_date,total_price,status,customer_type,payment_choice,created_at) VALUES(3,1,1,DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 5 DAY),DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 6 DAY),5,'pending','Web','qr',DATE_SUB(CURRENT_TIMESTAMP,INTERVAL 70 MINUTE))");
             s.execute("INSERT INTO folios(id,booking_id,folio_type,balance,status,code) VALUES(3,3,'master',5,'open','TEST-EXPIRED')");
             s.execute("INSERT INTO folio_transactions(folio_id,transaction_type,charge_type,amount,business_date) VALUES(3,'debit','room_rate',5,CURRENT_DATE)");
+            s.execute("INSERT INTO bookings(id,customer_id,room_id,check_in_date,check_out_date,total_price,status,customer_type,payment_choice,created_at) VALUES(30,1,1,DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 5 DAY),DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 6 DAY),5,'pending','Walk-in','counter',DATE_SUB(CURRENT_TIMESTAMP,INTERVAL 70 MINUTE)),(31,1,1,DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 5 DAY),DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 6 DAY),5,'pending','Web','counter',DATE_SUB(CURRENT_TIMESTAMP,INTERVAL 70 MINUTE)),(32,1,1,DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 5 DAY),DATE_ADD(CURRENT_TIMESTAMP,INTERVAL 6 DAY),5,'pending','Web','qr',DATE_SUB(CURRENT_TIMESTAMP,INTERVAL 61 MINUTE))");
         }
         try(var expiry=new quanlykhachsan.backend.booking.PendingBookingExpiryJob()){
             assertEquals(1,expiry.expire(c));assertEquals(0,expiry.expire(c));
             assertEquals(0,scalar(c,"SELECT balance FROM folios WHERE id=3").signum());
             assertEquals(1,scalar(c,"SELECT COUNT(*) FROM bookings WHERE id=3 AND status='cancelled'").intValueExact());
+            assertEquals(2,scalar(c,"SELECT COUNT(*) FROM bookings WHERE id IN (30,31) AND status='pending'").intValueExact());
+            assertEquals(1,scalar(c,"SELECT COUNT(*) FROM bookings WHERE id=32 AND status='pending'").intValueExact(),"a booking inside the two-minute webhook grace must retain its room hold");
         }
         verifyHttpOrdersAndBank(c,schema,dao);
         byte[] aesKey=new byte[32],blindKey=new byte[32];new java.security.SecureRandom().nextBytes(aesKey);new java.security.SecureRandom().nextBytes(blindKey);

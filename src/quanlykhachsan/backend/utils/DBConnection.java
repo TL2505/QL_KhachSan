@@ -7,8 +7,8 @@ import java.sql.SQLException;
  * Compatibility wrapper for DBConnection connecting to the centralized PMS Database.
  */
 public final class DBConnection {
-    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://192.168.56.102:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
-    public static final String DEFAULT_API_BASE_URL = "http://192.168.56.102:8081/api/v1";
+    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_runtime_20261022?useSSL=false&serverTimezone=UTC";
+    public static final String DEFAULT_API_BASE_URL = "http://localhost:8081/api/v1";
 
     private DBConnection() {}
 

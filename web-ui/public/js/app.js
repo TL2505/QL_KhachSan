@@ -23,7 +23,7 @@ import {
   formatCurrency,
   generateVietQRUrl,
   LUXURY_ROOMS_CATALOG
-} from './api.js?v=3.5.6';
+} from './api.js?v=3.5.7';
 import './shared/theme.js';
 
 // Cross-environment safe global reference (Browser Window vs Node.js test environment)
@@ -90,7 +90,7 @@ const state = {
       notes: ''
     },
     countdownTimer: null,
-    countdownSeconds: 900 // 15 minutes
+    countdownSeconds: 3600 // 1 hour
   },
   
   // Room detail modal
@@ -484,9 +484,11 @@ function filterAndRenderRooms() {
     const labels = {
       available: [t('🟢 Còn phòng'), 'available'], reserved: [t('🟠 Đã đặt'), 'reserved'],
       occupied: [t('🔴 Đang sử dụng'), 'occupied'], maintenance: [t('⚙️ Đang bảo trì'), 'maintenance'],
-      not_ready: [t('🟢 Còn phòng'), 'available']
+      not_ready: [t('🟡 Chưa sẵn sàng'), 'not-ready']
     };
     const [statusLabel, statusColor] = labels[room.availabilityStatus] || [t('Chưa xác định'), 'unknown'];
+    const bookable = room.availabilityStatus === 'available';
+    const bookingTitle = bookable ? t('Đặt phòng') : t('Phòng chưa sẵn sàng trong khoảng ngày đã chọn');
 
     return `
       <div class="room-card glass-card rounded-2xl overflow-hidden flex flex-col group" data-room-id="${room.id}">
@@ -567,7 +569,7 @@ function filterAndRenderRooms() {
                 <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                 <span class="hidden sm:inline"><span data-i18n="Chi Tiết">Chi Tiết</span></span>
               </button>
-              <button type="button" class="btn-book btn-gold px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-md" data-id="${room.id}">
+              <button type="button" class="btn-book btn-gold px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-md" data-id="${room.id}" ${bookable ? '' : 'disabled'} aria-disabled="${!bookable}" title="${escapeHtml(bookingTitle)}">
                 <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
                 <span><span data-i18n="Đặt Phòng">Đặt Phòng</span></span>
               </button>
@@ -1200,7 +1202,7 @@ function renderBookingModalContent() {
           if (res.totalAmount >= 0) b.totalAmount = Math.round(res.totalAmount);
           b.step = 3;
           showToast(t('Đã ghi nhận yêu cầu đặt phòng. Chờ xác nhận thanh toán.'), 'success', 7000);
-          startBookingCountdown();
+          if (b.payment?.expires_in_seconds != null) startBookingCountdown(b.payment.expires_in_seconds);
           renderBookingModalContent();
 
         } catch (err) {
@@ -1342,15 +1344,16 @@ function watchHomePayment(booking) {
       if(booking!==state.booking||!status.isConnected)return;
       status.textContent=paymentLabel(payment)+(paymentState(payment)==='PARTIAL'?` · Còn ${Number(payment.remaining_amount).toLocaleString('vi-VN')} đ`:'');
       if(paymentState(payment)==='PAID'){clearInterval(booking.countdownTimer);booking.countdownTimer=null;return;}
+      if(String(payment.booking_status||'').toLowerCase()==='cancelled'){clearTimeout(booking.paymentPollTimer);booking.paymentPollTimer=null;return;}
     }catch{status.textContent='Chưa lấy được xác nhận thanh toán. Đặt phòng vẫn được lưu; vui lòng kiểm tra lịch sử.';}
-    if(booking.countdownSeconds>0)booking.paymentPollTimer=setTimeout(poll,3000);
+    booking.paymentPollTimer=setTimeout(poll,3000);
   };booking.paymentPollTimer=setTimeout(poll,2500);
 }
-function startBookingCountdown() {
+function startBookingCountdown(seconds = 3600) {
   if (state.booking.countdownTimer) {
     clearInterval(state.booking.countdownTimer);
   }
-  state.booking.countdownSeconds = 900; // 15 mins
+  state.booking.countdownSeconds = Math.max(0,Math.min(3600,Number(seconds)||0));
 
   state.booking.countdownTimer = setInterval(() => {
     state.booking.countdownSeconds--;
@@ -1363,7 +1366,9 @@ function startBookingCountdown() {
     if (state.booking.countdownSeconds <= 0) {
       clearInterval(state.booking.countdownTimer);
       state.booking.countdownTimer = null;
-      showToast(t('Hết thời gian giữ phòng, vui lòng thao tác lại nếu chưa thanh toán.'), 'warning');
+      const status=document.getElementById('home-payment-status');
+      if(status)status.textContent='QR đã hết hạn. Hệ thống đang chờ tối đa 2 phút để đối soát giao dịch đã khởi tạo trước hạn.';
+      showToast(t('Phiên QR đã hết hạn; hệ thống đang đối soát giao dịch.'), 'warning');
     }
   }, 1000);
 }

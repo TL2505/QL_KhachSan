@@ -1,5 +1,18 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-23] — Overdue checkout charges and staff notification center
+
+- Added a 30-minute checkout grace period, per-started-hour overstay charges and one hourly penalty after six hours, with idempotent folio reconciliation across background processing and staff checkout.
+- Kept unpaid Web counter bookings in-house after checkout, marked them overdue after the grace period, and added a durable, deduplicated alert to the staff notification center with contact and collection details.
+- Documented staff notification API access and the overdue checkout policy. Added lifecycle regression coverage for grace boundaries, fee posting and notification deduplication.
+- Validation: pending focused backend and frontend checks; no live payment or email delivery was triggered.
+
+## [2026-10-23] — @codex — Correct MISA POS invoice payload
+
+- Set MISA's required `IsInvoiceCalculatingMachine` marker on POS invoice data, placed the reference ID at the documented nested level, and preserved the caller's invoice object when adding correction data.
+- Added synthetic HTTP contract tests for POS/HSM routes, token caching and separation, status calls, safe view links, PDF validation, and cancellation. Updated the e-invoice API contract and QA records. The operations guide now cites Circular 91/2026/TT-BTC alongside Decree 254/2026/NĐ-CP, and records seller-specific legal configuration as an accounting confirmation.
+- Validation: **6 focused adapter tests passed**; the POS marker regression also failed as expected when the old payload was temporarily restored. No MISA sandbox request was made because test credentials were unavailable.
+
 ## [2026-10-22] — @codex — Shared payment audit and durable lifecycle notifications
 
 - Added a common provider/method/direction transaction audit for cash, POS, legacy bank receipts and future gateway adapters, with payOS as the first new QR integration. Added signature and beneficiary validation, partial/excess handling, duplicate/conflict audits, and late-payment exceptions without reopening cancelled stays.
@@ -332,3 +345,10 @@
 # 2026-10-16 — Room status labels
 
 - Added the optional read-only `include_status=true` availability projection to `dev-spec/api-contracts.md`; existing endpoint behavior remains unchanged by default. No schema or data changes.
+
+## [2026-10-23] — Invoice tests, database bootstrap, API contract, and QA tracking
+
+- Updated internal invoice PDF tests to match the current payment-statement contract and moved their generated PDF to `target/qa-artifacts/`.
+- Added the electronic-invoice migration to the shared fresh-database bootstrap manifest.
+- Documented the MISA meInvoice routes and access rules in `docs/dev-spec/api-contracts.md`.
+- Added the QA bug report, test progress, and decision log. Maven ran 278 tests: 236 passed, 0 failed, and 42 guarded skips; the web UI suite passed all 133 tests.

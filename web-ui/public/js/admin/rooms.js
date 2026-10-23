@@ -270,9 +270,9 @@ export async function renderRooms(container) {
     };
 
     const deleteRoom = async room => {
-        const confirmed = window.showCustomConfirm
-            ? await window.showCustomConfirm(`Xóa phòng ${room.roomNumber}? Không thể xóa phòng đã có đặt phòng hoặc dữ liệu liên quan.`)
-            : window.confirm(`Xóa phòng ${room.roomNumber}? Không thể xóa phòng đã có đặt phòng hoặc dữ liệu liên quan.`);
+        const confirmed = await window.showCustomConfirm(`Xóa phòng ${room.roomNumber}? Không thể xóa phòng đã có đặt phòng hoặc dữ liệu liên quan.`, {
+            title: 'Xác nhận xóa phòng', confirmLabel: 'Xóa phòng'
+        });
         if (!confirmed) return;
         try {
             await api.delete(`/rooms/${encodeURIComponent(room.id)}`);

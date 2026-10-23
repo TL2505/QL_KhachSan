@@ -35,6 +35,14 @@ form { display: flex; gap: 8px; margin: 8px 16px; }
 input.input { width: 100%; min-width: 0; height: 45px; border-radius: 13px; background: #0b1423; border: 1px solid #39445a; color: #edf0f7; font-size: 12px; outline-offset: 2px; }
 input::placeholder { color: #9ba8bd; }
 form .btn { width: 45px; height: 45px; min-height: 45px; flex-shrink: 0; border-radius: 13px; border: 0; background: linear-gradient(120deg, #e7d184, #c7a32e); color: #101725; }
+.room-search-form { display: grid; gap: 8px; margin: 12px 0 0; }
+.room-search-form label { display: grid; gap: 4px; color: #d9dfeb; font-size: 11px; }
+.room-search-form input, .room-search-form select { width: 100%; min-width: 0; min-height: 36px; padding: 7px 9px; border: 1px solid #39445a; border-radius: 9px; background: #0b1423; color: #edf0f7; font: inherit; }
+.room-search-form button { width: 100%; min-height: 36px; border: 1px solid #dfbf5466; border-radius: 10px; background: #dfbf54; color: #101725; font-weight: 650; }
+.room-search-option { display: grid; gap: 7px; margin-top: 10px; padding: 10px; border: 1px solid #dfbf5445; border-radius: 12px; background: #0c1626; }
+.room-search-option p, .room-search-option small { margin: 0; line-height: 1.55; }
+.room-search-option small { color: #bdc8d9; font-size: 10px; }
+.room-search-option button { min-height: 34px; border: 0; border-radius: 9px; background: #dfbf54; color: #101725; font-weight: 650; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button:disabled { opacity: .45; cursor: wait; }
 button:focus-visible, a:focus-visible { outline: 2px solid #dfbf54; outline-offset: 3px; }

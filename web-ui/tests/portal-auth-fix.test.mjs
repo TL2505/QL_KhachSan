@@ -48,6 +48,10 @@ function createMockElement(id, tagName = 'div') {
     getAttribute: k => attrs.get(k) ?? null,
     removeAttribute: k => attrs.delete(k),
     focus: () => {},
+    insertAdjacentElement(position, sibling) {
+      if (position === 'afterend') this.nextSibling = sibling;
+      return sibling;
+    },
     addEventListener: (type, fn) => {
       if (!listeners.has(type)) listeners.set(type, []);
       listeners.get(type).push(fn);
@@ -95,7 +99,18 @@ function setupMockEnvironment() {
       return null;
     },
     querySelectorAll: () => [],
-    createElement: tag => createMockElement('dynamic', tag),
+    createElement: tag => {
+      const element = createMockElement('dynamic', tag);
+      let elementId = element.id;
+      Object.defineProperty(element, 'id', {
+        get: () => elementId,
+        set: value => { elementId = String(value); registry.set(elementId, element); }
+      });
+      element.insertAdjacentElement = (position, sibling) => {
+        if (position === 'afterend') element.nextSibling = sibling;
+      };
+      return element;
+    },
     body: createMockElement('body', 'body')
   };
 
@@ -317,7 +332,7 @@ test('portal-app.js: handleLoginSubmit prevents default, calls API via POST JSON
 // =============================================================================
 // ASYNCHRONOUS REGISTRATION & PASSWORD CONFIRMATION VERIFICATION
 // =============================================================================
-test('portal-app.js: handleRegisterSubmit validates password match and switches to login upon success', async () => {
+test('portal-app.js: handleRegisterSubmit shows field-level password mismatch and switches to login upon success', async () => {
   const env = setupMockEnvironment();
   try {
     let preventDefaultCalled = false;
@@ -360,7 +375,8 @@ test('portal-app.js: handleRegisterSubmit validates password match and switches 
       preventDefault: () => { preventDefaultCalled = true; }
     });
     assert.equal(preventDefaultCalled, true);
-    assert.match(statusBox.textContent, /không khớp/i, 'Must display mismatch message');
+    assert.match(confirmInput.nextSibling.textContent, /không khớp/i, 'Must show mismatch under password confirmation');
+    assert.equal(confirmInput.getAttribute('aria-invalid'), 'true');
     assert.equal(requestedUrl, null, 'Fetch must not be triggered on mismatch');
 
     // 2. Successful registration case
@@ -374,9 +390,71 @@ test('portal-app.js: handleRegisterSubmit validates password match and switches 
     const body = JSON.parse(requestOptions.body);
     assert.equal(body.email, 'vip@aurelia.vn');
     assert.equal(body.fullName, 'Nguyễn Quý Khách');
+    assert.equal(Object.hasOwn(body, 'identityCard'), false, 'Registration must not send a fake identity number');
 
     // Verify auto-switch to Login and pre-fill username
     assert.equal(loginUser.value, 'vip@aurelia.vn', 'Email/username must be prefilled in login form');
+  } finally {
+    env.teardown();
+  }
+});
+
+test('portal-app.js: invalid registration values are reported next to each affected field', async () => {
+  const env = setupMockEnvironment();
+  try {
+    let requests = 0;
+    globalThis.fetch = async () => { requests++; throw new Error('Fetch should not run for invalid form data'); };
+    const fullName = env.getOrCreate('reg-fullname', 'input');
+    const email = env.getOrCreate('reg-email', 'input');
+    const phone = env.getOrCreate('reg-phone', 'input');
+    const password = env.getOrCreate('reg-password', 'input');
+    const confirm = env.getOrCreate('reg-confirm-password', 'input');
+    fullName.value = '';
+    email.value = 'wrong@';
+    phone.value = '123';
+    password.value = 'short';
+    confirm.value = 'different';
+
+    const { handleRegisterSubmit } = await loadModule('portal-app.js');
+    await handleRegisterSubmit({ preventDefault() {} });
+
+    assert.match(fullName.nextSibling.textContent, /họ và tên/i);
+    assert.match(email.nextSibling.textContent, /email hợp lệ/i);
+    assert.match(phone.nextSibling.textContent, /8 đến 15 chữ số/i);
+    assert.match(password.nextSibling.textContent, /ít nhất 8 ký tự/i);
+    assert.match(confirm.nextSibling.textContent, /không khớp/i);
+    for (const input of [fullName, email, phone, password, confirm]) {
+      assert.equal(input.getAttribute('aria-invalid'), 'true');
+    }
+    assert.equal(requests, 0);
+  } finally {
+    env.teardown();
+  }
+});
+
+test('portal-app.js: server username conflicts are shown under email/username', async () => {
+  const env = setupMockEnvironment();
+  try {
+    globalThis.fetch = async () => ({
+      ok: false,
+      status: 409,
+      json: async () => ({
+        status: 'error',
+        message: 'Tên đăng nhập đã tồn tại.',
+        fieldErrors: { email: 'Tên đăng nhập đã tồn tại.' }
+      })
+    });
+    env.getOrCreate('reg-fullname', 'input').value = 'Nguyễn Quý Khách';
+    const email = env.getOrCreate('reg-email', 'input');
+    email.value = 'taken@aurelia.vn';
+    env.getOrCreate('reg-password', 'input').value = 'Secret@1234';
+    env.getOrCreate('reg-confirm-password', 'input').value = 'Secret@1234';
+
+    const { handleRegisterSubmit } = await loadModule('portal-app.js');
+    await handleRegisterSubmit({ preventDefault() {} });
+
+    assert.match(email.nextSibling.textContent, /đã tồn tại/i);
+    assert.equal(email.getAttribute('aria-invalid'), 'true');
   } finally {
     env.teardown();
   }

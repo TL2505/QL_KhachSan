@@ -111,23 +111,40 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public int addAndReturnId(Customer customer) throws Exception {
-        String query = "INSERT INTO customers(full_name, identity_card, phone, email, address, is_vip) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection con = DBconn.getConnection();
-             PreparedStatement ps = con.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, customer.getFullName());
-            ps.setString(2, customer.getIdentityCard());
-            ps.setString(3, customer.getPhone());
-            ps.setString(4, customer.getEmail());
-            ps.setString(5, customer.getAddress());
-            ps.setBoolean(6, customer.isVip());
-            ps.executeUpdate();
-
-            ResultSet rs = ps.getGeneratedKeys();
-            if (rs.next()) {
-                return rs.getInt(1);
+        try (Connection con = DBconn.getConnection()) {
+            boolean autoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+            try {
+                int id = addAndReturnId(con, customer);
+                if (customer.getIdentityCard() != null && !customer.getIdentityCard().isBlank()) {
+                    GuestIdentityVaultDao.configured().save(con, id, customer.getIdentityCard(), null, null);
+                }
+                con.commit();
+                return id;
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(autoCommit);
             }
         }
-        return -1;
+    }
+
+    @Override
+    public int addAndReturnId(Connection con, Customer customer) throws Exception {
+        if (con.getAutoCommit()) throw new SQLException("Customer insert requires a caller-owned transaction");
+        String query = "INSERT INTO customers(full_name, identity_card, phone, email, address, is_vip) VALUES (?, NULL, ?, ?, ?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, customer.getFullName());
+            ps.setString(2, customer.getPhone());
+            ps.setString(3, customer.getEmail());
+            ps.setString(4, customer.getAddress());
+            ps.setBoolean(5, customer.isVip());
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                return rs.next() ? rs.getInt(1) : -1;
+            }
+        }
     }
 
     @Override

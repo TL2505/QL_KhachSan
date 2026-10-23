@@ -15,15 +15,15 @@ import java.util.function.BiPredicate;
  * fallback is disabled unless explicitly enabled for a legacy desktop environment.
  */
 public final class ApiConfig {
-    public static final String DEFAULT_VM_IP = "192.168.56.102";
+    public static final String DEFAULT_SERVER_HOST = "localhost";
     public static final int DEFAULT_BACKEND_PORT = 8081;
     public static final int DEFAULT_DB_PORT = 3306;
 
     public static final String DEFAULT_API_BASE_URL = "http://localhost:8081/api/v1";
     public static final String LOCALHOST_IP = "127.0.0.1";
     public static final String LOCALHOST_API_BASE_URL = "http://localhost:8081/api/v1";
-    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
-    public static final String LOCALHOST_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
+    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_runtime_20261022?useSSL=false&serverTimezone=UTC";
+    public static final String LOCALHOST_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_runtime_20261022?useSSL=false&serverTimezone=UTC";
 
     private static final Properties PROPS = loadProperties();
 
@@ -102,7 +102,7 @@ public final class ApiConfig {
     }
 
     public static String getDbName() {
-        return getPropertyOrEnv("db.name", "DB_NAME", "hotel_prod_db");
+        return getPropertyOrEnv("db.name", "DB_NAME", "hotel_runtime_20261022");
     }
 
     public static String getDbUser() {
@@ -224,7 +224,7 @@ public final class ApiConfig {
         String host = System.getenv("DB_HOST");
         if (host != null && !host.trim().isEmpty()) {
             String port = System.getenv("DB_PORT") != null ? System.getenv("DB_PORT") : "3306";
-            String name = System.getenv("DB_NAME") != null ? System.getenv("DB_NAME") : "hotel_prod_db";
+            String name = System.getenv("DB_NAME") != null ? System.getenv("DB_NAME") : "hotel_runtime_20261022";
             return "jdbc:mysql://" + host + ":" + port + "/" + name + "?useSSL=false&serverTimezone=UTC";
         }
         return null;

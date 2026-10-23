@@ -216,7 +216,7 @@ export async function renderAdminCustomers(container, session) {
                         closeModal("global-modal");
                         loadCustomers();
                     } catch (err) {
-                        alert("Lỗi: " + err.message);
+                        await window.showCustomAlert("Lỗi: " + err.message, { title: 'Không thể xóa khách hàng' });
                     }
                 });
             });

@@ -24,7 +24,7 @@ class InvoicePdfControllerTest {
                 c.setAutoCommit(false);InvoiceFinalizationService.finalizePaid(c,fixture.booking);c.commit();
                 try(PreparedStatement q=c.prepareStatement("SELECT i.id,b.customer_id FROM invoices i JOIN bookings b ON b.id=i.booking_id WHERE i.booking_id=?")){q.setInt(1,fixture.booking);try(ResultSet r=q.executeQuery()){r.next();invoice=r.getLong(1);customer=r.getInt(2);}}
             }
-            var hotel=new VatInvoicePdfGenerator.Hotel("SYNTHETIC HOTEL","Synthetic test address","SYNTHETIC-MST","https://invoice.example.invalid/verify");
+            var hotel=new VatInvoicePdfGenerator.Hotel("SYNTHETIC HOTEL","Synthetic test address","SYNTHETIC-MST");
             var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);var context=server.createContext("/api/v1/invoices/",new InvoicePdfController(hotel));context.getFilters().add(new JwtFilter());server.start();
             try {
                 var client=HttpClient.newHttpClient();var uri=URI.create("http://127.0.0.1:"+server.getAddress().getPort()+"/api/v1/invoices/"+invoice+"/pdf");

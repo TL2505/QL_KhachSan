@@ -38,11 +38,12 @@ public final class PaymentReconciliationService {
                     try(var q=c.prepareStatement("SELECT folio_id,account_number,reference_code,payment_link_id,expires_at,state,created_at FROM payment_links WHERE order_code=? AND provider=?")){
                         q.setLong(1,p.orderCode());q.setString(2,p.provider());try(var r=q.executeQuery()){if(r.next()){folio=r.getLong(1);expectedAccount=r.getString(2);expectedRef=r.getString(3);expectedLink=r.getString(4);expiry=r.getObject(5,LocalDateTime.class);linkState=r.getString(6);created=r.getObject(7,LocalDateTime.class);}else reason="UNKNOWN_REFERENCE";}
                     }
-                    BigDecimal balance=null,applied=BigDecimal.ZERO,excess=BigDecimal.ZERO;
+                    BigDecimal balance=null,applied=BigDecimal.ZERO,excess=BigDecimal.ZERO;LocalDateTime paymentDeadline=expiry;
                     if(folio!=null){
                         try(var q=c.prepareStatement("SELECT booking_id FROM folios WHERE id=?")){q.setLong(1,folio);try(var r=q.executeQuery()){if(r.next())booking=r.getInt(1);}}
-                        String bookingState=null;
-                        try(var q=c.prepareStatement("SELECT status FROM bookings WHERE id=? FOR UPDATE")){q.setInt(1,booking);try(var r=q.executeQuery()){if(r.next())bookingState=r.getString(1);}}
+                        String bookingState=null,paymentChoice=null;LocalDateTime bookingCreated=null;
+                        try(var q=c.prepareStatement("SELECT status,payment_choice,created_at FROM bookings WHERE id=? FOR UPDATE")){q.setInt(1,booking);try(var r=q.executeQuery()){if(r.next()){bookingState=r.getString(1);paymentChoice=r.getString(2);bookingCreated=r.getObject(3,LocalDateTime.class);}}}
+                        if("qr".equals(paymentChoice)&&bookingCreated!=null)paymentDeadline=bookingCreated.plusMinutes(PaymentStatus.QR_WINDOW_MINUTES);
                         String folioState=null;
                         try(var q=c.prepareStatement("SELECT balance,status FROM folios WHERE id=? FOR UPDATE")){q.setLong(1,folio);try(var r=q.executeQuery()){if(r.next()){balance=r.getBigDecimal(1);folioState=r.getString(2);}}}
                         if(!"00".equals(p.resultCode()))reason="PROVIDER_NOT_CONFIRMED";
@@ -51,13 +52,16 @@ public final class PaymentReconciliationService {
                         else if(!expectedRef.equals(p.reference()))reason="REFERENCE_MISMATCH";
                         else if(expectedLink==null||!expectedLink.equals(p.linkId()))reason="LINK_MISMATCH";
                         else if(!Set.of("pending","confirmed","checked_in").contains(Objects.toString(bookingState,""))||"closed".equals(folioState)||"CANCELLED".equals(linkState))reason="LATE_PAYMENT";
-                        else if(p.occurredAt().isAfter(expiry)||p.occurredAt().isBefore(created.minusMinutes(5)))reason="OUTSIDE_PAYMENT_WINDOW";
+                        else if(paymentDeadline==null||p.occurredAt().isAfter(paymentDeadline)||p.occurredAt().isBefore(created.minusMinutes(5)))reason="OUTSIDE_PAYMENT_WINDOW";
                         else if(p.occurredAt().isAfter(LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusMinutes(5)))reason="INVALID_TRANSACTION_TIME";
                         if(reason==null){
                             applied=p.amount().min(balance);excess=p.amount().subtract(applied);
                             if(applied.signum()>0)credit(c,folio,"payment",applied,p.provider()+":"+p.transactionId());
                             if(excess.signum()>0)credit(c,folio,"credit_adjustment",excess,p.provider()+":"+p.transactionId());
                             balance=balance.subtract(applied);locks.updateBalance(c,folio,balance);FolioDao.confirmPaidBooking(c,booking);
+                            if(balance.signum()==0)try(var closeLink=c.prepareStatement("UPDATE payment_links SET state='PAID' WHERE order_code=? AND provider=? AND state IN ('CREATING','PENDING')")){
+                                closeLink.setLong(1,p.orderCode());closeLink.setString(2,p.provider());closeLink.executeUpdate();
+                            }
                             LifecycleNotifications.payment(c,booking,p.provider()+":"+p.transactionId(),p.amount(),balance);
                         }else LifecycleNotifications.booking(c,booking,"payment_error","payment-error:"+p.provider()+":"+p.transactionId(),"Thanh toán cần đối soát","Giao dịch chưa được ghi nhận vào đặt phòng. Mã lỗi: "+reason+". Vui lòng liên hệ lễ tân.");
                     }

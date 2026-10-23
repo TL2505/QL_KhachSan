@@ -23,20 +23,34 @@ export function paymentFlow() {
       const copy = document.createElement('button'); copy.type = 'button'; copy.textContent = 'Sao chép số tài khoản';
       copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(qr.account_number); copy.textContent='Đã sao chép'; } catch { status.textContent='Vui lòng sao chép số tài khoản được hiển thị bên trên.'; } });
       actions.append(download,copy); details.append(amount,account,reference,actions);
-      const until = Date.now() + Math.min(900, qr.expires_in_seconds ?? 300)*1000;
+      if (qr.provider === 'mock') {
+        const simulate = document.createElement('button'); simulate.type = 'button'; simulate.className = 'btn btn-primary btn-sm'; simulate.textContent = 'Mô phỏng thanh toán thành công';
+        simulate.addEventListener('click', async () => {
+          simulate.disabled = true; status.textContent = 'Đang xử lý thanh toán mô phỏng…';
+          try {
+            const payment = await api(`/folios/${folio.id}/mock-payment`, {method:'POST', token, signal:controller.signal});
+            if (current !== active) return;
+            if (paymentState(payment) === 'PAID') { status.textContent = 'Thanh toán mô phỏng thành công.'; simulate.textContent = 'Đã thanh toán'; settled(payment); }
+            else { status.textContent = paymentLabel(payment); simulate.disabled = false; }
+          } catch (error) { if (current === active) { status.textContent = error.message || 'Không thể hoàn tất thanh toán mô phỏng.'; simulate.disabled = false; } }
+        });
+        const note = document.createElement('p'); note.textContent = 'Chế độ thử nghiệm: thao tác này không chuyển tiền thật.'; details.append(note,simulate);
+      }
+      const until = Date.now() + Math.min(3600, qr.expires_in_seconds ?? 3600)*1000;
       let latest = 'Đang chờ xác nhận thanh toán';
       countdown = setInterval(() => {
         if (current !== active) return;
         const remaining = Math.max(0,Math.ceil((until-Date.now())/1000)); status.textContent=`${latest} · ${remaining}s`;
-        if (!remaining) {clearTimeout(timer);clearInterval(countdown);status.textContent='Mã đã hết thời gian hiển thị. Vui lòng liên hệ lễ tân để xác minh thanh toán.';}
+        if (!remaining) {clearTimeout(timer);clearInterval(countdown);image.hidden=true;status.textContent='QR đã hết hạn. Hệ thống đang chờ tối đa 2 phút để đối soát giao dịch đã khởi tạo trước hạn.';}
       },1000);
       async function poll() {
-        if (current !== active || Date.now() >= until) return;
+        if (current !== active) return;
         try {
           const payment = await api(`/folios/${folio.id}/payment-status`,{token,signal:controller.signal});
           if (current !== active) return;
           latest=paymentLabel(payment)+(paymentState(payment)==='PARTIAL'?` · Còn thiếu ${Number(payment.remaining_amount).toLocaleString('vi-VN')} đ`:'');
           if(paymentState(payment) === 'PAID') {stop();settled(payment);return;}
+          if(paymentState(payment)==='QR_EXPIRED'&&!payment.payment_reconciliation_pending&&payment.booking_status==='cancelled') {status.textContent='Booking đã kết thúc vì phiên QR hết hạn. Phòng đã được trả lại.';return;}
         } catch(error) {
           if(current !== active) return;
           if(error.status === 401 || error.status === 403) {clearInterval(countdown);status.textContent='Vui lòng liên hệ lễ tân để xác minh thanh toán.';return;}

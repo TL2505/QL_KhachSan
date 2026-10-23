@@ -82,13 +82,13 @@ export async function renderRooms(container, session) {
             `;
             
             tr.querySelector(".btn-delete-room").addEventListener("click", async () => {
-                if (confirm(`Bạn chắc chắn muốn xóa phòng này khỏi danh mục hệ thống?`)) {
+                if (await window.showCustomConfirm('Bạn chắc chắn muốn xóa phòng này khỏi danh mục hệ thống?', { title: 'Xác nhận xóa phòng', confirmLabel: 'Xóa phòng' })) {
                     try {
                         await api.delete(`/rooms/${r.id}`);
-                        alert("Đã xóa phòng thành công!");
+                        await window.showCustomAlert('Đã xóa phòng thành công!', { title: 'Đã xóa phòng', kind: 'success' });
                         loadRooms();
                     } catch (err) {
-                        alert("Lỗi xóa phòng: " + err.message);
+                        await window.showCustomAlert("Lỗi xóa phòng: " + err.message, { title: 'Không thể xóa phòng' });
                     }
                 }
             });

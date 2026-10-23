@@ -1,0 +1,132 @@
+# QA test progress
+
+Updated: 2026-10-23
+
+## Project and environment
+
+- Branch: `feature/hotel-payments-rental-policy`.
+- The checkout had existing user modifications before QA began. Those were preserved; QA changes touched regression fixtures, the MISA adapter, the migration manifest, the API contract, and QA documentation.
+- Application: Java 17 REST backend and Swing desktop client, MariaDB persistence, and a vanilla JavaScript web UI served by `web-ui/server.js`; AI service and MISA meInvoice are separate integrations.
+- Available runtimes: JDK 17.0.20.1, Maven 3.10.0, Node.js 24.20.0, npm 11.19.0. Docker is not installed.
+- The user explicitly authorized synthetic QA writes to the local MariaDB selected by `.env`: `hotel_runtime_20261022`, MariaDB 11.4.13 on port 3306. The backend is started with `start-backend.bat` on port 8081; the web UI is the user-started server on port 3000. Payment is configured to the mock provider for QA, and SMTP delivery is disabled.
+
+## Feature inventory
+
+- **User roles:** admin, staff/front desk, customer/guest, housekeeping, maintenance, and food-and-beverage staff.
+- **Guest and customer:** login/registration, Google OTP, profile and identity scanning, room discovery, availability, booking, promotions/vouchers, booking history, payment state, notifications, support, and loyalty.
+- **Front desk and hotel operations:** reservation and walk-in flows, room assignment, check-in/out, folios, payment collection/webhooks, service orders, invoices, and revenue reports.
+- **Housekeeping and maintenance:** room-state transitions, cleaning authorization, minibar inventory/posting, maintenance/out-of-order controls.
+- **Administration:** users/roles, room catalog, services, membership, AI configuration, and reporting.
+- **AI and integrations:** prompt guardrails, concierge chat/escalation, cloud provider settings, OTP/email, payment providers, and MISA e-invoice issue/sync/cancel/download.
+- **Platforms:** browser pages for guest/staff/admin plus the Java Swing desktop client.
+
+## Verification completed
+
+| Area | Result | Evidence |
+| --- | --- | --- |
+| Java compile and Maven tests | **284 run; 0 failures; 0 errors; 42 skipped** | JDK 17, isolated `target/qa-baseline` output and project-local Maven cache. The skips are environment-gated database/integration/performance cases. |
+| Web UI tests | **133 passed; 0 failed; 0 skipped** | `npm test` in `web-ui`; DOM and local HTTP fixtures were used. This is automated UI simulation, not a live browser journey. |
+| Changed browser JavaScript syntax | **6 files passed** | `node --check` on admin/staff invoices, customer bookings/discovery, concierge chat, and concierge room tools. |
+| Static frontend smoke | **Passed** | Local server returned HTTP 200 for `/`; HTML contained the login and booking modals. API/backend was not running. |
+| Live booking, mock QR payment, history, cancellation/refund and expiry | **Passed** | Browser on port 3000 plus the authorized local MariaDB. A paid mock booking was confirmed and then cancelled/refunded through the mock flow; a second unpaid QR booking expired; a third paid mock QR booking remains confirmed. No real payment was made. |
+| Web booking lifecycle and MariaDB local-time handling | **Passed in rollback-only transaction** | On synthetic booking #3, simulated 07:05 check-in, 90% checkout reminder, 05:01 auto checkout, `vacant_dirty`, cleaning task and lifecycle notifications. All simulation writes were rolled back; booking remains `confirmed` and room `reserved`. Found and fixed JDBC `Timestamp` timezone conversion in the engine. |
+| Post-fix Maven compile | **Passed** | Maven compiled 358 application sources and 125 test sources, including the new MariaDB lifecycle regression test. |
+| Targeted browser UI regression tests | **12 passed; 0 failed** | `node --test tests/customer-booking-voucher.test.mjs tests/portal-auth-fix.test.mjs`. |
+| Customer booking UI parity with landing page | **Passed** | Port 3000 live browser: compact search controls, expandable filters, availability lookup, room card, and booking summary/confirmation were visually checked. The booking was not submitted during this layout check. |
+| Staff counter collection and check-in timing | **UI passed; no collection posted** | After restarting the backend with `start-backend.bat`, booking #4 showed the counter-payment status and its modal loaded the 1,701,000 VND folio balance plus cash/POS choices. The modal was closed without submitting payment. Booking #3's check-in action was disabled until 14:00 with an explanation. |
+| Invoice PDF regression | **Passed** | Synthetic statement contains internal-only labels, reconciled total, and embedded Vietnamese font; it does not claim to be an issued tax invoice. |
+| Migration manifest regression | **Passed** | Manifest includes every SQL migration exactly once, including `v4_5_electronic_invoices.sql`. |
+| MISA adapter contract | **6 passed; 0 failed** | Synthetic loopback HTTP fixtures cover POS/HSM route and payload shapes, token reuse/separation, status headers, view-link allowlisting, PDF validation and cancellation. The POS marker assertion fails against the old payload and passes with the fix. |
+| Phase 2 acceptance gate | **4 validator unit tests passed; sign-off remains incomplete** | The read-only validator returned `phase2_complete: false`; it lists missing manual evidence for staff room-grid/check-in, QR/payment, housekeeping, minibar, maintenance override, invoicing, dashboard exports, and Docker. |
+| Current e-invoice legal references | **Checked against official sources** | The operations guide now cites both Decree 254/2026/NĐ-CP and Circular 91/2026/TT-BTC, effective 01/07/2026. Seller-specific applicability remains for accounting/tax confirmation. |
+
+The previously completed full-suite baseline was 284 Java tests (0 failures/errors, 42 skipped) and 133 web tests (0 failures/skips). The full suites were not rerun after the latest timezone fix. Post-fix verification includes a successful full Maven `test-compile`, a targeted MariaDB rollback simulation of the lifecycle stages, and the targeted browser UI tests listed below. The 42 skipped baseline cases include database/integration/performance opt-ins; no full Maven integration suite was pointed at the local runtime database.
+
+## Workflow coverage checklist
+
+- [x] Authentication and browser login/registration behavior through automated fixtures.
+- [x] Guest/customer booking, voucher, membership, profile, payment-state, support, and notification UI behavior through Node tests.
+- [x] Front-desk walk-in pricing/payment/check-in constraints through unit and UI tests.
+- [x] Room allocation, housekeeping authorization/state rules, maintenance, minibar, folio, and webhook logic through Java unit/controller tests where fixtures allowed.
+- [x] AI prompt guardrails, concierge authorization, provider settings, and session behavior through automated tests.
+- [x] Internal invoice PDF semantics and migration-manifest consistency.
+- [x] MISA adapter request/response behavior through synthetic local HTTP fixtures.
+- [x] Customer browser booking and mock QR payment journeys through cancellation/refund and QR expiry against the running backend and synthetic MariaDB data; automatic check-in/out logic was simulated transactionally because the real booking time had not arrived.
+- [x] Local MariaDB 11.4 migrations applied by backend startup; the full concurrency, payment-ledger integration suite and disposable-database bootstrap suite remain gated on an explicit `*_test` schema.
+- [ ] MISA sandbox issue/sync/adjust/cancel/PDF operations; no MISA test credentials were available and no provider calls were made.
+- [ ] Native Swing staff journey and full desktop UI inspection.
+- [ ] Docker bootstrap and long-duration performance/soak run.
+
+### Latest manual browser checks (2026-10-23)
+
+- Opened the user-started UI at `http://127.0.0.1:3000/portal.html?view=users` against the local backend and logged in as the seeded demo administrator.
+- Confirmed the permissions page loaded five users and live roles. Search and role filters worked; the existing-user role dialog opened and changed its selection locally, then was cancelled without saving.
+- Updated and visually inspected the add-account dialog so its labels, spacing, controls, buttons, dark/gold palette, and responsive grid match the permissions page's dialogs. The live role list populated with Nhân viên selected by default.
+- The user created a synthetic staff account through the admin form; the success dialog now presents the created name, username, optional contact details, role, and active status without showing the password. Signup errors also display under each relevant field and focus the first invalid input. Live invalid/valid/duplicate-account cases were checked.
+
+### Browser-native dialog fix (2026-10-23)
+
+- **Finding:** The customer booking-history “Hủy phòng” button showed a browser-native confirmation (`confirm()`), as shown in the user's screenshot. The same pattern appeared in customer, admin, and staff interface modules for confirmations, alerts, and text prompts.
+- **Fix:** Replaced application `alert()` / `confirm()` / `prompt()` calls with the shared Aurelia modal helpers. The in-page dialog supports closing with Escape or by clicking the backdrop; missing modal markup is recreated in the page rather than falling back to a browser popup. Updated cache versions for the portal and customer views.
+- **Checks:** `node --check` passed for 22 touched JavaScript files; `node --test tests/customer-booking-voucher.test.mjs tests/payment-state.test.mjs` passed 4/4; `git diff --check` passed. A source scan found no direct native dialog calls in application JavaScript; remaining matches are test-fixture strings and comments.
+- **Live browser status:** After reauthenticating as the seeded demo guest, clicked “Hủy phòng” for synthetic booking #133 on port 3000. The in-page confirmation appeared; closed it with “Giữ đặt phòng” and reloaded the history to confirm #133 remained pending. The first visual pass exposed cramped action buttons; after the CSS fix, the buttons displayed separately and the destructive action was red. The final modal was also closed with “Giữ đặt phòng”; no cancellation was submitted.
+- **Follow-up:** The browser-native modal was verified; later QA continued booking and payment flows through the live local backend and MariaDB as documented below.
+
+### Customer booking and QR payment flow (2026-10-23)
+
+- Reused the user-started customer portal at `http://127.0.0.1:3000/portal.html?view=bookings`; the backend health endpoint reported `UP` and `database=CONNECTED` after the `start-backend.bat` restart.
+- The customer discovery search now follows the landing-page pattern: check-in, check-out, guest count, promo code, and a gold availability button; optional rental/time/type/price filters are expandable. Search returned one available room and the confirmation dialog showed the correct dates, guest count, one-night quote and QR/counter payment choices. This layout check did not submit another booking.
+- Earlier live journey coverage: mock QR booking #1 was paid then cancelled with a mock refund; booking #2's QR deadline was advanced only in test data and the expiry worker cancelled it/released its room; booking #3 was paid via the mock UI and remains confirmed in the database. History shows these three states after reload.
+- A rollback-only MariaDB simulation of booking #3 exercised automatic check-in at 07:05, a deduplicated checkout reminder after the 90% point, and automatic check-out at 05:01. It verified `checked_in`/`occupied_clean`, then `checked_out`/`vacant_dirty`, one pending cleaning task, and lifecycle notification records; rollback restored `confirmed`/`reserved` and left no simulated cleaning task.
+- The first simulation exposed that `Timestamp.valueOf(LocalDateTime)` bound against MariaDB `DATETIME` shifted a 07:05 value to 00:05. The engine now uses `setObject(LocalDateTime)` for its wall-time comparisons and `check_in_actual`. A future MariaDB regression test was added and compiled; its disposable-schema guard was not overridden for this local runtime database.
+- SMTP remains disabled: the booking/reminder/checkout emails are queued in `notification_outbox`, but no email was sent. The payment/refund provider used in this journey was mock-only; no real funds moved.
+
+### Staff counter-payment and check-in timing (2026-10-23)
+
+- The live staff page initially showed the old generic “Xác nhận” action. After reloading the frontend, it showed “Chưa có phương thức thu” for booking #4 because the running backend had not loaded the new `paymentChoice` field.
+- `stop-backend.ps1` verified and stopped the recorded workspace backend PID 35712. The first sandboxed `start-backend.bat` attempt could not open Maven's protected user-profile lock. Rerunning the same project startup script with the required access succeeded: key preflight passed, database target was `127.0.0.1:3306/hotel_runtime_20261022`, MariaDB 11.4.13 connected, and backend health became ready on port 8081. No database was recreated.
+- On `http://localhost:3000/portal.html?view=bookings`, synthetic booking #4 now shows “Chờ thanh toán tại quầy” and “Thu tiền tại quầy”. Opening the modal loaded its Folio master balance of 1,701,000 VND and offered “Tiền mặt” and “Thẻ ngân hàng (POS)”. I closed the modal without pressing “Xác nhận đã thu”; no folio payment was submitted and #4 remained pending.
+- At 06:32 on 2026-10-23, confirmed booking #3 was scheduled for check-in at 14:00. Its “Nhận phòng” button was disabled and the row explained the available time. Cancelled bookings had no actions. The after-checkout UI branch is implemented but had no naturally ended confirmed booking for live verification.
+- The booking DAO now exposes `customer_type`. After restarting through `start-backend.bat`, the live staff UI labeled bookings #3 and #4 “Đặt qua Web · hệ thống tự check-in/check-out”. Confirmed Web booking #3 showed the explicit automatic-processing note and no manual “Nhận phòng” button; pending counter booking #4 kept the “Thu tiền tại quầy” action. Horizontal scrolling confirmed the action column and notes together. Screenshot: `docs/qa/screenshots/staff-web-auto-lifecycle-note.png`.
+- `node --check` passed for both staff booking modules; `git diff --check` passed for the touched backend, UI, and QA files. No automated test suite or cashier payment submission was run in this pass. The staff UI did not include a live Walk-in booking, so that label/action branch was not manually exercised.
+
+## Confirmed findings and fixes
+
+- `QA-2026-001`: Updated stale invoice PDF tests to the current internal-payment-statement contract. **Verified.**
+- `QA-2026-002`: Added the electronic-invoice migration to the shared bootstrap manifest. **Verified by manifest regression; database application remains unverified.**
+- `QA-2026-003`: Added MISA's required POS machine marker, corrected the POS request envelope, and avoided mutating the caller's payload. **Verified by six adapter tests using synthetic HTTP fixtures.**
+- `QA-2026-005`: Added field-specific signup errors and removed the temporary fake identity insert; verified invalid fields and duplicate-account feedback in the browser. **Verified.**
+- `QA-2026-006`: Added the Web booking lifecycle migration to the runtime migration sequence after booking history returned HTTP 500 on missing lifecycle schema. **Verified on local MariaDB; history now returns HTTP 200.**
+- `QA-2026-007`: Unified customer discovery search controls and room-card actions with the landing page. **Verified in live browser and targeted UI tests.**
+- `QA-2026-008`: Corrected Java/MariaDB wall-time binding in automatic booking lifecycle queries and check-in timestamp writes. **Verified with MariaDB rollback-only lifecycle simulation; permanent integration test compiled.**
+- `QA-2026-009`: Added staff counter/POS collection through the folio API and exposed the booking payment choice. **UI verified; collection was not submitted, so the ledger/payment endpoint remains unverified.**
+- `QA-2026-010`: Disabled check-in before the scheduled time and removed the action after checkout. **Pre-check-in UI verified; after-checkout UI branch not live-tested.**
+- `QA-2026-011`: Exposed the booking channel and labeled Web bookings as system-managed; suppresses manual check-in/check-out for those stays while retaining Web counter collection. **Live UI verified on bookings #3/#4.**
+
+## Remaining risks and next actions
+
+1. Configure a separate MariaDB schema whose name ends in `_test` to run the guarded database concurrency/payment/migration suites; they were not run against `hotel_runtime_20261022`.
+2. Automatic lifecycle was verified under a simulated clock and rolled back. Observe a naturally due booking/reminder on a future run if a wall-clock journey is required; no current booking was left checked in or checked out for testing.
+3. Continue remaining staff workflows through the browser, then run the desktop UI when a suitable GUI environment is available.
+4. Have an authorized cashier confirm the final “Xác nhận đã thu 1.701.000 đ” action only after receiving the test funds to complete payment-posting verification. The current browser modal is closed and the booking remains pending.
+5. With MISA test credentials and an approved test seller account, exercise issue/sync/adjust/cancel/PDF operations in MISA's test environment before considering production setup.
+6. Run Docker bootstrap and performance tests on a host with Docker and MariaDB 11.
+
+## Commands run
+
+- `mvn test` initially could not open a lock in the protected user-profile Maven cache. Retried successfully with the existing project-local `target/maven-repository` cache and `target/qa-baseline` output.
+- Final full-suite command: `mvn -o -Dmaven.repo.local=target/maven-repository -Dhotel.build.directory=target/qa-baseline test`; result: 284 run, 0 failures/errors, 42 skipped.
+- `mvn -Dtest=MisaMeInvoiceProviderTest test` passed all six tests using only local synthetic HTTP responses.
+- The POS marker regression was mutation-checked: temporarily omitting the marker made the test fail at its explicit contract assertion; restoring it returned all six adapter tests to passing.
+- `python.exe -m unittest tests.acceptance.test_phase2_gate -v` passed four validator unit tests. The read-only `scripts/validate-phase2-acceptance.py` run returned `phase2_complete: false` and the outstanding manual/Docker gates; no acceptance status was fabricated.
+- `test-dual-env.sh` was not run: its second target is the separately addressed VM `192.168.56.102`, and the script sends health and unauthenticated POST probes to that host.
+- Maven test run used local ephemeral sockets and `target/qa-temp`; it did not enable database integration flags.
+- `npm test` in `web-ui` passed all 133 tests when local test fixtures were allowed to bind/connect.
+- `node --check` on six modified browser JavaScript files passed.
+
+### Staff overdue notification center and overtime (2026-10-23)
+
+- Added the staff notification migration/API, per-user read state, overdue event from the Web lifecycle worker, and stable-reference late fee reconciliation. The portal tray now loads for authorized staff roles and refreshes while open/visible.
+- Backend compile passed across 361 application and 126 test sources. `CounterPaymentLifecycleTest`: 3 passed. The guarded `PaymentsNotificationsIntegrationTest` did not execute because it requires `HOTEL_RUN_DB_INTEGRATION=true` and a disposable database name ending in `_test`; the local runtime schema was not used for destructive integration fixtures.
+- `node --check` passed for eight source/public portal and booking modules. Focused Node UI tests passed 4/4; `git diff --check` passed.
+- Restarted with `start-backend.bat`; MariaDB 11.4.13 health/preflight passed and the staff notification API loaded through the live port-3000 portal. The bell showed “THÔNG BÁO NHÂN VIÊN” and the correct empty state. No overdue fixture, folio payment or email was created/sent, so a populated overdue notification still needs a disposable-fixture UI run.

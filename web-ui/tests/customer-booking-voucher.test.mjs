@@ -43,6 +43,10 @@ for (const invalid of [false, true]) {
     try {
       await renderDiscovery(document.getElementById('view-container'), {token:'fixture',role:'CUSTOMER'});
       assert.equal(document.getElementById('booking-voucher-code').value, 'ROOM10');
+      assert.equal(document.getElementById('booking-voucher-code').closest('.booking-search-grid') !== null, true);
+      assert.equal(document.getElementById('guest-count').tagName, 'SELECT');
+      assert.equal(document.querySelector('.booking-advanced-filters').open, false);
+      assert.equal(document.querySelector('.booking-search-submit').textContent.trim(), 'Kiểm tra phòng trống');
       document.querySelector('[data-book]').click();
       await until(() => invalid ? document.getElementById('discovery-feedback').textContent.includes('expired')
         : document.getElementById('booking-dialog').open);

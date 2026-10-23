@@ -1326,6 +1326,18 @@ html[data-theme="light"] .admin-portal .portal-view .star-rating .empty { color:
 .staff-portal .staff-bookings-actions { display:flex; flex-wrap:wrap; gap:7px; min-width:170px; }
 .staff-portal .staff-bookings-actions .btn { min-height:32px; padding:6px 10px; font-size:12px; white-space:nowrap; }
 .staff-portal .staff-bookings-na { color:var(--portal-muted); font-size:12px; white-space:nowrap; }
+.staff-portal .staff-booking-status-stack { display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+.staff-portal .staff-booking-channel-note { color:var(--portal-muted); font-size:11px; line-height:1.45; }
+.staff-portal .staff-booking-channel-note.is-automatic { color:#8fd8ff; }
+.staff-portal .staff-booking-channel-note.is-overdue { color:#fca5a5; font-weight:700; }
+.staff-portal .staff-overdue-alert { margin:0 0 16px; padding:16px 18px; border:1px solid rgba(239,68,68,.48); border-radius:14px; background:rgba(127,29,29,.18); color:var(--portal-text); }
+.staff-portal .staff-overdue-alert[hidden] { display:none; }
+.staff-portal .staff-overdue-alert-heading { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; color:#fca5a5; }
+.staff-portal .staff-overdue-alert ul { display:grid; gap:7px; margin:12px 0 0; padding:0; list-style:none; }
+.staff-portal .staff-overdue-alert li { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px 16px; padding-top:8px; border-top:1px solid rgba(239,68,68,.18); font-size:12px; }
+.staff-portal .staff-overdue-alert li a { color:#fecaca; font-weight:700; text-decoration:underline; }
+.staff-portal .staff-bookings-actions .staff-booking-automation-note { max-width:230px; white-space:normal; line-height:1.5; }
+.staff-portal .staff-bookings-actions .btn:disabled { opacity:.42; cursor:not-allowed; filter:grayscale(.55); transform:none; box-shadow:none; }
 .staff-portal .portal-view tbody tr:nth-child(even) { background:rgba(148,163,184,.025); }
 .staff-portal .portal-view tbody tr:hover { background:rgba(148,163,184,.07); }
 .staff-portal .portal-view .form-input,.staff-portal .portal-view input,.staff-portal .portal-view select,.staff-portal .portal-view textarea { min-height:42px; border:1px solid rgba(212,175,55,.22); border-radius:9px; color:var(--portal-text); background:#0b1220; font:inherit; }
@@ -2350,6 +2362,7 @@ html[data-theme="light"] .staff-portal :is(.staff-customers-view, .staff-data-vi
 .staff-portal .staff-bookings-view td:nth-child(6),
 .staff-portal .staff-invoices-view td:nth-child(4) { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .staff-portal .staff-data-view .staff-bookings-na { max-width: 190px; white-space: normal; line-height: 1.5; }
+html[data-theme="light"] .staff-portal .staff-booking-channel-note.is-automatic { color:#075985; }
 .staff-portal .staff-data-view #staff-bookings-summary > .stat-card:nth-child(1) { color: #739dff; border-color: rgba(115,157,255,.5) !important; }
 .staff-portal .staff-data-view #staff-bookings-summary > .stat-card:nth-child(3) { color: #52d6c2; border-color: rgba(82,214,194,.5) !important; }
 .staff-portal .staff-data-view #staff-bookings-summary > .stat-card:nth-child(2),
@@ -2413,6 +2426,11 @@ html[data-theme="light"] .staff-portal .staff-data-view #staff-bookings-summary 
 .staff-portal .checkout-amount { min-width: 0; }
 .staff-portal .checkout-amount > span { display: block; margin-bottom: 5px; color: var(--portal-muted); font-size: 11px; }
 .staff-portal .checkout-amount > strong { display: block; color: var(--portal-text); font-size: clamp(19px, 1.8vw, 24px); font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.staff-portal .checkout-counter-note { display:block; color:#9a6b05; font-size:11px; line-height:1.5; }
+html:not([data-theme="light"]) .staff-portal .checkout-counter-note { color:#f3d889; }
+.staff-portal .checkout-overdue-note { display:block; color:#b91c1c; font-size:12px; font-weight:700; line-height:1.55; }
+html:not([data-theme="light"]) .staff-portal .checkout-overdue-note { color:#fca5a5; }
+.staff-portal .checkout-overdue-note a { margin-left:4px; text-decoration:underline; }
 .staff-portal .checkout-card-actions .btn-pay { min-height: 44px; padding: 10px 14px; font-size: 12px; }
 .staff-portal .checkout-view .checkout-empty { grid-column: 1 / -1; margin: 0; }
 .staff-portal .checkout-empty .card-body { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px 20px; text-align: center; }

@@ -75,7 +75,8 @@ public class Main {
         HttpServer server = HttpServer.create(new InetSocketAddress(bindAddress, port), 0);
         // Khởi tạo các Filter
         Filter corsFilter = new CorsFilter();
-        Filter jwtFilter = new JwtFilter();
+        Filter jwtFilter = new JwtFilter((userId, tokenRole) ->
+                new quanlykhachsan.backend.user.UserDAOImpl().isRoleCurrent(userId, tokenRole));
         Filter exceptionFilter = new GlobalExceptionHandler();
         Filter systemStatusFilter = new SystemStatusFilter();
         Filter idempotencyFilter = new IdempotencyFilter();
@@ -171,6 +172,7 @@ public class Main {
         // Route Thông báo Vòng đời & Voucher Khách hàng (Phase 2.1)
         var notificationController = new quanlykhachsan.backend.customer.NotificationController();
         registerContext(server, ipRateLimiter, "/api/v1/notifications", notificationController, exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/staff-notifications", new quanlykhachsan.backend.notification.StaffNotificationController(), exceptionFilter, corsFilter, jwtFilter);
         // Route Đánh giá (Review)
         registerContext(server, ipRateLimiter, "/api/v1/reviews", new quanlykhachsan.backend.interaction.ReviewController(), exceptionFilter, corsFilter, jwtFilter);
         // Route Chat

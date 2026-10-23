@@ -277,6 +277,18 @@ button, input, select, textarea {
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
 }
 
+.auth-form input.auth-input-invalid {
+  border-color: #fb7185;
+  box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.12);
+}
+
+.auth-field-error {
+  margin: -6px 0 0;
+  color: #fda4af;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .auth-fields-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -808,6 +820,27 @@ button, input, select, textarea {
   padding-bottom: 15px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.16);
 }
+.portal-modal .modal-detail-list {
+  display: grid;
+  margin: 16px 0 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--portal-border);
+  border-radius: 12px;
+  background: rgba(8, 14, 25, 0.48);
+}
+.portal-modal .modal-detail-row {
+  display: grid;
+  grid-template-columns: minmax(110px, .7fr) minmax(0, 1.3fr);
+  gap: 14px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+.portal-modal .modal-detail-row:last-child { border-bottom: 0; }
+.portal-modal .modal-detail-label,
+.portal-modal .modal-detail-value { min-width: 0; margin: 0; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.portal-modal .modal-detail-label { color: var(--portal-muted); }
+.portal-modal .modal-detail-value { color: var(--portal-text); font-weight: 700; }
 .portal-modal .modal-header h2 {
   margin: 0;
   font: 600 22px/1.25 'Playfair Display', Georgia, serif;
@@ -827,6 +860,46 @@ button, input, select, textarea {
 }
 .portal-modal .modal-close:hover {
   background: rgba(212, 175, 55, 0.12);
+}
+.portal-modal .modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+.portal-modal .modal-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid var(--portal-border);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.portal-modal .modal-actions .btn-primary {
+  border-color: rgba(243, 229, 171, .7);
+  background: linear-gradient(120deg, #aa820a, #d4af37, #f3e5ab);
+  color: #111827;
+}
+.portal-modal .modal-actions .btn-secondary {
+  background: rgba(148, 163, 184, .08);
+  color: var(--portal-text);
+}
+.portal-modal .modal-actions .btn-danger {
+  border-color: rgba(248, 113, 113, .65);
+  background: linear-gradient(120deg, #991b1b, #dc2626);
+  color: #fff;
+}
+.portal-modal .modal-actions .btn:hover { filter: brightness(1.07); }
+@media (max-width: 520px) {
+  .portal-modal .modal-actions { align-items: stretch; flex-direction: column-reverse; }
+  .portal-modal .modal-actions .btn { width: 100%; }
 }
 
 /* Google Identity and four-digit OTP step */

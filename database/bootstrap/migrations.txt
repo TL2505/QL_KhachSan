@@ -13,3 +13,9 @@ v4_3_rental_types_dynamic_buffers.sql
 v4_4_room_catalog_content_media.sql
 04_social_auth.sql
 v4_1_login_devices.sql
+v4_5_electronic_invoices.sql
+v4_6_booking_payment_choice.sql
+v4_7_web_booking_lifecycle.sql
+v4_8_counter_payment_at_checkout.sql
+v4_9_counter_checkout_overdue_marker.sql
+v4_10_staff_notifications.sql

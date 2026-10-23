@@ -18,23 +18,31 @@ public final class NotificationWorker implements AutoCloseable {
     private final ScheduledExecutorService executor=Executors.newSingleThreadScheduledExecutor(r->{Thread t=new Thread(r,"notification-outbox");t.setDaemon(true);return t;});
     public NotificationWorker(){this(DatabaseConnection::getConnection,new SmtpMailSender(),Boolean.parseBoolean(System.getenv().getOrDefault("NOTIFICATION_EMAIL_ENABLED","false")),Clock.system(ZoneId.of("Asia/Ho_Chi_Minh")));}
     public NotificationWorker(Connections connections,Sender sender,boolean enabled,Clock clock){this.connections=connections;this.sender=sender;this.enabled=enabled;this.clock=clock;}
-    public void start(){System.out.println("[NOTIFICATIONS] Email delivery "+(enabled?"enabled":"disabled; set NOTIFICATION_EMAIL_ENABLED=true after SMTP verification"));executor.scheduleWithFixedDelay(()->{try{reminders();recoverExpiredLeases();if(enabled)for(int i=0;i<10&&deliverOne();i++){} }catch(Exception e){System.err.println("[NOTIFICATIONS] Worker temporarily unavailable: "+e.getClass().getSimpleName());}},10,30,TimeUnit.SECONDS);}
+    public void start(){System.out.println("[NOTIFICATIONS] Email delivery "+(enabled?"enabled":"disabled; set NOTIFICATION_EMAIL_ENABLED=true after SMTP verification"));executor.scheduleWithFixedDelay(()->{try{reminders();lifecycle();recoverExpiredLeases();if(enabled)for(int i=0;i<10&&deliverOne();i++){} }catch(Exception e){System.err.println("[NOTIFICATIONS] Worker temporarily unavailable: "+e.getClass().getSimpleName());}},10,30,TimeUnit.SECONDS);}
     public void reminders()throws SQLException {
         LocalDateTime now=LocalDateTime.now(clock);
         try(Connection c=connections.open()){
             c.setAutoCommit(false);
             try{
                 // Lock each booking before enqueue; cancellation/check-in cannot race the reminder snapshot.
-                try(var q=c.prepareStatement("SELECT b.id,b.status,b.check_in_date,b.check_out_date FROM bookings b WHERE ((b.status='confirmed' AND b.check_in_date>? AND b.check_in_date<=?) OR (b.status='checked_in' AND b.check_out_date>? AND b.check_out_date<=?)) AND NOT EXISTS (SELECT 1 FROM notification_outbox o WHERE o.event_key=CONCAT(IF(b.status='confirmed','checkin_reminder','checkout_reminder'),':',b.id,':',DATE_FORMAT(IF(b.status='confirmed',b.check_in_date,b.check_out_date),'%Y-%m-%dT%H:%i:%s'))) ORDER BY b.id LIMIT 200 FOR UPDATE SKIP LOCKED")){
-                    q.setObject(1,now);q.setObject(2,now.plusHours(24));q.setObject(3,now);q.setObject(4,now.plusHours(2));
+                try(var q=c.prepareStatement("SELECT b.id,b.status,b.check_in_date,b.check_out_date,b.payment_choice,COALESCE((SELECT SUM(f.balance) FROM folios f WHERE f.booking_id=b.id),0.00) FROM bookings b WHERE b.customer_type='Web' AND ((b.status='confirmed' AND b.check_in_date>? AND b.check_in_date<=?) OR (b.status='checked_in' AND b.check_out_date>? AND TIMESTAMPADD(MICROSECOND,ROUND(TIMESTAMPDIFF(MICROSECOND,b.check_in_date,b.check_out_date)*0.9),b.check_in_date)<=?)) AND NOT EXISTS (SELECT 1 FROM notification_outbox o WHERE o.event_key=CONCAT(IF(b.status='confirmed','checkin_reminder','checkout_reminder'),':',b.id,':',DATE_FORMAT(IF(b.status='confirmed',b.check_in_date,b.check_out_date),'%Y-%m-%dT%H:%i:%s'))) ORDER BY b.id LIMIT 200 FOR UPDATE SKIP LOCKED")){
+                    q.setObject(1,now);q.setObject(2,now.plusHours(24));q.setObject(3,now);q.setObject(4,now);
                     try(var r=q.executeQuery()){while(r.next()){
                         int id=r.getInt(1);boolean checkin="confirmed".equals(r.getString(2));String type=checkin?"checkin_reminder":"checkout_reminder";LocalDateTime date=r.getObject(checkin?3:4,LocalDateTime.class);
-                        LifecycleNotifications.booking(c,id,type,reminderKey(type,id,date),checkin?"Nhắc lịch nhận phòng":"Nhắc lịch trả phòng","Giờ dự kiến: "+date.toString().replace('T',' ')+" (giờ Việt Nam).");
+                        String message=checkin
+                            ?"Hệ thống sẽ tự động ghi nhận nhận phòng vào "+date.toString().replace('T',' ')+" (giờ Việt Nam)."
+                            :quanlykhachsan.backend.booking.WebBookingLifecycleEngine.checkoutReminderMessage(
+                                r.getObject(3,LocalDateTime.class),date,r.getString(5),r.getBigDecimal(6));
+                        LifecycleNotifications.booking(c,id,type,reminderKey(type,id,date),checkin?"Nhắc lịch nhận phòng":"Nhắc lịch check-out",message);
                     }}
                 }
                 c.commit();
             }catch(SQLException|RuntimeException e){c.rollback();throw e;}finally{c.setAutoCommit(true);}
         }
+    }
+    /** Web-only idempotent check-in/check-out actions share this worker's 30-second cadence. */
+    public void lifecycle()throws SQLException {
+        new quanlykhachsan.backend.booking.WebBookingLifecycleEngine(connections::open,clock).processDue();
     }
     public void recoverExpiredLeases()throws SQLException {
         try(Connection c=connections.open()){
@@ -77,7 +85,7 @@ public final class NotificationWorker implements AutoCloseable {
         return true;
     }
     private boolean reminderCurrent(Connection c,int booking,String type,String key)throws SQLException {
-        try(var q=c.prepareStatement("SELECT status,check_in_date,check_out_date FROM bookings WHERE id=?")){q.setInt(1,booking);try(var r=q.executeQuery()){if(!r.next())return false;boolean in=type.equals("checkin_reminder");LocalDateTime date=r.getObject(in?2:3,LocalDateTime.class);return (in?"confirmed":"checked_in").equals(r.getString(1))&&date.isAfter(LocalDateTime.now(clock))&&key.equals(reminderKey(type,booking,date));}}
+        try(var q=c.prepareStatement("SELECT status,check_in_date,check_out_date,customer_type FROM bookings WHERE id=?")){q.setInt(1,booking);try(var r=q.executeQuery()){if(!r.next()||!"Web".equalsIgnoreCase(r.getString(4)))return false;boolean in=type.equals("checkin_reminder");LocalDateTime date=r.getObject(in?2:3,LocalDateTime.class);return (in?"confirmed":"checked_in").equals(r.getString(1))&&date.isAfter(LocalDateTime.now(clock))&&key.equals(reminderKey(type,booking,date));}}
     }
     private static String reminderKey(String type,int booking,LocalDateTime date){return type+":"+booking+":"+date.format(java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss"));}
     public static long retrySeconds(int attempt){return Math.min(3600,30L*(1L<<Math.min(7,Math.max(0,attempt-1))));}

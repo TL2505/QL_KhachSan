@@ -4,7 +4,7 @@
 >
 > Ngày lập: 22/10/2026
 >
-> Trạng thái: Đang triển khai một phần trong mã nguồn; migration và luồng đặt/checkout đã được bổ sung nhưng chưa kiểm tra trên database.
+> Trạng thái: Đang triển khai; xem checklist để biết phần đã chạy và phần còn cần nghiệm thu trên database cô lập.
 >
 > Theo dõi phần đã làm và phần còn lại tại [checklist triển khai](booking-rental-policy-checklist.md). Migration mới: [v4_3_rental_types_dynamic_buffers.sql](../../../database/migrations/v4_3_rental_types_dynamic_buffers.sql).
 >
@@ -50,7 +50,7 @@ Các liên kết tương đối dưới đây xuất phát từ thư mục chứ
 | [RoomAvailabilityController](../../../src/quanlykhachsan/backend/room/RoomAvailabilityController.java) | Hai nhánh availability dùng cùng khoảng buffer động | Cần rà lại khi hoàn thiện UI housekeeping |
 | [BookingService](../../../src/quanlykhachsan/backend/booking/BookingService.java) | Kiểm tra đọc dùng buffer; tạo booking chốt lại trong transaction cấp phòng | API đổi lịch legacy chưa có; cập nhật trực tiếp bị khóa |
 | [BookingDAOImpl](../../../src/quanlykhachsan/backend/booking/BookingDAOImpl.java) | Insert legacy dùng policy chung với `DAILY`; không cho sửa lịch/trạng thái trực tiếp | Cần chuyển các thao tác còn lại sang API nghiệp vụ |
-| [FolioService](../../../src/quanlykhachsan/backend/booking/FolioService.java) và [FolioDao](../../../src/quanlykhachsan/backend/booking/FolioDao.java) | Checkout ghi thời điểm thực, cập nhật `room_release_at`, tạo task và đặt `due_at` | Phụ thu khi khách trả trễ chưa được hạch toán |
+| [FolioService](../../../src/quanlykhachsan/backend/booking/FolioService.java) và [FolioDao](../../../src/quanlykhachsan/backend/booking/FolioDao.java) | Checkout ghi thời điểm thực, cập nhật `room_release_at`, tạo task và đặt `due_at`; overdue Web counter được giữ lưu trú và báo nhân viên | Cần nghiệm thu migration và tính phí trên MariaDB kiểm thử |
 | [RoomStateService](../../../src/quanlykhachsan/backend/room/RoomStateService.java) | Khóa phòng, chặn xác nhận sạch trước buffer, hoàn tất task khi đánh dấu sạch | Màn hình task cho nhân viên còn lại |
 | [RoomStateMachine](../../../src/quanlykhachsan/backend/room/RoomStateMachine.java) | Kiểm soát chuyển trạng thái theo vai trò | Giữ làm hàng rào chuyển trạng thái vật lý |
 | [HousekeepingController](../../../src/quanlykhachsan/backend/room/HousekeepingController.java) | Có API danh sách task, cập nhật trạng thái sạch và ghi inspection | UI phân công/ưu tiên task chưa làm |
@@ -610,7 +610,7 @@ Hệ thống phải:
 
 ### 8.4. Định giá thời gian thực tế
 
-- Nhận phòng thực tế trước giờ đã đặt và checkout thực tế sau giờ đã đặt được tính theo `hourly_extra_hour_price`, làm tròn lên từng giờ bắt đầu. Trả sớm không tự hoàn tiền.
+- Nhận phòng thực tế trước giờ đã đặt tính theo `hourly_extra_hour_price`, làm tròn lên từng giờ bắt đầu. Trả muộn được miễn 30 phút đầu; sau đó mỗi giờ bắt đầu cộng một giờ phụ thu, và quá 6 giờ cộng một lần phụ thu bằng một giờ. Retry của worker và checkout dùng reference folio ổn định để không ghi trùng. Trả sớm không tự hoàn tiền.
 - Nếu thời lượng thực của booking `HOURLY` vượt 6 giờ, checkout xác định gói đích theo khung thực tế: ưu tiên `OVERNIGHT` nếu bao phủ 22:00–06:00 và nằm trong biên giờ cho phép; nếu không thì dùng `DAILY`.
 - Giá gói đích được so với các thành phần giá ban đầu (`room_rate`, `service_charge`, `vat`); chỉ ghi phần chênh dương, không tự phát sinh refund khi giá gói đích thấp hơn. `rental_type` và snapshot buffer đổi theo gói cuối khi checkout commit.
 - Phụ thu được ghi vào folio với reference ổn định để retry chỉ ghi phần còn thiếu. Nếu còn nợ các khoản cơ sở, booking ở `checked_in`; nếu chỉ còn khoản phụ thu thời gian thực tế, checkout và cleaning task vẫn được ghi nhận, folio tiếp tục nhận thanh toán sau checkout.

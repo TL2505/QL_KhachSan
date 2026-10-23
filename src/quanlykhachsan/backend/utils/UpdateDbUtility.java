@@ -219,6 +219,12 @@ public class UpdateDbUtility {
             runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_0_phase4_integrity.sql"));
             runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_2_payments_notifications.sql"));
             runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_3_rental_types_dynamic_buffers.sql"));
+            runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_5_electronic_invoices.sql"));
+            runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_6_booking_payment_choice.sql"));
+            runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_7_web_booking_lifecycle.sql"));
+            runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_8_counter_payment_at_checkout.sql"));
+            runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_9_counter_checkout_overdue_marker.sql"));
+            runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_10_staff_notifications.sql"));
             System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.");
     }
 

@@ -26,7 +26,14 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     public List<Invoice> searchInvoices(String keyword, String status, String fromDate, String toDate, int offset, int limit) {
         List<Invoice> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT i.*, c.full_name AS customer_name, r.room_number FROM invoices i " +
+            "SELECT i.*, c.full_name AS customer_name, r.room_number, " +
+            "(SELECT ei.id FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_id, " +
+            "(SELECT ei.status FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_status, " +
+            "(SELECT ei.invoice_number FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_number, " +
+            "(SELECT ei.document_type FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_type, " +
+            "(SELECT ei.provider_mode FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_mode, " +
+            "(SELECT ei.send_tax_status FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_tax_status, " +
+            "(SELECT ei.provider_view_url FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_view_url FROM invoices i " +
             "JOIN bookings b ON i.booking_id = b.id " +
             "LEFT JOIN customers c ON b.customer_id = c.id " +
             "JOIN rooms r ON b.room_id = r.id WHERE 1=1 "
@@ -85,6 +92,7 @@ public class InvoiceDAOImpl implements InvoiceDAO {
                     
                     inv.setCustomerName(rs.getString("customer_name"));
                     inv.setRoomNumber(rs.getString("room_number"));
+                    setElectronicInvoiceFields(inv, rs);
                     
                     list.add(inv);
                 }
@@ -97,7 +105,14 @@ public class InvoiceDAOImpl implements InvoiceDAO {
 
     @Override
     public Invoice getInvoiceById(int id) {
-        String sql = "SELECT i.*, c.full_name AS customer_name, r.room_number FROM invoices i " +
+        String sql = "SELECT i.*, c.full_name AS customer_name, r.room_number, " +
+                     "(SELECT ei.id FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_id, " +
+                     "(SELECT ei.status FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_status, " +
+                     "(SELECT ei.invoice_number FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_number, " +
+                     "(SELECT ei.document_type FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_type, " +
+                     "(SELECT ei.provider_mode FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_mode, " +
+                     "(SELECT ei.send_tax_status FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_tax_status, " +
+                     "(SELECT ei.provider_view_url FROM electronic_invoices ei WHERE ei.internal_invoice_id=i.id ORDER BY ei.id DESC LIMIT 1) AS einvoice_view_url FROM invoices i " +
                      "JOIN bookings b ON i.booking_id = b.id " +
                      "LEFT JOIN customers c ON b.customer_id = c.id " +
                      "JOIN rooms r ON b.room_id = r.id WHERE i.id = ?";
@@ -118,6 +133,7 @@ public class InvoiceDAOImpl implements InvoiceDAO {
                     inv.setStatus(rs.getString("status"));
                     inv.setCustomerName(rs.getString("customer_name"));
                     inv.setRoomNumber(rs.getString("room_number"));
+                    setElectronicInvoiceFields(inv, rs);
                     return inv;
                 }
             }
@@ -125,6 +141,16 @@ public class InvoiceDAOImpl implements InvoiceDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private static void setElectronicInvoiceFields(Invoice inv, ResultSet rs) throws SQLException {
+        long id=rs.getLong("einvoice_id");if(!rs.wasNull())inv.setElectronicInvoiceId(id);
+        inv.setElectronicInvoiceStatus(rs.getString("einvoice_status"));
+        inv.setElectronicInvoiceNumber(rs.getString("einvoice_number"));
+        inv.setElectronicInvoiceDocumentType(rs.getString("einvoice_type"));
+        inv.setElectronicInvoiceProviderMode(rs.getString("einvoice_mode"));
+        inv.setElectronicInvoiceTaxStatus(rs.getString("einvoice_tax_status"));
+        inv.setElectronicInvoiceViewUrl(rs.getString("einvoice_view_url"));
     }
 
     @Override

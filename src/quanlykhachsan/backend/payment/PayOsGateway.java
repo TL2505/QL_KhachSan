@@ -35,6 +35,23 @@ public final class PayOsGateway implements PaymentGateway {
         String url=text(data,"checkoutUrl");if(!url.startsWith("https://")||text(data,"paymentLinkId").isBlank()||text(data,"qrCode").isBlank())throw new IllegalStateException("PAYMENT_PROVIDER_LINK_INVALID");
         return data;
     }
+    @Override public String cancelLink(long orderCode,String reason)throws Exception {
+        config.requireLink();
+        JsonObject body=new JsonObject();body.addProperty("cancellationReason",reason==null?"Customer cancelled reservation":reason);
+        JsonObject response;
+        try {
+            response=call("POST","/v2/payment-requests/"+orderCode+"/cancel",body);
+        } catch(Exception cancelFailure) {
+            // A payment may win a race with cancellation. Ask the provider for
+            // its final state so the booking is never cancelled as unpaid.
+            try { response=call("GET","/v2/payment-requests/"+orderCode,null); }
+            catch(Exception statusFailure) { statusFailure.addSuppressed(cancelFailure); throw statusFailure; }
+        }
+        JsonObject data=response.has("data")&&!response.get("data").isJsonNull()?response.getAsJsonObject("data"):null;
+        if(data==null||!PayOsSignature.verify(data,text(response,"signature"),config.checksumKey()))
+            throw new IllegalStateException("PAYMENT_PROVIDER_RESPONSE_INVALID");
+        return text(data,"status").toUpperCase(java.util.Locale.ROOT);
+    }
     private JsonObject call(String method,String path,JsonObject data)throws Exception {
         var b=HttpRequest.newBuilder(URI.create("https://api-merchant.payos.vn"+path)).timeout(Duration.ofSeconds(12)).header("x-client-id",config.clientId()).header("x-api-key",config.apiKey()).header("Content-Type","application/json");
         var req=method.equals("GET")?b.GET().build():b.POST(HttpRequest.BodyPublishers.ofString(data.toString())).build();

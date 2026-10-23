@@ -23,11 +23,15 @@ class JwtFilterTest {
     private String baseUrl;
     private final AtomicBoolean handlerInvoked = new AtomicBoolean(false);
     private final AtomicReference<String> capturedRole = new AtomicReference<>();
+    private final AtomicReference<String> capturedCustomerId = new AtomicReference<>();
+    private final AtomicReference<String> capturedPhone = new AtomicReference<>();
 
     @BeforeEach
     void setUp() throws IOException {
         handlerInvoked.set(false);
         capturedRole.set(null);
+        capturedCustomerId.set(null);
+        capturedPhone.set(null);
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 
         var protectedContext = server.createContext("/api/v1/bookings", exchange -> {
@@ -36,6 +40,10 @@ class JwtFilterTest {
             if (role != null) {
                 capturedRole.set(role.toString());
             }
+            Object customerId = exchange.getAttribute("customer_id");
+            if (customerId != null) capturedCustomerId.set(customerId.toString());
+            Object phone = exchange.getAttribute("phone");
+            if (phone != null) capturedPhone.set(phone.toString());
             byte[] response = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, response.length);
             try (var os = exchange.getResponseBody()) {
@@ -136,5 +144,23 @@ class JwtFilterTest {
         assertEquals(200, response.statusCode());
         assertTrue(handlerInvoked.get(), "Handler must be invoked when valid token provided");
         assertEquals("manager", capturedRole.get());
+    }
+
+    @Test
+    void customerLoginTokenCarriesLinkedGuestIdentity() throws Exception {
+        String token = JwtTokenUtil.issueToken(42, "demo_guest", "CUSTOMER", "0901234567", 7);
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/v1/bookings"))
+                .POST(HttpRequest.BodyPublishers.ofString("{}"))
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
+        assertEquals("CUSTOMER", capturedRole.get());
+        assertEquals("7", capturedCustomerId.get());
+        assertEquals("0901234567", capturedPhone.get());
     }
 }

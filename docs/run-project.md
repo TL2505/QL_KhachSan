@@ -33,7 +33,7 @@ Reloading creates another new demo schema and switches to it only after successf
 
 - Install JDK 17 and Maven. Set `JAVA_HOME` to the JDK folder and add Maven's `bin` folder to `PATH`.
 - Start MySQL/MariaDB (or MySQL in XAMPP) on port `3306`.
-- The `hotel_prod_db` database must already exist. For a new local database, initialize it from `database/hotel.sql`; do not import this dump over a database containing data you need.
+- The database configured by `DB_URL` or `DB_NAME` in `.env` must already exist. The current local QA setup uses `hotel_runtime_20261022`; initialize a new local schema from `database/hotel.sql` only when you intend to create a fresh demo database.
 
 Check Java and Maven in PowerShell:
 
@@ -70,12 +70,12 @@ If Maven is not on `PATH`, specify its location (this is the installed path on t
 .\scripts\start-backend.ps1 -MavenCommand 'C:\Users\Admin\AppData\Local\Programs\Apache\Maven\apache-maven-3.10.0\bin\mvn.cmd'
 ```
 
-The checked-in `config.properties` targets the VM at `192.168.56.102:3306`. Automatic localhost fallback is disabled by default. The launcher requires an explicit target in `.env` or the process environment. To select a database in the terminal instead, set:
+The checked-in `config.properties` and local `.env` target the MariaDB QA database on `localhost:3306` (`hotel_runtime_20261022`). `start-backend.bat` loads `.env`; keep `DB_URL` and `DB_HOST` pointed at the same local instance used by HeidiSQL. To select that database in the terminal instead, set:
 
 ```powershell
 $env:DB_HOST = 'localhost'
 $env:DB_PORT = '3306'
-$env:DB_NAME = 'hotel_prod_db'
+$env:DB_NAME = 'hotel_runtime_20261022'
 $env:DB_USER = 'root'
 $env:DB_PASSWORD = 'your-local-database-password'
 ```

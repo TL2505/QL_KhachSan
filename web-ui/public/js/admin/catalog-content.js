@@ -218,7 +218,7 @@ export async function renderCatalogContent(container, session = {}) {
   }
 
   async function review(key, action) {
-    const note = action === 'reject' ? prompt('Ghi lý do từ chối để người biên tập chỉnh sửa:') : '';
+    const note = action === 'reject' ? await window.showCustomPrompt('Ghi lý do từ chối để người biên tập chỉnh sửa:', { title: 'Lý do từ chối nội dung', confirmLabel: 'Gửi từ chối' }) : '';
     if (action === 'reject' && !note?.trim()) return;
     try { await api.post(`/admin/catalog/content/${key}/${action}`, { review_note: note || '' }); await load(); }
     catch (error) { status.textContent = error.message || 'Chưa hoàn tất được bước duyệt.'; }

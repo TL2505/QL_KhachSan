@@ -57,14 +57,19 @@ public final class JwtTokenUtil {
     }
 
     public static String issueToken(int userId, String username, String role) {
+        return issueToken(userId, username, role, null, null);
+    }
+
+    public static String issueToken(int userId, String username, String role, String phone, Integer customerId) {
         Instant now = Instant.now();
-        return Jwts.builder()
+        var token = Jwts.builder()
             .subject(Integer.toString(userId))
             .claim("username", username)
-            .claim("role", role)
-            .issuedAt(Date.from(now))
+            .claim("role", role);
+        if (phone != null && !phone.isBlank()) token.claim("phone", phone);
+        if (customerId != null && customerId > 0) token.claim("customer_id", customerId);
+        return token.issuedAt(Date.from(now))
             .expiration(Date.from(now.plusSeconds(3600)))
-            .signWith(KEY)
-            .compact();
+            .signWith(KEY).compact();
     }
 }

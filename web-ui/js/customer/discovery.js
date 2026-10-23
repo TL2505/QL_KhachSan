@@ -85,17 +85,33 @@ const validDateRange = (checkIn, checkOut, rentalType = 'DAILY') => {
     (rentalType === 'HOURLY' ? checkOut >= checkIn : checkOut > checkIn);
 };
 const validTime = value => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
-const validStayWindow = (checkIn, checkOut, rentalType, inTime, outTime) => {
-  if (!validDateRange(checkIn, checkOut, rentalType) || !validTime(inTime) || !validTime(outTime)) return false;
-  if (rentalType === 'DAILY') return inTime === '14:00' && outTime === '12:00';
-  if (rentalType === 'OVERNIGHT') {
-    return checkOut === shiftDate(checkIn, 1) && inTime <= '22:00' && outTime >= '06:00';
+const timeMinutes = value => {
+  if (!validTime(value)) return NaN;
+  const [hours, minutes] = value.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+const stayWindowIssue = (checkIn, checkOut, rentalType, inTime, outTime) => {
+  if (!validDateRange(checkIn, checkOut, rentalType)) return 'Ngày trả phòng phải sau ngày nhận phòng; ngày nhận không được ở quá khứ.';
+  if (!validTime(inTime) || !validTime(outTime)) return 'Vui lòng chọn giờ nhận và giờ trả phòng hợp lệ.';
+  if (rentalType === 'DAILY') {
+    return inTime === '14:00' && outTime === '12:00' ? '' : 'Gói theo ngày cố định nhận phòng lúc 14:00 và trả phòng lúc 12:00.';
   }
-  const [inHour, inMinute] = inTime.split(':').map(Number);
-  const [outHour, outMinute] = outTime.split(':').map(Number);
+  if (rentalType === 'OVERNIGHT') {
+    if (checkOut !== shiftDate(checkIn, 1)) return 'Gói qua đêm chỉ áp dụng từ ngày nhận đến ngày kế tiếp.';
+    if (inTime !== '18:00' || outTime !== '08:00') return 'Gói qua đêm cố định 18:00–08:00 hôm sau (14 tiếng).';
+    return '';
+  }
   const days = Math.round((Date.parse(`${checkOut}T00:00:00Z`) - Date.parse(`${checkIn}T00:00:00Z`)) / 86400000);
-  const durationMinutes = days * 1440 + outHour * 60 + outMinute - inHour * 60 - inMinute;
-  return durationMinutes > 0;
+  const inMinutes = timeMinutes(inTime);
+  const outMinutes = timeMinutes(outTime);
+  if (inMinutes % 15 !== 0 || outMinutes % 15 !== 0) return 'Gói theo giờ chỉ nhận giờ theo từng khoảng 15 phút.';
+  const durationMinutes = days * 1440 + outMinutes - inMinutes;
+  if (durationMinutes <= 0) return 'Giờ trả phòng phải sau giờ nhận phòng.';
+  if (durationMinutes > 360) return 'Lưu trú theo giờ tối đa 6 tiếng. Hãy chọn giờ trả phòng trong giới hạn này hoặc chọn gói phù hợp.';
+  return '';
+};
+const validStayWindow = (checkIn, checkOut, rentalType, inTime, outTime) => {
+  return !stayWindowIssue(checkIn, checkOut, rentalType, inTime, outTime);
 };
 
 export async function renderDiscovery(container, session) {
@@ -105,20 +121,31 @@ export async function renderDiscovery(container, session) {
   container.innerHTML = `
     <div class="page-header">
       <h1>Khám phá phòng</h1>
-      <p>Tìm phòng theo thời gian lưu trú, số khách, hạng phòng và mức giá.</p>
+      <p>Chọn ngày lưu trú, số khách và mã ưu đãi để kiểm tra phòng trống.</p>
     </div>
-    <section class="card discovery-filter">
-      <div class="discovery-fields">
-        <label>Nhận phòng<input id="search-checkin" type="date" value="${today}" min="${today}" required></label>
-        <label>Trả phòng<input id="search-checkout" type="date" value="${tomorrow}" min="${tomorrow}" required></label>
-        <label>Loại hình lưu trú<select class="select select-sm" id="search-rental-type"><option value="DAILY">Theo ngày</option><option value="OVERNIGHT">Qua đêm</option><option value="HOURLY">Theo giờ</option></select></label>
-        <label>Giờ nhận phòng<input id="search-checkin-time" type="time" value="14:00" required></label>
-        <label>Giờ trả phòng<input id="search-checkout-time" type="time" value="12:00" required></label>
-        <label>Số khách<input id="guest-count" type="number" min="1" max="20" step="1" value="2" required></label>
-        <label>Hạng phòng<select id="filter-type"><option value="">Tất cả hạng</option></select></label>
-        <label>Giá tối đa<select id="filter-price"><option value="0">Mọi mức giá</option><option value="1000000">Dưới 1 triệu</option><option value="2000000">Dưới 2 triệu</option><option value="5000000">Dưới 5 triệu</option></select></label>
-        <button id="btn-search-rooms" class="btn btn-primary" type="button">Tìm phòng</button>
+    <section class="card card-border discovery-filter booking-search-panel" aria-label="Tìm phòng trống">
+      <div class="booking-search-grid">
+        <label class="booking-search-field"><span>Ngày nhận phòng</span><input class="input input-sm booking-search-control" id="search-checkin" type="date" value="${today}" min="${today}" required></label>
+        <label class="booking-search-field"><span>Ngày trả phòng</span><input class="input input-sm booking-search-control" id="search-checkout" type="date" value="${tomorrow}" min="${tomorrow}" required></label>
+        <label class="booking-search-field"><span>Số khách</span><select class="select select-sm booking-search-control" id="guest-count" required>
+          ${Array.from({length: 20}, (_, index) => index + 1).map(count => `<option value="${count}"${count === 2 ? ' selected' : ''}>${count === 2 ? '2 người lớn (tiêu chuẩn)' : count <= 4 ? `${count} người lớn` : `${count} khách`}</option>`).join('')}
+        </select></label>
+        <label class="booking-search-field"><span>Mã ưu đãi</span><input class="input input-sm booking-search-control booking-promo-input" id="booking-voucher-code" maxlength="50" placeholder="LUXURY2026" autocomplete="off" value="${esc(requestedVoucher)}"></label>
+        <button id="btn-search-rooms" class="btn booking-search-submit" type="button"><i data-lucide="search" aria-hidden="true"></i><span data-search-label>Kiểm tra phòng trống</span></button>
       </div>
+      <details class="collapse collapse-arrow booking-advanced-filters">
+        <summary class="collapse-title">Tùy chọn lưu trú nâng cao</summary>
+        <div class="collapse-content">
+          <div class="booking-advanced-grid">
+            <label class="booking-search-field"><span>Loại hình lưu trú</span><select class="select select-sm booking-search-control" id="search-rental-type"><option value="DAILY">Theo ngày</option><option value="OVERNIGHT">Qua đêm</option><option value="HOURLY">Theo giờ</option></select></label>
+            <label class="booking-search-field"><span>Giờ nhận phòng</span><input class="input input-sm booking-search-control" id="search-checkin-time" type="time" value="14:00" step="900" required></label>
+            <label class="booking-search-field"><span>Giờ trả phòng</span><input class="input input-sm booking-search-control" id="search-checkout-time" type="time" value="12:00" step="900" required></label>
+            <label class="booking-search-field"><span>Hạng phòng</span><select class="select select-sm booking-search-control" id="filter-type"><option value="">Tất cả hạng</option></select></label>
+            <label class="booking-search-field"><span>Giá tối đa mỗi đêm</span><select class="select select-sm booking-search-control" id="filter-price"><option value="0">Mọi mức giá</option><option value="1000000">Dưới 1 triệu</option><option value="2000000">Dưới 2 triệu</option><option value="5000000">Dưới 5 triệu</option></select></label>
+          </div>
+          <small id="stay-time-hint" class="booking-time-help">Gói theo ngày cố định: nhận phòng 14:00, trả phòng 12:00 hôm sau.</small>
+        </div>
+      </details>
       <p id="discovery-feedback" class="discovery-feedback" role="status" aria-live="polite"></p>
       <div class="discovery-status-overview" aria-live="polite">
         <div id="room-status-summary" class="room-status-summary" role="group" aria-label="Thống kê số phòng theo trạng thái">
@@ -126,11 +153,6 @@ export async function renderDiscovery(container, session) {
         </div>
       </div>
     </section>
-    <div class="card p-4 mb-4">
-      <label for="booking-voucher-code">Mã ưu đãi tiền phòng</label>
-      <input id="booking-voucher-code" class="input input-sm" maxlength="50" placeholder="Nhập mã hoặc để trống" value="${esc(requestedVoucher)}">
-      <small>Mã được kiểm tra khi chọn phòng. Bạn sẽ xem giá sau giảm trước khi xác nhận; có thể xóa mã để đặt không dùng ưu đãi.</small>
-    </div>
     <div class="discovery-result-head"><strong id="room-result-count">Đang tải phòng…</strong><span id="discovery-price-unit">Giá theo mỗi đêm</span></div>
     <div id="search-rooms-grid" class="customer-room-grid"></div>
 
@@ -152,7 +174,7 @@ export async function renderDiscovery(container, session) {
       <p id="booking-feedback" class="discovery-feedback" role="status" aria-live="polite"></p>
       <div class="discovery-dialog-actions">
         <button type="button" class="btn btn-secondary" data-close-booking>Quay lại</button>
-        <button type="button" class="btn btn-primary" id="confirm-booking">Xác nhận đặt phòng</button>
+        <button type="button" class="btn booking-dialog-confirm" id="confirm-booking">Xác nhận đặt phòng</button>
       </div>
     </dialog>
   `;
@@ -163,7 +185,63 @@ export async function renderDiscovery(container, session) {
   let booking = false;
   let bookingSucceeded = false;
   let paymentWatchTimer = null;
+  let paymentWindowTimer = null;
+  let paymentWindowDeadline = 0;
   const byId = id => container.querySelector(`#${id}`);
+  const syncStayControls = () => {
+    const rentalType = byId('search-rental-type').value;
+    const checkIn = byId('search-checkin').value;
+    const checkOut = byId('search-checkout');
+    const checkInTime = byId('search-checkin-time');
+    const checkOutTime = byId('search-checkout-time');
+    const hint = byId('stay-time-hint');
+    checkInTime.disabled = rentalType !== 'HOURLY';
+    checkOutTime.disabled = rentalType !== 'HOURLY';
+    checkOut.disabled = rentalType === 'OVERNIGHT';
+    checkInTime.removeAttribute('min');
+    checkInTime.removeAttribute('max');
+    checkOutTime.removeAttribute('min');
+    checkOutTime.removeAttribute('max');
+    checkInTime.step = rentalType === 'HOURLY' ? '900' : '60';
+    checkOutTime.step = rentalType === 'HOURLY' ? '900' : '60';
+    checkOut.removeAttribute('max');
+
+    if (rentalType === 'DAILY') {
+      checkInTime.value = '14:00';
+      checkOutTime.value = '12:00';
+      checkOut.min = checkIn ? shiftDate(checkIn, 1) : today;
+      hint.textContent = 'Gói theo ngày cố định: nhận phòng 14:00, trả phòng 12:00 hôm sau.';
+      return;
+    }
+    if (rentalType === 'OVERNIGHT') {
+      checkInTime.value = '18:00';
+      checkOutTime.value = '08:00';
+      checkOut.min = checkIn ? shiftDate(checkIn, 1) : today;
+      checkOut.max = checkIn ? shiftDate(checkIn, 1) : today;
+      if (checkIn) checkOut.value = shiftDate(checkIn, 1);
+      hint.textContent = 'Gói qua đêm cố định 18:00 hôm trước đến 08:00 hôm sau (14 tiếng).';
+      return;
+    }
+
+    checkOut.min = checkIn || today;
+    const checkInMinutes = timeMinutes(checkInTime.value);
+    if (checkIn && Number.isFinite(checkInMinutes)) {
+      const canExtendToNextDay = checkInMinutes >= 18 * 60;
+      const latestDate = canExtendToNextDay ? shiftDate(checkIn, 1) : checkIn;
+      checkOut.max = latestDate;
+      if (checkOut.value === checkIn) {
+        const earliest = Math.floor(checkInMinutes / 15) * 15 + 15;
+        const latest = Math.min(23 * 60 + 45, Math.floor((checkInMinutes + 360) / 15) * 15);
+        checkOutTime.min = `${String(Math.floor(earliest / 60)).padStart(2, '0')}:${String(earliest % 60).padStart(2, '0')}`;
+        checkOutTime.max = `${String(Math.floor(latest / 60)).padStart(2, '0')}:${String(latest % 60).padStart(2, '0')}`;
+      } else if (checkOut.value === shiftDate(checkIn, 1) && canExtendToNextDay) {
+        const latest = Math.floor((checkInMinutes + 360 - 1440) / 15) * 15;
+        checkOutTime.min = '00:00';
+        checkOutTime.max = `${String(Math.floor(latest / 60)).padStart(2, '0')}:${String(latest % 60).padStart(2, '0')}`;
+      }
+    }
+    hint.textContent = 'Lưu trú theo giờ tối đa 6 tiếng. Ngày trả phòng chỉ được chọn trong khoảng thời gian hợp lệ.';
+  };
   const feedback = (message = '', error = false) => {
     byId('discovery-feedback').textContent = message;
     byId('discovery-feedback').classList.toggle('is-error', error);
@@ -196,22 +274,66 @@ export async function renderDiscovery(container, session) {
     clearTimeout(paymentWatchTimer);
     paymentWatchTimer = null;
   };
+  const stopQrCountdown = () => {
+    clearTimeout(paymentWindowTimer);
+    paymentWindowTimer = null;
+    paymentWindowDeadline = 0;
+  };
+  const expireQrInDialog = (final = false, reconciling = true) => {
+    const panel = byId('booking-payment-panel');
+    const image = panel?.querySelector('.booking-payment-qr');
+    const simulate = panel?.querySelector('.booking-payment-test-button');
+    if (image) image.hidden = true;
+    if (simulate) simulate.disabled = true;
+    const status = byId('booking-payment-status');
+    if (status) status.textContent = final
+      ? 'Booking đã kết thúc vì phiên QR hết hạn. Phòng đã được trả lại.'
+      : reconciling
+        ? 'QR đã hết hạn. Hệ thống đang chờ tối đa 2 phút để nhận callback giao dịch đã bắt đầu trước hạn.'
+        : 'Đã hết thời gian đối soát. Hệ thống đang hoàn tất việc kết thúc booking và trả phòng.';
+    const countdown = byId('booking-payment-countdown');
+    if (countdown) countdown.textContent = final ? 'Bạn có thể đặt lại nếu vẫn muốn lưu trú.' : 'Bạn có thể đóng cửa sổ này; trạng thái sẽ được cập nhật trong Lịch sử đặt phòng.';
+    panel?.querySelector('.booking-rebook-link')?.remove();
+    if (final && panel && !panel.querySelector('.booking-rebook-link')) {
+      const link = document.createElement('a'); link.href = 'portal.html?view=discovery'; link.className = 'btn btn-primary btn-sm booking-rebook-link'; link.textContent = 'Đặt phòng mới'; panel.append(link);
+    }
+    stopQrCountdown();
+    if (final) stopPaymentWatch();
+  };
+  const startQrCountdown = seconds => {
+    stopQrCountdown();
+    paymentWindowDeadline = Date.now() + Math.max(0, Math.min(3600, Number(seconds) || 0)) * 1000;
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((paymentWindowDeadline - Date.now()) / 1000));
+      const countdown = byId('booking-payment-countdown');
+      if (!remaining) { expireQrInDialog(false, true); return; }
+      if (countdown) countdown.textContent = `Còn ${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')} để quét mã QR.`;
+      paymentWindowTimer = setTimeout(tick, 1000);
+    };
+    tick();
+  };
   const watchPayment = folioId => {
     stopPaymentWatch();
-    const deadline = Date.now() + 5 * 60 * 1000;
     const poll = async () => {
-      if (!byId('booking-dialog').open || Date.now() >= deadline) return;
+      if (!byId('booking-dialog').open) return;
       try {
         const payment = await api.get(`/folios/${folioId}/payment-status`);
         const state=String(payment.payment_status||'WAITING');
-        byId('booking-payment-status').textContent=state==='PARTIAL'?`Thanh toán thiếu. Còn ${Number(payment.remaining_amount).toLocaleString('vi-VN')} đ.`:state==='RECONCILIATION_ERROR'?'Lỗi đối soát, thanh toán chưa hoàn tất. Vui lòng liên hệ lễ tân.':'Đang chờ xác nhận thanh toán.';
         if (state === 'PAID') {
           byId('booking-payment-status').textContent = 'Đã nhận thanh toán thành công.';
+          stopQrCountdown();
           return;
         }
+        if (state === 'QR_EXPIRED') {
+          const bookingStatus = String(payment.booking_status || '').toLowerCase();
+          if (bookingStatus === 'cancelled') { expireQrInDialog(true, false); return; }
+          expireQrInDialog(false, Boolean(payment.payment_reconciliation_pending));
+          paymentWatchTimer = setTimeout(poll, 3000);
+          return;
+        }
+        byId('booking-payment-status').textContent=state==='PARTIAL'?`Thanh toán thiếu. Còn ${Number(payment.remaining_amount).toLocaleString('vi-VN')} đ.`:state==='RECONCILIATION_ERROR'?'Giao dịch cần lễ tân đối soát trước khi xác nhận.':state==='QR_PENDING'?'Mã QR còn hiệu lực. Đang chờ ngân hàng xác nhận…':'Đang cập nhật giao dịch…';
       } catch {
         byId('booking-payment-status').textContent = 'Chưa thể cập nhật trạng thái thanh toán. Đơn đặt phòng vẫn được lưu; vui lòng kiểm tra Lịch sử đặt phòng.';
-        return;
       }
       paymentWatchTimer = setTimeout(poll, 3000);
     };
@@ -240,12 +362,13 @@ export async function renderDiscovery(container, session) {
       const canBook = room.availability_status === 'available' && capacityOkay && supportedBookingTimes;
       const src = imageUrl(room.image_url);
       const amenities = amenitiesFor(room.amenities).slice(0, 3);
+      const timeIssue = stayWindowIssue(byId('search-checkin').value, byId('search-checkout').value, rentalType, checkInTime, checkOutTime);
       const reason = room.availability_status === 'available' && !supportedBookingTimes
-        ? 'Đặt phòng trực tuyến hiện áp dụng giờ nhận phòng 14:00 và trả phòng 12:00.'
+        ? timeIssue
         : room.availability_status === 'available'
         ? (capacity ? `Phòng chỉ phục vụ tối đa ${capacity} khách.` : 'Chưa có thông tin sức chứa để xác nhận đặt phòng.')
         : availabilityReason(room.availability_status);
-      return `<article class="customer-room-card">
+      return `<article class="card card-border customer-room-card">
         <div class="customer-room-image">${src ? `<img src="${esc(src)}" alt="${esc(room.image_alt || typeName(room))}" loading="lazy">` : '<div class="room-image-placeholder"><span aria-hidden="true">A</span><small>Ảnh phòng đang cập nhật</small></div>'}<span class="room-status ${kind}">${esc(text)}</span></div>
         <div class="customer-room-content">
           <div class="discovery-room-heading">
@@ -258,8 +381,8 @@ export async function renderDiscovery(container, session) {
           <div class="discovery-card-footer">
             <div class="discovery-room-price"><small>${rentalType === 'DAILY' ? 'GIÁ MỖI ĐÊM' : 'GIÁ GÓI'}</small><strong>${rentalType === 'DAILY' ? money(room.price) : 'Xem báo giá'}</strong></div>
             <div class="customer-room-actions">
-              <button class="btn btn-secondary" type="button" data-detail="${esc(room.id)}">Chi tiết</button>
-              <button class="btn btn-primary" type="button" data-book="${esc(room.id)}" ${canBook ? '' : `disabled title="${esc(reason)}" aria-label="Đặt phòng: ${esc(reason)}"`}>${canBook ? 'Đặt phòng' : 'Không thể đặt'}</button>
+              <button class="btn booking-room-detail" type="button" data-detail="${esc(room.id)}">Chi tiết</button>
+              <button class="btn booking-room-select" type="button" data-book="${esc(room.id)}" ${canBook ? '' : `disabled title="${esc(reason)}" aria-label="Đặt phòng: ${esc(reason)}"`}>${canBook ? 'Đặt phòng' : 'Không thể đặt'}</button>
             </div>
           </div>
           ${canBook ? '' : `<p class="room-unavailable-reason">${esc(reason)}</p>`}
@@ -285,12 +408,13 @@ export async function renderDiscovery(container, session) {
     }
     const checkInTime = byId('search-checkin-time').value;
     const checkOutTime = byId('search-checkout-time').value;
-    if (!validTime(checkInTime) || !validTime(checkOutTime)) {
+    const timeIssue = stayWindowIssue(checkIn, checkOut, byId('search-rental-type').value, checkInTime, checkOutTime);
+    if (timeIssue) {
       rooms = [];
       render();
       byId('room-result-count').textContent = 'Giờ lưu trú chưa hợp lệ';
-      renderStatusSummary([], 'Chọn giờ nhận và trả phòng hợp lệ rồi tìm lại.');
-      feedback('Vui lòng chọn giờ nhận phòng và giờ trả phòng hợp lệ.', true);
+      renderStatusSummary([], timeIssue);
+      feedback(timeIssue, true);
       return;
     }
     const guests = Number(byId('guest-count').value);
@@ -303,8 +427,9 @@ export async function renderDiscovery(container, session) {
     }
     loading = true;
     const searchButton = byId('btn-search-rooms');
+  const searchLabel = searchButton.querySelector('[data-search-label]');
     searchButton.disabled = true;
-    searchButton.textContent = 'Đang tìm…';
+    searchLabel.textContent = 'Đang kiểm tra…';
     renderStatusSummary([], 'Đang kiểm tra trạng thái phòng theo thời gian đã chọn…');
     byId('room-result-count').textContent = 'Đang tải phòng…';
     byId('search-rooms-grid').replaceChildren();
@@ -341,7 +466,7 @@ export async function renderDiscovery(container, session) {
     } finally {
       loading = false;
       searchButton.disabled = false;
-      searchButton.textContent = 'Tìm phòng';
+      searchLabel.textContent = 'Kiểm tra phòng trống';
     }
   };
 
@@ -368,6 +493,11 @@ export async function renderDiscovery(container, session) {
 
   const showBookingConfirmation = async room => {
     if (loading || booking) return;
+    const conciergeSuggestion = room.conciergeSuggestion || null;
+    const requireFreshConciergeSearch = () => {
+      try { sessionStorage.removeItem('aurelia-discovery-booking-intent'); } catch {}
+      feedback('Tình trạng phòng hoặc giá đã thay đổi từ lúc Quản gia AI tra cứu. Vui lòng tìm lại trong Quản gia AI để nhận gợi ý mới.', true);
+    };
     const checkIn = byId('search-checkin').value;
     const checkOut = byId('search-checkout').value;
     const rentalType = byId('search-rental-type').value;
@@ -423,12 +553,17 @@ export async function renderDiscovery(container, session) {
       const currentRooms = await api.get(`/rooms/availability?${query}`);
       const current = Array.isArray(currentRooms) ? currentRooms.find(item => String(item.id) === String(room.id)) : null;
       if (!current || current.availability_status !== 'available') {
+        if (conciergeSuggestion) { requireFreshConciergeSearch(); return; }
         if (current) {
           room.availability_status = current.availability_status;
           room.version = current.version;
           render();
         }
         feedback(current ? availabilityReason(current.availability_status) : 'Không tìm thấy phòng trong dữ liệu hiện tại. Vui lòng tìm lại.', true);
+        return;
+      }
+      if (conciergeSuggestion && Number(current.version) !== Number(conciergeSuggestion.roomVersion)) {
+        requireFreshConciergeSearch();
         return;
       }
       if (Number(current.version) !== Number(room.version)) {
@@ -464,6 +599,10 @@ export async function renderDiscovery(container, session) {
         check_out_date: checkOut
       }) : null;
       const quote = discount ? { ...baseQuote, ...discount } : baseQuote;
+      if (conciergeSuggestion && Number(Number(quote?.total_amount).toFixed(2)) !== Number(Number(conciergeSuggestion.quotedTotal).toFixed(2))) {
+        requireFreshConciergeSearch();
+        return;
+      }
       if (!profile?.fullName || !profile?.phone) {
         throw new Error('Hồ sơ cần có họ tên và số điện thoại. Vui lòng cập nhật tại mục Hồ sơ & bảo mật trước khi đặt.');
       }
@@ -475,6 +614,10 @@ export async function renderDiscovery(container, session) {
       const effectiveCheckOut = quote.check_out_date?.slice(0, 10) || checkOut;
       const effectiveCheckInTime = quote.check_in_date?.slice(11, 16) || checkInTime;
       const effectiveCheckOutTime = quote.check_out_date?.slice(11, 16) || checkOutTime;
+      if (effectiveType !== rentalType || effectiveCheckIn !== checkIn || effectiveCheckOut !== checkOut
+          || effectiveCheckInTime !== checkInTime || effectiveCheckOutTime !== checkOutTime) {
+        throw new Error('Báo giá đã điều chỉnh loại gói hoặc giờ lưu trú. Vui lòng chọn lại khung giờ phù hợp rồi tìm phòng.');
+      }
       pendingRoom = { room: current, checkIn: effectiveCheckIn, checkOut: effectiveCheckOut, checkInTime: effectiveCheckInTime, checkOutTime: effectiveCheckOutTime, rentalType: effectiveType, guests, profile, quote, voucherCode };
       bookingSucceeded = false;
       const nights = Math.round((Date.parse(`${effectiveCheckOut}T00:00:00Z`) - Date.parse(`${effectiveCheckIn}T00:00:00Z`)) / 86400000);
@@ -502,7 +645,7 @@ export async function renderDiscovery(container, session) {
         </section>
         <label class="booking-confirm-personal"><input id="booking-personal-confirmed" type="checkbox"><span>Tôi xác nhận thông tin cá nhân và chi tiết đặt phòng ở trên là chính xác.</span></label>
         <label class="booking-payment-choice">Hình thức thanh toán
-          <select id="booking-payment-choice"><option value="later">Thanh toán tại khách sạn</option><option value="online">Thanh toán online qua VietQR</option></select>
+          <select id="booking-payment-choice"><option value="counter">Thanh toán tại quầy khi trả phòng</option><option value="qr">Thanh toán bằng mã QR · quét trong 1 giờ</option></select>
         </label>
         <div id="booking-payment-panel" class="booking-payment-panel" hidden></div>`;
       byId('booking-feedback').textContent = '';
@@ -543,6 +686,7 @@ export async function renderDiscovery(container, session) {
     confirmButton.textContent = 'Đang gửi yêu cầu…';
     byId('booking-feedback').textContent = 'Đang xác nhận tình trạng phòng và tạo đơn…';
     byId('booking-feedback').classList.remove('is-error');
+    const onlinePayment = byId('booking-payment-choice').value === 'qr';
     const payload = {
       room_id: Number(room.id),
       room_version: Number(room.version),
@@ -553,7 +697,8 @@ export async function renderDiscovery(container, session) {
       check_out_time: pendingRoom.checkOutTime,
       guest_count: guests,
       quoted_total: quote.total_amount,
-      personal_info_confirmed: true
+      personal_info_confirmed: true,
+      payment_choice: onlinePayment ? 'qr' : 'counter'
     };
     if (voucherCode) payload.voucher_code = voucherCode;
     try {
@@ -561,9 +706,8 @@ export async function renderDiscovery(container, session) {
         headers: { 'Idempotency-Key': bookingKey(payload) }
       });
       try { sessionStorage.removeItem('aurelia-discovery-booking-intent'); } catch {}
-      const onlinePayment = byId('booking-payment-choice').value === 'online';
       pendingRoom = null;
-      byId('booking-feedback').textContent = `Đặt phòng thành công${result?.booking_code ? ` · ${result.booking_code}` : ''}. Tổng tiền ${money(result?.folio?.balance ?? quote.total_amount)}. ${onlinePayment ? 'Đang chuẩn bị mã thanh toán VietQR…' : 'Trạng thái thanh toán: Chờ thanh toán tại khách sạn.'}`;
+      byId('booking-feedback').textContent = `Đặt phòng thành công${result?.booking_code ? ` · ${result.booking_code}` : ''}. Tổng tiền ${money(result?.folio?.balance ?? quote.total_amount)}. ${onlinePayment ? 'Đang chuẩn bị mã thanh toán VietQR…' : 'Đơn đã được xác nhận. Quý khách thanh toán tại quầy trước khi trả phòng.'}`;
       byId('booking-feedback').classList.remove('is-error');
       confirmButton.textContent = 'Đóng';
       confirmButton.disabled = false;
@@ -577,15 +721,53 @@ export async function renderDiscovery(container, session) {
           const imageData = String(qr.qr_image_base64 || '').replace(/^data:image\/png;base64,/, '');
           if (!/^[A-Za-z0-9+/]+={0,2}$/.test(imageData)) throw new Error('Ảnh VietQR không hợp lệ.');
           panel.hidden = false;
-          panel.innerHTML = `<strong>Chờ thanh toán qua VietQR</strong><img class="booking-payment-qr" src="data:image/png;base64,${imageData}" alt="Mã VietQR thanh toán"><p>${money(qr.amount)}</p><p>${esc(qr.beneficiary_bank)} · ${esc(qr.account_number)} · ${esc(qr.account_holder)}</p><p>Nội dung chuyển khoản: <strong>${esc(qr.reference_code)}</strong></p><p id="booking-payment-status" role="status">Đang chờ ngân hàng xác nhận…</p>`;
+          panel.innerHTML = `<strong>${qr.provider === 'mock' ? 'Thanh toán mô phỏng (không chuyển tiền thật)' : 'Thanh toán qua VietQR'}</strong><img class="booking-payment-qr" src="data:image/png;base64,${imageData}" alt="Mã thanh toán"><p>${money(qr.amount)}</p><p>${esc(qr.beneficiary_bank)} · ${esc(qr.account_number)} · ${esc(qr.account_holder)}</p><p>Nội dung chuyển khoản: <strong>${esc(qr.reference_code)}</strong></p><p id="booking-payment-countdown" role="status"></p><p id="booking-payment-status" role="status">Chờ quét mã QR.</p>`;
+          if (qr.checkout_url) {
+            try {
+              const target = new URL(qr.checkout_url, window.location.href);
+              if (target.protocol === 'https:' && !target.username && !target.password) {
+                const checkout = document.createElement('a'); checkout.href = target.href; checkout.target = '_blank'; checkout.rel = 'noopener noreferrer'; checkout.className = 'btn btn-outline btn-sm'; checkout.textContent = 'Mở trang thanh toán của nhà cung cấp'; panel.append(checkout);
+              }
+            } catch { /* Keep the QR available if a provider URL is malformed. */ }
+          }
+          if (qr.provider === 'mock') {
+            const simulate = document.createElement('button');
+            simulate.type = 'button';
+            simulate.className = 'btn btn-primary btn-sm booking-payment-test-button';
+            simulate.textContent = 'Mô phỏng thanh toán thành công';
+            simulate.addEventListener('click', async () => {
+              const status = byId('booking-payment-status');
+              simulate.disabled = true;
+              status.textContent = 'Đang xử lý thanh toán mô phỏng…';
+              stopPaymentWatch();
+              try {
+                const payment = await api.post(`/folios/${result.folio.id}/mock-payment`, {});
+                if (payment.payment_status === 'PAID') {
+                  status.textContent = 'Thanh toán mô phỏng thành công. Đặt phòng đã được xác nhận.';
+                  simulate.textContent = 'Đã thanh toán';
+                  stopQrCountdown();
+                } else {
+                  status.textContent = payment.payment_status === 'PARTIAL'
+                    ? `Thanh toán thiếu. Còn ${Number(payment.remaining_amount).toLocaleString('vi-VN')} đ.`
+                    : 'Chưa thể xác nhận thanh toán mô phỏng.';
+                  simulate.disabled = false;
+                }
+              } catch (error) {
+                status.textContent = error.message || 'Không thể hoàn tất thanh toán mô phỏng.';
+                simulate.disabled = false;
+              }
+            });
+            panel.append(simulate);
+          }
+          startQrCountdown(qr.expires_in_seconds ?? result.payment_seconds_remaining ?? 3600);
           watchPayment(result.folio.id);
         } catch (error) {
           panel.hidden = false;
-          panel.textContent = `Đơn đã được lưu nhưng chưa thể tạo mã thanh toán trực tuyến (${error.message || 'lỗi máy chủ'}). Trạng thái: Chờ thanh toán. Bạn có thể thanh toán tại khách sạn hoặc kiểm tra lại lịch sử đặt phòng.`;
+          panel.textContent = `Đơn đã được lưu nhưng chưa thể mở phiên QR (${error.message || 'lỗi máy chủ'}). Hãy thử mở lại giao dịch từ Lịch sử đặt phòng khi phiên còn hạn.`;
         }
       } else {
         byId('booking-payment-panel').hidden = false;
-        byId('booking-payment-panel').textContent = 'Trạng thái thanh toán: Chờ thanh toán tại khách sạn.';
+        byId('booking-payment-panel').textContent = 'Đơn đã xác nhận. Vui lòng thanh toán tại quầy trước khi trả phòng.';
       }
     } catch (error) {
       byId('booking-feedback').textContent = error.message || 'Không thể đặt phòng. Vui lòng thử lại.';
@@ -611,12 +793,20 @@ export async function renderDiscovery(container, session) {
       feedback('Không tìm thấy lựa chọn đặt phòng đã lưu. Vui lòng tìm lại phòng.');
       return null;
     }
+    if (intent.fromConcierge && (!Number.isInteger(Number(intent.roomVersion))
+        || !Number.isFinite(Number(intent.quotedTotal)) || Number(intent.quotedTotal) <= 0
+        || typeof intent.checkedAt !== 'string')) {
+      try { sessionStorage.removeItem('aurelia-discovery-booking-intent'); } catch {}
+      feedback('Dữ liệu gợi ý phòng không còn hợp lệ. Vui lòng tìm lại trong Quản gia AI.', true);
+      return null;
+    }
     byId('search-checkin').value = intent.checkIn;
     byId('search-checkout').value = intent.checkOut;
     byId('search-rental-type').value = intent.rentalType || 'DAILY';
     byId('search-checkout').min = intent.rentalType === 'HOURLY' ? intent.checkIn : shiftDate(intent.checkIn, 1);
     byId('search-checkin-time').value = intent.checkInTime || '14:00';
     byId('search-checkout-time').value = intent.checkOutTime || '12:00';
+      syncStayControls();
     byId('guest-count').value = String(intent.guests);
     byId('filter-price').value = String(intent.price || '0');
     byId('booking-voucher-code').value = intent.rentalType && intent.rentalType !== 'DAILY' ? '' : (intent.voucherCode || '');
@@ -644,6 +834,7 @@ export async function renderDiscovery(container, session) {
     } else if (target.id === 'confirm-booking') {
       if (bookingSucceeded) {
         stopPaymentWatch();
+        stopQrCountdown();
         closeDialog(byId('booking-dialog'));
         bookingSucceeded = false;
         load();
@@ -665,8 +856,8 @@ export async function renderDiscovery(container, session) {
       checkOut.min = checkIn ? shiftDate(checkIn, 1) : today;
       if (checkIn && checkOut.value <= checkIn) checkOut.value = shiftDate(checkIn, 1);
     } else if (rentalType === 'OVERNIGHT') {
-      byId('search-checkin-time').value = '22:00';
-      byId('search-checkout-time').value = '06:00';
+      byId('search-checkin-time').value = '18:00';
+      byId('search-checkout-time').value = '08:00';
       checkOut.min = checkIn ? shiftDate(checkIn, 1) : today;
       if (checkIn) checkOut.value = shiftDate(checkIn, 1);
     } else {
@@ -679,6 +870,7 @@ export async function renderDiscovery(container, session) {
     voucher.disabled = rentalType !== 'DAILY';
     if (rentalType !== 'DAILY') voucher.value = '';
     voucher.title = rentalType === 'DAILY' ? '' : 'Mã ưu đãi hiện chỉ áp dụng cho lưu trú theo ngày.';
+    syncStayControls();
     rooms = [];
     renderStatusSummary([], 'Tìm phòng lại để kiểm tra theo loại hình lưu trú mới.');
     render();
@@ -687,40 +879,55 @@ export async function renderDiscovery(container, session) {
   byId('search-rental-type').addEventListener('change', rentalTypeChanged);
   const datesChanged = () => {
     const checkIn = byId('search-checkin').value;
-    const sameDayAllowed = byId('search-rental-type').value === 'HOURLY';
+    const rentalType = byId('search-rental-type').value;
+    const sameDayAllowed = rentalType === 'HOURLY';
     const minCheckOut = checkIn ? (sameDayAllowed ? checkIn : shiftDate(checkIn, 1)) : today;
     byId('search-checkout').min = minCheckOut;
     if (byId('search-checkout').value < minCheckOut) byId('search-checkout').value = minCheckOut;
+    if (rentalType === 'OVERNIGHT' && checkIn) byId('search-checkout').value = shiftDate(checkIn, 1);
+    syncStayControls();
     rooms = [];
     renderStatusSummary([], 'Tìm phòng lại để cập nhật thống kê theo thời gian mới.');
     render();
     byId('room-result-count').textContent = 'Hãy tìm phòng theo ngày đã chọn';
-    feedback('Ngày lưu trú đã thay đổi. Hãy tìm lại để kiểm tra tình trạng phòng.');
+    const issue = stayWindowIssue(checkIn, byId('search-checkout').value, rentalType,
+      byId('search-checkin-time').value, byId('search-checkout-time').value);
+    feedback(issue || 'Ngày lưu trú đã thay đổi. Hãy tìm lại để kiểm tra tình trạng phòng.', Boolean(issue));
   };
   byId('search-checkin').addEventListener('change', datesChanged);
   byId('search-checkout').addEventListener('change', datesChanged);
   const timesChanged = () => {
+    syncStayControls();
     rooms = [];
     render();
     byId('room-result-count').textContent = 'Hãy tìm phòng theo thời gian đã chọn';
     renderStatusSummary([], 'Tìm phòng lại để kiểm tra theo giờ nhận và trả phòng mới.');
-    feedback('Giờ lưu trú đã thay đổi. Hãy tìm lại để cập nhật tình trạng phòng.');
+    const issue = stayWindowIssue(byId('search-checkin').value, byId('search-checkout').value,
+      byId('search-rental-type').value, byId('search-checkin-time').value, byId('search-checkout-time').value);
+    feedback(issue || 'Giờ lưu trú đã thay đổi. Hãy tìm lại để cập nhật tình trạng phòng.', Boolean(issue));
   };
   byId('search-checkin-time').addEventListener('change', timesChanged);
   byId('search-checkout-time').addEventListener('change', timesChanged);
+  syncStayControls();
   byId('room-detail-dialog').addEventListener('click', event => {
     if (event.target === byId('room-detail-dialog')) closeDialog(byId('room-detail-dialog'));
   });
   byId('booking-dialog').addEventListener('click', event => {
     if (event.target === byId('booking-dialog') && !booking) closeDialog(byId('booking-dialog'));
   });
-  byId('booking-dialog').addEventListener('close', stopPaymentWatch);
+  byId('booking-dialog').addEventListener('close', () => { stopPaymentWatch(); stopQrCountdown(); });
 
   const resumeIntent = takeResumeIntent();
   await load({ preferredType: resumeIntent?.type || '' });
   if (resumeIntent) {
     const room = rooms.find(item => String(item.id) === String(resumeIntent.roomId));
-    if (!room) feedback('Phòng đã chọn không còn trong kết quả. Vui lòng kiểm tra lại ngày và tìm phòng.', true);
-    else await showBookingConfirmation(room);
+    if (!room && resumeIntent.fromConcierge) {
+      try { sessionStorage.removeItem('aurelia-discovery-booking-intent'); } catch {}
+      feedback('Phòng không còn trong dữ liệu tình trạng hiện tại. Vui lòng tìm lại trong Quản gia AI.', true);
+    } else if (!room) feedback('Phòng đã chọn không còn trong kết quả. Vui lòng kiểm tra lại ngày và tìm phòng.', true);
+    else {
+      if (resumeIntent.fromConcierge) room.conciergeSuggestion = resumeIntent;
+      await showBookingConfirmation(room);
+    }
   }
 }

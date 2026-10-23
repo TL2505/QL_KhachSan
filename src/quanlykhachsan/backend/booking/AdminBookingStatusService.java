@@ -110,8 +110,16 @@ final class AdminBookingStatusService {
         if (!booking.checkIn().after(Timestamp.from(Instant.now()))) {
             return new Result(409, "Không thể hủy đơn đã đến ngày nhận phòng; hãy xử lý tại Lễ tân");
         }
-        if (hasFinancialActivity(connection, booking.id())) {
-            return new Result(409, "Không thể hủy đơn đã có thanh toán hoặc hóa đơn");
+        if (hasPaymentOrInvoice(connection, booking.id())) {
+            return new Result(409, "Đơn đã có khoản thu hoặc hóa đơn. Vui lòng liên hệ Lễ tân để đối soát và xử lý hoàn tiền.");
+        }
+        if (hasNegativeFolioBalance(connection, booking.id())) {
+            return new Result(409, "Số dư chứng từ cần Lễ tân đối soát trước khi hủy.");
+        }
+        reverseUnpaidFolioDebits(connection, booking.id());
+        try (PreparedStatement closeLinks = connection.prepareStatement(
+                "UPDATE payment_links SET state='CANCELLED' WHERE folio_id IN (SELECT id FROM folios WHERE booking_id=?) AND state IN ('CREATING','PENDING')")) {
+            closeLinks.setInt(1, booking.id());closeLinks.executeUpdate();
         }
         try (PreparedStatement update = connection.prepareStatement(
                 "UPDATE bookings SET status='cancelled' WHERE id=? AND status IN ('pending','confirmed')")) {
@@ -128,15 +136,42 @@ final class AdminBookingStatusService {
         return new Result(200, "Đã hủy đơn đặt phòng");
     }
 
-    private static boolean hasFinancialActivity(Connection connection, int bookingId) throws SQLException {
+    private static boolean hasPaymentOrInvoice(Connection connection, int bookingId) throws SQLException {
         try (PreparedStatement invoice = connection.prepareStatement("SELECT 1 FROM invoices WHERE booking_id=? LIMIT 1")) {
             invoice.setInt(1, bookingId);
             try (ResultSet rows = invoice.executeQuery()) { if (rows.next()) return true; }
         }
-        try (PreparedStatement folio = connection.prepareStatement(
-                "SELECT 1 FROM folios WHERE booking_id=? AND (status IN ('settled','closed') OR balance<>0) LIMIT 1")) {
-            folio.setInt(1, bookingId);
-            try (ResultSet rows = folio.executeQuery()) { return rows.next(); }
+        try (PreparedStatement payment = connection.prepareStatement(
+                "SELECT 1 FROM folio_transactions t JOIN folios f ON f.id=t.folio_id WHERE f.booking_id=? AND t.transaction_type='credit' AND t.charge_type='payment' LIMIT 1")) {
+            payment.setInt(1, bookingId);
+            try (ResultSet rows = payment.executeQuery()) { if (rows.next()) return true; }
+        }
+        try (PreparedStatement reconciliation = connection.prepareStatement(
+                "SELECT 1 FROM payment_reconciliations p JOIN folios f ON f.id=p.folio_id WHERE f.booking_id=? AND p.applied_amount>0 LIMIT 1")) {
+            reconciliation.setInt(1, bookingId);
+            try (ResultSet rows = reconciliation.executeQuery()) { return rows.next(); }
+        }
+    }
+
+    private static boolean hasNegativeFolioBalance(Connection connection,int bookingId)throws SQLException {
+        try(PreparedStatement q=connection.prepareStatement("SELECT 1 FROM folios WHERE booking_id=? AND balance<0 LIMIT 1")){
+            q.setInt(1,bookingId);try(ResultSet rows=q.executeQuery()){return rows.next();}
+        }
+    }
+
+    private static void reverseUnpaidFolioDebits(Connection connection,int bookingId)throws SQLException {
+        try(PreparedStatement q=connection.prepareStatement("SELECT id,balance FROM folios WHERE booking_id=? FOR UPDATE")){
+            q.setInt(1,bookingId);try(ResultSet rows=q.executeQuery()){while(rows.next()){
+                long folio=rows.getLong(1);java.math.BigDecimal balance=rows.getBigDecimal(2);
+                if(balance.signum()>0)try(PreparedStatement adjustment=connection.prepareStatement(
+                        "INSERT INTO folio_transactions(folio_id,transaction_type,charge_type,description,amount,business_date,reference_id) SELECT ?,'credit','adjustment','Cancelled unpaid reservation hold',?,business_date,? FROM hotel_business_state WHERE id=1")){
+                    adjustment.setLong(1,folio);adjustment.setBigDecimal(2,balance);adjustment.setString(3,"CANCEL-HOLD-"+bookingId+"-"+folio);
+                    if(adjustment.executeUpdate()!=1)throw new SQLException("Hotel business date missing");
+                }
+            }}
+        }
+        try(PreparedStatement close=connection.prepareStatement("UPDATE folios SET balance=0,status='closed' WHERE booking_id=?")){
+            close.setInt(1,bookingId);close.executeUpdate();
         }
     }
 

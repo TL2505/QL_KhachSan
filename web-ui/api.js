@@ -63,28 +63,8 @@ export const getDynamicApiBaseUrl = () => {
   return `${protocol}//${hostname}:8081/api/v1`; 
 }; 
 
-export function getAlternativeApiBaseUrl(primaryUrl) {
-  if (typeof window === 'undefined' || !window.location) {
-    return null;
-  }
-  const hostname = window.location.hostname;
-  let port = window.location.port;
-  if (!port && window.location.origin) {
-    try {
-      port = new URL(window.location.origin).port;
-    } catch {}
-  }
-  // If window.location is configured for a specific custom port (like unit test mock server), do not fallback
-  if (port && port !== '3000' && port !== '8081' && port !== '80' && port !== '443') {
-    return null;
-  }
-  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-  if (hostname === '192.168.56.102') {
-    return `${protocol}//localhost:8081/api/v1`;
-  }
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return `${protocol}//192.168.56.102:8081/api/v1`;
-  }
+export function getAlternativeApiBaseUrl() {
+  // Keep requests on the selected host so local development cannot fall back to an unavailable VM.
   return null;
 }
 
@@ -93,7 +73,18 @@ export const API_BASE_URL = getDynamicApiBaseUrl();
 export function getApiBaseUrl() {
   const saved = read('hotel_api_url') || read('aurelia_api_base') || read('hotel_api_base');
   if (saved) {
-    try { return normalizeApiBase(saved); } catch {}
+    try {
+      const normalized = normalizeApiBase(saved);
+      const pageHost = typeof window !== 'undefined' && window.location ? window.location.hostname : '';
+      const localPage = pageHost === 'localhost' || pageHost === '127.0.0.1';
+      if (localPage && new URL(normalized).hostname === '192.168.56.102') {
+        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        const localBase = `${protocol}//${pageHost}:8081/api/v1`;
+        setApiBaseUrl(localBase);
+        return localBase;
+      }
+      return normalized;
+    } catch {}
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     const host = window.location.hostname || 'localhost';
@@ -208,7 +199,7 @@ export async function apiFetch(path, init = {}) {
       if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
       throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
     }
-    // Task 5: Network Fallback & Resilience - Try alternative host if primary fails or times out
+    // Do not retry against another host; the selected local backend is authoritative.
     const altBase = getAlternativeApiBaseUrl(baseUrl);
     if (altBase && altBase !== baseUrl) {
       try {

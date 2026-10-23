@@ -1,4 +1,5 @@
 import { apiFetch, getAuthSession, getStoredCustomerToken } from './api.js';
+import { conciergeRoomSearchIntent, searchConciergeRooms } from './concierge-room-tools.js';
 
 // Kept in memory: closing the panel preserves the conversation; reloading clears it.
 export function initConciergeChat() {
@@ -11,7 +12,7 @@ export function initConciergeChat() {
   const root = host.attachShadow({ mode: 'open' });
   root.innerHTML = `
     <link rel="stylesheet" href="${new URL('../css/concierge-ui.css', import.meta.url)}">
-    <link rel="stylesheet" href="${new URL('../css/concierge-chat.css', import.meta.url)}">
+    <link rel="stylesheet" href="${new URL('../css/concierge-chat.css?v=6', import.meta.url)}">
     <section class="card" data-theme="dark" role="dialog" aria-modal="false" aria-labelledby="concierge-title" hidden>
       <header>
         <span class="concierge-emblem" aria-hidden="true">✦</span>
@@ -23,6 +24,7 @@ export function initConciergeChat() {
         <button class="btn btn-sm" type="button" data-prompt="Giờ nhận phòng và trả phòng là khi nào?">Nhận / trả phòng</button>
         <button class="btn btn-sm" type="button" data-prompt="Khách sạn có những tiện nghi nào?">Tiện nghi</button>
         <button class="btn btn-sm" type="button" data-prompt="Tôi muốn tìm hiểu các dịch vụ của khách sạn.">Dịch vụ</button>
+        <button class="btn btn-sm" type="button" data-prompt="Tôi muốn tìm phòng.">Tìm phòng</button>
       </div>
       <div class="feedback" role="status"></div>
       <div class="actions">
@@ -104,6 +106,7 @@ export function initConciergeChat() {
     busy = value;
     $('form button').disabled = value;
     root.querySelectorAll('[data-prompt], #retry, #escalate').forEach(button => { button.disabled = value; });
+    root.querySelectorAll('.room-search-form button').forEach(button => { button.disabled = value; });
     messages.setAttribute('aria-busy', String(value));
   };
   const request = async (path, body) => {
@@ -125,6 +128,158 @@ export function initConciergeChat() {
       : error.status === 422 ? error.message || 'Trợ lý AI chưa sẵn sàng. Vui lòng liên hệ lễ tân.'
       : 'Chưa thể kết nối với trợ lý AI. Bạn có thể thử lại hoặc liên hệ lễ tân.';
   };
+  const noPreference = value => /^(khong yeu cau|khong co yeu cau|khong|bat ky|khong uu tien|no preference|none|any)$/i
+    .test(String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').trim().replace(/[.!?]+$/, ''));
+  const knownRoomDetails = message => {
+    const normalized = String(message).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase();
+    const dates = [...message.matchAll(/\b(20\d{2}-\d{2}-\d{2})\b/g)].map(match => match[1]);
+    if (!dates.length) {
+      for (const match of message.matchAll(/\b(\d{1,2})[/.](\d{1,2})[/.](20\d{2})\b/g)) {
+        dates.push(`${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`);
+      }
+    }
+    const times = [...message.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)].map(match => `${match[1].padStart(2, '0')}:${match[2]}`);
+    const guests = normalized.match(/\b(\d{1,2})\s*(khach|nguoi|guests?)\b/)?.[1];
+    const rentalType = /qua dem|overnight/.test(normalized) ? 'OVERNIGHT'
+      : /theo gio|hang gio|hourly/.test(normalized) ? 'HOURLY'
+        : /theo ngay|hang ngay|daily/.test(normalized) ? 'DAILY' : '';
+    const amenityLabel = /(?:tien nghi|amenities)\s*:\s*([^.;!?]+)/.exec(normalized)?.[1]?.trim();
+    return {
+      check_in: dates[0] || '', check_out: dates[1] || '', check_in_time: times[0] || '', check_out_time: times[1] || '',
+      guest_count: guests || '', rental_type: rentalType,
+      amenities: amenityLabel ? (amenityLabel.split(',').map(item => item.trim()).filter(Boolean).join(', ')) : ''
+    };
+  };
+  const searchForm = prefill => {
+    const content = bubble('Nếu tin nhắn của bạn có ngày, giờ hoặc số khách rõ ràng, các mục đó có thể đã được điền sẵn. Hãy kiểm tra, bổ sung mục còn thiếu cùng yêu cầu tiện nghi rồi bấm tra cứu. Nếu không có yêu cầu tiện nghi cụ thể, ghi “Không yêu cầu”.');
+    const form = document.createElement('form');
+    form.className = 'room-search-form';
+    const field = (labelText, type, name, options = {}) => {
+      const label = document.createElement('label');
+      label.textContent = labelText;
+      let control;
+      if (type === 'select') {
+        control = document.createElement('select');
+        control.className = 'select select-sm';
+        for (const [value, title] of options.choices) {
+          const option = document.createElement('option'); option.value = value; option.textContent = title; control.append(option);
+        }
+      } else {
+        control = document.createElement('input'); control.type = type;
+        control.className = 'input input-sm';
+        for (const [key, value] of Object.entries(options.attrs || {})) control.setAttribute(key, value);
+      }
+      if (prefill?.[name]) control.value = prefill[name];
+      control.name = name; control.required = true; label.append(control); form.append(label); return control;
+    };
+    const todayParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+    const today = Object.fromEntries(todayParts.map(part => [part.type, part.value]));
+    const minDate = `${today.year}-${today.month}-${today.day}`;
+    field('Ngày nhận phòng', 'date', 'check_in', { attrs: { min: minDate } });
+    field('Giờ nhận phòng', 'time', 'check_in_time');
+    field('Ngày trả phòng', 'date', 'check_out', { attrs: { min: minDate } });
+    field('Giờ trả phòng', 'time', 'check_out_time');
+    field('Loại lưu trú', 'select', 'rental_type', { choices: [['', 'Chọn loại lưu trú'], ['DAILY', 'Theo ngày'], ['OVERNIGHT', 'Qua đêm'], ['HOURLY', 'Theo giờ']] });
+    field('Số khách', 'number', 'guest_count', { attrs: { min: '1', max: '20', step: '1', inputmode: 'numeric' } });
+    field('Tiện nghi mong muốn', 'text', 'amenities', { attrs: { maxlength: '200', placeholder: 'Wi-Fi, bồn tắm; hoặc “Không yêu cầu”' } });
+    const submit = document.createElement('button');
+    submit.className = 'btn btn-sm'; submit.type = 'submit'; submit.textContent = 'Tra cứu phòng và giá'; form.append(submit);
+    content.append(form);
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (busy || !form.reportValidity()) return;
+      const values = Object.fromEntries(new FormData(form).entries());
+      const guestCount = Number(values.guest_count);
+      if (!Number.isInteger(guestCount) || guestCount < 1 || guestCount > 20) {
+        form.elements.guest_count.setCustomValidity('Số khách phải từ 1 đến 20.');
+        form.elements.guest_count.reportValidity(); form.elements.guest_count.setCustomValidity(''); return;
+      }
+      const amenityText = values.amenities.trim();
+      const amenities = noPreference(amenityText) ? [] : amenityText.split(',').map(value => value.trim()).filter(Boolean);
+      if (amenities.length > 10 || amenities.some(value => value.length > 50)) {
+        form.elements.amenities.setCustomValidity('Nhập tối đa 10 tiện nghi, mỗi tiện nghi không quá 50 ký tự.');
+        form.elements.amenities.reportValidity(); form.elements.amenities.setCustomValidity(''); return;
+      }
+      const criteria = { ...values, guest_count: guestCount, amenities };
+      const requestIdentity = identity;
+      const resultBubble = bubble('Đang tra cứu tình trạng phòng và báo giá từ máy chủ…');
+      setBusy(true);
+      try {
+        const result = await searchConciergeRooms(criteria);
+        if (token() !== requestIdentity) { syncIdentity(); return; }
+        await request('/ai/concierge/tool-log', { session_id: sessionId, outcome: result.options.length ? 'success' : 'no_results' });
+        if (token() !== requestIdentity) { syncIdentity(); return; }
+        form.remove();
+        renderRoomOptions(resultBubble, result, criteria);
+      } catch (error) {
+        if (token() !== requestIdentity) { syncIdentity(); return; }
+        try { await request('/ai/concierge/tool-log', { session_id: sessionId, outcome: 'unavailable' }); } catch { /* The failed tool call is still not presented as a result. */ }
+        resultBubble.textContent = error.status === 400
+          ? 'Khoảng ngày, giờ hoặc loại lưu trú chưa hợp lệ. Hãy sửa thông tin rồi tra cứu lại; tôi chưa thể đưa ra gợi ý.'
+          : 'Chưa thể lấy đủ dữ liệu tình trạng phòng và báo giá từ máy chủ. Vui lòng thử tra cứu lại; tôi chưa thể đưa ra gợi ý.';
+        form.querySelector('button[type="submit"]').textContent = 'Thử tra cứu lại';
+      } finally {
+        setBusy(false);
+        messages.scrollTop = messages.scrollHeight;
+        if (!panel.hidden) input.focus();
+      }
+    });
+  };
+  const renderRoomOptions = (target, result, criteria) => {
+    const formatMoney = value => Number.isFinite(Number(value))
+      ? `${new Intl.NumberFormat('vi-VN').format(Number(value))} ₫` : 'Không có dữ liệu giá';
+    const checkedAt = new Date(result.checked_at);
+    const checkedLabel = Number.isNaN(checkedAt.getTime()) ? result.checked_at
+      : new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short', timeStyle: 'short' }).format(checkedAt) + ' (giờ Việt Nam)';
+    target.replaceChildren();
+    const intro = document.createElement('p');
+    intro.textContent = result.options.length
+      ? `Máy chủ đã trả về ${result.options.length} lựa chọn phù hợp. Tra cứu lúc ${checkedLabel}.`
+      : `Hiện không có lựa chọn khớp dữ liệu tình trạng phòng và tiện nghi đã chọn. Tra cứu lúc ${checkedLabel}.`;
+    target.append(intro);
+    for (const option of result.options) {
+      const card = document.createElement('article'); card.className = 'room-search-option card card-border';
+      const title = document.createElement('strong'); title.textContent = `${option.room_type_name || 'Hạng phòng'} · Phòng ${option.room_number || option.room_id}`; card.append(title);
+      const facts = document.createElement('p'); facts.textContent = `Sức chứa ${option.capacity} khách · Tiện nghi: ${option.amenities.join(', ') || 'chưa có dữ liệu'}`; card.append(facts);
+      const quote = option.quote;
+      const stay = document.createElement('small');
+      const rentalLabel = ({ DAILY: 'theo ngày', OVERNIGHT: 'qua đêm', HOURLY: 'theo giờ' })[quote.rental_type] || 'loại lưu trú đã chọn';
+      stay.textContent = `Kỳ lưu trú ${rentalLabel}: ${quote.check_in_date || `${criteria.check_in} ${criteria.check_in_time}`} → ${quote.check_out_date || `${criteria.check_out} ${criteria.check_out_time}`} · ${criteria.guest_count} khách`;
+      card.append(stay);
+      const charges = document.createElement('p');
+      charges.textContent = `Tiền phòng ${formatMoney(quote.room_subtotal)} · Phí dịch vụ ${formatMoney(quote.service_charge)} · Thuế ${formatMoney(quote.vat)} · Tổng ${formatMoney(quote.total_amount)}`;
+      card.append(charges);
+      if (Array.isArray(quote.nightly_rates) && quote.nightly_rates.length) {
+        const nights = document.createElement('small');
+        nights.textContent = quote.nightly_rates.map(item => `${item.date}: ${formatMoney(item.amount)}`).join(' · '); card.append(nights);
+      }
+      const conditions = document.createElement('small');
+      conditions.textContent = `Tra cứu API lúc ${checkedLabel}. Điều kiện: báo giá áp dụng cho kỳ lưu trú đã chọn; sức chứa đáp ứng số khách; chưa giữ phòng. Tình trạng và giá sẽ được kiểm tra lại ở bước xác nhận.`;
+      card.append(conditions);
+      const action = document.createElement('button'); action.type = 'button'; action.className = 'btn btn-sm'; action.textContent = 'Mở bước xác nhận';
+      action.addEventListener('click', () => {
+        try {
+          sessionStorage.setItem('aurelia-discovery-booking-intent', JSON.stringify({
+            roomId: option.room_id, roomVersion: option.room_version, quotedTotal: Number(quote.total_amount),
+            checkedAt: result.checked_at, fromConcierge: true,
+            checkIn: quote.check_in_date?.slice(0, 10) || criteria.check_in,
+            checkOut: quote.check_out_date?.slice(0, 10) || criteria.check_out,
+            checkInTime: quote.check_in_date?.slice(11, 16) || criteria.check_in_time,
+            checkOutTime: quote.check_out_date?.slice(11, 16) || criteria.check_out_time,
+            guests: criteria.guest_count, rentalType: quote.rental_type || criteria.rental_type,
+            type: option.room_type_name, price: '0', voucherCode: '', amenities: criteria.amenities
+          }));
+          window.location.assign('/portal.html?view=discovery&resumeBooking=1');
+        } catch {
+          feedback.textContent = 'Không thể chuyển lựa chọn sang luồng đặt phòng. Vui lòng mở mục Đặt phòng trong cổng thành viên.';
+        }
+      });
+      card.append(action); target.append(card);
+    }
+    const note = document.createElement('small');
+    note.textContent = 'Các gợi ý không phải là booking đã xác nhận. Chỉ luồng đặt phòng hiện có mới xác nhận sau khi bạn kiểm tra lại thông tin.';
+    target.append(note);
+  };
   const send = async (question, isRetry = false) => {
     if (busy || !question.trim() || question.length > 2000) return;
     syncIdentity();
@@ -137,6 +292,13 @@ export function initConciergeChat() {
     }
     const requestIdentity = identity;
     if (!isRetry) bubble(question, true);
+    if (!isRetry && conciergeRoomSearchIntent(question)) {
+      input.value = '';
+      feedback.textContent = '';
+      retry.hidden = escalate.hidden = true;
+      searchForm(knownRoomDetails(question));
+      return;
+    }
     input.value = '';
     feedback.textContent = '';
     retry.hidden = escalate.hidden = true;
