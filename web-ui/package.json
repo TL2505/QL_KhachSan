@@ -7,6 +7,7 @@
     "build:concierge": "tailwindcss -i concierge-ui.input.css -o public/css/concierge-ui.css --minify",
     "build:ai-settings": "tailwindcss -i ai-settings-ui.input.css -o public/css/ai-settings-ui.css --minify",
     "build:account-settings": "tailwindcss -i account-settings-ui.input.css -o public/css/account-settings-ui.css --minify",
+    "build:housekeeping-preview": "tailwindcss -i housekeeping-preview.input.css -o public/css/housekeeping-preview.css --minify",
     "test": "node --test tests/*.test.mjs"
   },
   "devDependencies": {

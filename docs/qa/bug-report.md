@@ -154,8 +154,9 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Root cause:** The staff view lacked the existing folio-payment action and exposed a direct confirmation action that violates the payment invariant. The booking list DTO also did not expose `paymentChoice` until the backend was rebuilt.
 - **Affected files:** `src/quanlykhachsan/backend/booking/Booking.java`, `src/quanlykhachsan/backend/booking/BookingDAOImpl.java`, both staff booking modules under `web-ui/js` and `web-ui/public/js`, and portal module cache references.
 - **Fix implemented:** Exposed the stored payment choice in the booking model, replaced direct confirmation with a counter-collection action for counter bookings, and added a custom modal that loads current folio balances and offers cash/POS. Collection calls use `checkout:false` and an idempotency key; the API owns final confirmation.
-- **Verification:** UI verified after restarting with `start-backend.bat` against MariaDB: booking #4 displays “Chờ thanh toán tại quầy”; the modal showed folio balance 1,701,000 VND and both payment methods. The modal was closed without submitting a collection, so no transaction was posted and booking #4 remained pending. The final payment action is deliberately unverified until an authorized cashier confirms receipt of funds.
-- **Status:** Fixed-Unverified
+- **Verification:** Live staff UI on port 3000 displayed the counter collection modal and current folio balance. With the user's explicit authorization for a synthetic QA collection, booking #5 was collected through the cash option for 850,500 VND. The success dialog confirmed full payment; the booking row changed to “Đã thanh toán tại quầy”. The staff transaction history showed one `cash / cash` record for folio 5, 850,500 VND, applied amount 850,500 and excess 0 (`APPLIED`). No real funds or external gateway were involved.
+- **Notification evidence:** The staff outbox view shows `payment_paid / #5` as “Đang chờ gửi”, with zero attempts. This verifies event enqueueing only; SMTP is disabled in the QA environment, so delivery to Gmail was not tested or claimed.
+- **Status:** Verified
 
 ## QA-2026-010 — Staff check-in was enabled before the scheduled check-in time
 
@@ -202,3 +203,84 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Fix implemented:** Added stable-reference overtime/penalty reconciliation, a 30-minute overdue transition, an idempotent staff alert event and per-user read receipts. Staff roles can read the alert; the portal tray polls for new notifications and links to checkout. The checkout flow reconciles charges against any fees already posted by the lifecycle worker.
 - **Verification:** Backend compiled successfully; 3 focused Java lifecycle tests and 4 focused Node tests passed; syntax checks passed for 8 source/public JavaScript modules; `git diff --check` passed. Restarted the backend with `start-backend.bat`, which connected to MariaDB 11.4 and applied the migration. On the live staff portal, the bell opened the “THÔNG BÁO NHÂN VIÊN” center and its empty state loaded without API error. The runtime database was not changed to create an overdue booking, so the real event display remains to be verified against an overdue fixture; the MariaDB integration test requires a disposable schema ending in `_test`.
 - **Status:** Implemented; overdue fixture verification pending
+
+## QA-2026-013 — Customer list omitted profile details
+
+- **Type:** Confirmed API/UI data-contract defect
+- **Discovered:** 2026-10-24
+- **Module / role:** Customer directory; staff and administrator
+- **Severity / priority:** P2 / P2
+- **Environment and test data:** User-provided staff screenshot at `http://127.0.0.1:3000/portal.html?view=customers`; no customer record was modified.
+- **Reproduction:** Open the customer directory and inspect the name, identity, email, and address columns.
+- **Expected:** The list shows returned profile values, searches across those fields, and clearly distinguishes a vaulted identity number from a missing identity number.
+- **Actual:** Names and identity numbers appeared blank despite the UI reading camelCase fields. Email and address were never selected by the list query.
+- **Root cause:** `CustomerDAOImpl.searchCustomers()` returned snake_case map keys and omitted email/address, while the web modules consume camelCase. `handleCreate()` also discarded the submitted address.
+- **Affected files:** Customer DAO/controller; staff and admin customer modules in source and served `public` assets; customer search API contract.
+- **Fix implemented:** The query now includes email, address, and identity-vault presence; the API returns the frontend's camelCase fields and requires Admin/FrontDesk permission. Customer creation persists and returns email/address. Both directories escape returned values and show “Đã lưu bảo mật” for vaulted identity numbers.
+- **Regression verification:** Verified backend build and test-source compilation with the project Maven cache; `node --check` passed for all four source/served staff/admin customer modules; `git diff --check` passed. After restarting with `start-backend.bat`, the authenticated customer page on port 3000 showed all four names, email count 3, the encrypted-identity label, and available phone/email values. Address cells remained blank because the current records do not contain addresses. No customer records were modified. Email search and the admin page were not separately exercised in this pass.
+- **Status:** Verified
+
+## QA-2026-014 — Front-desk room card content overlapped and lacked visual grouping
+
+- **Type:** Confirmed UI layout defect
+- **Discovered:** 2026-10-24
+- **Module / role:** Front-desk room search; staff
+- **Severity / priority:** P3 / P2
+- **Environment and test data:** User-started browser on `http://127.0.0.1:3000/portal.html?view=front-desk`; availability search returned synthetic QA room QA-801, whose operational status is “Cần dọn phòng”. No booking was created.
+- **Precondition:** A room-search result is rendered using the shared customer room-card markup inside the staff portal.
+- **Reproduction:** Open front-desk processing, search room availability, and inspect the room result. The fallback image label, amenities, price label/value and actions lacked the customer page’s component styles and appeared crowded or overlapped.
+- **Expected:** Image fallback and status are distinct; room facts, amenities, price, action and any unavailability reason have clear spacing. An unready room remains unavailable for selection.
+- **Actual:** Staff-scoped styles covered the outer card but not its shared inner elements, so several lines ran together and the unavailable action/reason were hard to scan.
+- **Root cause:** Detailed room-card styles were scoped to `.customer-portal`; the shared `renderRoomCard` markup is also rendered by `.staff-portal` and therefore did not receive those rules.
+- **Affected files:** `web-ui/portal-admin.css`, `web-ui/public/portal-admin.css`, and the stylesheet cache reference in both portal HTML copies.
+- **Fix implemented:** Added staff-scoped layout and responsive rules for the card, image placeholder/status badge, heading and description, amenity chips, price, buttons and unavailable reason. Kept the disabled action for the cleaning room. Synchronized the served CSS/HTML and bumped the admin stylesheet cache key.
+- **Regression verification:** Manually searched availability on the live port-3000 staff UI and inspected the rendered result. QA-801 now shows centered fallback art, readable room details and separate amenity chips/price/action/reason; “Không thể đặt” remains disabled because the room needs cleaning. The accessibility tree also exposed each content field and the disabled button. No order or payment was submitted.
+- **Status:** Verified
+
+## QA-2026-015 — Staff payment history squeezed transaction fields into narrow columns
+
+- **Type:** Confirmed staff UI layout defect
+- **Discovered:** 2026-10-24
+- **Module / role:** Payment transaction history; staff
+- **Severity / priority:** P3 / P2
+- **Environment and test data:** Authenticated staff portal on `http://127.0.0.1:3000/portal.html?view=payment-operations`; existing synthetic QA transactions, including folio 5. No additional database writes were made during this layout check.
+- **Reproduction:** Open “Giao dịch & thông báo” and inspect the transaction table at a desktop viewport. Date/time and payment status broke across lines; transaction IDs and amount columns were difficult to scan.
+- **Expected:** Keep dates, amounts, folio IDs, payment method and result badge legible; allow deliberate horizontal scrolling for the wide table. Keep the filter controls compact when the viewport has room.
+- **Actual:** The default table width compressed eight columns into the content width, while the filter card stacked all controls vertically.
+- **Root cause:** The shared transaction table had no staff-specific minimum width, column sizing or layout rules for its filter controls.
+- **Affected files:** `web-ui/js/shared/payment-operations.js`, `web-ui/public/js/shared/payment-operations.js`, staff stylesheet copies, and portal cache references.
+- **Fix implemented:** Added a staff-scoped horizontally scrollable transaction region, minimum table width, per-column sizing and no-wrap rules for dates, values and status badges. Transaction IDs may wrap at readable break points. The filter controls now share a row on wide screens and adapt on narrow screens.
+- **Verification:** Reloaded the authenticated staff page on port 3000. The transaction rows displayed full date/time and amount values, unbroken status badges, legible transaction IDs and deliberate horizontal scrolling; the filter controls aligned in one row. Folio 5 still showed the authorized 850,500 VND applied cash transaction. No further transaction was submitted.
+- **Status:** Verified
+
+## QA-2026-016 — Staff transaction history did not identify the guest or booking
+
+- **Type:** Confirmed payment-audit usability defect
+- **Discovered:** 2026-10-24
+- **Module / role:** Payment transaction history; staff
+- **Severity / priority:** P2 / P2
+- **Environment and test data:** Authenticated staff portal on port 3000; existing local MariaDB QA records. No additional customer or payment data was created for this change.
+- **Reproduction:** Open “Giao dịch & thông báo” and inspect an otherwise successful transaction. The table showed a folio number and transaction ID but no customer or booking reference.
+- **Expected:** Staff can identify the guest and reservation associated with each payment without navigating through several separate pages.
+- **Actual:** Staff had to look up the folio in another screen before identifying the guest.
+- **Root cause:** The audit query joined folio to booking for customer filtering but did not project booking/customer/room context, and the table had no corresponding column.
+- **Affected files:** `PaymentStatus.java`, shared transaction history modules in source and served assets, staff stylesheet copies, portal cache references, and the API contract.
+- **Fix implemented:** The transaction audit now includes booking ID/code, customer name and room number via read-only joins. The portal shows these beside the explicit folio column; it does not display phone or identity numbers.
+- **Verification:** Rebuilt and restarted through `start-backend.bat`; preflight passed for MariaDB 11.4, schema and existing vault keys. On the authenticated port-3000 staff UI, the folio-5 cash transaction visibly showed “Khách QA đặt phòng 06h-18h”, `BKG-WEB-2026-5` and room `QA-801`. Filtering by Folio `5` returned just that matching row. Other folio 1, 3 and 4 rows also resolved to their customer names and booking codes. The API/UI did not expose phone or identity numbers, and no payment was submitted during this check.
+- **Status:** Verified
+
+## QA-2026-017 — Payment history table and pagination differed from other portal tables
+
+- **Type:** Confirmed UI consistency defect
+- **Discovered:** 2026-10-24
+- **Module / role:** Payment and notification history; staff
+- **Severity / priority:** P3 / P2
+- **Environment and test data:** Authenticated staff portal on `http://127.0.0.1:3000/portal.html?view=payment-operations`; existing MariaDB QA data. No transaction or database record was changed.
+- **Reproduction:** Open the payment history. The table sat outside the standard table card and pagination had only unstyled “Trang trước/Sau” buttons, with no page size, item range, or page indicator.
+- **Expected:** Use the shared table container and pagination controls used by the other portal tables.
+- **Actual:** Payment and notification history used custom controls, and lacked an exact total for pagination.
+- **Root cause:** The page owned its own previous/next buttons; the API returned only a page of rows.
+- **Affected files:** `PaymentStatus.java`, `PaymentOperationsController.java`, payment operations source/served modules, portal styles/navigation, API contract and QA notes.
+- **Fix implemented:** Both history APIs now return `{items, total}`; the page uses the shared pagination component and table card. Page size, visible range and previous/next state now match other portal tables. Moved “Thanh toán & thông báo” below “Hóa đơn”, used the wallet icon, and changed the inner heading to “Lịch sử thanh toán & thông báo”.
+- **Verification:** Restarted with `start-backend.bat`; MariaDB 11.4.13, schema and vault preflight passed. In the live staff UI, transactions showed `1–4 trên 4`, page `1 / 1`; notifications showed `1–10 trên 17`, and Next displayed `11–17 trên 17`, page `2 / 2`. Previous/Next disabled states were correct. The sidebar showed the renamed item after Hóa đơn with a wallet icon. `node --check` and `git diff --check` passed. No payment, email, or database data was changed.
+- **Status:** Verified

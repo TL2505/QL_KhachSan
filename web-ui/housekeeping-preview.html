@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Bản xem trước giao diện tiếp nhận và xử lý công việc dọn phòng Aurelia Palace.">
+  <title>Aurelia Palace | Công việc dọn phòng (bản xem trước)</title>
+  <link rel="stylesheet" href="/css/housekeeping-preview.css?v=1">
+  <script type="module" src="/js/housekeeping-preview.js?v=1"></script>
+</head>
+<body>
+  <div class="housekeeping-demo">
+    <div class="hk-shell">
+      <aside class="hk-sidebar" aria-label="Điều hướng nhân viên">
+        <div class="hk-brand">
+          <span class="hk-brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="20" height="20"><path d="M12 3 5 6v5c0 5 3 8.5 7 10 4-1.5 7-5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <div>
+            <p class="hk-brand-name">Aurelia Palace</p>
+            <p class="hk-brand-caption">HOTEL &amp; RESORT</p>
+          </div>
+        </div>
+        <p class="hk-section-label">NHÂN VIÊN BUỒNG PHÒNG</p>
+        <ul class="menu menu-vertical" aria-label="Chức năng">
+          <li>
+            <button type="button" id="show-active-tasks" aria-current="page">
+              <svg class="hk-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h16v15H4z"/><path d="M8 3v4M16 3v4M8 11h8M8 15h5"/></svg>
+              Công việc dọn phòng
+            </button>
+          </li>
+          <li>
+            <button type="button" id="show-all-tasks">
+              <svg class="hk-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+              Tất cả bàn giao
+            </button>
+          </li>
+          <li>
+            <button type="button" id="show-completed-tasks">
+              <svg class="hk-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l3 2M15 3h6v6"/></svg>
+              Đã hoàn tất
+            </button>
+          </li>
+        </ul>
+        <div class="hk-sidebar-spacer"></div>
+        <div class="hk-account">
+          <span class="hk-avatar" aria-hidden="true">BP</span>
+          <div>
+            <strong>Nhân viên buồng phòng</strong>
+            <small>Ca làm việc · Ca sáng</small>
+          </div>
+        </div>
+      </aside>
+
+      <main class="hk-main">
+        <div class="hk-topbar">
+          <span class="hk-prototype-tag"><span class="hk-prototype-dot"></span> Giao diện thử nghiệm</span>
+        </div>
+
+        <header class="hk-page-header">
+          <div>
+            <h1>Công việc dọn phòng</h1>
+            <p>Tiếp nhận phòng đã bàn giao, cập nhật tiến độ và xác nhận phòng sẵn sàng.</p>
+          </div>
+          <div class="hk-shift"><strong>Hôm nay</strong> · 24/10/2026 &nbsp;|&nbsp; Ca sáng · 07:00–15:00</div>
+        </header>
+
+        <div class="hk-demo-note" role="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+          <span><strong>Bản xem trước dùng dữ liệu minh họa.</strong> Các nút chỉ thay đổi trạng thái trên trang này; chưa kết nối đặt phòng, tài khoản nhân viên hay API dọn phòng.</span>
+        </div>
+
+        <section class="stats stats-horizontal hk-stats" aria-label="Tổng quan công việc">
+          <div class="stat">
+            <div class="stat-title">Chờ nhận dọn</div>
+            <div class="stat-value" id="count-waiting">0</div>
+            <div class="stat-desc">Phòng đã bàn giao</div>
+          </div>
+          <div class="stat">
+            <div class="stat-title">Đang dọn</div>
+            <div class="stat-value" id="count-progress">0</div>
+            <div class="stat-desc">Đang có nhân viên xử lý</div>
+          </div>
+          <div class="stat">
+            <div class="stat-title">Hoàn tất hôm nay</div>
+            <div class="stat-value" id="count-done">0</div>
+            <div class="stat-desc">Đã xác nhận sạch phòng</div>
+          </div>
+          <div class="stat">
+            <div class="stat-title">Ưu tiên gần nhất</div>
+            <div class="stat-value" id="next-arrival-value">—</div>
+            <div class="stat-desc">Theo giờ khách kế tiếp nhận phòng</div>
+          </div>
+        </section>
+
+        <section class="card card-border hk-panel" aria-labelledby="hk-queue-heading">
+          <div class="card-body">
+            <div class="hk-panel-head">
+              <div>
+                <h2 id="hk-queue-heading">Công việc đang xử lý</h2>
+                <p>Sắp xếp theo giờ nhận phòng kế tiếp và thời điểm phòng được bàn giao.</p>
+              </div>
+              <span class="hk-queue-count" id="task-count">Đang tải công việc…</span>
+            </div>
+
+            <div class="hk-filter-row">
+              <input class="input input-bordered" id="task-search" type="search" placeholder="Tìm theo mã phòng hoặc hạng phòng" aria-label="Tìm công việc theo phòng hoặc hạng phòng">
+              <select class="select select-bordered" id="task-status-filter" aria-label="Lọc theo trạng thái">
+                <option value="all">Tất cả trạng thái</option>
+                <option value="waiting">Chờ nhận dọn</option>
+                <option value="in_progress">Đang dọn</option>
+                <option value="done">Đã hoàn tất</option>
+                <option value="not_released">Chưa bàn giao</option>
+              </select>
+              <button class="btn btn-ghost" id="reset-filters" type="button">Xóa bộ lọc</button>
+            </div>
+
+            <div class="hk-table-wrap">
+              <table class="table table-zebra hk-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Phòng</th>
+                    <th scope="col">Thời điểm bàn giao</th>
+                    <th scope="col">Khách kế tiếp nhận phòng</th>
+                    <th scope="col">Mức ưu tiên</th>
+                    <th scope="col">Trạng thái công việc</th>
+                    <th scope="col"><span class="sr-only">Thao tác</span></th>
+                  </tr>
+                </thead>
+                <tbody id="housekeeping-task-list"></tbody>
+              </table>
+            </div>
+
+            <div class="hk-table-footer">
+              <span id="task-range">0 công việc</span>
+              <span>Thông tin khách và thanh toán được ẩn khỏi màn hình dọn phòng.</span>
+            </div>
+
+            <div class="hk-priority-note" id="handoff-rule">
+              <svg class="hk-priority-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4M12 16h.01"/></svg>
+              <div><strong>Quy tắc nhận việc</strong>Chỉ nhận dọn khi lễ tân đã bàn giao phòng. Ưu tiên phòng có khách sắp nhận; phòng chưa đến giờ bàn giao vẫn hiển thị để nhân viên theo dõi nhưng chưa thể bắt đầu dọn.</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div class="hk-toast" id="housekeeping-toast" role="status" aria-live="polite"></div>
+  </div>
+</body>
+</html>

@@ -1,8 +1,8 @@
 import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.36';
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.36';
-import { loadAdminView } from './js/view-admin.js?v=3.6.14';
-import { loadStaffView } from './js/view-staff.js?v=3.6.51';
-import { loadCustomerView } from './js/view-customer.js?v=3.6.25';
+import { loadAdminView } from './js/view-admin.js?v=3.6.15';
+import { loadStaffView } from './js/view-staff.js?v=3.6.65';
+import { loadCustomerView } from './js/view-customer.js?v=3.6.61';
 import { loadProfileView } from './js/view-shared.js';
 import './js/shared/theme.js';
 import './js/shared/pagination.js?v=3.6.4';
@@ -18,10 +18,60 @@ const closeGlobalModal = (modalId = 'global-modal') => {
 
 window.closeModal = closeGlobalModal;
 
+const getGlobalModalParts = () => {
+  let modal = document.getElementById('global-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'global-modal';
+    modal.className = 'portal-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('aria-label', 'Hộp thoại thao tác');
+    document.body.append(modal);
+  }
+  let content = document.getElementById('global-modal-content');
+  if (!content || !modal.contains(content)) {
+    content = document.createElement('div');
+    content.id = 'global-modal-content';
+    content.className = 'modal-content';
+    content.setAttribute('role', 'document');
+    modal.replaceChildren(content);
+  }
+  return { modal, content };
+};
+
+const activateGlobalModal = (modal, focusTarget, finish, cancelValue) => {
+  let settled = false;
+  const previousFocus = document.activeElement;
+  const settle = value => {
+    if (settled) return;
+    settled = true;
+    document.removeEventListener('keydown', onKeyDown);
+    modal.removeEventListener('click', onBackdropClick);
+    closeGlobalModal();
+    if (previousFocus?.isConnected && typeof previousFocus.focus === 'function') previousFocus.focus();
+    finish(value);
+  };
+  const onKeyDown = event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      settle(cancelValue);
+    }
+  };
+  const onBackdropClick = event => {
+    if (event.target === modal) settle(cancelValue);
+  };
+  modal.addEventListener('click', onBackdropClick);
+  document.addEventListener('keydown', onKeyDown);
+  modal.classList.add('active');
+  modal.setAttribute('aria-hidden', 'false');
+  focusTarget?.focus();
+  return settle;
+};
+
 window.showCustomConfirm = (message, options = {}) => new Promise(resolve => {
-  const modal = document.getElementById('global-modal');
-  const content = document.getElementById('global-modal-content');
-  if (!modal || !content) { resolve(false); return; }
+  const { modal, content } = getGlobalModalParts();
   content.replaceChildren();
   const heading = document.createElement('div');
   heading.className = 'modal-header';
@@ -34,24 +84,21 @@ window.showCustomConfirm = (message, options = {}) => new Promise(resolve => {
   text.textContent = message;
   text.style.cssText = 'margin:0;color:var(--portal-muted);line-height:1.65;white-space:pre-line';
   const actions = document.createElement('div');
-  actions.className = 'flex-row'; actions.style.justifyContent = 'flex-end'; actions.style.marginTop = '22px';
+  actions.className = 'modal-actions';
   const cancel = document.createElement('button');
   cancel.type = 'button'; cancel.className = 'btn btn-secondary'; cancel.textContent = options.cancelLabel || 'Hủy';
   const accept = document.createElement('button');
   accept.type = 'button'; accept.className = `btn ${options.kind === 'primary' ? 'btn-primary' : 'btn-danger'}`; accept.textContent = options.confirmLabel || 'Xác nhận';
   actions.append(cancel, accept); content.append(heading, text, actions);
-  const finish = value => { closeGlobalModal(); resolve(value); };
+  const finish = activateGlobalModal(modal, accept, resolve, false);
   close.addEventListener('click', () => finish(false));
   cancel.addEventListener('click', () => finish(false));
   accept.addEventListener('click', () => finish(true));
-  modal.classList.add('active'); modal.setAttribute('aria-hidden', 'false'); accept.focus();
 });
 
 // Shared feedback dialog: modules can show API errors instead of failing silently.
 window.showCustomAlert = (message, options = {}) => new Promise(resolve => {
-  const modal = document.getElementById('global-modal');
-  const content = document.getElementById('global-modal-content');
-  if (!modal || !content) { console.warn('Không tìm thấy vùng hiển thị hộp thoại:', message); resolve(); return; }
+  const { modal, content } = getGlobalModalParts();
   content.replaceChildren();
   const heading = document.createElement('div');
   heading.className = 'modal-header';
@@ -84,21 +131,54 @@ window.showCustomAlert = (message, options = {}) => new Promise(resolve => {
     }
   }
   const actions = document.createElement('div');
-  actions.className = 'flex-row'; actions.style.justifyContent = 'flex-end'; actions.style.marginTop = '22px';
+  actions.className = 'modal-actions';
   const acknowledge = document.createElement('button');
   acknowledge.type = 'button'; acknowledge.className = `btn ${options.kind === 'success' ? 'btn-primary' : 'btn-secondary'}`; acknowledge.textContent = 'Đã hiểu';
   actions.append(acknowledge); content.append(heading, text);
   if (detailList) content.append(detailList);
   content.append(actions);
-  const finish = () => { closeGlobalModal(); resolve(); };
-  close.addEventListener('click', finish);
-  acknowledge.addEventListener('click', finish);
-  modal.classList.add('active'); modal.setAttribute('aria-hidden', 'false'); acknowledge.focus();
+  const finish = activateGlobalModal(modal, acknowledge, resolve, undefined);
+  close.addEventListener('click', () => finish());
+  acknowledge.addEventListener('click', () => finish());
+});
+
+window.showCustomPrompt = (message, options = {}) => new Promise(resolve => {
+  const { modal, content } = getGlobalModalParts();
+  content.replaceChildren();
+  const heading = document.createElement('div');
+  heading.className = 'modal-header';
+  const title = document.createElement('h2');
+  title.textContent = options.title || 'Thông tin bổ sung';
+  const close = document.createElement('button');
+  close.type = 'button'; close.className = 'modal-close'; close.setAttribute('aria-label', 'Đóng'); close.textContent = '×';
+  heading.append(title, close);
+  const text = document.createElement('p');
+  text.textContent = message || '';
+  text.style.cssText = 'margin:0 0 14px;color:var(--portal-muted);line-height:1.65;white-space:pre-line';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = options.defaultValue || '';
+  input.placeholder = options.placeholder || '';
+  input.setAttribute('aria-label', options.inputLabel || message || 'Thông tin bổ sung');
+  input.style.cssText = 'width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--portal-border);border-radius:10px;background:rgba(8,14,25,.6);color:var(--portal-text)';
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  const cancel = document.createElement('button');
+  cancel.type = 'button'; cancel.className = 'btn btn-secondary'; cancel.textContent = options.cancelLabel || 'Hủy';
+  const accept = document.createElement('button');
+  accept.type = 'button'; accept.className = 'btn btn-primary'; accept.textContent = options.confirmLabel || 'Tiếp tục';
+  actions.append(cancel, accept); content.append(heading, text, input, actions);
+  const finish = activateGlobalModal(modal, input, resolve, null);
+  close.addEventListener('click', () => finish(null));
+  cancel.addEventListener('click', () => finish(null));
+  accept.addEventListener('click', () => finish(input.value));
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); finish(input.value); }
+  });
 });
 
 const menus = {
   ADMIN: [
-    ['payment-operations', 'Giao dịch & thông báo', 'receipt-text'],
     ['dashboard', 'Tổng quan', 'chart-no-axes-combined'],
     ['rooms', 'Quản lý phòng', 'bed-double'],
     ['catalog-content', 'Danh mục & landing page', 'images'],
@@ -110,11 +190,11 @@ const menus = {
     ['promotions', 'Khuyến mãi', 'ticket-percent'],
     ['reviews', 'Đánh giá', 'star'],
     ['invoices', 'Hóa đơn', 'receipt-text'],
+    ['payment-operations', 'Thanh toán & thông báo', 'wallet'],
     ['ai-settings', 'API key AI', 'key-round'],
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   STAFF: [
-    ['payment-operations', 'Giao dịch & thông báo', 'receipt-text'],
     ['catalog-content', 'Danh mục & landing page', 'images'],
     ['room-map', 'Sơ đồ phòng', 'panels-top-left'],
     ['front-desk', 'Xử lý tại quầy', 'concierge-bell'],
@@ -122,15 +202,16 @@ const menus = {
     ['customers', 'Khách hàng', 'contact-round'],
     ['checkout', 'Nhận & trả phòng', 'key-round'],
     ['invoices', 'Hóa đơn', 'receipt-text'],
+    ['payment-operations', 'Thanh toán & thông báo', 'wallet'],
     ['loyalty', 'Thành viên', 'award'],
     ['chat', 'Tin nhắn', 'messages-square'],
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   CUSTOMER: [
-    ['payment-operations', 'Giao dịch & thông báo', 'receipt-text'],
     ['dashboard', 'Tổng quan', 'layout-dashboard'],
     ['discovery', 'Đặt phòng', 'calendar-plus'],
     ['bookings', 'Lịch sử đặt phòng', 'history'],
+    ['payment-operations', 'Thanh toán & thông báo', 'wallet'],
     ['concierge', 'Dịch vụ & ưu đãi', 'sparkles'],
     ['support', 'Hỗ trợ', 'life-buoy'],
     ['profile', 'Hồ sơ', 'user-cog'],
@@ -143,6 +224,7 @@ titles['dashboard'] = 'Tổng quan & Hạng thẻ';
 titles['bookings'] = 'Lịch sử đặt phòng';
 titles['discovery'] = 'Đặt phòng mới';
 titles['concierge'] = 'Dịch vụ & Ví ưu đãi';
+titles['payment-operations'] = 'Thanh toán & thông báo';
 titles['profile'] = 'Thông tin cá nhân';
 titles['security'] = 'Bảo mật & Mật khẩu';
 

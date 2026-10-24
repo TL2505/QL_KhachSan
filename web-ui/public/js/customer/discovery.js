@@ -1,6 +1,8 @@
 import { api } from '../../api.js';
 import { bookingKey } from '../booking-api.js';
 import { bindRoomImageFallbacks } from '../shared/room-images.js';
+import { renderRoomCard } from '../shared/room-card.js';
+import { renderBookingSearchFields, roomAvailabilityPath } from '../shared/booking-search.js';
 
 const money = value => value == null || value === '' || !Number.isFinite(Number(value))
   ? 'Chưa có giá'
@@ -28,6 +30,15 @@ const localDate = date => {
   const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
   return `${value.year}-${value.month}-${value.day}`;
 };
+const hotelClockMinutes = () => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return Number(value.hour) * 60 + Number(value.minute);
+};
+const formatMinutes = value => `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
+const earliestHourlyCheckIn = () => Math.ceil(hotelClockMinutes() / 15) * 15;
 const shiftDate = (value, days) => {
   const [year, month, day] = value.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
@@ -53,16 +64,6 @@ const statusFor = room => {
   }
   return labels[room.availability_status] || ['Chưa cập nhật', 'not-ready'];
 };
-const statusSummaryItems = [
-  ['Còn phòng', 'available'],
-  ['Đã đặt', 'reserved'],
-  ['Đang có khách', 'occupied'],
-  ['Bảo trì', 'maintenance'],
-  ['Cần dọn phòng', 'not-ready'],
-  ['Có khách - cần dọn', 'not-ready'],
-  ['Chưa cấu hình giá', 'pricing_unconfigured'],
-  ['Chưa sẵn sàng', 'not-ready']
-];
 const availabilityReason = status => ({
   reserved: 'Phòng đã có lịch đặt trùng khoảng thời gian này.',
   occupied: 'Phòng đang được sử dụng trong khoảng thời gian đã chọn.',
@@ -93,6 +94,15 @@ const timeMinutes = value => {
 const stayWindowIssue = (checkIn, checkOut, rentalType, inTime, outTime) => {
   if (!validDateRange(checkIn, checkOut, rentalType)) return 'Ngày trả phòng phải sau ngày nhận phòng; ngày nhận không được ở quá khứ.';
   if (!validTime(inTime) || !validTime(outTime)) return 'Vui lòng chọn giờ nhận và giờ trả phòng hợp lệ.';
+  const inMinutes = timeMinutes(inTime);
+  if (rentalType === 'HOURLY' && checkIn === localDate(new Date())) {
+    const earliest = earliestHourlyCheckIn();
+    if (earliest > 23 * 60 + 45) return 'Hôm nay đã hết giờ nhận phòng theo giờ. Vui lòng chọn ngày khác.';
+    if (inMinutes < earliest) return `Giờ nhận phòng theo giờ phải từ ${formatMinutes(earliest)} trở đi vì ngày nhận là hôm nay.`;
+  }
+  if (checkIn === localDate(new Date()) && inMinutes < hotelClockMinutes()) {
+    return 'Giờ nhận phòng đã qua. Vui lòng chọn ngày khác hoặc khung giờ trong tương lai.';
+  }
   if (rentalType === 'DAILY') {
     return inTime === '14:00' && outTime === '12:00' ? '' : 'Gói theo ngày cố định nhận phòng lúc 14:00 và trả phòng lúc 12:00.';
   }
@@ -102,7 +112,6 @@ const stayWindowIssue = (checkIn, checkOut, rentalType, inTime, outTime) => {
     return '';
   }
   const days = Math.round((Date.parse(`${checkOut}T00:00:00Z`) - Date.parse(`${checkIn}T00:00:00Z`)) / 86400000);
-  const inMinutes = timeMinutes(inTime);
   const outMinutes = timeMinutes(outTime);
   if (inMinutes % 15 !== 0 || outMinutes % 15 !== 0) return 'Gói theo giờ chỉ nhận giờ theo từng khoảng 15 phút.';
   const durationMinutes = days * 1440 + outMinutes - inMinutes;
@@ -124,15 +133,7 @@ export async function renderDiscovery(container, session) {
       <p>Chọn ngày lưu trú, số khách và mã ưu đãi để kiểm tra phòng trống.</p>
     </div>
     <section class="card card-border discovery-filter booking-search-panel" aria-label="Tìm phòng trống">
-      <div class="booking-search-grid">
-        <label class="booking-search-field"><span>Ngày nhận phòng</span><input class="input input-sm booking-search-control" id="search-checkin" type="date" value="${today}" min="${today}" required></label>
-        <label class="booking-search-field"><span>Ngày trả phòng</span><input class="input input-sm booking-search-control" id="search-checkout" type="date" value="${tomorrow}" min="${tomorrow}" required></label>
-        <label class="booking-search-field"><span>Số khách</span><select class="select select-sm booking-search-control" id="guest-count" required>
-          ${Array.from({length: 20}, (_, index) => index + 1).map(count => `<option value="${count}"${count === 2 ? ' selected' : ''}>${count === 2 ? '2 người lớn (tiêu chuẩn)' : count <= 4 ? `${count} người lớn` : `${count} khách`}</option>`).join('')}
-        </select></label>
-        <label class="booking-search-field"><span>Mã ưu đãi</span><input class="input input-sm booking-search-control booking-promo-input" id="booking-voucher-code" maxlength="50" placeholder="LUXURY2026" autocomplete="off" value="${esc(requestedVoucher)}"></label>
-        <button id="btn-search-rooms" class="btn booking-search-submit" type="button"><i data-lucide="search" aria-hidden="true"></i><span data-search-label>Kiểm tra phòng trống</span></button>
-      </div>
+      ${renderBookingSearchFields({checkInId:'search-checkin',checkInValue:today,checkInMin:today,checkOutId:'search-checkout',checkOutValue:tomorrow,checkOutMin:tomorrow,guestCountId:'guest-count',guestCount:2,guestLabel:count=>count===2?'2 người lớn (tiêu chuẩn)':count<=4?`${count} người lớn`:`${count} khách`,voucher:{id:'booking-voucher-code',value:requestedVoucher,placeholder:'LUXURY2026',maxLength:50},searchButtonId:'btn-search-rooms',searchButtonLabel:'Kiểm tra phòng trống'})}
       <details class="collapse collapse-arrow booking-advanced-filters">
         <summary class="collapse-title">Tùy chọn lưu trú nâng cao</summary>
         <div class="collapse-content">
@@ -147,11 +148,6 @@ export async function renderDiscovery(container, session) {
         </div>
       </details>
       <p id="discovery-feedback" class="discovery-feedback" role="status" aria-live="polite"></p>
-      <div class="discovery-status-overview" aria-live="polite">
-        <div id="room-status-summary" class="room-status-summary" role="group" aria-label="Thống kê số phòng theo trạng thái">
-          <p class="room-status-summary-message">Tìm phòng để xem thống kê trạng thái.</p>
-        </div>
-      </div>
     </section>
     <div class="discovery-result-head"><strong id="room-result-count">Đang tải phòng…</strong><span id="discovery-price-unit">Giá theo mỗi đêm</span></div>
     <div id="search-rooms-grid" class="customer-room-grid"></div>
@@ -224,48 +220,50 @@ export async function renderDiscovery(container, session) {
     }
 
     checkOut.min = checkIn || today;
+    if (checkIn === localDate(new Date())) {
+      const earliest = earliestHourlyCheckIn();
+      const latestToday = 23 * 60 + 45;
+      if (earliest <= latestToday) {
+        checkInTime.min = formatMinutes(earliest);
+        if (timeMinutes(checkInTime.value) < earliest) checkInTime.value = formatMinutes(earliest);
+      } else {
+        checkInTime.min = formatMinutes(latestToday);
+        checkInTime.max = formatMinutes(latestToday);
+        checkInTime.value = formatMinutes(latestToday);
+        if (checkOut.value === checkIn) checkOut.value = shiftDate(checkIn, 1);
+      }
+    }
     const checkInMinutes = timeMinutes(checkInTime.value);
     if (checkIn && Number.isFinite(checkInMinutes)) {
       const canExtendToNextDay = checkInMinutes >= 18 * 60;
+      if (checkOut.value === checkIn && checkInMinutes >= 23 * 60 + 45) checkOut.value = shiftDate(checkIn, 1);
       const latestDate = canExtendToNextDay ? shiftDate(checkIn, 1) : checkIn;
       checkOut.max = latestDate;
+      if (checkOut.value > latestDate) checkOut.value = latestDate;
       if (checkOut.value === checkIn) {
         const earliest = Math.floor(checkInMinutes / 15) * 15 + 15;
         const latest = Math.min(23 * 60 + 45, Math.floor((checkInMinutes + 360) / 15) * 15);
-        checkOutTime.min = `${String(Math.floor(earliest / 60)).padStart(2, '0')}:${String(earliest % 60).padStart(2, '0')}`;
-        checkOutTime.max = `${String(Math.floor(latest / 60)).padStart(2, '0')}:${String(latest % 60).padStart(2, '0')}`;
+        checkOutTime.min = formatMinutes(earliest);
+        checkOutTime.max = formatMinutes(latest);
+        if (timeMinutes(checkOutTime.value) < earliest) checkOutTime.value = formatMinutes(earliest);
+        if (timeMinutes(checkOutTime.value) > latest) checkOutTime.value = formatMinutes(latest);
       } else if (checkOut.value === shiftDate(checkIn, 1) && canExtendToNextDay) {
         const latest = Math.floor((checkInMinutes + 360 - 1440) / 15) * 15;
         checkOutTime.min = '00:00';
-        checkOutTime.max = `${String(Math.floor(latest / 60)).padStart(2, '0')}:${String(latest % 60).padStart(2, '0')}`;
+        checkOutTime.max = formatMinutes(latest);
+        if (timeMinutes(checkOutTime.value) > latest) checkOutTime.value = formatMinutes(latest);
       }
     }
-    hint.textContent = 'Lưu trú theo giờ tối đa 6 tiếng. Ngày trả phòng chỉ được chọn trong khoảng thời gian hợp lệ.';
+    if (checkIn === localDate(new Date())) {
+      const earliest = earliestHourlyCheckIn();
+      hint.textContent = earliest > 23 * 60 + 45
+        ? 'Hôm nay đã hết khung giờ nhận phòng theo giờ. Hãy chọn ngày nhận phòng khác.'
+        : `Lưu trú tối đa 6 tiếng. Nhận phòng hôm nay từ ${formatMinutes(earliest)} trở đi.`;
+    } else hint.textContent = 'Lưu trú theo giờ tối đa 6 tiếng. Chọn giờ nhận phòng trong tương lai.';
   };
   const feedback = (message = '', error = false) => {
     byId('discovery-feedback').textContent = message;
     byId('discovery-feedback').classList.toggle('is-error', error);
-  };
-  const renderStatusSummary = (sourceRooms, message = '') => {
-    const summary = byId('room-status-summary');
-    if (message) {
-      summary.innerHTML = `<p class="room-status-summary-message">${esc(message)}</p>`;
-      return;
-    }
-    const counts = new Map();
-    sourceRooms.forEach(room => {
-      const [label] = statusFor(room);
-      counts.set(label, (counts.get(label) || 0) + 1);
-    });
-    summary.innerHTML = `
-      <div class="room-status-summary-total"><strong>${sourceRooms.length}</strong><span>Tổng số phòng</span></div>
-      <div class="room-status-summary-items">
-        ${statusSummaryItems.map(([label, kind]) => `
-          <div class="room-status-summary-item ${kind}" title="${esc(label)}">
-            <span>${esc(label)}</span><strong>${counts.get(label) || 0}</strong>
-          </div>
-        `).join('')}
-      </div>`;
   };
   const closeDialog = dialog => {
     if (dialog.open) dialog.close();
@@ -360,34 +358,16 @@ export async function renderDiscovery(container, session) {
       const checkOutTime = byId('search-checkout-time').value;
       const supportedBookingTimes = validStayWindow(byId('search-checkin').value, byId('search-checkout').value, rentalType, checkInTime, checkOutTime);
       const canBook = room.availability_status === 'available' && capacityOkay && supportedBookingTimes;
-      const src = imageUrl(room.image_url);
-      const amenities = amenitiesFor(room.amenities).slice(0, 3);
       const timeIssue = stayWindowIssue(byId('search-checkin').value, byId('search-checkout').value, rentalType, checkInTime, checkOutTime);
       const reason = room.availability_status === 'available' && !supportedBookingTimes
         ? timeIssue
         : room.availability_status === 'available'
         ? (capacity ? `Phòng chỉ phục vụ tối đa ${capacity} khách.` : 'Chưa có thông tin sức chứa để xác nhận đặt phòng.')
         : availabilityReason(room.availability_status);
-      return `<article class="card card-border customer-room-card">
-        <div class="customer-room-image">${src ? `<img src="${esc(src)}" alt="${esc(room.image_alt || typeName(room))}" loading="lazy">` : '<div class="room-image-placeholder"><span aria-hidden="true">A</span><small>Ảnh phòng đang cập nhật</small></div>'}<span class="room-status ${kind}">${esc(text)}</span></div>
-        <div class="customer-room-content">
-          <div class="discovery-room-heading">
-            <small>HẠNG PHÒNG · PHÒNG ${esc(room.room_number || room.id)}</small>
-            <h3>${esc(typeName(room))}</h3>
-            <p>${capacity ? `Tối đa ${capacity} khách` : 'Chưa có thông tin sức chứa'}</p>
-          </div>
-          ${room.description ? `<p class="discovery-room-description">${esc(room.description)}</p>` : ''}
-          <div class="discovery-room-amenities" aria-label="Tiện nghi">${amenities.length ? amenities.map(item => `<span>${esc(item)}</span>`).join('') : '<span>Tiện nghi chưa cập nhật</span>'}</div>
-          <div class="discovery-card-footer">
-            <div class="discovery-room-price"><small>${rentalType === 'DAILY' ? 'GIÁ MỖI ĐÊM' : 'GIÁ GÓI'}</small><strong>${rentalType === 'DAILY' ? money(room.price) : 'Xem báo giá'}</strong></div>
-            <div class="customer-room-actions">
-              <button class="btn booking-room-detail" type="button" data-detail="${esc(room.id)}">Chi tiết</button>
-              <button class="btn booking-room-select" type="button" data-book="${esc(room.id)}" ${canBook ? '' : `disabled title="${esc(reason)}" aria-label="Đặt phòng: ${esc(reason)}"`}>${canBook ? 'Đặt phòng' : 'Không thể đặt'}</button>
-            </div>
-          </div>
-          ${canBook ? '' : `<p class="room-unavailable-reason">${esc(reason)}</p>`}
-        </div>
-      </article>`;
+      return renderRoomCard(room, {
+        statusLabel: text, statusKind: kind, canSelect: canBook, reason,
+        actionLabel: 'Đặt phòng', actionAttribute: 'data-book', rentalType, showDetails: true, money
+      });
     }).join('') : rooms.length && Number.isInteger(guests) && guests > 0
       ? `<p class="customer-empty">Không có phòng đủ sức chứa cho ${guests} khách trong kết quả tìm kiếm.</p>`
       : '<p class="customer-empty">Không có phòng phù hợp với bộ lọc đã chọn.</p>';
@@ -400,7 +380,6 @@ export async function renderDiscovery(container, session) {
     const checkOut = byId('search-checkout').value;
     if (!validDateRange(checkIn, checkOut, byId('search-rental-type').value)) {
       rooms = [];
-      renderStatusSummary([], 'Nhập thời gian lưu trú hợp lệ rồi tìm phòng để xem thống kê.');
       render();
       byId('room-result-count').textContent = 'Ngày lưu trú chưa hợp lệ';
       feedback('Ngày trả phòng phải sau ngày nhận phòng; ngày nhận không được ở quá khứ.', true);
@@ -413,7 +392,6 @@ export async function renderDiscovery(container, session) {
       rooms = [];
       render();
       byId('room-result-count').textContent = 'Giờ lưu trú chưa hợp lệ';
-      renderStatusSummary([], timeIssue);
       feedback(timeIssue, true);
       return;
     }
@@ -430,23 +408,15 @@ export async function renderDiscovery(container, session) {
   const searchLabel = searchButton.querySelector('[data-search-label]');
     searchButton.disabled = true;
     searchLabel.textContent = 'Đang kiểm tra…';
-    renderStatusSummary([], 'Đang kiểm tra trạng thái phòng theo thời gian đã chọn…');
     byId('room-result-count').textContent = 'Đang tải phòng…';
     byId('search-rooms-grid').replaceChildren();
     feedback('');
     try {
-      const query = new URLSearchParams({
-        check_in: checkIn,
-        check_out: checkOut,
-        rental_type: byId('search-rental-type').value,
-        check_in_time: checkInTime,
-        check_out_time: checkOutTime,
-        include_status: 'true'
-      });
-      const result = await api.get(`/rooms/availability?${query}`, { signal: AbortSignal.timeout(15000) });
+      const result = await api.get(roomAvailabilityPath({
+        checkIn,checkOut,rentalType:byId('search-rental-type').value,checkInTime,checkOutTime,includeStatus:true
+      }), { signal: AbortSignal.timeout(15000) });
       if (!Array.isArray(result)) throw new Error('Dữ liệu phòng không hợp lệ. Vui lòng thử lại.');
       rooms = result;
-      renderStatusSummary(rooms);
       const type = byId('filter-type');
       const previous = preferredType || type.value;
       const types = [...new Set(rooms.map(room => room.room_type_name).filter(Boolean))];
@@ -456,7 +426,6 @@ export async function renderDiscovery(container, session) {
       feedback(rooms.length ? 'Tình trạng được kiểm tra theo thời gian lưu trú đã chọn.' : 'Chưa có dữ liệu phòng.');
     } catch (error) {
       rooms = [];
-      renderStatusSummary([], 'Không thể thống kê vì chưa tải được tình trạng phòng.');
       byId('room-result-count').textContent = 'Không thể tải phòng';
       const message = error.name === 'TimeoutError'
         ? 'Máy chủ phản hồi quá lâu khi tải phòng. Vui lòng thử tìm lại.'
@@ -872,7 +841,6 @@ export async function renderDiscovery(container, session) {
     voucher.title = rentalType === 'DAILY' ? '' : 'Mã ưu đãi hiện chỉ áp dụng cho lưu trú theo ngày.';
     syncStayControls();
     rooms = [];
-    renderStatusSummary([], 'Tìm phòng lại để kiểm tra theo loại hình lưu trú mới.');
     render();
     byId('room-result-count').textContent = 'Hãy tìm phòng theo loại hình đã chọn';
   };
@@ -887,7 +855,6 @@ export async function renderDiscovery(container, session) {
     if (rentalType === 'OVERNIGHT' && checkIn) byId('search-checkout').value = shiftDate(checkIn, 1);
     syncStayControls();
     rooms = [];
-    renderStatusSummary([], 'Tìm phòng lại để cập nhật thống kê theo thời gian mới.');
     render();
     byId('room-result-count').textContent = 'Hãy tìm phòng theo ngày đã chọn';
     const issue = stayWindowIssue(checkIn, byId('search-checkout').value, rentalType,
@@ -901,7 +868,6 @@ export async function renderDiscovery(container, session) {
     rooms = [];
     render();
     byId('room-result-count').textContent = 'Hãy tìm phòng theo thời gian đã chọn';
-    renderStatusSummary([], 'Tìm phòng lại để kiểm tra theo giờ nhận và trả phòng mới.');
     const issue = stayWindowIssue(byId('search-checkin').value, byId('search-checkout').value,
       byId('search-rental-type').value, byId('search-checkin-time').value, byId('search-checkout-time').value);
     feedback(issue || 'Giờ lưu trú đã thay đổi. Hãy tìm lại để cập nhật tình trạng phòng.', Boolean(issue));

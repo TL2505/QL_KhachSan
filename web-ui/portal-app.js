@@ -1,8 +1,8 @@
 import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.36';
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.36';
-import { loadAdminView } from './js/view-admin.js?v=3.6.14';
-import { loadStaffView } from './js/view-staff.js?v=3.6.51';
-import { loadCustomerView } from './js/view-customer.js?v=3.6.27';
+import { loadAdminView } from './js/view-admin.js?v=3.6.15';
+import { loadStaffView } from './js/view-staff.js?v=3.6.65';
+import { loadCustomerView } from './js/view-customer.js?v=3.6.61';
 import { loadProfileView } from './js/view-shared.js';
 import './js/shared/theme.js';
 import './js/shared/pagination.js?v=3.6.4';
@@ -179,7 +179,6 @@ window.showCustomPrompt = (message, options = {}) => new Promise(resolve => {
 
 const menus = {
   ADMIN: [
-    ['payment-operations', 'Giao dịch & thông báo', 'receipt-text'],
     ['dashboard', 'Tổng quan', 'chart-no-axes-combined'],
     ['rooms', 'Quản lý phòng', 'bed-double'],
     ['catalog-content', 'Danh mục & landing page', 'images'],
@@ -191,11 +190,11 @@ const menus = {
     ['promotions', 'Khuyến mãi', 'ticket-percent'],
     ['reviews', 'Đánh giá', 'star'],
     ['invoices', 'Hóa đơn', 'receipt-text'],
+    ['payment-operations', 'Thanh toán & thông báo', 'wallet'],
     ['ai-settings', 'API key AI', 'key-round'],
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   STAFF: [
-    ['payment-operations', 'Giao dịch & thông báo', 'receipt-text'],
     ['catalog-content', 'Danh mục & landing page', 'images'],
     ['room-map', 'Sơ đồ phòng', 'panels-top-left'],
     ['front-desk', 'Xử lý tại quầy', 'concierge-bell'],
@@ -203,15 +202,16 @@ const menus = {
     ['customers', 'Khách hàng', 'contact-round'],
     ['checkout', 'Nhận & trả phòng', 'key-round'],
     ['invoices', 'Hóa đơn', 'receipt-text'],
+    ['payment-operations', 'Thanh toán & thông báo', 'wallet'],
     ['loyalty', 'Thành viên', 'award'],
     ['chat', 'Tin nhắn', 'messages-square'],
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   CUSTOMER: [
-    ['payment-operations', 'Giao dịch & thông báo', 'receipt-text'],
     ['dashboard', 'Tổng quan', 'layout-dashboard'],
     ['discovery', 'Đặt phòng', 'calendar-plus'],
     ['bookings', 'Lịch sử đặt phòng', 'history'],
+    ['payment-operations', 'Thanh toán & thông báo', 'wallet'],
     ['concierge', 'Dịch vụ & ưu đãi', 'sparkles'],
     ['support', 'Hỗ trợ', 'life-buoy'],
     ['profile', 'Hồ sơ', 'user-cog'],
@@ -224,6 +224,7 @@ titles['dashboard'] = 'Tổng quan & Hạng thẻ';
 titles['bookings'] = 'Lịch sử đặt phòng';
 titles['discovery'] = 'Đặt phòng mới';
 titles['concierge'] = 'Dịch vụ & Ví ưu đãi';
+titles['payment-operations'] = 'Thanh toán & thông báo';
 titles['profile'] = 'Thông tin cá nhân';
 titles['security'] = 'Bảo mật & Mật khẩu';
 

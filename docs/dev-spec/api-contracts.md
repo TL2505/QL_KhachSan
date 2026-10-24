@@ -10,12 +10,12 @@ These additions use the existing `{status:"success",data:...}` envelope. See [op
 | GET `/api/v1/folios/{id-or-code}/payment-qr` | Staff or owning customer/guest | Provider QR image/payload, account details, reference, order_code, amount, currency, expires_in_seconds. Existing `/vietqr` is a compatibility alias. Missing payOS configuration returns 503 without a fabricated QR. |
 | GET `/api/v1/folios/{id-or-code}/payment-status` | Same ownership | Existing balance/status plus `payment_status` (WAITING/PAID/PARTIAL/RECONCILIATION_ERROR), `paid_amount`, `remaining_amount`, `reconciliation_reason`. |
 | GET `/api/v1/folios/{id-or-code}/payment-history` | Same ownership | Latest 100 normalized provider/method receipts and reconciliation exceptions. |
-| GET `/api/v1/payment-operations/transactions` | Staff sees all; customer/guest sees own | Paginated transaction audit; optional `folio_id`, `limit` 1–100 (default 50), `offset` >=0. Unknown-reference transactions visible only to staff. |
-| GET `/api/v1/payment-operations/notifications` | Same scope | Outbox state, booking/event reference, attempts, sanitized last_error, due/sent timestamps; no credentials or recipient addresses. |
+| GET `/api/v1/payment-operations/transactions` | Staff sees all; customer/guest sees own | Paginated transaction audit; optional `folio_id`, `limit` 1–100 (default 50), `offset` >=0. Returns `{items, total}` for accurate page controls. Includes linked booking ID/code, customer name and room number when the folio resolves to a booking; no phone or identity number. Unknown-reference transactions visible only to staff. |
+| GET `/api/v1/payment-operations/notifications` | Same scope | Returns `{items, total}` with outbox state, booking/event reference, attempts, sanitized last_error, due/sent timestamps; no credentials or recipient addresses. |
 | GET `/api/v1/payment-operations/attempts?id={outbox-id}` | Same scope | Attempt number/state/error/start/finish timestamps; no access to another customer's deliveries. |
 | GET `/api/v1/payment-operations/configuration` | Staff only | QR provider/configuration presence and email opt-in flag; does not verify provider credentials. |
 
-Transaction audit includes provider, payment_method, direction (current collections IN), transaction_id, folio_id (nullable), amount, applied_amount, excess_amount, payment_status, reason, transaction_at and webhook delivery count. `HISTORICAL_COLLECTION` identifies imported authoritative receipts without new ledger credits. Historical cash/POS status uses the folio balance at migration time. Current state must always come from the status projection.
+Transaction audit includes provider, payment_method, direction (current collections IN), transaction_id, folio_id (nullable), amount, applied_amount, excess_amount, payment_status, reason, transaction_at and webhook delivery count. Linked booking/customer context is returned as `booking_id`, `booking_code`, `customer_name`, and `room_number`; the portal can associate a payment with its guest without exposing phone or identity data. The payment and notification history endpoints return a `total` count alongside the current page's `items` for exact shared pagination. `HISTORICAL_COLLECTION` identifies imported authoritative receipts without new ledger credits. Historical cash/POS status uses the folio balance at migration time. Current state must always come from the status projection.
 
 Customer portal booking results now include canonical `paymentStatus` and a `payment` object containing the same status/paid/remaining fields aggregated over the booking's folios. Booking lifecycle status does not imply a payment state.
 
@@ -258,7 +258,28 @@ curl -X POST http://localhost:8081/api/v1/customers \
 ### 6. Search Customer Profiles
 - **Method:** `GET`
 - **Route:** `/api/v1/customers?search=Tran`
-- **Auth:** Bearer JWT
+- **Auth:** Bearer JWT; Admin or FrontDesk role
+- **Response:** `data` is an array of customer objects using camelCase fields. `email` and `address` are included when present. `hasIdentityCard` indicates that an identity document exists in plaintext or the encrypted identity vault; vaulted numbers are not returned as plaintext.
+
+```json
+{
+  "status": "SUCCESS",
+  "data": [
+    {
+      "id": 1001,
+      "fullName": "Synthetic Guest",
+      "phone": "0900000000",
+      "identityCard": null,
+      "hasIdentityCard": true,
+      "email": "guest@example.invalid",
+      "address": "Synthetic address",
+      "loyaltyLevel": "Member",
+      "createdAt": "2026-10-24 10:00:00"
+    }
+  ],
+  "meta": { "total": 1 }
+}
+```
 
 ```bash
 curl -X GET "http://localhost:8081/api/v1/customers?search=Tran" \

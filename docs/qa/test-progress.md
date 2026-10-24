@@ -1,10 +1,10 @@
 # QA test progress
 
-Updated: 2026-10-23
+Updated: 2026-10-24
 
 ## Project and environment
 
-- Branch: `feature/hotel-payments-rental-policy`.
+- Branch: `codex/booking-payment-checkin-flow`.
 - The checkout had existing user modifications before QA began. Those were preserved; QA changes touched regression fixtures, the MISA adapter, the migration manifest, the API contract, and QA documentation.
 - Application: Java 17 REST backend and Swing desktop client, MariaDB persistence, and a vanilla JavaScript web UI served by `web-ui/server.js`; AI service and MISA meInvoice are separate integrations.
 - Available runtimes: JDK 17.0.20.1, Maven 3.10.0, Node.js 24.20.0, npm 11.19.0. Docker is not installed.
@@ -33,7 +33,9 @@ Updated: 2026-10-23
 | Post-fix Maven compile | **Passed** | Maven compiled 358 application sources and 125 test sources, including the new MariaDB lifecycle regression test. |
 | Targeted browser UI regression tests | **12 passed; 0 failed** | `node --test tests/customer-booking-voucher.test.mjs tests/portal-auth-fix.test.mjs`. |
 | Customer booking UI parity with landing page | **Passed** | Port 3000 live browser: compact search controls, expandable filters, availability lookup, room card, and booking summary/confirmation were visually checked. The booking was not submitted during this layout check. |
-| Staff counter collection and check-in timing | **UI passed; no collection posted** | After restarting the backend with `start-backend.bat`, booking #4 showed the counter-payment status and its modal loaded the 1,701,000 VND folio balance plus cash/POS choices. The modal was closed without submitting payment. Booking #3's check-in action was disabled until 14:00 with an explanation. |
+| Front-desk booking UI parity and automatic customer suggestions | **Passed with live inventory limit** | The stay/guest search controls, availability URL builder, and room-card renderer are shared with customer discovery. Seven focused web tests passed. On port 3000, entering a synthetic unmatched name showed no suggestion as required; live availability returned zero eligible clean rooms, so no booking or payment was submitted. |
+| Front-desk room-card layout | **Passed in live browser** | Port-3000 staff availability search returned QA-801 in “Cần dọn phòng”. The fallback image, room facts, amenity chips, price, disabled action and reason now appear as distinct sections. No booking was created. |
+| Staff counter collection and check-in timing | **Collection posted and verified; pre-check-in UI passed** | On the live staff UI, synthetic booking #5 was collected through the cash option for 850,500 VND after user authorization. The booking row showed “Đã thanh toán tại quầy”; transaction history showed one `cash / cash` folio-5 entry with 850,500 applied and zero excess (`APPLIED`). No real money or external gateway was used. `payment_paid / #5` is queued with zero email attempts, so Gmail delivery remains unverified while SMTP is disabled. Booking #3's pre-check-in button remains disabled until its scheduled time. |
 | Invoice PDF regression | **Passed** | Synthetic statement contains internal-only labels, reconciled total, and embedded Vietnamese font; it does not claim to be an issued tax invoice. |
 | Migration manifest regression | **Passed** | Manifest includes every SQL migration exactly once, including `v4_5_electronic_invoices.sql`. |
 | MISA adapter contract | **6 passed; 0 failed** | Synthetic loopback HTTP fixtures cover POS/HSM route and payload shapes, token reuse/separation, status headers, view-link allowlisting, PDF validation and cancellation. The POS marker assertion fails against the old payload and passes with the fix. |
@@ -47,6 +49,7 @@ The previously completed full-suite baseline was 284 Java tests (0 failures/erro
 - [x] Authentication and browser login/registration behavior through automated fixtures.
 - [x] Guest/customer booking, voucher, membership, profile, payment-state, support, and notification UI behavior through Node tests.
 - [x] Front-desk walk-in pricing/payment/check-in constraints through unit and UI tests.
+- [x] Front-desk shared room-card display through the live browser, including preservation of the disabled action for a room needing cleaning.
 - [x] Room allocation, housekeeping authorization/state rules, maintenance, minibar, folio, and webhook logic through Java unit/controller tests where fixtures allowed.
 - [x] AI prompt guardrails, concierge authorization, provider settings, and session behavior through automated tests.
 - [x] Internal invoice PDF semantics and migration-manifest consistency.
@@ -99,7 +102,7 @@ The previously completed full-suite baseline was 284 Java tests (0 failures/erro
 - `QA-2026-006`: Added the Web booking lifecycle migration to the runtime migration sequence after booking history returned HTTP 500 on missing lifecycle schema. **Verified on local MariaDB; history now returns HTTP 200.**
 - `QA-2026-007`: Unified customer discovery search controls and room-card actions with the landing page. **Verified in live browser and targeted UI tests.**
 - `QA-2026-008`: Corrected Java/MariaDB wall-time binding in automatic booking lifecycle queries and check-in timestamp writes. **Verified with MariaDB rollback-only lifecycle simulation; permanent integration test compiled.**
-- `QA-2026-009`: Added staff counter/POS collection through the folio API and exposed the booking payment choice. **UI verified; collection was not submitted, so the ledger/payment endpoint remains unverified.**
+- `QA-2026-009`: Added staff counter/POS collection through the folio API and exposed the booking payment choice. **Verified end to end in the live UI and transaction history using an authorized synthetic cash collection on booking #5.**
 - `QA-2026-010`: Disabled check-in before the scheduled time and removed the action after checkout. **Pre-check-in UI verified; after-checkout UI branch not live-tested.**
 - `QA-2026-011`: Exposed the booking channel and labeled Web bookings as system-managed; suppresses manual check-in/check-out for those stays while retaining Web counter collection. **Live UI verified on bookings #3/#4.**
 
@@ -108,7 +111,7 @@ The previously completed full-suite baseline was 284 Java tests (0 failures/erro
 1. Configure a separate MariaDB schema whose name ends in `_test` to run the guarded database concurrency/payment/migration suites; they were not run against `hotel_runtime_20261022`.
 2. Automatic lifecycle was verified under a simulated clock and rolled back. Observe a naturally due booking/reminder on a future run if a wall-clock journey is required; no current booking was left checked in or checked out for testing.
 3. Continue remaining staff workflows through the browser, then run the desktop UI when a suitable GUI environment is available.
-4. Have an authorized cashier confirm the final “Xác nhận đã thu 1.701.000 đ” action only after receiving the test funds to complete payment-posting verification. The current browser modal is closed and the booking remains pending.
+4. The staff counter-collection write path is verified for a synthetic cash collection on booking #5; POS and partial/excess staff collections remain untested in the live UI.
 5. With MISA test credentials and an approved test seller account, exercise issue/sync/adjust/cancel/PDF operations in MISA's test environment before considering production setup.
 6. Run Docker bootstrap and performance tests on a host with Docker and MariaDB 11.
 
@@ -130,3 +133,40 @@ The previously completed full-suite baseline was 284 Java tests (0 failures/erro
 - Backend compile passed across 361 application and 126 test sources. `CounterPaymentLifecycleTest`: 3 passed. The guarded `PaymentsNotificationsIntegrationTest` did not execute because it requires `HOTEL_RUN_DB_INTEGRATION=true` and a disposable database name ending in `_test`; the local runtime schema was not used for destructive integration fixtures.
 - `node --check` passed for eight source/public portal and booking modules. Focused Node UI tests passed 4/4; `git diff --check` passed.
 - Restarted with `start-backend.bat`; MariaDB 11.4.13 health/preflight passed and the staff notification API loaded through the live port-3000 portal. The bell showed “THÔNG BÁO NHÂN VIÊN” and the correct empty state. No overdue fixture, folio payment or email was created/sent, so a populated overdue notification still needs a disposable-fixture UI run.
+
+### Customer directory details (2026-10-24)
+
+- **Finding:** The customer table showed dashes for name/identity because its API map keys were snake_case while the staff/admin views consume camelCase. Email/address were missing from the list query; customer creation also ignored address.
+- **Fix:** Standardized list response fields, selected email/address and identity-vault presence, persisted submitted addresses, applied staff/admin authorization to the PII list endpoint, and escaped database values in both source and served customer modules.
+- **Verification:** `start-backend.bat` passed key/schema/vault preflight and restarted the backend against local MariaDB. Maven `test-compile` compiled 361 main and 126 test sources; no test suite was run. `node --check` passed on all four edited customer modules and `git diff --check` passed. The live authenticated port-3000 table now shows customer names, three existing email values, phone values, and “Đã lưu bảo mật” for a vaulted identity. Address cells remain empty because the existing rows have no address data. No customer records were created, deleted, or edited. Search-by-email and the admin page were not separately exercised.
+- **Next action:** If requested, manually exercise email/address search and admin customer details with synthetic records; current production-like records should not be edited to fill missing addresses.
+
+### Staff payment history readability (2026-10-24)
+
+- **Finding:** The eight-column payment history compressed date/time, transaction ID, amount and status at the live desktop viewport. The filter controls also stacked despite sufficient horizontal space.
+- **Fix:** Added a horizontally scrollable, minimum-width transaction table with legible column sizing and no-wrap rules for key values. Filter controls use a responsive row layout. Source and served assets are synchronized with cache-busted portal/module URLs.
+- **Verification:** Reloaded the authenticated port-3000 staff page. Dates and amounts stayed on one line, the paid badges remained intact, transaction IDs were readable, and filters aligned horizontally. Folio 5 showed the authorized 850,500 VND cash entry; no extra transaction was submitted.
+- **Status:** QA-2026-015 verified. Continue the remaining POS and partial/excess live collection paths separately.
+
+### Identify guests from payment transactions (2026-10-24)
+
+- **Finding:** Staff saw only Folio ID and transaction ID, so they needed another lookup to identify a guest's payment.
+- **Fix:** Transaction history now projects booking code, customer name and room number; the UI displays those alongside Folio ID. Phone and identity numbers remain absent from this list.
+- **Verification:** Rebuilt/restarted with `start-backend.bat`; MariaDB 11.4 connection, schema and vault-key preflight passed. The live authenticated port-3000 staff history showed the existing folio-5 transaction as “Khách QA đặt phòng 06h-18h”, `BKG-WEB-2026-5`, room `QA-801`. Filtering on Folio `5` returned exactly that row. Folios 1, 3 and 4 also resolved to the expected existing QA customer and booking-code rows. No extra transaction was submitted.
+- **Status:** QA-2026-016 verified. POS and partial/excess live collection paths remain open and require a separate approved synthetic payment action.
+
+### Payment history table consistency (2026-10-24)
+
+- **Finding:** Payment and notification history used basic previous/next buttons instead of the shared portal pagination and table card.
+- **Fix:** Both history endpoints now return current-page `items` plus an exact `total`; the UI uses the shared pagination control, matching page-size selector, range summary and page indicator. The menu item now appears below “Hóa đơn” as “Thanh toán & thông báo” with a wallet icon.
+- **Verification:** Restarted with `start-backend.bat`; MariaDB 11.4.13, schema and vault preflight passed. The live staff page showed transactions `1–4 trên 4` and notifications `1–10 trên 17`; Next returned `11–17 trên 17` on page `2 / 2`, with correct disabled states. No database records, payments or emails were changed. JavaScript syntax and `git diff --check` passed.
+- **Status:** QA-2026-017 verified. Continue the remaining POS and partial/excess live collection paths separately.
+
+### Housekeeping staff interface preview (2026-10-24)
+
+- **Scope:** Added a standalone housekeeping work-queue preview at `web-ui/public/housekeeping-preview.html` for the later staff-area integration. It uses synthetic room/task data only and makes no backend, booking, customer, database, payment, or email changes.
+- **Manual browser verification:** On port 3000, accepted the already handed-over room 305 and saw it change to “Đang dọn”; confirmed cleaning and saw it in “Đã hoàn tất”. Room 110, which is not handed over until 13:30, stayed visible for awareness with the action disabled and an explanation. The completed list showed rooms 305 and 605. Earlier preview checks also exercised room search and the all/completed views.
+- **Build checks:** `npm run build:housekeeping-preview`, `node --check` on source and served JavaScript, and `git diff --check` passed.
+- **Regression suite:** The initial sandboxed `npm test` run had 10 failures. Two front-desk checks were stale for the new disabled room cards/empty-state guidance, and the notification test fixture did not implement the browser APIs used by the staff notification tray. Updated these regression checks and added a deterministic hotel-time clock for the check-in assertion. The first sandboxed full run still blocked local-server fixtures (`EACCES`); rerunning with localhost access passed the login/server integration cases. Final `npm test`: **136 passed, 0 failed**.
+- **Backend regression:** mvn -o -Dmaven.repo.local=target/maven-repository -Dhotel.build.directory=target/qa-baseline test: **291 run, 0 failures/errors, 42 guarded tests skipped**. The skips include MariaDB destructive/integration fixtures that require an explicit disposable test schema.
+- **Status:** Housekeeping preview workflow and full web-ui suite verified. Production integration remains intentionally deferred. Bundle this work with the related staff changes for the single GitHub push, as requested.

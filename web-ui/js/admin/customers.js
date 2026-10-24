@@ -1,4 +1,5 @@
 import { api } from "../../api.js";
+import { escapeHtml } from "../shared/ui.js";
 
 function avatarColor(str) {
     const colors = ['#d97706','#10b981','#3b82f6','#8b5cf6','#06b6d4','#ef4444','#f59e0b'];
@@ -114,31 +115,36 @@ export async function renderAdminCustomers(container, session) {
         paginatedList.forEach((c, i) => {
             const initials = getInitials(c.fullName);
             const color    = avatarColor(c.fullName);
+            const displayName = escapeHtml(c.fullName || '—');
+            const identity = c.identityCard
+                ? escapeHtml(c.identityCard)
+                : c.hasIdentityCard ? '<span class="badge">Đã lưu bảo mật</span>' : '—';
+            const safePhone = String(c.phone || '').replace(/[^+\d]/g, '');
             const tr = document.createElement("tr");
             tr.className = "table-row-animate";
             tr.style.animationDelay = `${i * 0.035}s`;
             tr.innerHTML = `
                 <td>
-                    <div class="user-avatar" style="background:${color};">${initials}</div>
+                    <div class="user-avatar" style="background:${color};">${escapeHtml(initials)}</div>
                 </td>
                 <td>
-                    <div style="font-weight:600;font-size:14px;">${c.fullName || '—'}</div>
-                    <div style="font-size:12px;color:var(--text-muted);">ID: ${c.id}</div>
+                    <div style="font-weight:600;font-size:14px;">${displayName}</div>
+                    <div style="font-size:12px;color:var(--text-muted);">ID: ${escapeHtml(c.id)}</div>
                 </td>
-                <td style="font-size:13px;font-family:monospace;color:var(--text-muted);">${c.identityCard || '—'}</td>
+                <td style="font-size:13px;font-family:monospace;color:var(--text-muted);">${identity}</td>
                 <td style="font-size:13px;">
-                    ${c.phone ? `<a href="tel:${c.phone}" style="color:var(--text-main);text-decoration:none;">${c.phone}</a>` : '<span style="color:var(--text-muted);">—</span>'}
+                    ${c.phone ? `<a href="tel:${escapeHtml(safePhone)}" style="color:var(--text-main);text-decoration:none;">${escapeHtml(c.phone)}</a>` : '<span style="color:var(--text-muted);">—</span>'}
                 </td>
                 <td style="font-size:13px;">
-                    ${c.email ? `<a href="mailto:${c.email}" style="color:var(--primary);text-decoration:none;">${c.email}</a>` : '<span style="color:var(--text-muted);">—</span>'}
+                    ${c.email ? `<a href="mailto:${escapeHtml(c.email)}" style="color:var(--primary);text-decoration:none;">${escapeHtml(c.email)}</a>` : '<span style="color:var(--text-muted);">—</span>'}
                 </td>
-                <td style="font-size:13px;color:var(--text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${c.address || ''}">${c.address || '—'}</td>
+                <td style="font-size:13px;color:var(--text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(c.address || '')}">${escapeHtml(c.address || '—')}</td>
                 <td style="text-align:right;">
                     <div class="action-btns" style="justify-content:flex-end;">
-                        <button class="btn-icon btn-view-cust" data-id="${c.id}" title="Xem chi tiết">
+                        <button class="btn-icon btn-view-cust" data-id="${escapeHtml(c.id)}" title="Xem chi tiết">
                             <i data-lucide="eye" style="width:14px;height:14px;"></i>
                         </button>
-                        <button class="btn-icon danger btn-delete-cust" data-id="${c.id}" data-name="${c.fullName}" title="Xóa khách hàng">
+                        <button class="btn-icon danger btn-delete-cust" data-id="${escapeHtml(c.id)}" data-name="${escapeHtml(c.fullName || '')}" title="Xóa khách hàng">
                             <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
                         </button>
                     </div>
@@ -156,28 +162,28 @@ export async function renderAdminCustomers(container, session) {
                         <button class="modal-close" onclick="closeModal('global-modal')">&times;</button>
                     </div>
                     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:16px;background:var(--bg-card);border-radius:var(--radius-md);">
-                        <div class="user-avatar" style="width:56px;height:56px;font-size:20px;background:${color};">${initials}</div>
+                        <div class="user-avatar" style="width:56px;height:56px;font-size:20px;background:${color};">${escapeHtml(initials)}</div>
                         <div>
-                            <div style="font-size:18px;font-weight:700;">${c.fullName || '—'}</div>
-                            <div style="font-size:13px;color:var(--text-muted);">ID Khách hàng: #${c.id}</div>
+                            <div style="font-size:18px;font-weight:700;">${displayName}</div>
+                            <div style="font-size:13px;color:var(--text-muted);">ID Khách hàng: #${escapeHtml(c.id)}</div>
                         </div>
                     </div>
                     <div class="grid grid-cols-2" style="gap:12px;">
                         <div style="background:var(--bg-card);border-radius:var(--radius-sm);padding:14px;">
                             <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">CCCD / Hộ chiếu</div>
-                            <div style="font-weight:600;font-family:monospace;">${c.identityCard || '—'}</div>
+                            <div style="font-weight:600;font-family:monospace;">${escapeHtml(c.identityCard || (c.hasIdentityCard ? 'Đã lưu bảo mật' : '—'))}</div>
                         </div>
                         <div style="background:var(--bg-card);border-radius:var(--radius-sm);padding:14px;">
                             <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Điện thoại</div>
-                            <div style="font-weight:600;">${c.phone || '—'}</div>
+                            <div style="font-weight:600;">${escapeHtml(c.phone || '—')}</div>
                         </div>
                         <div style="background:var(--bg-card);border-radius:var(--radius-sm);padding:14px;">
                             <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Email</div>
-                            <div style="font-weight:600;word-break:break-all;">${c.email || '—'}</div>
+                            <div style="font-weight:600;word-break:break-all;">${escapeHtml(c.email || '—')}</div>
                         </div>
                         <div style="background:var(--bg-card);border-radius:var(--radius-sm);padding:14px;">
                             <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Địa chỉ</div>
-                            <div style="font-weight:600;">${c.address || '—'}</div>
+                            <div style="font-weight:600;">${escapeHtml(c.address || '—')}</div>
                         </div>
                     </div>
                     <div class="flex-row" style="justify-content:flex-end;margin-top:20px;">
@@ -201,7 +207,7 @@ export async function renderAdminCustomers(container, session) {
                         <div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
                             <i data-lucide="user-x" style="width:24px;height:24px;color:var(--danger);"></i>
                         </div>
-                        <p style="font-size:15px;font-weight:600;margin-bottom:8px;">Xóa khách hàng <strong>${c.fullName}</strong>?</p>
+                        <p style="font-size:15px;font-weight:600;margin-bottom:8px;">Xóa khách hàng <strong>${escapeHtml(c.fullName || 'này')}</strong>?</p>
                         <p style="font-size:13px;color:var(--text-muted);">Toàn bộ dữ liệu liên quan sẽ bị xóa vĩnh viễn.</p>
                     </div>
                     <div class="flex-row" style="justify-content:flex-end;">
@@ -284,7 +290,8 @@ export async function renderAdminCustomers(container, session) {
             (c.fullName     || '').toLowerCase().includes(q) ||
             (c.identityCard || '').toLowerCase().includes(q) ||
             (c.phone        || '').toLowerCase().includes(q) ||
-            (c.email        || '').toLowerCase().includes(q)
+            (c.email        || '').toLowerCase().includes(q) ||
+            (c.address      || '').toLowerCase().includes(q)
         );
         currentPage = 1;
         renderTable(filtered);

@@ -52,3 +52,11 @@
 - **Evidence:** The guest can keep occupying a Web reservation after its scheduled checkout while an unpaid counter balance remains. Staff need the booking, room, guest contact and outstanding balance to collect payment and complete checkout.
 - **Decision:** Keep the reservation checked in through the first 30 minutes after checkout. If the counter balance remains, mark it overdue, post idempotent hourly overstay charges and create one durable staff notification linked to the checkout screen. Charge each started hour after the free period and add one hourly penalty when six hours have elapsed. Staff read state is per account. QR-paid Web reservations continue through automatic checkout; front-desk stays remain staff-operated.
 - **Approval needed:** None; the user requested the overdue staff alert and confirmed the grace/fee rules.
+
+## DL-2026-007 — Keep housekeeping work queue standalone until staff integration
+
+- **Date:** 2026-10-24
+- **Area:** Staff housekeeping
+- **Evidence:** The user asked for a dedicated form/queue for cleaning staff and then specified that the new interface should be integrated later, while staff work proceeds first.
+- **Decision:** Keep the current housekeeping queue on its own preview route with clearly labeled synthetic data and local-only state changes. Do not connect it to booking operations, MariaDB, payments, customer records, or staff permissions until the integration work is taken up.
+- **Approval needed:** None for the mock UI. Integration will require the actual housekeeping role and handoff/status API contract.

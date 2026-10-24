@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
 /**
  * Customer Profile Management Controller (TASK-A2.2).
@@ -137,12 +138,17 @@ public class CustomerController implements HttpHandler {
                     ? obj.get("loyalty_level").getAsString()
                     : (obj.has("loyaltyLevel") && !obj.get("loyaltyLevel").isJsonNull() ? obj.get("loyaltyLevel").getAsString() : "Member");
 
-            int id = customerDao.createCustomer(fullName, phone, identityCard, email, loyaltyLevel);
+            String address = obj.has("address") && !obj.get("address").isJsonNull()
+                    ? obj.get("address").getAsString() : null;
+
+            int id = customerDao.createCustomer(fullName, phone, identityCard, email, address, loyaltyLevel);
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("id", id);
             data.put("full_name", fullName != null ? fullName.trim() : "");
             data.put("phone", phone != null ? phone.trim() : "");
             data.put("identity_card", identityCard != null ? identityCard.trim() : "");
+            data.put("email", email != null ? email.trim() : "");
+            data.put("address", address != null ? address.trim() : "");
             data.put("loyalty_level", loyaltyLevel != null ? loyaltyLevel.trim() : "Member");
             ApiResponseUtil.sendSuccess(exchange, 201, data);
         } catch (Exception e) {
@@ -155,8 +161,11 @@ public class CustomerController implements HttpHandler {
      */
     public void handleSearch(HttpExchange exchange) throws IOException {
         try {
+            if (!SecurityUtil.hasPermission(exchange, 1, 2)) return;
             String query = exchange.getRequestURI().getQuery();
             String keyword = null;
+            String phone = null;
+            String identity = null;
             if (query != null && !query.isBlank()) {
                 for (String param : query.split("&")) {
                     String[] pair = param.split("=", 2);
@@ -165,12 +174,30 @@ public class CustomerController implements HttpHandler {
                     String v = java.net.URLDecoder.decode(pair[1].trim(), StandardCharsets.UTF_8);
                     if ("search".equalsIgnoreCase(k) || "q".equalsIgnoreCase(k) || "keyword".equalsIgnoreCase(k)) {
                         keyword = v;
+                    } else if ("phone".equalsIgnoreCase(k)) {
+                        phone = v;
+                    } else if ("identity".equalsIgnoreCase(k)) {
+                        identity = v;
                     }
                 }
             }
 
-            List<Map<String, Object>> customers = customerDao.searchCustomers(keyword);
-            ApiResponseUtil.sendSuccess(exchange, 200, customers, Map.of("total", customers.size()));
+            if (phone != null) {
+                phone = phone.replaceAll("\\D", "");
+                if (phone.startsWith("84") && phone.length() >= 11) phone = "0" + phone.substring(2);
+                if (phone.length() < 6) phone = null;
+            }
+
+            byte[] identityHash = null;
+            try {
+                if (identity != null && identity.strip().replaceAll("[^A-Za-z0-9]", "").length() >= 5) {
+                    identityHash = GuestIdentityVaultDao.configured().blindIndex(identity);
+                }
+                List<Map<String, Object>> customers = customerDao.searchCustomers(keyword, phone, identityHash);
+                ApiResponseUtil.sendSuccess(exchange, 200, customers, Map.of("total", customers.size()));
+            } finally {
+                if (identityHash != null) Arrays.fill(identityHash, (byte) 0);
+            }
         } catch (Exception e) {
             GlobalExceptionHandler.handle(exchange, e);
         }

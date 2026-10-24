@@ -36,7 +36,7 @@ public record StayWindow(RentalType rentalType, LocalDateTime checkIn, LocalDate
             }
         }
 
-        if (in.isBefore(LocalDateTime.now(HOTEL_ZONE))) {
+        if (in.isBefore(LocalDateTime.now(HOTEL_ZONE).truncatedTo(ChronoUnit.MINUTES))) {
             throw new IllegalArgumentException("Check-in time has already passed");
         }
         if (!out.isAfter(in)) throw new IllegalArgumentException("Check-out must follow check-in");

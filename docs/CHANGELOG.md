@@ -1,5 +1,40 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-24] — Link payment history to guest and booking
+
+- Added booking code, customer name and room number to payment audit rows using the existing Folio → booking relationships.
+- Kept customer phone and identity numbers out of the transaction table and updated the API contract.
+- Rebuilt through `start-backend.bat` and verified guest, booking code and room on the existing folio-5 transaction in the live port-3000 staff page; no extra payment was submitted.
+
+## [2026-10-24] — Improve staff payment history readability
+
+- Kept transaction date/time, amounts and result badges together in the staff payment history; wide tables now scroll horizontally instead of squeezing every field.
+- Aligned filter controls in one row on wide screens and kept a responsive layout for smaller screens.
+- Verified the refreshed port-3000 staff view against existing synthetic transactions; no extra payment was submitted.
+
+## [2026-10-24] — Clarify front-desk room cards
+
+- Added staff-scoped styles for the shared room-card image placeholder/status, room details, amenity chips, price, actions and unavailable reason. The “Cần dọn phòng” selection remains disabled.
+- Updated QA-2026-014 with the live port-3000 visual check; no booking or payment was submitted.
+
+## [2026-10-24] — Verify staff counter collection end to end
+
+- Recorded the authorized synthetic cash collection for Web booking #5 and verified the booking's paid state in the live staff list.
+- Confirmed transaction history contains one applied cash entry for 850,500 VND with zero excess; no real funds or external gateway were used.
+- Updated QA-2026-009 and test progress; POS and partial/excess collection paths remain open.
+
+## [2026-10-24] — Reuse customer room search in front-desk bookings
+
+- Reused the same stay/guest search controls, availability query builder, and room-card renderer in customer discovery and staff front-desk booking.
+- Replaced manual customer lookup with debounced suggestions while staff enter a name, phone, identity number, or email. Only matching customer profiles are suggested; an unmatched guest continues as a new customer.
+- Verification: seven focused browser UI tests passed. On the live staff portal, a synthetic unmatched name produced no suggestion; today's room search returned no eligible clean rooms, so no live room selection, booking, or payment was submitted.
+
+## [2026-10-24] — Restore customer profile details in staff and admin lists
+
+- Fixed the customer list API/UI field-name mismatch, included email and address in search results, and exposed whether an identity number is present in the encrypted vault without decrypting it for list views.
+- Customer creation now preserves submitted addresses. The customer list endpoint is restricted to Admin/FrontDesk, matching its PII scope.
+- Added QA-2026-013 and documented the list response fields and verification status.
+
 ## [2026-10-23] — Overdue checkout charges and staff notification center
 
 - Added a 30-minute checkout grace period, per-started-hour overstay charges and one hourly penalty after six hours, with idempotent folio reconciliation across background processing and staff checkout.
@@ -352,3 +387,9 @@
 - Added the electronic-invoice migration to the shared fresh-database bootstrap manifest.
 - Documented the MISA meInvoice routes and access rules in `docs/dev-spec/api-contracts.md`.
 - Added the QA bug report, test progress, and decision log. Maven ran 278 tests: 236 passed, 0 failed, and 42 guarded skips; the web UI suite passed all 133 tests.
+
+## [2026-10-24] — Shared payment history pagination
+
+- Added exact totals to payment and notification history responses and reused the portal-wide pagination component for page size, result ranges, page indicators, and navigation states.
+- Grouped the history table in the shared card treatment and moved “Thanh toán & thông báo” below “Hóa đơn” with a wallet icon.
+- Recorded the live verification as QA-2026-017; no database records, payments, or emails were changed.

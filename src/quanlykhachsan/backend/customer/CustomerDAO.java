@@ -35,6 +35,12 @@ public interface CustomerDAO {
     public void updateLoyaltyPoints(int customerId, int currentPointsChange, int totalPointsChange, String newLevel) throws Exception;
 
     // TASK-A2.2: Customer Profile Management & Fast Lookup
-    public int createCustomer(String fullName, String phone, String identityCard, String email, String loyaltyLevel) throws java.sql.SQLException;
+    public int createCustomer(String fullName, String phone, String identityCard, String email, String address, String loyaltyLevel) throws java.sql.SQLException;
+    /** Backward-compatible overload for callers that do not collect an address. */
+    default int createCustomer(String fullName, String phone, String identityCard, String email, String loyaltyLevel) throws java.sql.SQLException {
+        return createCustomer(fullName, phone, identityCard, email, null, loyaltyLevel);
+    }
     public java.util.List<java.util.Map<String, Object>> searchCustomers(String keyword);
+    /** Searches staff-entered contact fields and optionally matches the protected identity blind index. */
+    public java.util.List<java.util.Map<String, Object>> searchCustomers(String keyword, String phone, byte[] identityHash);
 }

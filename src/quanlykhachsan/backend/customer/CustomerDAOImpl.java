@@ -161,7 +161,7 @@ public class CustomerDAOImpl implements CustomerDAO {
     }
 
     @Override
-    public int createCustomer(String fullName, String phone, String identityCard, String email, String loyaltyLevel) throws SQLException {
+    public int createCustomer(String fullName, String phone, String identityCard, String email, String address, String loyaltyLevel) throws SQLException {
         // Check for duplicate ID/Passport or phone numbers
         String checkSql = "SELECT id FROM customers WHERE identity_card = ? OR phone = ?";
         try (Connection con = DatabaseConnection.getConnection();
@@ -175,14 +175,15 @@ public class CustomerDAOImpl implements CustomerDAO {
             }
         }
 
-        String insertSql = "INSERT INTO customers(full_name, phone, identity_card, email, loyalty_level) VALUES (?, ?, ?, ?, ?)";
+        String insertSql = "INSERT INTO customers(full_name, phone, identity_card, email, address, loyalty_level) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, fullName != null ? fullName.trim() : "");
             ps.setString(2, phone != null ? phone.trim() : "");
             ps.setString(3, identityCard != null ? identityCard.trim() : "");
             ps.setString(4, email != null ? email.trim() : "");
-            ps.setString(5, (loyaltyLevel != null && !loyaltyLevel.isBlank()) ? loyaltyLevel.trim() : "Member");
+            ps.setString(5, address != null ? address.trim() : "");
+            ps.setString(6, (loyaltyLevel != null && !loyaltyLevel.isBlank()) ? loyaltyLevel.trim() : "Member");
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -202,29 +203,58 @@ public class CustomerDAOImpl implements CustomerDAO {
 
     @Override
     public List<Map<String, Object>> searchCustomers(String keyword) {
+        return searchCustomers(keyword, null, null);
+    }
+
+    @Override
+    public List<Map<String, Object>> searchCustomers(String keyword, String phone, byte[] identityHash) {
         List<Map<String, Object>> list = new ArrayList<>();
         boolean hasKeyword = (keyword != null && !keyword.isBlank());
-        String sql = hasKeyword
-                ? "SELECT id, full_name, phone, identity_card, loyalty_level, created_at FROM customers WHERE full_name LIKE ? OR phone LIKE ? OR identity_card LIKE ? ORDER BY id DESC LIMIT 50"
-                : "SELECT id, full_name, phone, identity_card, loyalty_level, created_at FROM customers ORDER BY id DESC LIMIT 50";
+        boolean hasPhone = (phone != null && phone.replaceAll("\\D", "").length() >= 6);
+        boolean hasIdentityHash = identityHash != null && identityHash.length > 0;
+        String normalizedPhoneSql = "REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '')";
+        String canonicalPhoneSql = "CASE WHEN " + normalizedPhoneSql + " LIKE '84%' THEN CONCAT('0', SUBSTRING(" + normalizedPhoneSql + ", 3)) ELSE " + normalizedPhoneSql + " END";
+        String identityMatchColumn = hasIdentityHash ? "(identity_hash = ?) AS identity_matched" : "FALSE AS identity_matched";
+        StringBuilder sql = new StringBuilder("SELECT id, full_name, phone, identity_card, email, address, loyalty_level, created_at, (identity_hash IS NOT NULL) AS has_identity_hash, ")
+                .append(identityMatchColumn).append(" FROM customers");
+        List<String> filters = new ArrayList<>();
+        if (hasKeyword) filters.add("(full_name LIKE ? OR phone LIKE ? OR identity_card LIKE ? OR email LIKE ? OR address LIKE ?)");
+        if (hasPhone) filters.add("(" + canonicalPhoneSql + " LIKE ?)");
+        if (hasIdentityHash) filters.add("(identity_hash = ?)");
+        if (!filters.isEmpty()) sql.append(" WHERE ").append(String.join(" OR ", filters));
+        List<String> ordering = new ArrayList<>();
+        if (hasIdentityHash) ordering.add("CASE WHEN identity_hash = ? THEN 0 ELSE 1 END");
+        if (hasPhone) ordering.add("CASE WHEN " + canonicalPhoneSql + " LIKE ? THEN 0 ELSE 1 END");
+        ordering.add("id DESC");
+        sql.append(" ORDER BY ").append(String.join(", ", ordering)).append(" LIMIT 50");
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            int parameter = 1;
+            if (hasIdentityHash) ps.setBytes(parameter++, identityHash); // identityMatched projection
             if (hasKeyword) {
                 String pattern = "%" + keyword.trim() + "%";
-                ps.setString(1, pattern);
-                ps.setString(2, pattern);
-                ps.setString(3, pattern);
+                for (int i = 0; i < 5; i++) ps.setString(parameter++, pattern);
             }
+            if (hasPhone) ps.setString(parameter++, "%" + phone.replaceAll("\\D", "") + "%");
+            if (hasIdentityHash) ps.setBytes(parameter++, identityHash);
+            if (hasIdentityHash) ps.setBytes(parameter++, identityHash); // identity-first result ordering
+            if (hasPhone) ps.setString(parameter, "%" + phone.replaceAll("\\D", "") + "%");
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> map = new LinkedHashMap<>();
+                    String identityCard = rs.getString("identity_card");
                     map.put("id", rs.getInt("id"));
-                    map.put("full_name", rs.getString("full_name"));
+                    map.put("fullName", rs.getString("full_name"));
                     map.put("phone", rs.getString("phone"));
-                    map.put("identity_card", rs.getString("identity_card"));
-                    map.put("loyalty_level", rs.getString("loyalty_level"));
-                    map.put("created_at", rs.getString("created_at"));
+                    map.put("identityCard", identityCard);
+                    map.put("hasIdentityCard", rs.getBoolean("has_identity_hash")
+                            || (identityCard != null && !identityCard.isBlank()));
+                    map.put("identityMatched", rs.getBoolean("identity_matched"));
+                    map.put("email", rs.getString("email"));
+                    map.put("address", rs.getString("address"));
+                    map.put("loyaltyLevel", rs.getString("loyalty_level"));
+                    map.put("createdAt", rs.getString("created_at"));
                     list.add(map);
                 }
             }

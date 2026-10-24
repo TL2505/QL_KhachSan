@@ -99,6 +99,8 @@ function setupMockEnvironment() {
       return null;
     },
     querySelectorAll: () => [],
+    addEventListener: () => {},
+    removeEventListener: () => {},
     createElement: tag => {
       const element = createMockElement('dynamic', tag);
       let elementId = element.id;
@@ -138,6 +140,8 @@ function setupMockEnvironment() {
       replace: () => {}
     },
     localStorage: mockStorage,
+    setInterval: () => 1,
+    clearInterval: () => {},
     lucide: { createIcons: () => {} }
   };
   globalThis.localStorage = mockStorage;
@@ -158,17 +162,23 @@ function setupMockEnvironment() {
 // STATIC STRUCTURAL & LUXURY AUDIT
 // =============================================================================
 
-test('admin and staff never request customer-only notifications or expire their session', async () => {
+test('staff roles use the staff notification endpoint and never request customer notifications', async () => {
   const env = setupMockEnvironment();
   try {
-    let requests = 0;
-    globalThis.fetch = async url => { if (String(url).includes('/notifications')) requests++; throw new Error('Synthetic unavailable endpoint'); };
+    let staffRequests = 0, customerRequests = 0;
+    globalThis.fetch = async url => {
+      const endpoint = new URL(String(url)).pathname;
+      if (endpoint.endsWith('/staff-notifications')) staffRequests++;
+      else if (endpoint.endsWith('/notifications')) customerRequests++;
+      return {ok:true,status:200,headers:{get:()=>null},text:async()=>JSON.stringify({status:'success',data:[]})};
+    };
     const { initNotificationTray } = await loadModule('public/portal-app.js');
     for (const role of ['ADMIN', 'STAFF', 'HOUSEKEEPING']) {
       await initNotificationTray({ role, token: 'valid-test-token' });
-      assert.equal(env.getOrCreate('btn-notification-bell').hidden, true);
+      assert.equal(env.getOrCreate('btn-notification-bell').hidden, false);
     }
-    assert.equal(requests, 0);
+    assert.equal(staffRequests, 3);
+    assert.equal(customerRequests, 0);
   } finally { env.teardown(); }
 });
 

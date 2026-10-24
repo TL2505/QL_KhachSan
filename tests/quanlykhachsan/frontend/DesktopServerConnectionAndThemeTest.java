@@ -52,7 +52,7 @@ public class DesktopServerConnectionAndThemeTest {
 
         String activeJdbcUrl = ApiConfig.getJdbcUrl();
         assertNotNull(activeJdbcUrl);
-        assertTrue(activeJdbcUrl.contains("hotel_prod_db"), "JDBC URL must target hotel_prod_db");
+        assertTrue(activeJdbcUrl.contains("hotel_runtime_20261022"), "JDBC URL must target the local QA database");
     }
 
     @Test

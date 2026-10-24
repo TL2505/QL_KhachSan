@@ -9,7 +9,7 @@ import { renderInvoices } from "./admin/invoices.js?v=3.6.4";
 import { renderAdminCustomers } from "./admin/customers.js?v=3.6.4";
 import { renderAdminMembership } from "./admin/loyalty.js?v=3.6.21";
 import { renderAiSettings } from "./admin/ai-settings.js?v=7";
-import { renderPaymentOperations } from './shared/payment-operations.js';
+import { renderPaymentOperations } from './shared/payment-operations.js?v=3.6.66';
 import { renderRentalPolicy } from './admin/rental-policy.js';
 import { renderCatalogContent } from './admin/catalog-content.js?v=1';
 

@@ -169,11 +169,11 @@ export async function renderCheckout(container, session) {
                     <p style="margin: 0 0 8px 0; color: var(--text-muted); font-size: 14px;">Phòng: <strong style="color: var(--text-color); font-size: 16px; float: right;">${b.roomNumber || 'N/A'}</strong></p>
                     <p style="margin: 0; color: var(--text-muted); font-size: 14px;">Khách hàng: <strong style="color: var(--text-color); font-size: 16px; float: right;">${b.customerName || 'Khách vãng lai'}</strong></p>
                 </div>
-                <div class="form-group" style="margin-bottom: 15px;">
+                <div class="form-group" id="pay-amount-group" style="margin-bottom: 15px; display:none;">
                     <label style="display:block;margin-bottom:5px;font-size:14px;color:var(--text-muted);">Số tiền thu (VNĐ)</label>
-                    <input type="number" class="form-control" id="pay-amount" value="${b.totalPrice || 0}" required style="width:100%;">
+                    <input type="number" class="form-control" id="pay-amount" value="${b.totalPrice || 0}" min="0.01" step="0.01" required style="width:100%;">
                 </div>
-                <div class="form-group" style="margin-bottom: 15px;">
+                <div class="form-group" id="pay-method-group" style="margin-bottom: 15px; display:none;">
                     <label style="display:block;margin-bottom:5px;font-size:14px;color:var(--text-muted);">Phương thức thanh toán</label>
                     <select class="form-control" id="pay-method" style="width:100%;">
                         <option value="Cash">Tiền mặt</option>
@@ -185,11 +185,12 @@ export async function renderCheckout(container, session) {
                     <p style="font-size: 14px; color: var(--success); margin-bottom: 10px;">Quét mã VietQR để thanh toán</p>
                     <img id="qr-image" src="" alt="VietQR" style="width: 200px; height: 200px; border-radius: 8px; border: 2px solid var(--border);">
                 </div>
+                <div id="pay-balance-status" class="alert alert-info" role="status">Đang kiểm tra số dư folio…</div>
             </div>
             <div class="modal-body" id="modal-success-screen" style="display: none; text-align: center; padding: 40px 20px;">
                 <i data-lucide="check-circle" style="width: 64px; height: 64px; color: var(--success); margin-bottom: 20px; display: inline-block;"></i>
-                <h3 style="margin-bottom: 10px;">Thanh Toán Thành Công!</h3>
-                <p style="color: var(--text-muted); margin-bottom: 25px;">Hệ thống đã ghi nhận doanh thu và chuyển phòng sang trạng thái Đang Dọn Dẹp.</p>
+                <h3 id="checkout-success-heading" style="margin-bottom: 10px;">Thanh Toán Thành Công!</h3>
+                <p id="checkout-success-message" style="color: var(--text-muted); margin-bottom: 25px;">Hệ thống đã ghi nhận doanh thu và chuyển phòng sang trạng thái Đang Dọn Dẹp.</p>
                 <button class="btn btn-primary" id="btn-print-invoice">
                     <i data-lucide="printer" style="width:16px;height:16px;"></i> In Hóa Đơn PDF
                 </button>
@@ -209,9 +210,27 @@ export async function renderCheckout(container, session) {
         const qrImage = document.getElementById("qr-image");
         const btnConfirm = document.getElementById("btn-confirm-pay");
         
-        let transferPaid=false,folioId=null,pollTimer;
+        const amountGroup=document.getElementById('pay-amount-group');
+        const methodGroup=document.getElementById('pay-method-group');
+        const balanceStatus=document.getElementById('pay-balance-status');
+        const successHeading=document.getElementById('checkout-success-heading');
+        const successMessage=document.getElementById('checkout-success-message');
+        let transferPaid=false,folioId=null,pollTimer,folioBalance=null,alreadyPaid=false;
         const qrStatus=document.createElement('p');qrStatus.className='alert';qrStatus.setAttribute('role','status');qrCodeSection.append(qrStatus);
         async function findFolio(){const response=await api.get(`/folios/booking/${currentProcessBooking.id}`);const folios=Array.isArray(response)?response:response.data;const f=folios?.find(f=>f.id===folioId&&Number(f.balance)>0)||folios?.find(f=>Number(f.balance)>0)||folios?.find(f=>f.folio_type==='master')||folios?.[0];if(!f)throw new Error('Không tìm thấy folio');folioId=f.id;return f;}
+        const showFolioBalance=(folio,{preserveAmount=false}={})=>{
+            folioBalance=Number(folio.balance);
+            if(!Number.isFinite(folioBalance)||folioBalance<0)throw new Error('Không xác minh được số dư folio.');
+            alreadyPaid=folioBalance===0;
+            amountGroup.style.display=alreadyPaid?'none':'block';
+            methodGroup.style.display=alreadyPaid?'none':'block';
+            balanceStatus.style.display=alreadyPaid?'block':'none';
+            balanceStatus.className=alreadyPaid?'alert alert-success':'alert alert-info';
+            balanceStatus.textContent=alreadyPaid?'Khách đã thanh toán đủ. Không phát sinh giao dịch mới; chỉ cần xác nhận trả phòng.':'';
+            if(!preserveAmount||alreadyPaid)payAmountInput.value=alreadyPaid?'0':folioBalance.toFixed(2);
+            btnConfirm.disabled=false;
+            btnConfirm.textContent=alreadyPaid?'Xác nhận trả phòng':'Hoàn tất Thanh toán';
+        };
         const updateQRCode = async () => {
             clearTimeout(pollTimer);transferPaid=false;btnConfirm.disabled=false;payAmountInput.readOnly=false;
             if (payMethodSelect.value === "Chuyển khoản") {
@@ -241,33 +260,26 @@ export async function renderCheckout(container, session) {
         };
 
         payMethodSelect.addEventListener("change", updateQRCode);
-        findFolio().then(f=>{if(btnConfirm.isConnected&&payMethodSelect.value!=='Chuyển khoản')payAmountInput.value=f.balance;}).catch(error=>{btnConfirm.disabled=true;qrCodeSection.style.display='block';qrStatus.textContent=error.message;});
+        btnConfirm.disabled=true;
+        findFolio().then(f=>{if(btnConfirm.isConnected)showFolioBalance(f);}).catch(error=>{if(!btnConfirm.isConnected)return;balanceStatus.className='alert alert-error';balanceStatus.textContent=error.message||'Không kiểm tra được số dư folio.';btnConfirm.disabled=true;});
         
         btnConfirm.addEventListener('click', async () => {
             if (!currentProcessBooking) return;
             
-            const amount = document.getElementById("pay-amount").value;
             const method = document.getElementById("pay-method").value;
-            
-            if (!amount || amount < 0) {
-                await window.showCustomAlert("Vui lòng nhập số tiền hợp lệ!", { title: 'Số tiền không hợp lệ' });
-                return;
-            }
-
-            const payload = {
-                bookingId: currentProcessBooking.id,
-                customerId: currentProcessBooking.customerId,
-                amount: parseFloat(amount),
-                paymentMethod: method
-            };
 
             try {
                 btnConfirm.disabled = true;
                 btnConfirm.textContent = "Đang xử lý...";
-                
-                if(method==='Chuyển khoản'&&!transferPaid)throw new Error('Ngân hàng chưa xác nhận thanh toán.');
-                if(!folioId)await findFolio();
-                const payment={amount:method==='Chuyển khoản'?0:payload.amount,payment_method:method==='Credit Card'?'POS':'cash',checkout:true};
+                const previousBalance=folioBalance;
+                const latestFolio=await findFolio();
+                showFolioBalance(latestFolio,{preserveAmount:Number(latestFolio.balance)===previousBalance});
+                btnConfirm.disabled=true;
+                btnConfirm.textContent='Đang xử lý...';
+                const amount=alreadyPaid?0:Number(payAmountInput.value);
+                if(!alreadyPaid&&(!Number.isFinite(amount)||amount<=0))throw new Error('Số tiền thu phải lớn hơn 0.');
+                if(method==='Chuyển khoản'&&!alreadyPaid&&!transferPaid)throw new Error('Ngân hàng chưa xác nhận thanh toán.');
+                const payment={amount:method==='Chuyển khoản'||alreadyPaid?0:amount,payment_method:method==='Credit Card'?'POS':'cash',checkout:true};
                 const signature=JSON.stringify(payment);const attempt=currentProcessBooking.collectionAttempt;
                 const key=attempt?.signature===signature?attempt.key:crypto.randomUUID();currentProcessBooking.collectionAttempt={signature,key};
                 const result=await api.post(`/folios/${folioId}/pay`,payment,{headers:{'Idempotency-Key':key},timeoutMs:15000,retryOnNetworkError:false});
@@ -277,7 +289,7 @@ export async function renderCheckout(container, session) {
                     let due=Number(result.balance||0);
                     if(due<=0){folioId=null;try{const next=await findFolio();due=Number(next.balance||0);}catch{due=0;}}
                     if(method==='Chuyển khoản'){transferPaid=false;await updateQRCode();}
-                    else payAmountInput.value=due.toFixed(2);
+                    else {showFolioBalance({balance:due});btnConfirm.disabled=true;btnConfirm.textContent='Đang xử lý...';}
                     const message=result.checked_out?'Phòng đã được trả.':'Đã ghi nhận khoản thu; chưa thể hoàn tất trả phòng.';
                     await window.showCustomAlert(`${message} Còn ${Number(result.booking_balance||due).toLocaleString('vi-VN')} đ trên các folio. Số tiền kế tiếp là folio ${due.toLocaleString('vi-VN')} đ.`, { title: 'Chưa thể hoàn tất trả phòng' });
                     return;
@@ -287,6 +299,7 @@ export async function renderCheckout(container, session) {
                 document.getElementById("modal-checkout-form").style.display = 'none';
                 document.getElementById("modal-footer-form").style.display = 'none';
                 document.getElementById("modal-success-screen").style.display = 'block';
+                if(alreadyPaid){successHeading.textContent='Trả phòng thành công!';successMessage.textContent='Khách đã thanh toán đủ. Hệ thống đã hoàn tất trả phòng và chuyển phòng sang trạng thái cần dọn dẹp.';}
                 if (window.lucide) lucide.createIcons();
 
                 document.getElementById("btn-print-invoice").onclick = async () => {
@@ -309,7 +322,7 @@ export async function renderCheckout(container, session) {
                 await window.showCustomAlert("Lỗi thanh toán: " + e.message, { title: 'Không thể ghi nhận thanh toán' });
             } finally {
                 btnConfirm.disabled = false;
-                btnConfirm.textContent = "Hoàn tất Thanh toán";
+                btnConfirm.textContent = alreadyPaid ? "Xác nhận trả phòng" : "Hoàn tất Thanh toán";
             }
         });
     };
