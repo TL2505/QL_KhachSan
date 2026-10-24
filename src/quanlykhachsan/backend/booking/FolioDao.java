@@ -5,9 +5,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /** JDBC boundary for the folio ledger; every write uses the caller's transaction. */
@@ -107,12 +107,12 @@ public final class FolioDao {
             if(finalBuffer==null)q.setNull(2,Types.SMALLINT);else q.setInt(2,finalBuffer);
             q.setInt(3, bookingId);q.setInt(4,roomId);if(q.executeUpdate()!=1)return false;
         }
-        Timestamp readyNotBefore;
+        LocalDateTime readyNotBefore;
         try(PreparedStatement q=c.prepareStatement("SELECT room_release_at FROM bookings WHERE id=?")){
-            q.setInt(1,bookingId);try(ResultSet r=q.executeQuery()){if(!r.next())throw new SQLException("Booking disappeared during checkout");readyNotBefore=r.getTimestamp(1);}
+            q.setInt(1,bookingId);try(ResultSet r=q.executeQuery()){if(!r.next())throw new SQLException("Booking disappeared during checkout");readyNotBefore=r.getObject(1,LocalDateTime.class);}
         }
         try (PreparedStatement q = c.prepareStatement("UPDATE rooms SET status='vacant_dirty',ready_not_before=?,version=version+1 WHERE id=? AND status IN ('occupied_clean','occupied_dirty')")) {
-            q.setTimestamp(1,readyNotBefore);q.setInt(2, roomId); if (q.executeUpdate() != 1) throw new SQLException("Room state changed before checkout");
+            q.setObject(1,readyNotBefore);q.setInt(2, roomId); if (q.executeUpdate() != 1) throw new SQLException("Room state changed before checkout");
         }
         try(PreparedStatement q=c.prepareStatement(
                 "INSERT INTO cleaning_tasks(booking_id,room_id,rental_type,estimated_duration_minutes,due_at,expected_finish_at,status) "

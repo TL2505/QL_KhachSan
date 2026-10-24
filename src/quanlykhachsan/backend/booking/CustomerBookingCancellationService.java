@@ -78,7 +78,7 @@ public final class CustomerBookingCancellationService {
 
     private static Booking lockBooking(Connection c,int id,int customer)throws SQLException {
         try(PreparedStatement q=c.prepareStatement("SELECT id,customer_type,status,payment_choice,check_in_date FROM bookings WHERE id=? AND customer_id=? FOR UPDATE")){
-            q.setInt(1,id);q.setInt(2,customer);try(ResultSet r=q.executeQuery()){return r.next()?new Booking(r.getString(2),r.getString(3).toLowerCase(Locale.ROOT),r.getString(4),r.getTimestamp(5).toLocalDateTime()):null;}
+            q.setInt(1,id);q.setInt(2,customer);try(ResultSet r=q.executeQuery()){return r.next()?new Booking(r.getString(2),r.getString(3).toLowerCase(Locale.ROOT),r.getString(4),r.getObject(5,LocalDateTime.class)):null;}
         }
     }
 

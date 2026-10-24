@@ -24,14 +24,16 @@ Updated: 2026-10-24
 
 | Area | Result | Evidence |
 | --- | --- | --- |
-| Java compile and Maven tests | **284 run; 0 failures; 0 errors; 42 skipped** | JDK 17, isolated `target/qa-baseline` output and project-local Maven cache. The skips are environment-gated database/integration/performance cases. |
-| Web UI tests | **133 passed; 0 failed; 0 skipped** | `npm test` in `web-ui`; DOM and local HTTP fixtures were used. This is automated UI simulation, not a live browser journey. |
+| Java compile and Maven tests | **291 run; 0 failures; 0 errors; 42 skipped** | Latest full Maven suite used JDK 17, isolated `.run/qa-full` output and project-local Maven cache. The skips are environment-gated database/integration/performance cases. |
+| Web UI tests | **140 passed; 0 failed; 0 skipped** | Latest `npm test` in `web-ui`, including the staff booking 401 and late-response regressions; DOM and local HTTP fixtures were used. |
 | Changed browser JavaScript syntax | **6 files passed** | `node --check` on admin/staff invoices, customer bookings/discovery, concierge chat, and concierge room tools. |
 | Static frontend smoke | **Passed** | Local server returned HTTP 200 for `/`; HTML contained the login and booking modals. API/backend was not running. |
 | Live booking, mock QR payment, history, cancellation/refund and expiry | **Passed** | Browser on port 3000 plus the authorized local MariaDB. A paid mock booking was confirmed and then cancelled/refunded through the mock flow; a second unpaid QR booking expired; a third paid mock QR booking remains confirmed. No real payment was made. |
 | Web booking lifecycle and MariaDB local-time handling | **Passed in rollback-only transaction** | On synthetic booking #3, simulated 07:05 check-in, 90% checkout reminder, 05:01 auto checkout, `vacant_dirty`, cleaning task and lifecycle notifications. All simulation writes were rolled back; booking remains `confirmed` and room `reserved`. Found and fixed JDBC `Timestamp` timezone conversion in the engine. |
-| Post-fix Maven compile | **Passed** | Maven compiled 358 application sources and 125 test sources, including the new MariaDB lifecycle regression test. |
-| Targeted browser UI regression tests | **12 passed; 0 failed** | `node --test tests/customer-booking-voucher.test.mjs tests/portal-auth-fix.test.mjs`. |
+| Post-fix Maven compile | **Passed** | Fresh isolated Maven build compiled 361 application sources and 126 test sources, including the MariaDB lifecycle regression test. |
+| Booking wall-time JDBC mapping | **Partially verified** | Availability, reservation, QR expiry, cancellation, check-in/out, checkout adjustment, room readiness and housekeeping now bind/read local `DATETIME` values with `LocalDateTime`. The MariaDB lifecycle integration test exercised local-time booking and automatic check-in/out successfully; direct database/UI checks for each staff and customer endpoint remain pending. |
+| Disposable MariaDB payment integration | **22 passed; 0 failed** | `scripts/test-payments.ps1` created an owned random `*_test` schema, applied migrations and ran the payment/notification integration cases plus webhook/signature/mail tests. The schema was removed afterward; no real gateway or email was called and the runtime schema was not used. |
+| Auth and transport regression tests | **25 passed; 0 failed** | `portal-auth-fix.test.mjs` (9), `transport.test.mjs` (14), and `staff-bookings-auth.test.mjs` (2), including expiry redirection, legacy-token cleanup, and safe late responses. |
 | Customer booking UI parity with landing page | **Passed** | Port 3000 live browser: compact search controls, expandable filters, availability lookup, room card, and booking summary/confirmation were visually checked. The booking was not submitted during this layout check. |
 | Front-desk booking UI parity and automatic customer suggestions | **Passed with live inventory limit** | The stay/guest search controls, availability URL builder, and room-card renderer are shared with customer discovery. Seven focused web tests passed. On port 3000, entering a synthetic unmatched name showed no suggestion as required; live availability returned zero eligible clean rooms, so no booking or payment was submitted. |
 | Front-desk room-card layout | **Passed in live browser** | Port-3000 staff availability search returned QA-801 in “Cần dọn phòng”. The fallback image, room facts, amenity chips, price, disabled action and reason now appear as distinct sections. No booking was created. |
@@ -42,7 +44,7 @@ Updated: 2026-10-24
 | Phase 2 acceptance gate | **4 validator unit tests passed; sign-off remains incomplete** | The read-only validator returned `phase2_complete: false`; it lists missing manual evidence for staff room-grid/check-in, QR/payment, housekeeping, minibar, maintenance override, invoicing, dashboard exports, and Docker. |
 | Current e-invoice legal references | **Checked against official sources** | The operations guide now cites both Decree 254/2026/NĐ-CP and Circular 91/2026/TT-BTC, effective 01/07/2026. Seller-specific applicability remains for accounting/tax confirmation. |
 
-The previously completed full-suite baseline was 284 Java tests (0 failures/errors, 42 skipped) and 133 web tests (0 failures/skips). The full suites were not rerun after the latest timezone fix. Post-fix verification includes a successful full Maven `test-compile`, a targeted MariaDB rollback simulation of the lifecycle stages, and the targeted browser UI tests listed below. The 42 skipped baseline cases include database/integration/performance opt-ins; no full Maven integration suite was pointed at the local runtime database.
+Latest full-suite evidence is 291 Java tests (0 failures/errors, 42 skipped) and 140 web tests (0 failures). The Java suite was freshly compiled into `.run/qa-full` after the wall-time JDBC changes. Separately, 22 payment/notification tests passed against an owned disposable MariaDB schema, which the script removed. The 42 full-suite skips are other guarded database/integration/performance cases. The web suite remains current because no web source changed afterward.
 
 ## Workflow coverage checklist
 
@@ -55,7 +57,8 @@ The previously completed full-suite baseline was 284 Java tests (0 failures/erro
 - [x] Internal invoice PDF semantics and migration-manifest consistency.
 - [x] MISA adapter request/response behavior through synthetic local HTTP fixtures.
 - [x] Customer browser booking and mock QR payment journeys through cancellation/refund and QR expiry against the running backend and synthetic MariaDB data; automatic check-in/out logic was simulated transactionally because the real booking time had not arrived.
-- [x] Local MariaDB 11.4 migrations applied by backend startup; the full concurrency, payment-ledger integration suite and disposable-database bootstrap suite remain gated on an explicit `*_test` schema.
+- [x] Local MariaDB 11.4 migrations applied by backend startup; 22 payment, notification, webhook and signature cases passed on a disposable `*_test` schema.
+- [ ] Remaining guarded MariaDB integration/migration/concurrency/performance cases outside the payment script; no test ran against the runtime database.
 - [ ] MISA sandbox issue/sync/adjust/cancel/PDF operations; no MISA test credentials were available and no provider calls were made.
 - [ ] Native Swing staff journey and full desktop UI inspection.
 - [ ] Docker bootstrap and long-duration performance/soak run.
@@ -108,7 +111,7 @@ The previously completed full-suite baseline was 284 Java tests (0 failures/erro
 
 ## Remaining risks and next actions
 
-1. Configure a separate MariaDB schema whose name ends in `_test` to run the guarded database concurrency/payment/migration suites; they were not run against `hotel_runtime_20261022`.
+1. Run remaining guarded MariaDB concurrency/migration/performance cases on a disposable schema; do not point them at `hotel_runtime_20261022`.
 2. Automatic lifecycle was verified under a simulated clock and rolled back. Observe a naturally due booking/reminder on a future run if a wall-clock journey is required; no current booking was left checked in or checked out for testing.
 3. Continue remaining staff workflows through the browser, then run the desktop UI when a suitable GUI environment is available.
 4. The staff counter-collection write path is verified for a synthetic cash collection on booking #5; POS and partial/excess staff collections remain untested in the live UI.
@@ -118,13 +121,13 @@ The previously completed full-suite baseline was 284 Java tests (0 failures/erro
 ## Commands run
 
 - `mvn test` initially could not open a lock in the protected user-profile Maven cache. Retried successfully with the existing project-local `target/maven-repository` cache and `target/qa-baseline` output.
-- Final full-suite command: `mvn -o -Dmaven.repo.local=target/maven-repository -Dhotel.build.directory=target/qa-baseline test`; result: 284 run, 0 failures/errors, 42 skipped.
+- Final full-suite command: `$env:MAVEN_OPTS='-Dmaven.repo.local=target/maven-repository'; mvn -B '-Dhotel.build.directory=.run/qa-full' test`; result: 291 run, 0 failures/errors, 42 skipped. Build compiled 361 application and 126 test sources.
 - `mvn -Dtest=MisaMeInvoiceProviderTest test` passed all six tests using only local synthetic HTTP responses.
 - The POS marker regression was mutation-checked: temporarily omitting the marker made the test fail at its explicit contract assertion; restoring it returned all six adapter tests to passing.
 - `python.exe -m unittest tests.acceptance.test_phase2_gate -v` passed four validator unit tests. The read-only `scripts/validate-phase2-acceptance.py` run returned `phase2_complete: false` and the outstanding manual/Docker gates; no acceptance status was fabricated.
 - `test-dual-env.sh` was not run: its second target is the separately addressed VM `192.168.56.102`, and the script sends health and unauthenticated POST probes to that host.
 - Maven test run used local ephemeral sockets and `target/qa-temp`; it did not enable database integration flags.
-- `npm test` in `web-ui` passed all 133 tests when local test fixtures were allowed to bind/connect.
+- `npm test` in `web-ui` passed all 140 tests when local test fixtures were allowed to bind/connect.
 - `node --check` on six modified browser JavaScript files passed.
 
 ### Staff overdue notification center and overtime (2026-10-23)
@@ -170,3 +173,17 @@ The previously completed full-suite baseline was 284 Java tests (0 failures/erro
 - **Regression suite:** The initial sandboxed `npm test` run had 10 failures. Two front-desk checks were stale for the new disabled room cards/empty-state guidance, and the notification test fixture did not implement the browser APIs used by the staff notification tray. Updated these regression checks and added a deterministic hotel-time clock for the check-in assertion. The first sandboxed full run still blocked local-server fixtures (`EACCES`); rerunning with localhost access passed the login/server integration cases. Final `npm test`: **136 passed, 0 failed**.
 - **Backend regression:** mvn -o -Dmaven.repo.local=target/maven-repository -Dhotel.build.directory=target/qa-baseline test: **291 run, 0 failures/errors, 42 guarded tests skipped**. The skips include MariaDB destructive/integration fixtures that require an explicit disposable test schema.
 - **Status:** Housekeeping preview workflow and full web-ui suite verified. Production integration remains intentionally deferred. Bundle this work with the related staff changes for the single GitHub push, as requested.
+
+### Disposable MariaDB payment integration attempt (2026-10-24)
+
+- **Safety setup:** The payment test script uses a random `hotel_payments_<token>_test` schema, marks ownership, disables outbound email, and drops only that owned schema after the run. No runtime-schema changes, payments, or emails were made.
+- **Initial attempt:** The sandbox could not connect to `127.0.0.1:3306`; no disposable schema was created during that run.
+- **Follow-up:** MariaDB service was confirmed listening on 3306 with local access. The script then ran against random owned schemas. It exposed and fixed a duplicate customer email in the test fixture, updated stale assumptions about the paged API and QR choice, and moved the outside-window transaction from minute 60 to minute 61 to avoid a microsecond-boundary ambiguity.
+- **Final result:** All 22 payment/notification, webhook, signature and mail tests passed; the random schema was dropped by the script. No external payment or email was sent. The 15 database integration cases are included in this count.
+
+### Staff session expiry recovery (2026-10-24)
+
+- **Finding:** The staff booking tab displayed the raw 401 response `Missing or malformed Authorization header (Bearer <token>)` after an invalid or missing token.
+- **Fix:** The shared API transport now clears unchanged/legacy-only stale credentials and dispatches the existing session-expired event; it suppresses technical 401/403 server messages. The booking list no longer renders raw exception messages or writes into a view removed by the sign-in transition.
+- **Verification:** `node --test tests/transport.test.mjs`: **14 passed**, including authenticated PDF expiry. Two staff-booking tests cover safe auth errors and late responses after view removal. Final full `npm test`: **140 passed, 0 failed** with loopback access. A sandbox-only run failed in HTTP fixtures with `EACCES` and was not treated as a product regression.
+- **Portal UI check:** A portal integration test dispatched the expired-session event and confirmed the protected content clears, the login form appears, the status message is localized, and the stale token is removed. The user-owned browser tabs were left untouched, so live visual confirmation remains open.

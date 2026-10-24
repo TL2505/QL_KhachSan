@@ -47,6 +47,7 @@ function createMockElement(id, tagName = 'div') {
     setAttribute: (k, v) => attrs.set(k, String(v)),
     getAttribute: k => attrs.get(k) ?? null,
     removeAttribute: k => attrs.delete(k),
+    replaceChildren() { this.innerHTML = ''; this.textContent = ''; },
     focus: () => {},
     insertAdjacentElement(position, sibling) {
       if (position === 'afterend') this.nextSibling = sibling;
@@ -128,6 +129,7 @@ function setupMockEnvironment() {
   const originalWindow = globalThis.window;
   const originalStorage = globalThis.localStorage;
   const originalFetch = globalThis.fetch;
+  const windowListeners = new Map();
 
   globalThis.document = mockDoc;
   globalThis.window = {
@@ -140,6 +142,14 @@ function setupMockEnvironment() {
       replace: () => {}
     },
     localStorage: mockStorage,
+    addEventListener: (type, listener) => {
+      if (!windowListeners.has(type)) windowListeners.set(type, []);
+      windowListeners.get(type).push(listener);
+    },
+    dispatchEvent: event => {
+      for (const listener of windowListeners.get(event.type) || []) listener(event);
+      return true;
+    },
     setInterval: () => 1,
     clearInterval: () => {},
     lucide: { createIcons: () => {} }
@@ -179,6 +189,18 @@ test('staff roles use the staff notification endpoint and never request customer
     }
     assert.equal(staffRequests, 3);
     assert.equal(customerRequests, 0);
+
+    env.getOrCreate('auth-view').hidden = true;
+    env.getOrCreate('app-view').hidden = false;
+    env.getOrCreate('view-container').innerHTML = '<p>protected staff data</p>';
+    localStorage.setItem('hotel_auth_session', JSON.stringify({ token: 'stale-staff-token', role: 'STAFF' }));
+    localStorage.setItem('auth_token', 'stale-staff-token');
+    window.dispatchEvent(new Event('hotel:session-expired'));
+    assert.equal(env.getOrCreate('auth-view').hidden, false);
+    assert.equal(env.getOrCreate('app-view').hidden, true);
+    assert.equal(env.getOrCreate('view-container').innerHTML, '');
+    assert.equal(env.getOrCreate('auth-status').textContent, 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    assert.equal(localStorage.getItem('auth_token'), null);
   } finally { env.teardown(); }
 });
 

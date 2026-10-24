@@ -7,19 +7,19 @@ import quanlykhachsan.backend.utils.SecurityUtil;
 
 public final class RoomStateService {
     public JsonObject change(Connection c,Change change)throws SQLException,OptimisticLockException {
-        String from;int version;Timestamp readyNotBefore;
-        try(PreparedStatement q=c.prepareStatement("SELECT status,version,ready_not_before FROM rooms WHERE id=? FOR UPDATE")){q.setInt(1,change.room());try(ResultSet r=q.executeQuery()){if(!r.next())throw new IllegalArgumentException("Unknown room");from=r.getString(1);version=r.getInt(2);readyNotBefore=r.getTimestamp(3);}}
+        String from;int version;LocalDateTime readyNotBefore;
+        try(PreparedStatement q=c.prepareStatement("SELECT status,version,ready_not_before FROM rooms WHERE id=? FOR UPDATE")){q.setInt(1,change.room());try(ResultSet r=q.executeQuery()){if(!r.next())throw new IllegalArgumentException("Unknown room");from=r.getString(1);version=r.getInt(2);readyNotBefore=r.getObject(3,LocalDateTime.class);}}
         if(change.expectedVersion()!=null && version!=change.expectedVersion())throw new OptimisticLockException();
         new RoomStateMachine().transition(from,change.to(),change.role());
         if(change.to().equals("vacant_clean") && readyNotBefore!=null
-                && readyNotBefore.toLocalDateTime().isAfter(LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")))) {
+                && readyNotBefore.isAfter(LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")))) {
             throw new IllegalStateException("Room cannot be marked clean before its turnaround buffer ends");
         }
         boolean repair=change.to().equals("out_of_order") || change.to().equals("out_of_service");
         if(repair) {
             if(change.until()==null || !change.until().isAfter(LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"))))throw new IllegalArgumentException("Maintenance finish date required");
             boolean conflict;
-            try(PreparedStatement q=c.prepareStatement("SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in','checked_out') AND check_in_date<? AND room_release_at>CURRENT_TIMESTAMP(6) LIMIT 1 FOR UPDATE")){q.setInt(1,change.room());q.setTimestamp(2,Timestamp.valueOf(change.until()));try(ResultSet r=q.executeQuery()){conflict=r.next();}}
+            try(PreparedStatement q=c.prepareStatement("SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in','checked_out') AND check_in_date<? AND room_release_at>CURRENT_TIMESTAMP(6) LIMIT 1 FOR UPDATE")){q.setInt(1,change.room());q.setObject(2,change.until());try(ResultSet r=q.executeQuery()){conflict=r.next();}}
             if(conflict) {
                 if(change.managerPin()==null)throw new IllegalStateException("Manager authorization is required for conflicting reservations");
                 if(!SecurityUtil.verifyPassword(change.managerPin(),change.managerHash()))throw new SecurityException("Invalid manager authorization");
@@ -33,7 +33,7 @@ public final class RoomStateService {
                 try(PreparedStatement q=c.prepareStatement("SELECT b.id FROM bookings b WHERE b.room_id=? AND b.status='checked_in' LIMIT 1 FOR UPDATE")){q.setInt(1,change.room());try(ResultSet r=q.executeQuery()){if(r.next())throw new IllegalStateException("Check-out must settle folios through the booking workflow");}}
             }
         }
-        try(PreparedStatement q=c.prepareStatement("UPDATE rooms SET status=?,version=version+1,maintenance_until=? WHERE id=? AND version=?")){q.setString(1,change.to());q.setTimestamp(2,repair?Timestamp.valueOf(change.until()):null);q.setInt(3,change.room());q.setInt(4,version);if(q.executeUpdate()!=1)throw new OptimisticLockException();}
+        try(PreparedStatement q=c.prepareStatement("UPDATE rooms SET status=?,version=version+1,maintenance_until=? WHERE id=? AND version=?")){q.setString(1,change.to());if(repair)q.setObject(2,change.until());else q.setNull(2,Types.TIMESTAMP);q.setInt(3,change.room());q.setInt(4,version);if(q.executeUpdate()!=1)throw new OptimisticLockException();}
         if(change.to().equals("vacant_clean")) {
             try(PreparedStatement q=c.prepareStatement("UPDATE rooms SET ready_not_before=NULL WHERE id=?")){q.setInt(1,change.room());q.executeUpdate();}
             try(PreparedStatement q=c.prepareStatement("UPDATE cleaning_tasks SET status='completed',completed_at=CURRENT_TIMESTAMP(6) WHERE room_id=? AND status IN ('pending','in_progress')")){q.setInt(1,change.room());q.executeUpdate();}

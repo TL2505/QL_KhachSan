@@ -33,7 +33,7 @@ public class BookingService {
             java.time.LocalDateTime release=out.plusMinutes(buffer);
             try(java.sql.PreparedStatement q=c.prepareStatement(
                     "SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in','checked_out') AND check_in_date<? AND room_release_at>? LIMIT 1")) {
-                q.setInt(1,roomId);q.setTimestamp(2,java.sql.Timestamp.valueOf(release));q.setTimestamp(3,java.sql.Timestamp.valueOf(in));
+                q.setInt(1,roomId);q.setObject(2,release);q.setObject(3,in);
                 try(java.sql.ResultSet r=q.executeQuery()){return !r.next();}
             }
         } catch(java.sql.SQLException ex) { return false; }

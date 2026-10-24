@@ -18,8 +18,8 @@ public final class HousekeepingController implements HttpHandler {
                 try(PreparedStatement q=c.prepareStatement("SELECT t.status,r.status,r.ready_not_before FROM cleaning_tasks t JOIN rooms r ON r.id=t.room_id WHERE t.id=? FOR UPDATE")){
                     q.setLong(1,taskId);try(ResultSet row=q.executeQuery()){
                         if(!row.next()){c.rollback();ApiResponseUtil.write(e,404,ApiResponseUtil.error("Cleaning task not found"));return;}
-                        Timestamp ready=row.getTimestamp(3);
-                        if(!row.getString(1).equals("pending")||!row.getString(2).equals("vacant_dirty")||(ready!=null&&ready.after(new Timestamp(System.currentTimeMillis())))){
+                        java.time.LocalDateTime ready=row.getObject(3,java.time.LocalDateTime.class);
+                        if(!row.getString(1).equals("pending")||!row.getString(2).equals("vacant_dirty")||(ready!=null&&ready.isAfter(java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"))))){
                             c.rollback();ApiResponseUtil.write(e,409,ApiResponseUtil.error("Task cannot start until the room is released for cleaning"));return;
                         }
                     }
@@ -44,11 +44,11 @@ public final class HousekeepingController implements HttpHandler {
                     JsonObject task=new JsonObject();task.addProperty("id",rows.getLong("id"));task.addProperty("booking_id",rows.getInt("booking_id"));
                     task.addProperty("room_id",rows.getInt("room_id"));task.addProperty("room_number",rows.getString("room_number"));
                     task.addProperty("rental_type",rows.getString("rental_type"));task.addProperty("estimated_duration_minutes",rows.getInt("estimated_duration_minutes"));
-                    task.addProperty("status",rows.getString("status"));Timestamp due=rows.getTimestamp("due_at");if(due==null)task.add("due_at",com.google.gson.JsonNull.INSTANCE);else task.addProperty("due_at",due.toLocalDateTime().toString());
+                    task.addProperty("status",rows.getString("status"));java.time.LocalDateTime due=rows.getObject("due_at",java.time.LocalDateTime.class);if(due==null)task.add("due_at",com.google.gson.JsonNull.INSTANCE);else task.addProperty("due_at",due.toString());
                     task.addProperty("overdue",rows.getBoolean("overdue"));
                     task.addProperty("turnaround_conflict",rows.getBoolean("turnaround_conflict"));
-                    Timestamp expected=rows.getTimestamp("expected_finish_at");if(expected==null)task.add("expected_finish_at",com.google.gson.JsonNull.INSTANCE);else task.addProperty("expected_finish_at",expected.toLocalDateTime().toString());
-                    task.addProperty("created_at",rows.getTimestamp("created_at").toLocalDateTime().toString());tasks.add(task);
+                    java.time.LocalDateTime expected=rows.getObject("expected_finish_at",java.time.LocalDateTime.class);if(expected==null)task.add("expected_finish_at",com.google.gson.JsonNull.INSTANCE);else task.addProperty("expected_finish_at",expected.toString());
+                    task.addProperty("created_at",rows.getObject("created_at",java.time.LocalDateTime.class).toString());tasks.add(task);
                 }}
                 ApiResponseUtil.write(e,200,ApiResponseUtil.successWithData(tasks));
             }catch(SQLException ex){ApiResponseUtil.write(e,503,ApiResponseUtil.error("Cleaning task list is temporarily unavailable"));}

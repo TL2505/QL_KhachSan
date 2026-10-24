@@ -20,7 +20,7 @@ public final class DynamicPricingEngine {
         if(operational==0)throw new IllegalStateException("No operational inventory");
         List<Reservation> reservations=new ArrayList<>();
         try(PreparedStatement q=c.prepareStatement("SELECT b.room_id,DATE(b.check_in_date),DATE(b.check_out_date) FROM bookings b JOIN rooms r ON r.id=b.room_id WHERE b.status IN ('confirmed','checked_in') AND r.status NOT IN ('out_of_order','out_of_service') AND b.check_in_date<? AND b.check_out_date>?")) {
-            q.setTimestamp(1,Timestamp.valueOf(range.checkOut().atTime(12,0)));q.setTimestamp(2,Timestamp.valueOf(range.checkIn().atTime(14,0)));
+            q.setObject(1,range.checkOut().atTime(12,0));q.setObject(2,range.checkIn().atTime(14,0));
             try(ResultSet r=q.executeQuery()){while(r.next())reservations.add(new Reservation(r.getInt(1),r.getDate(2).toLocalDate(),r.getDate(3).toLocalDate()));}
         }
         List<NightlyRate> nights=new ArrayList<>();BigDecimal subtotal=BigDecimal.ZERO;

@@ -31,9 +31,8 @@ public final class RoomAvailabilityController implements HttpHandler {
                 +"AND NOT EXISTS (SELECT 1 FROM cleaning_tasks ct WHERE ct.room_id=r.id AND ct.status IN ('pending','in_progress') AND COALESCE(ct.expected_finish_at,DATE_ADD(ct.created_at,INTERVAL ct.estimated_duration_minutes MINUTE))>?) "
                 +"AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.room_id=r.id AND b.status IN ('pending','confirmed','checked_in','checked_out') AND b.check_in_date<DATE_ADD(?, INTERVAL (CASE ? WHEN 'HOURLY' THEN r.buffer_hourly WHEN 'OVERNIGHT' THEN r.buffer_overnight ELSE r.buffer_daily END) MINUTE) AND b.room_release_at>?) ORDER BY t.display_order,r.id LIMIT 200";
             try(Connection c=DatabaseConnection.getConnection();PreparedStatement q=c.prepareStatement(sql)) {
-                Timestamp checkInStamp=Timestamp.valueOf(stay.checkIn());
-                q.setTimestamp(1,checkInStamp);q.setTimestamp(2,checkInStamp);q.setTimestamp(3,checkInStamp);
-                q.setTimestamp(4,Timestamp.valueOf(stay.checkOut()));q.setString(5,stay.rentalType().databaseValue());q.setTimestamp(6,checkInStamp);
+                q.setObject(1,stay.checkIn());q.setObject(2,stay.checkIn());q.setObject(3,stay.checkIn());
+                q.setObject(4,stay.checkOut());q.setString(5,stay.rentalType().databaseValue());q.setObject(6,stay.checkIn());
                 try(ResultSet r=q.executeQuery()){while(r.next()){
                     if(!hasConfiguredRate(r,stay.rentalType()))continue;
                     JsonObject room=new JsonObject();room.addProperty("id",r.getInt(1));room.addProperty("room_type_id",r.getInt(2));room.addProperty("room_type_name",r.getString(3));room.addProperty("version",r.getInt(4));room.addProperty("price",r.getBigDecimal(5));room.addProperty("room_number",r.getString(6));room.addProperty("description",r.getString(7));room.addProperty("capacity",r.getInt(8));room.addProperty("image_url",r.getString(9));room.addProperty("image_alt",r.getString(10));room.addProperty("amenities",r.getString(11));rooms.add(room);
@@ -86,8 +85,7 @@ public final class RoomAvailabilityController implements HttpHandler {
         boolean today=stay.checkIn().toLocalDate().equals(java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
         JsonArray rooms = new JsonArray();
         try (Connection c = DatabaseConnection.getConnection(); PreparedStatement q = c.prepareStatement(sql)) {
-                Timestamp checkInStamp=Timestamp.valueOf(stay.checkIn());
-                q.setTimestamp(1,checkInStamp);q.setTimestamp(2,checkInStamp);q.setTimestamp(3,Timestamp.valueOf(stay.checkOut()));q.setString(4,stay.rentalType().databaseValue());q.setTimestamp(5,checkInStamp);
+                q.setObject(1,stay.checkIn());q.setObject(2,stay.checkIn());q.setObject(3,stay.checkOut());q.setString(4,stay.rentalType().databaseValue());q.setObject(5,stay.checkIn());
             try (ResultSet r = q.executeQuery()) {
                 while (r.next()) {
                     String physical = r.getString("status");

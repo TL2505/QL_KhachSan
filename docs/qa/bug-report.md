@@ -284,3 +284,32 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Fix implemented:** Both history APIs now return `{items, total}`; the page uses the shared pagination component and table card. Page size, visible range and previous/next state now match other portal tables. Moved “Thanh toán & thông báo” below “Hóa đơn”, used the wallet icon, and changed the inner heading to “Lịch sử thanh toán & thông báo”.
 - **Verification:** Restarted with `start-backend.bat`; MariaDB 11.4.13, schema and vault preflight passed. In the live staff UI, transactions showed `1–4 trên 4`, page `1 / 1`; notifications showed `1–10 trên 17`, and Next displayed `11–17 trên 17`, page `2 / 2`. Previous/Next disabled states were correct. The sidebar showed the renamed item after Hóa đơn with a wallet icon. `node --check` and `git diff --check` passed. No payment, email, or database data was changed.
 - **Status:** Verified
+
+## QA-2026-018 — Staff booking page exposed raw authentication error text
+
+- **Type:** Confirmed session recovery and UI error handling defect
+- **Discovered:** 2026-10-24
+- **Module / role:** Staff booking list; staff
+- **Severity / priority:** P2 / P2
+- **Environment and test data:** Existing authenticated staff portal tab on port 3000; a protected booking request returned HTTP 401. No booking, payment, or customer data was changed.
+- **Reproduction:** Open the staff booking list after the local authentication token is missing or invalid. The table displays the server response `Missing or malformed Authorization header (Bearer <token>)` as if it were booking data.
+- **Expected:** Clear stale authentication state, return to the login form, and show a concise Vietnamese sign-in message without exposing server diagnostics.
+- **Actual:** The page retained the staff shell and rendered the raw authorization error in the table.
+- **Root cause:** The shared API client only announced session expiry when a structured session object contained a token, and copied server messages from 401 responses. The booking list also rendered exception messages directly.
+- **Fix implemented:** Protected 401 responses now clear unchanged or legacy-only sessions and dispatch the existing session-expired event, including authenticated file downloads. 401/403 server messages are replaced with safe UI text. The booking list handles removed views and uses localized load errors.
+- **Verification:** `node --test tests/transport.test.mjs` passed 14/14, including legacy-token cleanup, session replacement preservation, and suppression of the raw authorization message. A portal UI integration test confirms the expired-session event clears protected content and reveals the login form; two staff-booking tests cover safe auth errors and late responses after view removal. The full web UI suite passed 140/140 with localhost access. The user-owned browser tab was not reloaded.
+- **Status:** Fix verified in automated transport and portal UI tests; live browser confirmation pending
+
+## QA-2026-019 — Booking wall-clock values depended on JDBC timestamp conversion
+
+- **Type:** Confirmed date/time correctness defect with related paths hardened
+- **Discovered:** 2026-10-24
+- **Module / role:** Booking availability, QR expiry, cancellation, checkout, room readiness and housekeeping
+- **Severity / priority:** P1 / P2
+- **Evidence:** A rollback-only MariaDB lifecycle simulation previously showed a scheduled 07:05 local check-in being read as 00:05 when `LocalDateTime` values crossed JDBC as `Timestamp`. The lifecycle engine was corrected at that time. A follow-up source audit found the same conversion pattern in other business-wall-time paths.
+- **Expected:** Booking, payment, checkout and room-turnover times remain the same local `DATETIME` values regardless of the JVM timezone.
+- **Actual:** `Timestamp.valueOf(LocalDateTime)` and `ResultSet.getTimestamp(...).toLocalDateTime()` can convert a local wall time through the JVM/connection timezone and shift the comparison or displayed deadline.
+- **Affected paths:** Availability lookup and room allocation; booking insert and pricing occupancy lookup; QR deadline projection; customer/admin cancellation and check-in eligibility; checkout adjustments; housekeeping task display/start; room readiness and no-show cutoffs.
+- **Fix implemented:** Replaced wall-time binds and reads in those paths with JDBC `setObject(LocalDateTime)` / `getObject(..., LocalDateTime.class)`. Kept actual `java.util.Date` payment timestamps on their existing instant-based path.
+- **Verification:** The fresh full Maven suite passed with 291 tests, 0 failures/errors and 42 environment-gated skips. A rollback-only MariaDB lifecycle simulation verified local-time check-in, stored wall time, reminder, auto-checkout, cleaning task and notifications. The disposable MariaDB payment/lifecycle suite passed 22/22. Availability, cancellation, housekeeping and other affected endpoints have not each received a separate live database journey.
+- **Status:** Code fix, automated suite and targeted MariaDB coverage verified; endpoint-by-endpoint live confirmation remains open

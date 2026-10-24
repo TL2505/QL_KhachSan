@@ -58,7 +58,7 @@ public final class PublicBookingService {
                 LocalDateTime roomReleaseAt=stay.releaseAt(bufferMinutes);
                 try(PreparedStatement q=c.prepareStatement("INSERT INTO bookings(customer_id,room_id,rental_type,check_in_date,check_out_date,buffer_minutes,total_price,status,customer_type,payment_choice) VALUES (?,?,?,?,?,?,?,?,?,?)",Statement.RETURN_GENERATED_KEYS)) {
                     q.setInt(1,customerId);q.setInt(2,request.roomId());q.setString(3,stay.rentalType().databaseValue());
-                    q.setTimestamp(4,Timestamp.valueOf(stay.checkIn()));q.setTimestamp(5,Timestamp.valueOf(stay.checkOut()));
+                    q.setObject(4,stay.checkIn());q.setObject(5,stay.checkOut());
                     q.setInt(6,bufferMinutes);q.setBigDecimal(7,quote.total_amount());q.setString(8,initialStatus);q.setString(9,channel);q.setString(10,request.paymentChoice());q.executeUpdate();
                     try(ResultSet r=q.getGeneratedKeys()){if(!r.next())throw new SQLException("Booking ID missing");bookingId=r.getInt(1);}
                 }

@@ -36,8 +36,8 @@ public final class PaymentStatus {
         try(var q=c.prepareStatement("SELECT payment_choice,created_at,status FROM bookings WHERE id=?")){
             q.setInt(1,booking);try(var r=q.executeQuery()){
                 if(!r.next())return new BookingWindow(null,null,null,null);
-                String choice=r.getString(1);var created=r.getTimestamp(2);String bookingStatus=r.getString(3);
-                LocalDateTime deadline=created==null?null:created.toLocalDateTime().plusMinutes(QR_WINDOW_MINUTES);
+                String choice=r.getString(1);LocalDateTime created=r.getObject(2,LocalDateTime.class);String bookingStatus=r.getString(3);
+                LocalDateTime deadline=created==null?null:created.plusMinutes(QR_WINDOW_MINUTES);
                 try(var link=c.prepareStatement("SELECT state,expires_at FROM payment_links WHERE folio_id IN (SELECT id FROM folios WHERE booking_id=?) ORDER BY order_code DESC LIMIT 1")){
                     link.setInt(1,booking);try(var lr=link.executeQuery()){if(lr.next()){
                         LocalDateTime linkDeadline=lr.getObject(2,LocalDateTime.class);
@@ -54,8 +54,8 @@ public final class PaymentStatus {
         try(var q=c.prepareStatement("SELECT b.payment_choice,b.created_at,b.status FROM bookings b JOIN folios f ON f.booking_id=b.id WHERE f.id=?")){
             q.setLong(1,folio);try(var r=q.executeQuery()){
                 if(!r.next())return new BookingWindow(null,null,null,null);
-                String choice=r.getString(1);var created=r.getTimestamp(2);String bookingStatus=r.getString(3);
-                LocalDateTime deadline=created==null?null:created.toLocalDateTime().plusMinutes(QR_WINDOW_MINUTES);
+                String choice=r.getString(1);LocalDateTime created=r.getObject(2,LocalDateTime.class);String bookingStatus=r.getString(3);
+                LocalDateTime deadline=created==null?null:created.plusMinutes(QR_WINDOW_MINUTES);
                 try(var link=c.prepareStatement("SELECT state,expires_at FROM payment_links WHERE folio_id=? ORDER BY order_code DESC LIMIT 1")){
                     link.setLong(1,folio);try(var lr=link.executeQuery()){if(lr.next()){
                         LocalDateTime linkDeadline=lr.getObject(2,LocalDateTime.class);

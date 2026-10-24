@@ -343,11 +343,13 @@ public final class CustomerPortalController implements HttpHandler {
         try(PreparedStatement q=c.prepareStatement(sql)){
             q.setInt(1,customerId);try(ResultSet r=q.executeQuery()){while(r.next()){
                 JsonObject x=new JsonObject();int id=r.getInt(1);
-                x.addProperty("id",id);x.addProperty("bookingCode","BKG-WEB-"+r.getTimestamp(4).toLocalDateTime().getYear()+"-"+id);
+                java.time.LocalDateTime checkIn=r.getObject(4,java.time.LocalDateTime.class);
+                java.time.LocalDateTime checkOut=r.getObject(5,java.time.LocalDateTime.class);
+                x.addProperty("id",id);x.addProperty("bookingCode","BKG-WEB-"+checkIn.getYear()+"-"+id);
                 x.addProperty("roomId",r.getInt(2));x.addProperty("roomNumber",r.getString(3));
-                x.addProperty("checkInDate",r.getTimestamp(4).toString());x.addProperty("checkOutDate",r.getTimestamp(5).toString());
+                x.addProperty("checkInDate",checkIn.toString());x.addProperty("checkOutDate",checkOut.toString());
                 x.addProperty("totalPrice",r.getBigDecimal(6));
-                Timestamp overdueAt=r.getTimestamp(24);x.addProperty("status",overdueAt==null?r.getString(7):"overdue");
+                java.time.LocalDateTime overdueAt=r.getObject(24,java.time.LocalDateTime.class);x.addProperty("status",overdueAt==null?r.getString(7):"overdue");
                 if(overdueAt!=null)x.addProperty("checkoutOverdueAt",overdueAt.toString());
                 var payment=quanlykhachsan.backend.payment.PaymentStatus.forBooking(c,id);x.addProperty("paymentStatus",payment.get("payment_status").getAsString());x.add("payment",payment);
                 int invoiceId=r.getInt(9);if(!r.wasNull())x.addProperty("invoiceId",invoiceId);
@@ -361,7 +363,7 @@ public final class CustomerPortalController implements HttpHandler {
                 long folioId=r.getLong(20);if(!r.wasNull())x.addProperty("folioId",folioId);
                 x.addProperty("canReview","checked_out".equals(r.getString(7))&&!hasReview);
                 String channel=r.getString(21);String status=r.getString(7).toLowerCase(java.util.Locale.ROOT);
-                boolean beforeCheckIn=r.getTimestamp(4).toLocalDateTime().isAfter(java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
+                boolean beforeCheckIn=checkIn.isAfter(java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
                 x.addProperty("canCancel","Web".equalsIgnoreCase(channel)&&beforeCheckIn&&java.util.Set.of("pending","confirmed").contains(status)&&!payment.get("payment_reconciliation_pending").getAsBoolean());
                 x.addProperty("customerType",channel);
                 x.addProperty("cancelViaSupport","Web".equalsIgnoreCase(channel)&&("checked_in".equals(status)||("confirmed".equals(status)&&!beforeCheckIn)));

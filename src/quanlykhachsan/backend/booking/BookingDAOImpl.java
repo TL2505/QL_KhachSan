@@ -41,8 +41,8 @@ public class BookingDAOImpl implements BookingDAO {
                 ps.setInt(1, booking.getCustomerId());
                 ps.setInt(2, booking.getRoomId());
                 ps.setString(3,RentalType.DAILY.databaseValue());
-                ps.setTimestamp(4,java.sql.Timestamp.valueOf(stay.checkIn()));
-                ps.setTimestamp(5,java.sql.Timestamp.valueOf(stay.checkOut()));
+                ps.setObject(4,stay.checkIn());
+                ps.setObject(5,stay.checkOut());
                 ps.setInt(6,buffer);
                 ps.setBigDecimal(7, BigDecimal.valueOf(booking.getTotalPrice()).setScale(2, RoundingMode.HALF_UP));
                 ps.setString(8, booking.getStatus());

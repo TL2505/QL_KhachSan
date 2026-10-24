@@ -352,8 +352,15 @@ export async function renderBookings(container, session) {
             } else renderTable(allBookings);
             return true;
         } catch (e) {
-            document.getElementById("staff-bookings-body").innerHTML =
-                `<tr><td colspan="8" style="color:var(--danger);padding:20px;">${escapeHtml(e.message)}</td></tr>`;
+            const body = document.getElementById("staff-bookings-body");
+            if (!body) return false;
+            const message = e?.status === 401
+                ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+                : e?.status === 403
+                    ? 'Tài khoản hiện tại không có quyền xem đơn đặt phòng.'
+                    : 'Không thể tải danh sách đặt phòng. Vui lòng thử lại.';
+            body.innerHTML =
+                `<tr><td colspan="8" role="status" style="color:var(--danger);padding:20px;">${escapeHtml(message)}</td></tr>`;
             return false;
         } finally {
             loadingBookings = false;

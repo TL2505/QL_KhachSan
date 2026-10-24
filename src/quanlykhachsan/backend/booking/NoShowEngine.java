@@ -92,7 +92,7 @@ public final class NoShowEngine {
         List<OverdueBooking> result = new ArrayList<>();
         try (PreparedStatement query = connection.prepareStatement(sql)) {
             LocalDate eligible=cutoff.toLocalTime().isBefore(java.time.LocalTime.of(2,0))?cutoff.toLocalDate().minusDays(1):cutoff.toLocalDate();
-            query.setTimestamp(1, java.sql.Timestamp.valueOf(eligible.atStartOfDay()));
+            query.setObject(1, eligible.atStartOfDay());
             query.setInt(2, BATCH_SIZE);
             try (ResultSet rows = query.executeQuery()) {
                 while (rows.next()) {

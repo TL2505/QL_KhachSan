@@ -4,8 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Locale;
 import quanlykhachsan.backend.utils.DatabaseConnection;
 
@@ -64,7 +63,7 @@ final class AdminBookingStatusService {
                 if (booking == null) { connection.rollback(); return new Result(404, "Không tìm thấy đơn đặt phòng"); }
                 if (!"confirmed".equals(booking.status())) { connection.rollback(); return new Result(409, "Chỉ đơn đã xác nhận mới được nhận phòng"); }
                 java.time.LocalDateTime now=java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
-                if (now.isBefore(booking.checkIn().toLocalDateTime()) || !now.isBefore(booking.checkOut().toLocalDateTime())) {
+                if (now.isBefore(booking.checkIn()) || !now.isBefore(booking.checkOut())) {
                     connection.rollback(); return new Result(409, "Chưa đến giờ nhận phòng hoặc đơn đã quá giờ lưu trú");
                 }
                 try(PreparedStatement roomCheck=connection.prepareStatement(
@@ -74,8 +73,8 @@ final class AdminBookingStatusService {
                         if(!room.next() || !("reserved".equals(room.getString("status")) || "vacant_clean".equals(room.getString("status")))) {
                             connection.rollback();return new Result(409,"Phòng chưa ở trạng thái sạch và sẵn sàng");
                         }
-                        Timestamp ready=room.getTimestamp("ready_not_before");
-                        if((ready!=null&&ready.toLocalDateTime().isAfter(now))||room.getBoolean("active_task")) {
+                        LocalDateTime ready=room.getObject("ready_not_before",LocalDateTime.class);
+                        if((ready!=null&&ready.isAfter(now))||room.getBoolean("active_task")) {
                             connection.rollback();return new Result(409,"Phòng cần hoàn tất thời gian đệm và công việc dọn phòng trước khi nhận khách");
                         }
                     }
@@ -107,7 +106,7 @@ final class AdminBookingStatusService {
         if (!"pending".equals(booking.status()) && !"confirmed".equals(booking.status())) {
             return new Result(409, "Chỉ đơn chờ xác nhận hoặc đã xác nhận mới có thể hủy tại Admin");
         }
-        if (!booking.checkIn().after(Timestamp.from(Instant.now()))) {
+        if (!booking.checkIn().isAfter(LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")))) {
             return new Result(409, "Không thể hủy đơn đã đến ngày nhận phòng; hãy xử lý tại Lễ tân");
         }
         if (hasPaymentOrInvoice(connection, booking.id())) {
@@ -180,10 +179,10 @@ final class AdminBookingStatusService {
                 "SELECT id,room_id,check_in_date,check_out_date,status FROM bookings WHERE id=? FOR UPDATE")) {
             query.setInt(1, id);
             try (ResultSet rows = query.executeQuery()) {
-                return rows.next() ? new BookingRow(rows.getInt(1), rows.getInt(2), rows.getTimestamp(3), rows.getTimestamp(4), rows.getString(5).toLowerCase(Locale.ROOT)) : null;
+                return rows.next() ? new BookingRow(rows.getInt(1), rows.getInt(2), rows.getObject(3,LocalDateTime.class), rows.getObject(4,LocalDateTime.class), rows.getString(5).toLowerCase(Locale.ROOT)) : null;
             }
         }
     }
 
-    private record BookingRow(int id, int roomId, Timestamp checkIn, Timestamp checkOut, String status) { }
+    private record BookingRow(int id, int roomId, LocalDateTime checkIn, LocalDateTime checkOut, String status) { }
 }

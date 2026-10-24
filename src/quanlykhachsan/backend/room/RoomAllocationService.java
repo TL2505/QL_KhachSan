@@ -96,8 +96,8 @@ public final class RoomAllocationService {
                 "SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in','checked_out') "
               + "AND check_in_date<? AND room_release_at>? LIMIT 1 FOR UPDATE")) {
             query.setInt(1, roomId);
-            query.setTimestamp(2, java.sql.Timestamp.valueOf(newReleaseAt));
-            query.setTimestamp(3, java.sql.Timestamp.valueOf(stay.checkIn()));
+            query.setObject(2, newReleaseAt);
+            query.setObject(3, stay.checkIn());
             try (ResultSet row = query.executeQuery()) {
                 if (row.next()) throw new RoomUnavailableException();
             }
@@ -105,7 +105,7 @@ public final class RoomAllocationService {
         try(PreparedStatement query=connection.prepareStatement(
                 "SELECT 1 FROM cleaning_tasks ct WHERE ct.room_id=? AND ct.status IN ('pending','in_progress') "
               + "AND COALESCE(ct.expected_finish_at,DATE_ADD(ct.created_at,INTERVAL ct.estimated_duration_minutes MINUTE))>? LIMIT 1 FOR UPDATE")) {
-            query.setInt(1,roomId);query.setTimestamp(2,java.sql.Timestamp.valueOf(stay.checkIn()));
+            query.setInt(1,roomId);query.setObject(2,stay.checkIn());
             try(ResultSet row=query.executeQuery()){if(row.next())throw new RoomUnavailableException();}
         }
         boolean today=stay.checkIn().toLocalDate().equals(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")));
@@ -113,7 +113,7 @@ public final class RoomAllocationService {
             try(PreparedStatement query=connection.prepareStatement(
                     "SELECT 1 FROM cleaning_tasks ct WHERE ct.room_id=? AND ct.status IN ('pending','in_progress') "
                   + "AND COALESCE(ct.expected_finish_at,DATE_ADD(ct.created_at,INTERVAL ct.estimated_duration_minutes MINUTE))<=? LIMIT 1 FOR UPDATE")) {
-                query.setInt(1,roomId);query.setTimestamp(2,java.sql.Timestamp.valueOf(stay.checkIn()));
+                query.setInt(1,roomId);query.setObject(2,stay.checkIn());
                 try(ResultSet row=query.executeQuery()){if(!row.next())throw new RoomUnavailableException();}
             }
         }

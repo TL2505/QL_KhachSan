@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,14 +30,14 @@ public final class CheckoutAdjustmentService {
               + "FROM bookings b JOIN rooms r ON r.id=b.room_id JOIN room_types t ON t.id=r.room_type_id WHERE b.id=? AND b.status='checked_in' FOR UPDATE")) {
             q.setInt(1, bookingId); try (ResultSet r = q.executeQuery()) {
                 if (!r.next()) throw new CheckoutAdjustmentException("Only checked-in bookings can check out");
-                b = new BookingState(RentalType.parse(r.getString(1)), r.getTimestamp(2).toLocalDateTime(),
-                    r.getTimestamp(3).toLocalDateTime(), r.getTimestamp(4).toLocalDateTime(), r.getInt(5),
+                b = new BookingState(RentalType.parse(r.getString(1)), r.getObject(2,LocalDateTime.class),
+                    r.getObject(3,LocalDateTime.class), r.getObject(4,LocalDateTime.class), r.getInt(5),
                     r.getInt(6), r.getInt(7), r.getInt(8), r.getBigDecimal(9));
             }
         }
         LocalDateTime actualOut;
         try (PreparedStatement q = c.prepareStatement("SELECT CURRENT_TIMESTAMP(6)")) {
-            try (ResultSet r = q.executeQuery()) { r.next(); actualOut = r.getTimestamp(1).toLocalDateTime(); }
+            try (ResultSet r = q.executeQuery()) { r.next(); actualOut = r.getObject(1,LocalDateTime.class); }
         }
         RentalType finalType = b.rentalType();
         boolean converted = false;

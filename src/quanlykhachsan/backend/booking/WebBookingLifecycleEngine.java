@@ -74,9 +74,9 @@ public final class WebBookingLifecycleEngine {
             boolean ready;
             try(PreparedStatement q=c.prepareStatement("SELECT status,ready_not_before,EXISTS(SELECT 1 FROM cleaning_tasks t WHERE t.room_id=rooms.id AND t.status IN ('pending','in_progress')) AS active_task FROM rooms WHERE id=? FOR UPDATE")){
                 q.setInt(1,booking[1]);try(ResultSet r=q.executeQuery()){
-                    if(!r.next())continue;Timestamp readyAt=r.getTimestamp("ready_not_before");
+                    if(!r.next())continue;LocalDateTime readyAt=r.getObject("ready_not_before",LocalDateTime.class);
                     ready=("reserved".equals(r.getString("status"))||"vacant_clean".equals(r.getString("status")))
-                        &&(readyAt==null||!readyAt.toLocalDateTime().isAfter(now))&&!r.getBoolean("active_task");
+                        &&(readyAt==null||!readyAt.isAfter(now))&&!r.getBoolean("active_task");
                 }
             }
             if(!ready)continue;

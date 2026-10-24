@@ -138,6 +138,19 @@ export function clearAuthSession() {
   write('token', null);
 }
 
+function announceSessionExpiryIfCurrent(session) {
+  const currentSession = getAuthSession();
+  const sessionHasNotChanged = session?.token
+    ? currentSession?.token === session.token
+    : !currentSession?.token;
+  if (!sessionHasNotChanged) return false;
+  clearAuthSession();
+  if (typeof window !== 'undefined' && window.dispatchEvent) {
+    window.dispatchEvent(new Event('hotel:session-expired'));
+  }
+  return true;
+}
+
 function messageFor(status) {
   return ({
     401: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
@@ -214,11 +227,8 @@ export async function apiFetch(path, init = {}) {
     }
   }
 
-  if (!isPublic && response.status === 401 && session?.token && getAuthSession()?.token === session.token) {
-    setAuthSession(null);
-    if (typeof window !== 'undefined' && window.dispatchEvent) {
-      window.dispatchEvent(new Event('hotel:session-expired'));
-    }
+  if (!isPublic && response.status === 401) {
+    announceSessionExpiryIfCurrent(session);
   }
 
   if (response.status === 204) return null;
@@ -232,7 +242,7 @@ export async function apiFetch(path, init = {}) {
   }
 
   if (!response.ok) {
-    const serverMessage = (response.status < 500 && result && typeof result.message === 'string') ? result.message.trim() : '';
+    const serverMessage = (response.status < 500 && ![401, 403].includes(response.status) && result && typeof result.message === 'string') ? result.message.trim() : '';
     throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'));
   }
 
@@ -264,12 +274,7 @@ export async function fetchAuthenticatedFile(path, init = {}) {
     if (error.name === 'AbortError') throw error;
     throw new ApiError('Không thể tải tệp. Vui lòng thử lại.');
   }
-  if (response.status === 401 && session?.token && getAuthSession()?.token === session.token) {
-    setAuthSession(null);
-    if (typeof window !== 'undefined' && window.dispatchEvent) {
-      window.dispatchEvent(new Event('hotel:session-expired'));
-    }
-  }
+  if (response.status === 401) announceSessionExpiryIfCurrent(session);
   if (!response.ok) throw new ApiError(messageFor(response.status), response.status, response.headers.get('Retry-After'));
   if (!response.headers.get('Content-Type')?.toLowerCase().includes('application/pdf')) {
     throw new ApiError('Máy chủ không trả về tệp PDF hợp lệ.', response.status);
