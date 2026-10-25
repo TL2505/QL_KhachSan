@@ -26,7 +26,7 @@ public final class RoomAvailabilityController implements HttpHandler {
             JsonArray rooms=new JsonArray();
             // A current dirty/occupied state does not erase a later free slot.
             // An unfinished same-day cleaning task does block that slot until its ETA.
-            String sql="SELECT r.id,r.room_type_id,t.name,r.version,r.price,r.room_number,t.description,t.capacity,t.image_url,t.image_alt,t.amenities,t.hourly_base_price,t.hourly_extra_hour_price,t.overnight_price FROM rooms r JOIN room_types t ON t.id=r.room_type_id WHERE t.is_visible=1 AND r.status NOT IN ('out_of_order','out_of_service') "
+            String sql="SELECT r.id,r.room_type_id,t.name,r.version,r.price,r.room_number,t.description,t.capacity,COALESCE(NULLIF(r.image_url,''),t.image_url) AS image_url,t.image_alt,t.amenities,t.hourly_base_price,t.hourly_extra_hour_price,t.overnight_price FROM rooms r JOIN room_types t ON t.id=r.room_type_id WHERE t.is_visible=1 AND r.status NOT IN ('out_of_order','out_of_service') "
                 +"AND NOT (DATE(?)=CURRENT_DATE AND r.status='vacant_dirty' AND NOT EXISTS (SELECT 1 FROM cleaning_tasks ct WHERE ct.room_id=r.id AND ct.status IN ('pending','in_progress') AND COALESCE(ct.expected_finish_at,DATE_ADD(ct.created_at,INTERVAL ct.estimated_duration_minutes MINUTE))<=?)) "
                 +"AND NOT EXISTS (SELECT 1 FROM cleaning_tasks ct WHERE ct.room_id=r.id AND ct.status IN ('pending','in_progress') AND COALESCE(ct.expected_finish_at,DATE_ADD(ct.created_at,INTERVAL ct.estimated_duration_minutes MINUTE))>?) "
                 +"AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.room_id=r.id AND b.status IN ('pending','confirmed','checked_in','checked_out') AND b.check_in_date<DATE_ADD(?, INTERVAL (CASE ? WHEN 'HOURLY' THEN r.buffer_hourly WHEN 'OVERNIGHT' THEN r.buffer_overnight ELSE r.buffer_daily END) MINUTE) AND b.room_release_at>?) ORDER BY t.display_order,r.id LIMIT 200";
@@ -71,7 +71,7 @@ public final class RoomAvailabilityController implements HttpHandler {
 
     /** Read-only stay-specific labels. Keep the existing availability response unchanged. */
     private void writeStatuses(HttpExchange e,StayWindow stay) throws SQLException, IOException {
-        String sql = "SELECT r.id,r.room_type_id,r.status,r.room_number,r.price,t.name,t.capacity,t.description,t.image_url,t.image_alt,t.amenities,r.version, "
+        String sql = "SELECT r.id,r.room_type_id,r.status,r.room_number,r.price,t.name,t.capacity,t.description,COALESCE(NULLIF(r.image_url,''),t.image_url) AS image_url,t.image_alt,t.amenities,r.version, "
             + "MAX(CASE WHEN b.status='checked_in' THEN 1 ELSE 0 END) AS occupied, "
             + "MAX(CASE WHEN b.status IN ('pending','confirmed') THEN 1 ELSE 0 END) AS reserved, "
             + "MAX(CASE WHEN b.status='checked_out' THEN 1 ELSE 0 END) AS turnover, "
@@ -81,7 +81,7 @@ public final class RoomAvailabilityController implements HttpHandler {
             + "FROM rooms r JOIN room_types t ON t.id=r.room_type_id LEFT JOIN bookings b ON b.room_id=r.id "
             + "AND b.status IN ('pending','confirmed','checked_in','checked_out') "
             + "AND b.check_in_date<DATE_ADD(?, INTERVAL (CASE ? WHEN 'HOURLY' THEN r.buffer_hourly WHEN 'OVERNIGHT' THEN r.buffer_overnight ELSE r.buffer_daily END) MINUTE) AND b.room_release_at>? "
-            + "WHERE t.is_visible=1 GROUP BY r.id,r.room_type_id,r.status,r.room_number,r.price,t.name,t.capacity,t.description,t.image_url,t.image_alt,t.amenities,r.version,t.hourly_base_price,t.hourly_extra_hour_price,t.overnight_price,t.display_order ORDER BY t.display_order,r.id";
+            + "WHERE t.is_visible=1 GROUP BY r.id,r.room_type_id,r.status,r.room_number,r.price,t.name,t.capacity,t.description,r.image_url,t.image_url,t.image_alt,t.amenities,r.version,t.hourly_base_price,t.hourly_extra_hour_price,t.overnight_price,t.display_order ORDER BY t.display_order,r.id";
         boolean today=stay.checkIn().toLocalDate().equals(java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")));
         JsonArray rooms = new JsonArray();
         try (Connection c = DatabaseConnection.getConnection(); PreparedStatement q = c.prepareStatement(sql)) {

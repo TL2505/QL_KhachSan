@@ -313,3 +313,68 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Fix implemented:** Replaced wall-time binds and reads in those paths with JDBC `setObject(LocalDateTime)` / `getObject(..., LocalDateTime.class)`. Kept actual `java.util.Date` payment timestamps on their existing instant-based path.
 - **Verification:** The fresh full Maven suite passed with 291 tests, 0 failures/errors and 42 environment-gated skips. A rollback-only MariaDB lifecycle simulation verified local-time check-in, stored wall time, reminder, auto-checkout, cleaning task and notifications. The disposable MariaDB payment/lifecycle suite passed 22/22. Availability, cancellation, housekeeping and other affected endpoints have not each received a separate live database journey.
 - **Status:** Code fix, automated suite and targeted MariaDB coverage verified; endpoint-by-endpoint live confirmation remains open
+
+## QA-2026-020 — Admin overview fails while the running backend is stale
+
+- **Type:** Confirmed runtime/build synchronization defect
+- **Discovered:** 2026-10-26
+- **Module / role:** Admin dashboard; administrator
+- **Severity / priority:** P2 / P2
+- **Environment and test data:** Authenticated `http://127.0.0.1:3000/portal.html?view=dashboard`, Java backend on 8081, local MariaDB QA schema. No data was changed.
+- **Reproduction:** Open the admin dashboard and press “Làm mới số liệu”.
+- **Expected:** The revenue, occupancy, pending booking, refund ratio, stay schedule and net-revenue chart load from `GET /api/v1/reports/admin-overview`.
+- **Actual:** The page shows “Không tải được số liệu tổng quan”; all report values remain dashes and the chart is empty. The browser console reports `ApiError: Endpoint không tồn tại`.
+- **Evidence / root cause:** The running Java process is PID 15368 and started at 04:36. Its loaded `ReportController.class` under `.run/backend-build/classes` was last built at 04:34, while the source controller containing the `admin-overview` route was modified at 04:48. The running process therefore predates the current endpoint implementation.
+- **Affected components:** `ReportController`, `ReportDAOImpl`, `.run/backend-build`, and the admin dashboard’s live API integration.
+- **Proposed fix:** Stop only the project-owned backend using its guarded stop script, then start it through `scripts/start-backend.ps1 -Background` so the changed Java source is rebuilt before startup. Keep the configured database and keys unchanged.
+- **Fix implemented:** Rebuilt/restarted the project backend with `start-backend.bat`; the loaded process now serves the current report route.
+- **Regression tests:** Existing report controller/DAO tests, Maven suite, then live authenticated dashboard refresh.
+- **Verification:** On the authenticated port-3000 dashboard after restart, the report and chart loaded. The page showed 5,953,500 ₫ collected, 0% occupancy, 0 pending bookings, a 28.6% refund/collection ratio, and the expected cleaning count. No new dashboard errors appeared in the browser console; the captured endpoint errors were from the previous day's stale process.
+- **Status:** Verified
+
+## QA-2026-021 — Room image field needed upload and preview
+
+- **Type:** Confirmed room-management usability gap
+- **Discovered:** 2026-10-26
+- **Module / role:** Room add/edit form; administrator
+- **Severity / priority:** P3 / P2
+- **Environment and test data:** Authenticated admin portal at `http://127.0.0.1:3000/portal.html?view=rooms`; local sample `web-ui/public/standard.jpg`. No customer data was used.
+- **Reproduction:** Open “Sửa” for a room or “Thêm phòng mới” and inspect the image field.
+- **Expected:** Choose an image file, see a preview before saving, and use the same upload interaction in both forms.
+- **Actual:** The earlier room form required a manually entered image URL, which was inconsistent with the existing catalog upload flow.
+- **Root cause:** Room and catalog image inputs had separate UI behavior and upload code.
+- **Fix implemented:** Added one shared upload helper for room/catalog images; room add/edit now accepts JPEG/PNG up to 5 MB, shows a local preview before save, and uploads only on submit. The existing backend keeps image bytes in its configured local media directory and stores metadata/public path in MariaDB; no external object-storage provider is configured.
+- **Verification:** On port 3000, the edit form previewed `standard.jpg` successfully (natural width 1200 px). The add form showed the same optional picker, preview area and accommodation-rate section. Both forms were cancelled without saving; QA-801 remained at 1,500,000 đ/night and “Cần vệ sinh”. Client validation tests passed for accepted JPEG/PNG and rejected empty, oversized, and unsupported files. The upload POST/persist/reload path was not submitted during this check. The full web suite ran 142 tests: 135 passed; five login/auth integration cases and two sandbox-blocked server socket cases failed, unrelated to this image flow.
+- **Status:** Fixed; upload persistence still needs a live save-and-reload QA run.
+
+## QA-2026-022 — Room types lacked a dedicated management workflow
+
+- **Type:** Confirmed administration workflow gap
+- **Discovered:** 2026-10-26
+- **Module / role:** Room catalog and room pricing; administrator
+- **Severity / priority:** P2 / P2
+- **Environment and test data:** Admin portal source and local test fixtures. Automated requests used synthetic room-type data; no room-type records were changed in MariaDB during this session.
+- **Reproduction:** Open Admin room management. The physical-room add/edit dialogs contain the shared hourly/overnight rate editor, but there is no separate room-type screen to create, edit, or remove a type.
+- **Expected:** Physical rooms and room types have separate management screens; an admin can manage type metadata and its shared stay-rate policy, while deletion is prevented if rooms still use that type.
+- **Actual:** Room-type creation was not available as a dedicated workflow and shared rates were presented inside individual room dialogs.
+- **Root cause:** The portal had room CRUD but no room-type CRUD view, route, or API write contract. Pricing controls were composed in the room form.
+- **Fix implemented:** Added Admin “Hạng phòng” route with searchable CRUD, server-side validation and a reference-count deletion guard. Reused the stay-rate editor there and removed it from physical-room dialogs.
+- **Regression tests:** `node --test tests/room-types.test.mjs tests/portal.test.mjs`; `RoomTypeControllerTest`.
+- **Verification:** 29 focused portal/avatar/media/room-type UI tests passed; Maven compilation and `RoomTypeControllerTest` passed. Live MariaDB CRUD was not exercised because the configured app user cannot drop the integration test's temporary schema; browser review was stopped by the user's physical Escape action.
+- **Status:** Fixed and automated-test verified; live UI/database verification pending
+
+## QA-2026-023 — Account settings did not provide a shared avatar workflow
+
+- **Type:** Confirmed cross-role profile capability gap
+- **Discovered:** 2026-10-26
+- **Module / role:** Account profile; administrator, staff, and customer
+- **Severity / priority:** P3 / P2
+- **Environment and test data:** Shared account-settings modules and synthetic browser test fixtures; no external storage credentials were exposed.
+- **Reproduction:** Open account settings for each of Admin, Staff, and Customer. The shared profile flow has no common upload, preview, save, or remove behavior for an avatar.
+- **Expected:** All authenticated roles can use one consistent avatar workflow backed by the configured media provider, and only update their own profile.
+- **Actual:** No role-independent avatar setting was present.
+- **Root cause:** The account profile schema and shared settings view did not include an avatar field or self-scoped avatar API operation.
+- **Fix implemented:** Added `users.avatar_url`, an idempotent migration, authenticated self-scoped upload/removal routes, and a reusable avatar picker in shared account settings for all three roles.
+- **Regression tests:** `node --test tests/account-settings.test.mjs tests/media-upload.test.mjs`; `AccountSecurityTest`; `MariaDbMigrationIntegrationTest` migration assertions.
+- **Verification:** Focused web tests passed and Java compilation plus `AccountSecurityTest` passed. The live migration integration could not finish because the app DB user lacked permission to drop its temporary test schema; live role-by-role browser review was stopped by the user's physical Escape action.
+- **Status:** Fixed and automated-test verified; live UI/database verification pending

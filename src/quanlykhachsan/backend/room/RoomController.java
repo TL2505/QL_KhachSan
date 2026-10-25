@@ -38,6 +38,14 @@ public class RoomController implements HttpHandler {
 
         if ("GET".equalsIgnoreCase(method) && pathInfo.equals("/types")) {
             handleGetAllRoomTypes(exchange);
+        } else if ("POST".equalsIgnoreCase(method) && pathInfo.equals("/types")) {
+            handleCreateRoomType(exchange);
+        } else if ("PUT".equalsIgnoreCase(method) && pathInfo.matches("/types/\\d+")) {
+            handleUpdateRoomType(exchange, Integer.parseInt(pathInfo.substring("/types/".length())));
+        } else if ("DELETE".equalsIgnoreCase(method) && pathInfo.matches("/types/\\d+")) {
+            handleDeleteRoomType(exchange, Integer.parseInt(pathInfo.substring("/types/".length())));
+        } else if ("GET".equalsIgnoreCase(method) && pathInfo.matches("/types/\\d+")) {
+            handleGetRoomTypeById(exchange, Integer.parseInt(pathInfo.substring("/types/".length())));
         } else if ("GET".equalsIgnoreCase(method) && (pathInfo.isEmpty() || pathInfo.equals("/"))) {
             // GET /api/rooms - Lấy danh sách tất cả phòng
             handleGetAll(exchange);
@@ -212,6 +220,7 @@ public class RoomController implements HttpHandler {
         room.setId(roomId);
         room.setRoomNumber(number);
         room.setRoomTypeId(request.getRoomTypeId());
+        room.setImageUrl(validateImageUrl(request.getImageUrl()));
         room.setPrice(price);
         if (creating) {
             String status = request.getStatus();
@@ -222,6 +231,30 @@ public class RoomController implements HttpHandler {
             room.setStatus(status);
         }
         return room;
+    }
+
+    static String validateImageUrl(String value) {
+        if (value == null || value.isBlank()) return null;
+        String trimmed = value.trim();
+        if (trimmed.length() > 500) {
+            throw new IllegalArgumentException("Đường dẫn ảnh không được dài quá 500 ký tự.");
+        }
+        String message = "Ảnh phòng phải dùng HTTP/HTTPS hoặc ảnh đã tải lên hệ thống.";
+        if (trimmed.matches("^/api/v1/media/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")) {
+            return trimmed;
+        }
+        java.net.URI uri;
+        try {
+            uri = java.net.URI.create(trimmed);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(message);
+        }
+        String scheme = uri.getScheme();
+        if (!uri.isAbsolute() || uri.getHost() == null
+                || !("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+            throw new IllegalArgumentException(message);
+        }
+        return trimmed;
     }
 
     private void handleDelete(HttpExchange exchange, int roomId) throws IOException {
@@ -257,6 +290,55 @@ public class RoomController implements HttpHandler {
         } else {
             ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy loại phòng"));
         }
+    }
+
+    private void handleCreateRoomType(HttpExchange e) throws IOException {
+        if(!SecurityUtil.checkAdmin(e))return;
+        try {
+            RoomType type=validatedRoomType(e,0);
+            if(roomService.addRoomType(type))ApiResponseUtil.write(e,201,ApiResponseUtil.successWithData(type));
+            else ApiResponseUtil.write(e,500,ApiResponseUtil.error("Không thể thêm hạng phòng."));
+        } catch(RoomTypeConflictException ex) { ApiResponseUtil.write(e,409,ApiResponseUtil.error(ex.getMessage())); }
+        catch(IllegalArgumentException ex) { ApiResponseUtil.write(e,400,ApiResponseUtil.error(ex.getMessage())); }
+        catch(IllegalStateException ex) { ApiResponseUtil.write(e,503,ApiResponseUtil.error("Không thể thêm hạng phòng lúc này.")); }
+    }
+
+    private void handleUpdateRoomType(HttpExchange e,int id) throws IOException {
+        if(!SecurityUtil.checkAdmin(e))return;
+        try {
+            RoomType type=validatedRoomType(e,id);
+            if(roomService.updateRoomType(type))ApiResponseUtil.write(e,200,ApiResponseUtil.successWithData(type));
+            else ApiResponseUtil.write(e,404,ApiResponseUtil.error("Không tìm thấy hạng phòng."));
+        } catch(RoomTypeConflictException ex) { ApiResponseUtil.write(e,409,ApiResponseUtil.error(ex.getMessage())); }
+        catch(IllegalArgumentException ex) { ApiResponseUtil.write(e,400,ApiResponseUtil.error(ex.getMessage())); }
+        catch(IllegalStateException ex) { ApiResponseUtil.write(e,503,ApiResponseUtil.error("Không thể cập nhật hạng phòng lúc này.")); }
+    }
+
+    private void handleDeleteRoomType(HttpExchange e,int id) throws IOException {
+        if(!SecurityUtil.checkAdmin(e))return;
+        try {
+            if(roomService.deleteRoomType(id))ApiResponseUtil.write(e,200,ApiResponseUtil.success("Đã xóa hạng phòng."));
+            else ApiResponseUtil.write(e,404,ApiResponseUtil.error("Không tìm thấy hạng phòng."));
+        } catch(RoomTypeConflictException ex) { ApiResponseUtil.write(e,409,ApiResponseUtil.error(ex.getMessage())); }
+        catch(IllegalStateException ex) { ApiResponseUtil.write(e,503,ApiResponseUtil.error("Không thể xóa hạng phòng lúc này.")); }
+    }
+
+    private RoomType validatedRoomType(HttpExchange e,int id) throws IOException {
+        RoomType type=gson.fromJson(new String(e.getRequestBody().readAllBytes(),StandardCharsets.UTF_8),RoomType.class);
+        if(type==null)throw new IllegalArgumentException("Thiếu thông tin hạng phòng.");
+        String name=type.getName()==null?"":type.getName().trim();
+        if(name.length()<2||name.length()>100||name.chars().anyMatch(Character::isISOControl))throw new IllegalArgumentException("Tên hạng phòng phải có từ 2 đến 100 ký tự.");
+        String description=type.getDescription()==null?"":type.getDescription().trim();
+        String amenities=type.getAmenities()==null?"":type.getAmenities().trim();
+        if(description.length()>2000||amenities.length()>500)throw new IllegalArgumentException("Mô tả tối đa 2.000 ký tự, tiện nghi tối đa 500 ký tự.");
+        if(type.getCapacity()<1||type.getCapacity()>100)throw new IllegalArgumentException("Sức chứa phải từ 1 đến 100 khách.");
+        double price=type.getBasePrice();
+        if(!Double.isFinite(price)||price<=0||BigDecimal.valueOf(price).compareTo(new BigDecimal("99999999.99"))>0||BigDecimal.valueOf(price).stripTrailingZeros().scale()>2)throw new IllegalArgumentException("Giá tham chiếu phải lớn hơn 0 và tối đa 2 chữ số thập phân.");
+        String image=validateImageUrl(type.getImageUrl());
+        String imageAlt=type.getImageAlt()==null?"":type.getImageAlt().trim();
+        if(imageAlt.length()>255)throw new IllegalArgumentException("Mô tả ảnh tối đa 255 ký tự.");
+        type.setId(id);type.setName(name);type.setDescription(description);type.setAmenities(amenities);type.setImageUrl(image);type.setImageAlt(imageAlt);type.setRoomCount(0);
+        return type;
     }
 
     private void handleSearch(HttpExchange exchange) throws IOException {

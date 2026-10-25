@@ -1,6 +1,6 @@
 import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.36';
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.36';
-import { loadAdminView } from './js/view-admin.js?v=3.6.15';
+import { loadAdminView } from './js/view-admin.js?v=3.6.22';
 import { loadStaffView } from './js/view-staff.js?v=3.6.65';
 import { loadCustomerView } from './js/view-customer.js?v=3.6.61';
 import { loadProfileView } from './js/view-shared.js';
@@ -181,8 +181,8 @@ const menus = {
   ADMIN: [
     ['dashboard', 'Tổng quan', 'chart-no-axes-combined'],
     ['rooms', 'Quản lý phòng', 'bed-double'],
+    ['room-types', 'Hạng phòng', 'bed-double-check'],
     ['catalog-content', 'Danh mục & landing page', 'images'],
-    ['rental-policy', 'Giá loại hình lưu trú', 'badge-dollar-sign'],
     ['bookings', 'Đặt phòng', 'calendar-check'],
     ['users', 'Quản lý phân quyền', 'users'],
     ['customers', 'Khách hàng', 'contact-round'],
@@ -520,6 +520,7 @@ function renderNav(session, activeTab) {
 
 function openView(session, role, tab) {
   try {
+    if (role === 'ADMIN' && tab === 'rental-policy') tab = 'rooms';
     if (!menus[role]?.some(([key]) => key === tab)) {
       tab = menus[role]?.[0]?.[0] || 'dashboard';
     }

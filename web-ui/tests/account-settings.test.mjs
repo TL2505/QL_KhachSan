@@ -5,7 +5,7 @@ import { api, setAuthSession, getAuthSession } from '../public/api.js';
 import { renderAccountSettings } from '../public/js/shared/account-settings.js';
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
-const account = verified => ({userId:1, username:'synthetic', fullName:'Nguyễn Ánh',phone:'0900000000',email:'guest@example.invalid',emailVerified:verified,mailConfigured:true});
+const account = verified => ({userId:1, username:'synthetic', fullName:'Nguyễn Ánh',phone:'0900000000',email:'guest@example.invalid',avatarUrl:null,emailVerified:verified,mailConfigured:true});
 const challenge = purpose => ({challengeId:`synthetic-${purpose}-challenge`,maskedEmail:'g***@example.invalid',expiresAt:new Date(Date.now()+300000).toISOString(),resendAt:new Date(Date.now()+60000).toISOString()});
 test('device inventory escapes labels and verified email hides repeat verification',async t=>{
     const {$}=await setup(t,'ADMIN',true,async path=>path === '/account/devices'
@@ -17,12 +17,13 @@ test('device inventory escapes labels and verified email hides repeat verificati
 });
 async function setup(t, role='ADMIN', verified=false, get, options={}) {
     const dom=new JSDOM('<main></main>',{url:'http://localhost'});
-    const old={window:globalThis.window,document:globalThis.document,storage:globalThis.localStorage,get:api.get,post:api.post};
-    globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.localStorage=dom.window.localStorage;
+    const old={window:globalThis.window,document:globalThis.document,storage:globalThis.localStorage,fileReader:globalThis.FileReader,get:api.get,post:api.post,del:api.delete};
+    globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.localStorage=dom.window.localStorage;globalThis.FileReader=dom.window.FileReader;
     setAuthSession({token:'synthetic-session',username:'synthetic',role});
     api.get=get||(async path=>path === '/account/devices' ? [{id:1,browser:'Chrome',platform:'Windows',ip:'127.0.0.1',current:true,lastLoginAt:'2026-10-22T01:00:00Z',lastSeenAt:'2026-10-22T01:00:00Z'}] : account(verified));
-    const calls=[];api.post=async(path,body,options)=>{calls.push({path,body,options});return path.endsWith('request')?challenge(path.includes('email')?'email':'password'):account(true);};
-    t.after(()=>{api.get=old.get;api.post=old.post;dom.window.close();globalThis.window=old.window;globalThis.document=old.document;globalThis.localStorage=old.storage;});
+    const calls=[];api.post=async(path,body,options)=>{calls.push({path,body,options});return path==='/account/avatar'?{url:'/api/v1/media/synthetic-avatar'}:path.endsWith('request')?challenge(path.includes('email')?'email':'password'):account(true);};
+    api.delete=async(path,options)=>{calls.push({path,options,method:'DELETE'});return {avatarUrl:''};};
+    t.after(()=>{api.get=old.get;api.post=old.post;api.delete=old.del;dom.window.close();globalThis.window=old.window;globalThis.document=old.document;globalThis.localStorage=old.storage;globalThis.FileReader=old.fileReader;});
     const root=document.querySelector('main');await renderAccountSettings(root,getAuthSession(),{showIdentity:role==='CUSTOMER',...options});
     const $=s=>root.querySelector(s);
     const submit=s=>$(s).dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));
@@ -31,6 +32,7 @@ async function setup(t, role='ADMIN', verified=false, get, options={}) {
 
 for(const role of ['ADMIN','STAFF','CUSTOMER'])test(`${role} shares email verification and password UX`,async t=>{
     const {$,submit,calls}=await setup(t,role);
+    assert.ok($('#account-avatar-file'));assert.ok($('#account-avatar-save'));
     assert.equal($('.account-settings-view h1').textContent,'Hồ sơ & bảo mật');
     assert.match($('#account-devices-list').textContent,/Chrome · Windows/);
     assert.match($('#account-devices-list').textContent,/Thiết bị này/);
@@ -44,6 +46,27 @@ for(const role of ['ADMIN','STAFF','CUSTOMER'])test(`${role} shares email verifi
     assert.equal(getAuthSession().emailVerified,true);
     assert.equal(calls[1].body.challengeId,'synthetic-email-challenge');
     assert.equal(localStorage.getItem('hotel_auth_session').includes('123456'),false);
+});
+
+test('shared avatar picker previews, uploads and stores the account-bound URL',async t=>{
+    const {$,dom,calls}=await setup(t,'STAFF');
+    dom.window.URL.createObjectURL=()=> 'blob:synthetic-avatar';dom.window.URL.revokeObjectURL=()=>{};
+    const file=new dom.window.File([new Uint8Array([1,2,3])],'avatar.png',{type:'image/png'});
+    Object.defineProperty($('#account-avatar-file'),'files',{configurable:true,value:[file]});
+    $('#account-avatar-file').dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+    assert.equal($('#account-avatar-image').src,'blob:synthetic-avatar');assert.equal($('#account-avatar-save').disabled,false);
+    $('#account-avatar-save').click();await settle();await settle();
+    assert.equal(calls.find(call=>call.path==='/account/avatar').body.fileName,'avatar.png');
+    assert.equal($('#account-avatar-image').getAttribute('src'),'/api/v1/media/synthetic-avatar');
+    assert.equal(getAuthSession().avatarUrl,'/api/v1/media/synthetic-avatar');
+});
+
+test('shared avatar removal clears only the current account profile',async t=>{
+    const {$,calls}=await setup(t,'CUSTOMER',false,async()=>({...account(false),avatarUrl:'/api/v1/media/existing'}));
+    assert.equal($('#account-avatar-image').getAttribute('src'),'/api/v1/media/existing');
+    $('#account-avatar-remove').click();await settle();await settle();
+    assert.equal(calls.find(call=>call.method==='DELETE').path,'/account/avatar');
+    assert.equal(getAuthSession().avatarUrl,null);assert.equal($('#account-avatar-image').hidden,true);
 });
 
 test('customer profile edits personal information without duplicating password or OTP controls',async t=>{

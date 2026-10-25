@@ -1,4 +1,5 @@
 import { api } from "../../api.js";
+import { uploadMedia, validateImageFile } from "../shared/media-upload.js";
 
 const ROOM_STATUSES = {
     vacant_clean: { label: "Trống - sạch", badge: "badge-available" },
@@ -18,12 +19,14 @@ export async function renderRooms(container) {
     container.innerHTML = `
         <div class="page-header flex-row justify-between">
             <div>
-                <h1>Cấu Hình Phòng Khách Sạn</h1>
-                <p>Quản lý danh sách phòng, hạng phòng, giá và trạng thái vận hành.</p>
+                <h1>Quản lý phòng</h1>
+                <p>Quản lý từng phòng vật lý, trạng thái vận hành và hình ảnh phòng.</p>
             </div>
-            <button id="btn-add-room-admin" class="btn btn-primary">
-                <i data-lucide="plus" style="width:14px;height:14px;"></i> Thêm phòng mới
-            </button>
+            <div class="admin-rooms-header-actions">
+                <button id="btn-add-room-admin" class="btn btn-primary">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> Thêm phòng mới
+                </button>
+            </div>
         </div>
         <div id="rooms-feedback" class="rooms-feedback" role="status" aria-live="polite" hidden></div>
         <div class="card">
@@ -134,6 +137,7 @@ export async function renderRooms(container) {
             edit.type = "button";
             edit.className = "btn btn-secondary btn-sm";
             edit.textContent = "Sửa";
+            edit.title = "Cập nhật thông tin phòng và giá chung của hạng phòng";
             edit.addEventListener("click", () => openRoomForm(room));
             const remove = document.createElement("button");
             remove.type = "button";
@@ -195,6 +199,10 @@ export async function renderRooms(container) {
             return;
         }
         const editing = Boolean(room);
+        const closeRoomModal = () => {
+            releaseObjectPreview();
+            window.closeModal?.("global-modal");
+        };
         modal.classList.add("active");
         content.innerHTML = `
             <div class="modal-header">
@@ -215,7 +223,25 @@ export async function renderRooms(container) {
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="ar-price">Đơn giá / đêm (VND) *</label>
+                    <label class="form-label" for="ar-image-file">Ảnh phòng (không bắt buộc)</label>
+                    <div class="rooms-image-picker">
+                        <label class="btn btn-secondary rooms-image-picker-button" for="ar-image-file">Chọn ảnh</label>
+                        <input class="rooms-image-file-input" type="file" id="ar-image-file" accept="image/jpeg,image/png"
+                            aria-describedby="ar-image-help ar-image-preview-status">
+                        <span id="ar-image-file-name">Chưa chọn ảnh</span>
+                    </div>
+                    <small class="rooms-form-note" id="ar-image-help">Chọn ảnh JPEG hoặc PNG, tối đa 5 MB. Ảnh được tải lên khi lưu phòng.</small>
+                    <div class="rooms-image-preview" id="ar-image-preview">
+                        <div class="rooms-image-preview-placeholder" id="ar-image-preview-placeholder">
+                            <span aria-hidden="true">Ảnh</span>
+                            <small>Ảnh phòng sẽ hiển thị ở đây</small>
+                        </div>
+                        <img id="ar-image-preview-image" alt="Ảnh xem trước phòng" referrerpolicy="no-referrer" hidden>
+                    </div>
+                    <small class="rooms-form-note rooms-image-preview-status" id="ar-image-preview-status" role="status" aria-live="polite">${room?.imageUrl ? "Đang tải ảnh hiện tại…" : "Chọn tệp ảnh để xem trước trước khi lưu."}</small>
+                </div>
+                    <div class="form-group">
+                        <label class="form-label" for="ar-price">Đơn giá / đêm (VND) *</label>
                     <input class="form-input" type="number" id="ar-price" min="1" max="99999999.99" step="0.01"
                         value="${editing ? escapeHtml(room.price) : ""}" required placeholder="Ví dụ: 500000">
                 </div>
@@ -230,23 +256,116 @@ export async function renderRooms(container) {
                     </select>
                 </div>`}
                 <div class="rooms-form-error" id="room-form-error" role="alert" hidden></div>
-                <div class="flex-row mt-4" style="justify-content:flex-end;">
-                    <button type="button" class="btn btn-secondary" data-close-room-modal>Hủy</button>
-                    <button type="submit" class="btn btn-primary">${editing ? "Lưu thay đổi" : "Thêm phòng"}</button>
-                </div>
             </form>
+            <div class="flex-row mt-4" style="justify-content:flex-end;">
+                <button type="button" class="btn btn-secondary" data-close-room-modal>Hủy</button>
+                <button type="submit" form="form-room-admin-action" class="btn btn-primary">${editing ? "Lưu thông tin phòng" : "Thêm phòng"}</button>
+            </div>
         `;
         content.querySelectorAll("[data-close-room-modal]").forEach(button =>
-            button.addEventListener("click", () => window.closeModal?.("global-modal")));
+            button.addEventListener("click", closeRoomModal));
 
+        const imageInput = content.querySelector("#ar-image-file");
+        const imageFileName = content.querySelector("#ar-image-file-name");
+        const previewImage = content.querySelector("#ar-image-preview-image");
+        const previewPlaceholder = content.querySelector("#ar-image-preview-placeholder");
+        const previewStatus = content.querySelector("#ar-image-preview-status");
+        let previewUrl = "";
+        let objectPreviewUrl = "";
+        let uploadedImageUrl = "";
+        const showImagePreview = (src, successMessage) => {
+            previewUrl = src;
+            previewImage.hidden = true;
+            previewPlaceholder.hidden = false;
+            previewStatus.textContent = "Đang tải ảnh xem trước…";
+            previewImage.onload = () => {
+                if (previewUrl !== src) return;
+                previewImage.hidden = false;
+                previewPlaceholder.hidden = true;
+                previewStatus.textContent = successMessage;
+            };
+            previewImage.onerror = () => {
+                if (previewUrl !== src) return;
+                previewImage.hidden = true;
+                previewPlaceholder.hidden = false;
+                previewStatus.textContent = "Không thể hiển thị ảnh này. Hãy chọn một tệp JPEG hoặc PNG khác.";
+            };
+            previewImage.src = src;
+        };
+        const releaseObjectPreview = () => {
+            if (!objectPreviewUrl) return;
+            URL.revokeObjectURL(objectPreviewUrl);
+            objectPreviewUrl = "";
+        };
+        imageInput.addEventListener("change", () => {
+            uploadedImageUrl = "";
+            const file = imageInput.files?.[0];
+            if (!file) {
+                releaseObjectPreview();
+                imageFileName.textContent = "Chưa chọn ảnh";
+                if (room?.imageUrl) {
+                    let existingImageUrl;
+                    try { existingImageUrl = new URL(room.imageUrl, window.location.origin); }
+                    catch { existingImageUrl = null; }
+                    if (existingImageUrl && ['http:', 'https:'].includes(existingImageUrl.protocol)) {
+                        showImagePreview(existingImageUrl.href, "Ảnh hiện tại của phòng.");
+                        return;
+                    }
+                }
+                previewUrl = "";
+                previewImage.removeAttribute("src");
+                previewImage.hidden = true;
+                previewPlaceholder.hidden = false;
+                previewStatus.textContent = "Chọn tệp ảnh để xem trước trước khi lưu.";
+                return;
+            }
+            try {
+                validateImageFile(file);
+            } catch (error) {
+                imageInput.value = "";
+                imageFileName.textContent = "Chưa chọn ảnh";
+                releaseObjectPreview();
+                if (room?.imageUrl) {
+                    let existingImageUrl;
+                    try { existingImageUrl = new URL(room.imageUrl, window.location.origin); }
+                    catch { existingImageUrl = null; }
+                    if (existingImageUrl && ['http:', 'https:'].includes(existingImageUrl.protocol)) {
+                        showImagePreview(existingImageUrl.href, `Ảnh hiện tại của phòng. ${error.message}`);
+                        return;
+                    }
+                }
+                previewUrl = "";
+                previewImage.removeAttribute("src");
+                previewImage.hidden = true;
+                previewPlaceholder.hidden = false;
+                previewStatus.textContent = error.message;
+                return;
+            }
+            imageFileName.textContent = file.name;
+            releaseObjectPreview();
+            objectPreviewUrl = URL.createObjectURL(file);
+            showImagePreview(objectPreviewUrl, `Đang xem trước ${file.name}. Tệp sẽ được tải lên khi lưu phòng.`);
+        });
+        if (room?.imageUrl) {
+            let existingImageUrl;
+            try { existingImageUrl = new URL(room.imageUrl, window.location.origin); }
+            catch { existingImageUrl = null; }
+            if (existingImageUrl && ['http:', 'https:'].includes(existingImageUrl.protocol)) {
+                showImagePreview(existingImageUrl.href, "Ảnh hiện tại của phòng.");
+            } else {
+                previewStatus.textContent = "Đường dẫn ảnh hiện tại không hợp lệ. Chọn ảnh mới để thay thế.";
+            }
+        }
         content.querySelector("#form-room-admin-action").addEventListener("submit", async event => {
             event.preventDefault();
             const form = event.currentTarget;
-            const submit = form.querySelector('button[type="submit"]');
+            const submit = content.querySelector('button[form="form-room-admin-action"][type="submit"]');
             const errorNode = form.querySelector("#room-form-error");
+            const imageFile = imageInput.files?.[0] || null;
             const payload = {
                 roomNumber: form.querySelector("#ar-number").value.trim(),
                 roomTypeId: Number(form.querySelector("#ar-type").value),
+                imageUrl: room?.imageUrl || null,
                 price: Number(form.querySelector("#ar-price").value)
             };
             if (!editing) payload.status = form.querySelector("#ar-status").value;
@@ -254,9 +373,14 @@ export async function renderRooms(container) {
             submit.textContent = "Đang lưu...";
             errorNode.hidden = true;
             try {
+                if (imageFile) {
+                    if (!uploadedImageUrl) uploadedImageUrl = (await uploadMedia(imageFile)).url;
+                    payload.imageUrl = uploadedImageUrl;
+                }
                 if (editing) await api.put(`/rooms/${encodeURIComponent(room.id)}`, payload);
                 else await api.post("/rooms", payload);
-                window.closeModal?.("global-modal");
+                releaseObjectPreview();
+                closeRoomModal();
                 feedback(editing ? "Đã cập nhật phòng." : "Đã thêm phòng.", "success");
                 await loadRooms();
             } catch (error) {
@@ -264,7 +388,7 @@ export async function renderRooms(container) {
                 errorNode.hidden = false;
             } finally {
                 submit.disabled = false;
-                submit.textContent = editing ? "Lưu thay đổi" : "Thêm phòng";
+                submit.textContent = editing ? "Lưu thông tin phòng" : "Thêm phòng";
             }
         });
     };

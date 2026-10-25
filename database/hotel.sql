@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(100) NULL,
   verified_email VARCHAR(100) NULL,
   phone VARCHAR(20) NULL,
+  avatar_url VARCHAR(500) NULL,
   customer_id INT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -118,6 +119,7 @@ CREATE TABLE IF NOT EXISTS rooms (
   id INT AUTO_INCREMENT PRIMARY KEY,
   room_number VARCHAR(20) NOT NULL UNIQUE,
   room_type_id INT NOT NULL,
+  image_url VARCHAR(500) NULL,
   price DECIMAL(10, 2) NOT NULL,
 
   status ENUM('vacant_clean', 'vacant_dirty', 'occupied_clean', 'occupied_dirty', 'out_of_order', 'reserved') NOT NULL DEFAULT 'vacant_clean',

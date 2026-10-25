@@ -17,8 +17,16 @@ import quanlykhachsan.backend.utils.JsonUtil;
 
 public class ReportController implements HttpHandler {
 
-    private ReportDAO reportDAO = new ReportDAOImpl();
-    private Gson gson = JsonUtil.getGson();
+    private final ReportDAO reportDAO;
+    private final Gson gson = JsonUtil.getGson();
+
+    public ReportController() {
+        this(new ReportDAOImpl());
+    }
+
+    ReportController(ReportDAO reportDAO) {
+        this.reportDAO = java.util.Objects.requireNonNull(reportDAO, "reportDAO");
+    }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -39,6 +47,8 @@ public class ReportController implements HttpHandler {
             handleGetMonthlyRevenue(exchange);
         } else if ("GET".equalsIgnoreCase(method) && reportPath.equals("/api/reports/today-stats")) {
             handleGetTodayStats(exchange);
+        } else if ("GET".equalsIgnoreCase(method) && reportPath.equals("/api/reports/admin-overview")) {
+            handleGetAdminOverview(exchange);
         } else if ("GET".equalsIgnoreCase(method) && reportPath.equals("/api/reports/active-accounts")) {
             handleGetActiveAccounts(exchange);
         } else if ("POST".equalsIgnoreCase(method) && reportPath.equals("/api/reports/dashboard")) {
@@ -62,6 +72,19 @@ public class ReportController implements HttpHandler {
 
         DailyStats stats = reportDAO.getDailyStats();
         ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(stats));
+    }
+
+    private void handleGetAdminOverview(HttpExchange exchange) throws IOException {
+        if (!SecurityUtil.checkAdmin(exchange))
+            return;
+
+        try {
+            AdminOverviewStats stats = reportDAO.getAdminOverview();
+            ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(stats));
+        } catch (Exception e) {
+            e.printStackTrace();
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Không thể tải báo cáo tổng quan."));
+        }
     }
 
     private void handleGetActiveAccounts(HttpExchange exchange) throws IOException {

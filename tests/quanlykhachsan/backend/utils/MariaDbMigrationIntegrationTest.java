@@ -41,6 +41,7 @@ class MariaDbMigrationIntegrationTest {
                 assertTrue(tableExists(connection, "folio_transactions"));
                 assertTrue(tableExists(connection, "audit_checkpoints"));
                 assertTrue(tableExists(connection, "ai_escalation_tickets"));
+                assertTrue(columnExists(connection, "users", "avatar_url"));
                 assertTrue(columnExists(connection, "rooms", "buffer_hourly"));
                 assertTrue(columnExists(connection, "rooms", "ready_not_before"));
                 assertTrue(columnExists(connection, "room_types", "hourly_base_price"));
@@ -54,9 +55,7 @@ class MariaDbMigrationIntegrationTest {
                 assertTrue(foreignKeyExists(connection, "ai_escalation_tickets", "fk_ai_escalation_customer"));
 
                 String scriptSchema = "hotel_script_test_" + UUID.randomUUID().toString().replace("-", "");
-                try (Statement create = connection.createStatement()) {
-                    create.execute("CREATE DATABASE `" + scriptSchema + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                }
+                statement.execute("CREATE DATABASE `" + scriptSchema + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                 try (Connection scriptConnection = DriverManager.getConnection(withSchema(rootUrl, scriptSchema), user, password)) {
                     executeHotelSchemaScript(scriptConnection, scriptSchema);
                     UpdateDbUtility.migrate(scriptConnection);
@@ -64,13 +63,12 @@ class MariaDbMigrationIntegrationTest {
                     assertTrue(columnExists(scriptConnection, "rooms", "buffer_daily"));
                     assertTrue(columnExists(scriptConnection, "room_types", "hourly_extra_hour_price"));
                     assertTrue(columnExists(scriptConnection, "bookings", "check_out_actual"));
+                    assertTrue(columnExists(scriptConnection, "users", "avatar_url"));
                     assertTrue(tableExists(scriptConnection, "cleaning_tasks"));
                     assertTrue(tableExists(scriptConnection, "audit_checkpoints"));
                     assertTrue(foreignKeyExists(scriptConnection, "folios", "fk_folios_bookings"));
                 } finally {
-                    try (Statement drop = connection.createStatement()) {
-                        drop.execute("DROP DATABASE IF EXISTS `" + scriptSchema + "`");
-                    }
+                    statement.execute("DROP DATABASE IF EXISTS `" + scriptSchema + "`");
                 }
             }
         } finally {

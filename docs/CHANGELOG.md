@@ -1,5 +1,36 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-26] — Shared account avatars and a dedicated room-type tab
+
+- Added one avatar picker to the shared account settings used by Admin, Staff and Customer. Each upload is attached to the authenticated user's account, uses the configured media provider, and supports preview, save and remove.
+- Added the idempotent `users.avatar_url` migration and self-scoped avatar API routes.
+- Added an Admin “Hạng phòng” tab with create, edit and delete for room types. Deletion is blocked while physical rooms use the type.
+- Removed shared stay-rate controls from physical-room dialogs and reused the existing rate editor in the new tab.
+- Verification: focused portal, avatar, media-upload and room-type UI tests passed 29/29; room-type authorization and account profile Java tests passed; Java test compilation succeeded. The full web suite ran 147 cases (140 passed, 7 blocked by loopback HTTP test-server failures). Browser-driven review was stopped by the user during this turn.
+
+## [2026-10-26] — Upload and preview room images
+
+- Replaced the room URL field with an optional JPEG/PNG picker (up to 5 MB) in both add and edit forms; selected images preview locally before submission.
+- Consolidated catalog and room upload requests through a shared helper. The current backend stores file bytes in its configured local media directory and the URL/metadata in MariaDB; an external object-storage provider is not configured yet.
+- Verified both room dialogs on port 3000, previewed `standard.jpg`, then cancelled without changing QA-801 or uploading the image. Image validation tests passed 2/2; modified JavaScript syntax and `git diff --check` passed.
+- Revisited the admin dashboard after backend restart and verified the live report/chart, resolving QA-2026-020.
+- Full web regression run: 142 tests, 135 passed, 7 failed (five login/auth integration failures due to unavailable test API and two loopback `EACCES` failures in server tests); focused image-upload validation passed 2/2.
+
+### QA follow-up — Room image persistence
+
+- Fixed room updates rejecting the managed media path returned by the upload API; only strict UUID media paths and absolute HTTP/HTTPS URLs are accepted. Retry after a successful upload reuses its URL.
+- Manually uploaded `standard.jpg` and saved it to QA-801 through the admin room dialog. Reopening the dialog fetched the persisted image (1200 px natural width). The room price and housekeeping state were unchanged.
+- Added backend URL-validation regression coverage (3 passed). The failed first room update left one unattached media asset; its cleanup is pending a DB reference check because MariaDB is currently stopped.
+- Added a Cloudflare R2 S3-compatible media provider with signed server-side uploads and reads. Local storage remains the default; R2 is selected through `.env` and returns a direct URL only when an HTTPS public base is configured. The secret key stays on the backend.
+- After the operator filled the R2 settings, restarted with `start-backend.bat` and manually saved `standard.jpg` to QA-801 on port 3000. Reopening the room popup loaded the 1200 × 900 R2 image. Room price and housekeeping status were unchanged. R2 credentials were not printed or added to versioned files.
+
+## [2026-10-26] — Consolidate room pricing and improve admin visibility
+
+- Added a business-date admin overview with occupancy, collections, refund rate, pending refunds, cancellations, arrivals/departures, cleaning work and six-month net revenue.
+- Moved hourly and overnight price controls into the add/update room dialog. The dialog states that these rates apply to every room in the selected room type; room-level nightly price remains separate.
+- Fixed low-contrast text and controls in light-theme account management, and removed the stray visible “Đóng” text from role/create/delete dialogs.
+- Verification: backend compile succeeded and all 140 existing web UI tests passed. Port-3000 admin account and dialog UI checks passed; dashboard API integration failed against a stale running backend build and is tracked as QA-2026-020.
+
 ## [2026-10-24] — Link payment history to guest and booking
 
 - Added booking code, customer name and room number to payment audit rows using the existing Folio → booking relationships.
@@ -393,3 +424,18 @@
 - Added exact totals to payment and notification history responses and reused the portal-wide pagination component for page size, result ranges, page indicators, and navigation states.
 - Grouped the history table in the shared card treatment and moved “Thanh toán & thông báo” below “Hóa đơn” with a wallet icon.
 - Recorded the live verification as QA-2026-017; no database records, payments, or emails were changed.
+
+## [2026-10-26] — Admin operations dashboard
+
+- Reworked the administrator overview to combine payment collections, room occupancy, pending reservations, arrivals/departures, housekeeping, refunds and cancellations in one responsive dashboard.
+- Added the admin-only `GET /api/v1/reports/admin-overview` report, using business-date folio records and auditable refund statuses; documented calculation periods and denominators in the API contract.
+- Replaced the single-month invoice chart request with a six-month net folio revenue series. No database schema or records were changed.
+- Moved accommodation-type hourly and overnight rate editing into room management, added a shortcut to the section, and redirected old rate-page links to the room screen.
+- Manual port-3000 checks: account list and add/role/delete dialogs rendered correctly; no account or permission mutation was submitted. The admin dashboard error is reproducible because the running 8081 process predates the latest report route; tracked as QA-2026-020 and pending rebuild/restart verification.
+
+## [2026-10-26] — Cloudflare R2 room images
+
+- Added optional Cloudflare R2 storage for room images using server-side S3 SigV4 credentials; the browser receives only image URLs and credentials remain in the backend environment.
+- Kept local media as the default and documented private proxy reads and direct HTTPS public-base configuration.
+- Verified on port 3000 by uploading a sample image to QA-801, saving, reopening the room dialog, and loading the persisted 1200 × 900 image from R2. The room price and housekeeping state were unchanged.
+- Focused checks passed: 4 R2 adapter tests, 3 room-image URL validation tests, and 2 browser upload-helper tests.

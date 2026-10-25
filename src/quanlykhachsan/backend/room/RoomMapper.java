@@ -8,6 +8,7 @@ public class RoomMapper {
         Room room = new Room();
         room.setRoomNumber(request.getRoomNumber());
         room.setRoomTypeId(request.getRoomTypeId() != null ? request.getRoomTypeId() : 1);
+        room.setImageUrl(request.getImageUrl());
         room.setPrice(request.getPrice() != null ? request.getPrice() : 0.0);
         room.setStatus(request.getStatus() != null ? request.getStatus() : "vacant_clean");
         return room;
@@ -18,6 +19,7 @@ public class RoomMapper {
         response.setId(room.getId());
         response.setRoomNumber(room.getRoomNumber());
         response.setRoomTypeId(room.getRoomTypeId());
+        response.setImageUrl(room.getImageUrl());
         response.setTypeName(room.getTypeName());
         response.setPrice(room.getPrice());
         response.setStatus(room.getStatus());

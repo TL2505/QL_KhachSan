@@ -1,0 +1,2 @@
+ALTER TABLE rooms
+  ADD COLUMN IF NOT EXISTS image_url VARCHAR(500) NULL AFTER room_type_id;

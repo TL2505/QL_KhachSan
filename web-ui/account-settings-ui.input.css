@@ -5,7 +5,7 @@
   themes: false;
   root: ".account-settings-view";
   prefix: ais-;
-  include: button, card, fieldset, input, textarea, badge, collapse, alert, table;
+  include: button, card, fieldset, input, textarea, badge, collapse, alert, table, avatar, file-input;
   logs: false;
 }
 .account-settings-view {
@@ -47,7 +47,14 @@ body.customer-portal .account-settings-view { --color-primary: var(--customer-pr
 .portal-body .portal-view .account-settings-view > .page-header h1 { font: 600 clamp(24px, 2.5cqi, 30px)/1.35 'Playfair Display', Georgia, serif; color: var(--portal-text); margin: 0 0 8px; }
 .portal-body .portal-view .account-settings-view > .page-header p { font-size: 13px; line-height: 1.7; color: var(--portal-muted); margin: 0; }
 .account-summary { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 18px 20px; margin-bottom: 22px; border: 1px solid var(--portal-border); border-radius: 14px; background: var(--portal-panel); }
-.account-settings-avatar { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 12px; border: 1px solid var(--portal-gold); color: var(--portal-gold); font-weight: 700; font-size: 20px; }
+.account-settings-avatar { display: grid; place-items: center; width: 64px; height: 64px; flex: none; overflow: hidden; border-radius: 50%; border: 1px solid var(--portal-gold); color: var(--portal-gold); font-weight: 700; font-size: 22px; }
+.account-settings-avatar > div { width: 100%; height: 100%; display: grid; place-items: center; }
+.account-settings-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.account-summary-identity { min-width: 150px; flex: 0 1 auto; overflow-wrap: anywhere; }
+.account-avatar-controls { min-width: min(100%, 260px); max-width: 420px; flex: 1 1 280px; display: grid; gap: 7px; }
+.account-avatar-controls > label { font-size: 12px; font-weight: 600; color: var(--portal-text); }
+.account-settings-view .ais-file-input { width: 100%; max-width: 100%; min-width: 0; background: var(--portal-bg); color: var(--portal-text); border-color: var(--portal-border); font: inherit; font-size: 12px; }
+.account-avatar-controls .ais-card-actions { gap: 8px; }
 .account-summary strong { font-size: 15px; color: var(--portal-text); }
 .account-summary > div:nth-child(2) { min-width: 0; flex: 1; overflow-wrap: anywhere; }
 .account-summary small { display: block; margin-top: 5px; color: var(--portal-muted); font-size: 12px; }

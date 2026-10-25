@@ -19,3 +19,5 @@ v4_7_web_booking_lifecycle.sql
 v4_8_counter_payment_at_checkout.sql
 v4_9_counter_checkout_overdue_marker.sql
 v4_10_staff_notifications.sql
+v4_11_room_images.sql
+v4_12_account_avatars.sql

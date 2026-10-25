@@ -1,8 +1,9 @@
 // Admin Views Module Coordinator
-import { renderDashboard } from "./admin/dashboard.js?v=3.6.4";
-import { renderRooms } from "./admin/rooms.js?v=3.6.4";
+import { renderDashboard } from "./admin/dashboard.js?v=3.6.6";
+import { renderRooms } from "./admin/rooms.js?v=3.6.12";
+import { renderRoomTypes } from "./admin/room-types.js?v=1.0.0";
 import { renderBookings } from "./staff/bookings.js";
-import { renderUsers } from "./admin/users.js?v=1.0.3";
+import { renderUsers } from "./admin/users.js?v=1.0.5";
 import { renderPromotions } from "./admin/promotions.js?v=3.6.4";
 import { renderReviews } from "./admin/reviews.js?v=3.6.4";
 import { renderInvoices } from "./admin/invoices.js?v=3.6.4";
@@ -10,8 +11,7 @@ import { renderAdminCustomers } from "./admin/customers.js?v=3.6.4";
 import { renderAdminMembership } from "./admin/loyalty.js?v=3.6.21";
 import { renderAiSettings } from "./admin/ai-settings.js?v=7";
 import { renderPaymentOperations } from './shared/payment-operations.js?v=3.6.66';
-import { renderRentalPolicy } from './admin/rental-policy.js';
-import { renderCatalogContent } from './admin/catalog-content.js?v=1';
+import { renderCatalogContent } from './admin/catalog-content.js?v=3';
 
 export function loadAdminView(tab = "dashboard") {
     const container = document.getElementById("view-container");
@@ -19,8 +19,6 @@ export function loadAdminView(tab = "dashboard") {
     
     if (tab === 'payment-operations') {
         renderPaymentOperations(container, session);
-    } else if (tab === "rental-policy") {
-        renderRentalPolicy(container);
     } else if (tab === "catalog-content") {
         renderCatalogContent(container, session);
     } else if (tab === "ai-settings") {
@@ -29,6 +27,8 @@ export function loadAdminView(tab = "dashboard") {
         renderDashboard(container, session);
     } else if (tab === "rooms") {
         renderRooms(container, session);
+    } else if (tab === "room-types") {
+        renderRoomTypes(container, session);
     } else if (tab === "bookings") {
         renderBookings(container, session);
     } else if (tab === "users") {

@@ -1,10 +1,10 @@
 # QA test progress
 
-Updated: 2026-10-24
+Updated: 2026-10-26
 
 ## Project and environment
 
-- Branch: `codex/booking-payment-checkin-flow`.
+- Branch: `codex/admin-room-types-avatar-media` (new branch prepared for the consolidated push).
 - The checkout had existing user modifications before QA began. Those were preserved; QA changes touched regression fixtures, the MISA adapter, the migration manifest, the API contract, and QA documentation.
 - Application: Java 17 REST backend and Swing desktop client, MariaDB persistence, and a vanilla JavaScript web UI served by `web-ui/server.js`; AI service and MISA meInvoice are separate integrations.
 - Available runtimes: JDK 17.0.20.1, Maven 3.10.0, Node.js 24.20.0, npm 11.19.0. Docker is not installed.
@@ -187,3 +187,37 @@ Latest full-suite evidence is 291 Java tests (0 failures/errors, 42 skipped) and
 - **Fix:** The shared API transport now clears unchanged/legacy-only stale credentials and dispatches the existing session-expired event; it suppresses technical 401/403 server messages. The booking list no longer renders raw exception messages or writes into a view removed by the sign-in transition.
 - **Verification:** `node --test tests/transport.test.mjs`: **14 passed**, including authenticated PDF expiry. Two staff-booking tests cover safe auth errors and late responses after view removal. Final full `npm test`: **140 passed, 0 failed** with loopback access. A sandbox-only run failed in HTTP fixtures with `EACCES` and was not treated as a product regression.
 - **Portal UI check:** A portal integration test dispatched the expired-session event and confirmed the protected content clears, the login form appears, the status message is localized, and the stale token is removed. The user-owned browser tabs were left untouched, so live visual confirmation remains open.
+
+### Admin dashboard and dialogs (2026-10-26)
+
+- **Manual UI passed:** On port 3000, the authenticated admin account list loaded. Opened the add-account, role-change and delete-confirmation dialogs; all were centered/readable, with no stray backdrop text. Cancelled each dialog; account count and roles remained unchanged. No account was created, role changed, or account deleted.
+- **Manual UI defect reproduced:** Opening the admin dashboard shows a localized load error, four KPI values remain blank, and the revenue chart stays empty. Clicking refresh reproduces the error. Browser console: `ApiError: Endpoint không tồn tại` from `/api/v1/reports/admin-overview`.
+- **Backend evidence:** PID 15368 owns 8081 and its classpath is this workspace’s `.run/backend-build/classes`. Runtime `ReportController.class` timestamp 04:34 predates the source controller timestamp 04:48. The source contains the route, but the currently running process was started before that change.
+- **Next:** Restart using the guarded project stop script and `scripts/start-backend.ps1 -Background`; verify health, authenticated dashboard values, chart, and console. Then rerun targeted Java/web regressions.
+
+### Admin dashboard follow-up and room image upload persistence (2026-10-26)
+
+- **Dashboard:** Restarted using `start-backend.bat` in the prior QA step and revisited the authenticated dashboard on port 3000. The report, chart and operational summary now load: 5,953,500 ₫ collected, 0% occupancy, 0 pending bookings, 28.6% refund/collection ratio, and one room needing cleaning. No new dashboard console error was recorded. QA-2026-020 is verified.
+- **Room image UI:** The add/edit room dialogs use one shared JPEG/PNG upload helper (5 MB maximum), show a preview before submission, and embed the shared room-type price controls in the room dialog.
+- **Persistence defect found and fixed:** The first end-to-end save uploaded the image successfully but the room API rejected the resulting managed `/api/v1/media/{uuid}` path. `RoomController` now accepts only that strict UUID route or an absolute HTTP/HTTPS URL. A retry reuses the uploaded URL instead of creating another media asset.
+- **Manual persistence verification:** Restarted the backend with `start-backend.bat`; saved the uploaded sample image to QA-801 through the room edit dialog. Reopened the dialog and verified the stored image loaded from `/api/v1/media/9b0e9b49-bfa4-4ce5-8e1b-3bdcd61737e8` with `naturalWidth=1200` and the “Ảnh hiện tại của phòng” status. QA-801 remained at 1,500,000 đ/night and “Cần vệ sinh”.
+- **Automated checks:** `RoomImageUrlValidationTest`: 3 passed (managed UUID path and HTTP/HTTPS accepted; other relative paths and protocols rejected). `node --test tests/media-upload.test.mjs`: 2/2 passed; JavaScript syntax checks and `git diff --check` passed. Full `npm test --prefix web-ui` ran 142 tests: 135 passed and 7 failed. Five `login-modal.test.mjs` integration scenarios received the generic connection error or consequently failed the login transition assertion; two `server.test.mjs` cases were blocked by sandbox `connect EACCES` on ephemeral loopback ports.
+- **Open cleanup:** The first successful local upload, which preceded the rejected room update, left an unattached media asset (`44baad75-eec8-4eba-a4aa-42c2991bb26a`). Do not delete its file or DB row until MariaDB confirms it is unreferenced by both rooms and room-type images. R2 is now configured and live-verified in the follow-up below; retain the old local file until that reference check is complete.
+
+### Cloudflare R2 room-image integration and live QA (2026-10-26)
+
+- Added a backend Cloudflare R2 S3-compatible adapter using SigV4 for upload, read/proxy, and cleanup. Local disk remains the default; R2 activates only with `HOTEL_MEDIA_PROVIDER=r2`. A blank public base keeps the bucket private and serves via the backend; a configured HTTPS public base returns a direct image URL. No storage credentials are sent to the browser.
+- **Manual end-to-end passed:** The operator configured R2 variables in ignored `.env`. Started the local backend with `start-backend.bat`; MariaDB 11.4.13, schema, and vault checks all passed. On port 3000, uploaded the sample `standard.jpg` from the room-edit popup, saved QA-801, reopened the popup, and verified “Ảnh hiện tại của phòng” plus successful image load at 1200 × 900 from the configured R2 public base. Nightly price remained 1,500,000 đ and housekeeping status remained “Cần vệ sinh”.
+- **Automated checks:** `R2ObjectStorageTest`: 4 passed; `RoomImageUrlValidationTest`: 3 passed; `node --test web-ui/tests/media-upload.test.mjs`: 2 passed. JavaScript syntax checks and `git diff --check` passed.
+- **Still open:** Verify whether the first local upload is unreferenced in `rooms` and `room_type_images` before removing its orphan file/row. R2 live upload and read are verified; the R2 bucket now contains the QA-801 sample image.
+
+### Shared account avatars and dedicated room-type management (2026-10-26)
+
+- **Scope:** Added the same avatar upload/preview/remove flow to Admin, Staff, and Customer account settings. Added Admin room-type create/edit/delete and moved the shared stay-rate editor out of physical-room dialogs into the room-type page. Existing R2-backed media routes are reused.
+- **Focused web tests:** `node --test tests/portal.test.mjs tests/room-types.test.mjs tests/account-settings.test.mjs tests/media-upload.test.mjs`: **29 passed, 0 failed**. This covers all three roles, upload/removal, room-type create/edit/delete behavior, disabled deletion for in-use types, and source/public synchronization.
+- **Full web suite:** `npm test`: **147 total, 140 passed, 7 failed**. Five `login-modal.test.mjs` scenarios could not reach their local HTTP fixture and consequently showed the generic connection state; two `server.test.mjs` cases failed to connect to ephemeral `127.0.0.1` ports with `EACCES`. Treat these as environment-blocked integration cases; the focused feature tests pass.
+- **Backend:** `mvn.cmd -q -DskipTests test-compile` passed. `mvn.cmd -q '-Dtest=RoomTypeControllerTest,AccountSecurityTest' test` passed, covering room-type authorization/input rejection and the avatar field in account profile responses.
+- **Database:** The new `users.avatar_url` migration and schema changes compiled and have migration inventory coverage. Live MariaDB migration verification was not completed: the configured app database user could not drop a temporary integration schema, so the integration test aborted during cleanup. No production/runtime schema was intentionally modified in this session; do not retry cleanup without first identifying only test-owned schemas and confirming DB permissions.
+- **Browser:** Manual visual review was stopped by the user's physical Escape action. No browser interaction was performed after that stop. The UI changes are therefore automated-test verified but not live-browser verified in this session.
+- **Other checks:** `git diff --check` passed. `.env` remains ignored and was not staged; `.env.example` contains only blank R2 placeholders.
+- **Status:** Feature tests verified. Full-suite loopback integration and live browser/DB verification remain blocked.

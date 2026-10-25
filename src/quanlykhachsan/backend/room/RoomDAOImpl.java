@@ -11,7 +11,7 @@ public class RoomDAOImpl implements RoomDAO {
 
     @Override
     public void addRoom(Room room) {
-        String query = "INSERT INTO rooms(room_number, room_type_id, price, status) VALUES (?, ?, ?, ?)";
+        String query = "INSERT INTO rooms(room_number, room_type_id, image_url, price, status) VALUES (?, ?, ?, ?, ?)";
         try (Connection con = DBconn.getConnection()) {
             con.setAutoCommit(false);
             try {
@@ -25,8 +25,9 @@ public class RoomDAOImpl implements RoomDAO {
                 try (PreparedStatement ps = con.prepareStatement(query)) {
                     ps.setString(1, room.getRoomNumber());
                     ps.setInt(2, room.getRoomTypeId());
-                    ps.setBigDecimal(3, java.math.BigDecimal.valueOf(room.getPrice()));
-                    ps.setString(4, room.getStatus());
+                    ps.setString(3, room.getImageUrl());
+                    ps.setBigDecimal(4, java.math.BigDecimal.valueOf(room.getPrice()));
+                    ps.setString(5, room.getStatus());
                     ps.executeUpdate();
                 }
                 con.commit();
@@ -48,7 +49,7 @@ public class RoomDAOImpl implements RoomDAO {
 
     @Override
     public boolean updateRoom(Room room) {
-        String query = "UPDATE rooms SET room_number=?, room_type_id=?, price=?, version=version+1 WHERE id=?";
+        String query = "UPDATE rooms SET room_number=?, room_type_id=?, image_url=?, price=?, version=version+1 WHERE id=?";
         try (Connection con = DBconn.getConnection()) {
             con.setAutoCommit(false);
             try {
@@ -78,8 +79,9 @@ public class RoomDAOImpl implements RoomDAO {
                 try (PreparedStatement ps = con.prepareStatement(query)) {
                     ps.setString(1, room.getRoomNumber());
                     ps.setInt(2, room.getRoomTypeId());
-                    ps.setBigDecimal(3, java.math.BigDecimal.valueOf(room.getPrice()));
-                    ps.setInt(4, room.getId());
+                    ps.setString(3, room.getImageUrl());
+                    ps.setBigDecimal(4, java.math.BigDecimal.valueOf(room.getPrice()));
+                    ps.setInt(5, room.getId());
                     boolean updated = ps.executeUpdate() == 1;
                     con.commit();
                     return updated;
@@ -159,6 +161,7 @@ public class RoomDAOImpl implements RoomDAO {
                 r.setId(rs.getInt("id"));
                 r.setRoomNumber(rs.getString("room_number"));
                 r.setRoomTypeId(rs.getInt("room_type_id"));
+                r.setImageUrl(rs.getString("image_url"));
                 r.setPrice(rs.getDouble("price"));
                 r.setStatus(rs.getString("status"));
                 r.setVersion(rs.getInt("version"));
@@ -217,6 +220,7 @@ public class RoomDAOImpl implements RoomDAO {
                     r.setId(rs.getInt("id"));
                     r.setRoomNumber(rs.getString("room_number"));
                     r.setRoomTypeId(rs.getInt("room_type_id"));
+                    r.setImageUrl(rs.getString("image_url"));
                     r.setPrice(rs.getDouble("price"));
                     r.setStatus(rs.getString("status"));
                     r.setTypeName(rs.getString("type_name"));

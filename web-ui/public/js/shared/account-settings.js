@@ -1,5 +1,6 @@
 import { api, getAuthSession, setAuthSession, clearAuthSession } from '../../api.js';
 import { escapeHtml as esc } from './ui.js';
+import { uploadMedia, validateImageFile } from './media-upload.js';
 
 const otpInput = (id, label) => `<label for="${id}">${label}</label><input class="ais-input account-otp" id="${id}" inputmode="numeric" autocomplete="one-time-code" type="text" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required>`;
 const passwordInput = (id, label, autocomplete) => `<div class="account-field"><label for="${id}">${label}</label><div class="account-password-field"><input class="ais-input" id="${id}" type="password" autocomplete="${autocomplete}" maxlength="72" ${autocomplete === 'new-password' ? 'minlength="8"' : ''} required><button class="ais-btn ais-btn-ghost ais-btn-sm" type="button" data-password="${id}" aria-label="Hiện ${label.toLowerCase()}" aria-pressed="false">Hiện</button></div></div>`;
@@ -16,7 +17,18 @@ export async function renderAccountSettings(container, session = getAuthSession(
     const roleLabel = role === 'ADMIN' ? 'Quản trị viên' : role === 'CUSTOMER' ? 'Khách hàng' : 'Nhân viên';
     container.innerHTML = `<section class="account-settings-view account-mode-${mode}" aria-label="${title}">
       <div class="page-header"><div><h1>${title}</h1><p>${description}</p></div></div>
-      <div class="account-summary"><div class="account-settings-avatar" aria-hidden="true">${esc((session.fullName || session.username || 'A').trim().charAt(0).toUpperCase())}</div><div><strong id="account-display-name">${esc(session.fullName || session.username)}</strong><small>${esc(session.username)} · ${roleLabel}</small></div><span class="ais-badge ais-badge-outline" id="account-email-badge">Đang tải hồ sơ…</span></div>
+      <div class="account-summary">
+        <div class="ais-avatar ais-avatar-placeholder account-settings-avatar" aria-hidden="true"><div><span id="account-avatar-initial">${esc((session.fullName || session.username || 'A').trim().charAt(0).toUpperCase())}</span><img id="account-avatar-image" alt="" hidden></div></div>
+        <div class="account-summary-identity"><strong id="account-display-name">${esc(session.fullName || session.username)}</strong><small>${esc(session.username)} · ${roleLabel}</small></div>
+        <div class="account-avatar-controls">
+          <label for="account-avatar-file">Ảnh đại diện</label>
+          <input class="ais-file-input ais-file-input-bordered ais-file-input-sm" id="account-avatar-file" type="file" accept="image/jpeg,image/png" aria-describedby="account-avatar-help account-avatar-message">
+          <small id="account-avatar-help">JPEG hoặc PNG, tối đa 5 MB. Ảnh được lưu trong kho dùng chung của khách sạn.</small>
+          <div class="ais-card-actions"><button class="ais-btn ais-btn-primary ais-btn-sm" id="account-avatar-save" type="button" disabled>Lưu ảnh</button><button class="ais-btn ais-btn-ghost ais-btn-sm" id="account-avatar-remove" type="button" hidden>Gỡ ảnh</button></div>
+          <p class="ais-alert ais-alert-soft account-notice" id="account-avatar-message" role="status" aria-live="polite"></p>
+        </div>
+        <span class="ais-badge ais-badge-outline" id="account-email-badge">Đang tải hồ sơ…</span>
+      </div>
       <p class="ais-alert ais-alert-soft account-notice" id="account-load-error" role="alert"></p><button class="ais-btn ais-btn-outline" id="account-reload" hidden>Tải lại hồ sơ</button>
       <p id="account-operation" role="status" aria-live="polite"></p>
       <div class="account-settings-grid">
@@ -62,7 +74,7 @@ export async function renderAccountSettings(container, session = getAuthSession(
     </section>`;
     if (!document.getElementById('account-settings-ui')) {
         const link = document.createElement('link'); link.id = 'account-settings-ui'; link.rel = 'stylesheet';
-        link.href = new URL('../../css/account-settings-ui.css?v=3', import.meta.url).href; document.head.append(link);
+        link.href = new URL('../../css/account-settings-ui.css?v=4', import.meta.url).href; document.head.append(link);
     }
     const root = container.querySelector('.account-settings-view'), $ = selector => root.querySelector(selector);
     const on = (selector, event, handler) => $(selector)?.addEventListener(event, handler);
@@ -70,6 +82,7 @@ export async function renderAccountSettings(container, session = getAuthSession(
     const disabled = (selector, value) => { const node = $(selector); if (node) node.disabled = value; };
     const active = () => root.isConnected && getAuthSession()?.token === token;
     let profile = null, busy = false, emailFlow = null, passwordFlow = null, identityLoaded = false;
+    let pendingAvatarFile = null, avatarPreviewUrl = '', currentAvatarUrl = session.avatarUrl || '';
     const message = (target, text, error = false) => { $(target).textContent = text; $(target).classList.toggle('account-error', error); };
     const post = (path, body = {}) => api.post('/account/' + path, body, transport);
     async function loadDevices() {
@@ -110,6 +123,10 @@ export async function renderAccountSettings(container, session = getAuthSession(
         $('#account-email-help').textContent = dirtyEmail ? 'Email đã thay đổi. Lưu hồ sơ trước khi yêu cầu mã mới.' : profile?.emailVerified ? 'Email đã xác minh, có thể dùng để nhận OTP đổi mật khẩu.' : mode === 'profile' ? 'Xác minh email trong tab Bảo mật sau khi lưu hồ sơ.' : mode === 'security' && !profile?.email ? 'Thêm email trong tab Hồ sơ trước khi yêu cầu mã xác minh.' : 'Xác minh bằng mã OTP gửi đến hộp thư của bạn.';
         $('#account-email-badge').textContent = !profile ? 'Đang tải hồ sơ…' : dirtyEmail ? 'Email chưa lưu' : profile.emailVerified ? 'Email đã xác minh' : 'Email chưa xác minh';
         $('#account-email-badge').classList.toggle('ais-badge-success', !!profile?.emailVerified && !dirtyEmail);
+        disabled('#account-avatar-file', busy || !profile);
+        disabled('#account-avatar-save', busy || !profile || !pendingAvatarFile);
+        disabled('#account-avatar-remove', busy || !profile || !currentAvatarUrl || !!pendingAvatarFile);
+        hidden('#account-avatar-remove', !currentAvatarUrl && !pendingAvatarFile);
         if ($('#account-password-help')) $('#account-password-help').textContent = profile && !profile.mailConfigured ? 'Hiện chưa thể gửi email xác thực. Vui lòng liên hệ quản trị viên.' : profile?.emailVerified ? `Mã OTP sẽ được gửi đến ${profile.email}. Chỉ bạn mới nên sử dụng mã này.` : 'Xác minh email trước khi đổi mật khẩu.';
         for (const [name, flow] of [['email', emailFlow], ['password', passwordFlow]]) {
             const button = $(`#account-${name}-resend`), seconds = remaining(flow);
@@ -129,10 +146,22 @@ export async function renderAccountSettings(container, session = getAuthSession(
         if (fill) for (const [field, key] of [['username','username'],['fullname','fullName'],['phone','phone'],['email','email']]) { const input = $(`#account-${field}`); if (input) input.value = data[key] || ''; }
         $('#account-display-name').textContent = data.fullName || data.username;
         const stored = getAuthSession();
-        if (stored?.token === token) setAuthSession({ ...stored, fullName: data.fullName, phone: data.phone, email: data.email, emailVerified: data.emailVerified });
+        if (stored?.token === token) setAuthSession({ ...stored, fullName: data.fullName, phone: data.phone, email: data.email, emailVerified: data.emailVerified, avatarUrl: data.avatarUrl || null });
         const sidebarName = document.getElementById('user-display-name'); if (sidebarName) sidebarName.textContent = data.fullName || data.username;
         const topbarName = document.getElementById('topbar-user-name'); if (topbarName) topbarName.textContent = data.fullName || data.username;
-        const avatar = root.querySelector('.account-settings-avatar'); if (avatar) avatar.textContent = (data.fullName || data.username || 'A').trim().charAt(0).toUpperCase();
+        const avatar = $('#account-avatar-image'), initial = $('#account-avatar-initial'), frame = root.querySelector('.account-settings-avatar');
+        if (avatar) avatar.onerror = () => { avatar.hidden = true; if (initial) initial.hidden = false; frame?.classList.add('ais-avatar-placeholder'); };
+        if (data.avatarUrl) {
+            currentAvatarUrl = data.avatarUrl;
+            if (avatar) { avatar.src = data.avatarUrl; avatar.hidden = false; }
+            if (initial) initial.hidden = true;
+            frame?.classList.remove('ais-avatar-placeholder');
+        } else {
+            currentAvatarUrl = '';
+            if (avatar) { avatar.removeAttribute('src'); avatar.hidden = true; }
+            if (initial) { initial.hidden = false; initial.textContent = (data.fullName || data.username || 'A').trim().charAt(0).toUpperCase(); }
+            frame?.classList.add('ais-avatar-placeholder');
+        }
         sync();
     }
     async function run(target, operation, status) {
@@ -154,6 +183,40 @@ export async function renderAccountSettings(container, session = getAuthSession(
     }
     const load = () => run('#account-load-error', async () => { const data = await api.get('/account/profile'); if (active()) { apply(data); $('#account-reload').hidden = true; } }, 'Đang tải hồ sơ…').then(() => { if (active() && !profile) $('#account-reload').hidden = false; });
     $('#account-reload').onclick = load;
+    const releaseAvatarPreview = () => {
+        if (!avatarPreviewUrl) return;
+        window.URL.revokeObjectURL(avatarPreviewUrl); avatarPreviewUrl = '';
+    };
+    on('#account-avatar-file', 'change', event => {
+        const file = event.currentTarget.files?.[0] || null;
+        pendingAvatarFile = null; releaseAvatarPreview();
+        if (!file) { if (profile) apply(profile, false); return; }
+        try { validateImageFile(file); }
+        catch (error) { event.currentTarget.value = ''; message('#account-avatar-message', error.message, true); if (profile) apply(profile, false); return; }
+        pendingAvatarFile = file; avatarPreviewUrl = window.URL.createObjectURL(file);
+        const avatar = $('#account-avatar-image'), initial = $('#account-avatar-initial'), frame = root.querySelector('.account-settings-avatar');
+        avatar.src = avatarPreviewUrl; avatar.hidden = false; initial.hidden = true; frame.classList.remove('ais-avatar-placeholder');
+        message('#account-avatar-message', `Đang xem trước ${file.name}. Bấm Lưu ảnh để cập nhật cho tài khoản này.`); sync();
+    });
+    on('#account-avatar-save', 'click', () => run('#account-avatar-message', async () => {
+        if (!pendingAvatarFile) return;
+        const result = await uploadMedia(pendingAvatarFile, '/account/avatar');
+        if (!active()) return;
+        pendingAvatarFile = null; releaseAvatarPreview();
+        if ($('#account-avatar-file')) $('#account-avatar-file').value = '';
+        apply({ ...profile, avatarUrl: result.url }, false);
+        message('#account-avatar-message', 'Đã cập nhật ảnh đại diện cho tài khoản.');
+        window.dispatchEvent(new Event('hotel:profile-updated'));
+    }, 'Đang tải ảnh đại diện lên kho lưu trữ…'));
+    on('#account-avatar-remove', 'click', () => run('#account-avatar-message', async () => {
+        await api.delete('/account/avatar', transport);
+        if (!active()) return;
+        pendingAvatarFile = null; releaseAvatarPreview();
+        if ($('#account-avatar-file')) $('#account-avatar-file').value = '';
+        apply({ ...profile, avatarUrl: null }, false);
+        message('#account-avatar-message', 'Đã gỡ ảnh đại diện khỏi tài khoản.');
+        window.dispatchEvent(new Event('hotel:profile-updated'));
+    }, 'Đang gỡ ảnh đại diện…'));
     on('#account-profile-form', 'submit', event => { event.preventDefault(); run('#account-profile-message', async () => {
         const data = await post('profile', { fullName: $('#account-fullname').value.trim(), phone: $('#account-phone').value.trim(), email: $('#account-email').value.trim() });
         if (active()) { apply(data); message('#account-profile-message', 'Đã lưu hồ sơ.'); }
@@ -202,7 +265,7 @@ export async function renderAccountSettings(container, session = getAuthSession(
     });
     const refresh = () => { if (active()) load(); };
     window.addEventListener('hotel:profile-updated', refresh);
-    const timer = window.setInterval(() => { if (!active()) { window.clearInterval(timer); window.removeEventListener('hotel:profile-updated', refresh); } else sync(); }, 1000);
+    const timer = window.setInterval(() => { if (!active()) { window.clearInterval(timer); window.removeEventListener('hotel:profile-updated', refresh); releaseAvatarPreview(); } else sync(); }, 1000);
     if (options.showIdentity) $('#account-identity-content').closest('details').addEventListener('toggle', async event => {
         if (!event.currentTarget.open || identityLoaded) return;
         identityLoaded = true;

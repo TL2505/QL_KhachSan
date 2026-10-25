@@ -209,6 +209,24 @@ curl -X GET http://localhost:8081/api/v1/rooms \
 
 ---
 
+### 3.1 Room image upload and serving
+
+- **Upload:** `POST /api/v1/admin/catalog/media` with a Bearer token and JSON body `{"fileName":"room.jpg","dataBase64":"<base64>"}`. Only valid JPEG/PNG images up to 5 MB and 6000 × 6000 px are accepted.
+- **Serving:** `GET /api/v1/media/{uuid}` serves managed images. The endpoint reads image bytes from the configured storage provider; file bytes are never stored in MariaDB.
+- **Local default:** `HOTEL_MEDIA_PROVIDER=local` stores bytes under `HOTEL_MEDIA_DIR` and records media metadata plus the API URL in `media_assets`.
+- **Cloudflare R2:** Set `HOTEL_MEDIA_PROVIDER=r2`, `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY`. The endpoint is derived as `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`; use an R2 S3 API token scoped to Object Read & Write for the target bucket. `R2_PUBLIC_BASE_URL` is optional: when absent, the backend proxies reads from the private bucket; when configured to an HTTPS `r2.dev` or custom domain, the returned image URL points directly to it.
+- `media_assets.storage_key` records a provider marker and object key; `public_url` is the URL returned to room and catalog forms. Credentials remain server-side and must not be sent to the browser.
+
+### 3.2 Account avatars and room-type catalog
+
+- **Read profile:** `GET /api/v1/account/profile` includes `avatarUrl` for the authenticated account.
+- **Upload avatar:** `POST /api/v1/account/avatar` accepts the same `fileName` and `dataBase64` JSON shape and JPEG/PNG limits as the room image endpoint. The server uses the authenticated user ID, stores the image through the configured media provider, and updates only that account's `users.avatar_url` in the same database transaction as the media metadata.
+- **Remove avatar:** `DELETE /api/v1/account/avatar` clears only the authenticated user's avatar reference. The media object is retained to avoid deleting an image that may still be referenced.
+- **Room-type catalog:** Admin-only `POST /api/v1/rooms/types`, `PUT /api/v1/rooms/types/{id}`, and `DELETE /api/v1/rooms/types/{id}` manage room type name, description, capacity, day reference price, amenities, image and visibility. Deletion returns `409` while a physical room still uses that type.
+- **Stay rates:** `GET /api/v1/admin/rental-policy` and `PUT /api/v1/admin/rental-policy/{id}` remain the shared editor for hourly, overnight and extra-hour rates. These settings belong to the room type and are no longer embedded in a physical-room create/edit form.
+
+---
+
 ### 4. Dynamic Room Availability Search
 - **Method:** `GET`
 - **Route:** `/api/v1/rooms/availability?check_in=2026-10-15&check_out=2026-10-18&room_type=Deluxe`
@@ -986,3 +1004,11 @@ Successful JSON operations use the existing `{status:"success",data:...}` envelo
 The MISA adapter supports `POS`, `HSM_CODE`, and `HSM_NO_CODE`. POS requests use `/api/v3/code/itg/invoice-calculating/invoiceandpublish`, place the reference inside `OrgInvoiceData`, and set `IsInvoiceCalculatingMachine: true`. HSM requests use `/api/v3/code/itg/invoicepublishing/publishhsm` for coded invoices and `/api/v3/itg/invoicepublishing/publishhsm` for uncoded invoices. The adapter uses the corresponding code/no-code status, view-link and PDF routes. Provider credentials are sent only to token endpoints; cancellation uses MISA's separate integration token.
 
 Invalid requests return 400; authorization failures return 403; business conflicts and uncertain provider outcomes return 409; definite provider rejection returns 502; missing provider configuration or persistence/transport availability failures return 503. Provider credentials and raw customer request data are not included in events or responses. See [the operations guide](../electronic-invoices.md) for configuration and staff workflow.
+
+### Admin operations dashboard — 2026-10-26
+
+| Method and route | Access and behavior |
+| --- | --- |
+| `GET /api/v1/reports/admin-overview` | Admin only. Returns the hotel's business date, today's payment collections, occupied/sellable room counts, pending bookings, arrivals/departures and rooms needing cleaning, current-month collections and completed refunds, outstanding manual refund requests, booking cancellation ratio, and six months of net folio revenue. |
+
+Refund ratio is `refunds resolved during the current business month / payment collections posted in that month`; cancellation ratio is cancelled bookings among bookings created during the month. Revenue chart uses folio debits less `adjustment` and `refund` credits by business date. All monetary values are VND; a ratio is zero when its denominator is zero. The response uses the standard `{status:"success",data:...}` envelope and is read-only.

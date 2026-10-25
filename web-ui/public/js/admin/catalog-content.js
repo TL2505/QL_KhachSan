@@ -1,4 +1,5 @@
 import { api } from '../../api.js';
+import { uploadMedia } from '../shared/media-upload.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const classificationLabel = value => value === 'legal' ? 'Pháp lý · cần duyệt' : value === 'brand' ? 'Thương hiệu · cần duyệt' : 'Nội dung cập nhật thường xuyên';
@@ -31,22 +32,6 @@ function makeField(labelText, key, kind, value, required = false) {
     });
   }
   return { label, input };
-}
-
-function readFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
-    reader.onerror = () => reject(new Error('Không đọc được ảnh đã chọn.')); reader.readAsDataURL(file);
-  });
-}
-
-async function uploadMedia(file) {
-  if (!['image/jpeg', 'image/png'].includes(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024) {
-    throw new Error('Chọn ảnh JPEG hoặc PNG, dung lượng tối đa 5 MB.');
-  }
-  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 60000);
-  try { return await api.post('/admin/catalog/media', { fileName: file.name, dataBase64: await readFile(file) }, { signal: controller.signal }); }
-  finally { clearTimeout(timeout); }
 }
 
 export async function renderCatalogContent(container, session = {}) {
