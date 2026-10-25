@@ -1,5 +1,12 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-26] — Fix room-type navigation icon and responsive rate cards
+
+- Replaced the unsupported room-type sidebar icon with Lucide's `layers` icon.
+- Changed the shared rate editor from a fixed two-column breakpoint to auto-fit columns with a 420px minimum; a single card now fills its available track and narrow screens use one column.
+- Added regression coverage for the navigation icon, adaptive grid rules, and editor markup. Focused portal and room-type tests passed 15/15.
+- Live visual confirmation remains pending because the open portal tab is signed out; authentication was not automated.
+
 ## [2026-10-26] — Shared account avatars and a dedicated room-type tab
 
 - Added one avatar picker to the shared account settings used by Admin, Staff and Customer. Each upload is attached to the authenticated user's account, uses the configured media provider, and supports preview, save and remove.

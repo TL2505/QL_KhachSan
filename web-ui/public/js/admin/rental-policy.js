@@ -34,7 +34,7 @@ export async function renderRentalPolicy(container, { embedded = false, roomType
     container.append(header);
   }
   const status = document.createElement('p'); status.className = 'alert alert-info admin-room-rates-status'; status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
-  const list = document.createElement('div'); list.className = 'grid grid-cols-1 xl:grid-cols-2 gap-4'; container.append(status, list);
+  const list = document.createElement('div'); list.className = 'grid room-rates-grid gap-4'; container.append(status, list);
 
   async function load(savedTypeName = '') {
     if (renderRequests.get(container) !== requestId) return;

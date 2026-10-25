@@ -2992,8 +2992,15 @@ body.admin-portal #global-modal-content .room-type-form { display: grid; gap: 12
 body.admin-portal #global-modal-content .room-type-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 body.admin-portal #global-modal-content .room-type-image-preview { min-height: 180px; }
 body.admin-portal #global-modal-content .room-type-image-preview img { max-height: 260px; }
+body.admin-portal .portal-view #room-types-rate-editor .room-rates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  align-items: stretch;
+}
+body.admin-portal .portal-view #room-types-rate-editor .room-rates-grid > .card { width: 100%; min-width: 0; }
 @media (max-width: 680px) {
   body.admin-portal .portal-view .room-types-toolbar { align-items: stretch; flex-direction: column; }
   body.admin-portal .portal-view .room-types-filters { min-width: 0; }
+  body.admin-portal .portal-view #room-types-rate-editor .room-rates-grid { grid-template-columns: minmax(0, 1fr); }
   body.admin-portal #global-modal-content .room-type-form-grid { grid-template-columns: minmax(0, 1fr); }
 }

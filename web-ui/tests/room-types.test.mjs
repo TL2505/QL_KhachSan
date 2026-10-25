@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { api } from '../public/api.js';
 import { renderRoomTypes } from '../public/js/admin/room-types.js';
@@ -25,9 +27,18 @@ test('separate room-type view includes CRUD and the moved shared stay-rate edito
   assert.equal(root.querySelector('h1').textContent,'Hạng phòng');
   assert.match(root.querySelector('#room-types-body').textContent,/Synthetic Deluxe/);
   assert.equal(root.querySelectorAll('#room-types-rate-editor [data-rate]').length,3);
+  assert.ok(root.querySelector('#room-types-rate-editor .room-rates-grid'));
   root.querySelector('#room-type-add').click();
   assert.ok(document.querySelector('#room-type-form'));
   assert.equal(document.querySelector('#global-modal-content [data-rate]'),null);
+});
+
+test('room-type navigation has a Lucide icon and rate cards flex to available width',async()=>{
+  const portalApp=await readFile(fileURLToPath(new URL('../public/portal-app.js',import.meta.url)),'utf8');
+  const adminCss=await readFile(fileURLToPath(new URL('../public/portal-admin.css',import.meta.url)),'utf8');
+  assert.match(portalApp,/\['room-types',\s*'Hạng phòng',\s*'layers'\]/);
+  assert.match(adminCss,/grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*420px\),\s*1fr\)\)/);
+  assert.match(adminCss,/room-rates-grid\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\);/);
 });
 
 test('room-type form creates with validated room-class fields then refreshes list and rates',async t=>{

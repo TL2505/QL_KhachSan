@@ -1,6 +1,6 @@
 import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.36';
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.36';
-import { loadAdminView } from './js/view-admin.js?v=3.6.22';
+import { loadAdminView } from './js/view-admin.js?v=3.6.23';
 import { loadStaffView } from './js/view-staff.js?v=3.6.65';
 import { loadCustomerView } from './js/view-customer.js?v=3.6.61';
 import { loadProfileView } from './js/view-shared.js';
@@ -181,7 +181,7 @@ const menus = {
   ADMIN: [
     ['dashboard', 'Tổng quan', 'chart-no-axes-combined'],
     ['rooms', 'Quản lý phòng', 'bed-double'],
-    ['room-types', 'Hạng phòng', 'bed-double-check'],
+    ['room-types', 'Hạng phòng', 'layers'],
     ['catalog-content', 'Danh mục & landing page', 'images'],
     ['bookings', 'Đặt phòng', 'calendar-check'],
     ['users', 'Quản lý phân quyền', 'users'],

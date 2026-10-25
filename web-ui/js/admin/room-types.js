@@ -1,6 +1,6 @@
 import { api } from '../../api.js';
 import { uploadMedia, validateImageFile } from '../shared/media-upload.js';
-import { renderRentalPolicy } from './rental-policy.js?v=3.6.3';
+import { renderRentalPolicy } from './rental-policy.js?v=3.6.4';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const money = value => Number(value || 0).toLocaleString('vi-VN') + ' đ';

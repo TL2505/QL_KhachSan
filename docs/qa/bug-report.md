@@ -378,3 +378,19 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Regression tests:** `node --test tests/account-settings.test.mjs tests/media-upload.test.mjs`; `AccountSecurityTest`; `MariaDbMigrationIntegrationTest` migration assertions.
 - **Verification:** Focused web tests passed and Java compilation plus `AccountSecurityTest` passed. The live migration integration could not finish because the app DB user lacked permission to drop its temporary test schema; live role-by-role browser review was stopped by the user's physical Escape action.
 - **Status:** Fixed and automated-test verified; live UI/database verification pending
+
+## QA-2026-024 — Room-type navigation icon was missing and rate cards stayed narrow
+
+- **Type:** Confirmed admin visual/responsive defect
+- **Discovered:** 2026-10-26
+- **Module / role:** Admin sidebar and room-type rate editor; administrator
+- **Severity / priority:** P3 / P2
+- **Environment and evidence:** User-provided screenshot of `http://127.0.0.1:3000/portal.html?view=room-types`; one room type was displayed in a narrow left column while most of the rate panel remained empty.
+- **Reproduction:** Open the room-type page at a desktop width with one room type. Inspect the nav item and the card under “Giá theo gói lưu trú”.
+- **Expected:** The nav item displays a valid icon. Rate cards adapt to available width: one card fills the row, several cards wrap to useful columns, and small screens use one column.
+- **Actual:** The nav used `bed-double-check`, which did not render. The editor used a fixed `xl:grid-cols-2`, so a single card occupied only one of two columns.
+- **Root cause:** Unsupported Lucide icon identifier and fixed large-screen grid columns without auto-fit behavior.
+- **Fix implemented:** Switched to the supported `layers` icon and an auto-fit grid with a 420px minimum card width, plus a narrow-screen one-column rule. Updated root/public copies and cache-busting versions.
+- **Regression tests:** `node --test tests/room-types.test.mjs tests/portal.test.mjs`.
+- **Verification:** 15 tests passed, including icon, auto-fit, narrow-screen and source/public synchronization checks. The current browser session is signed out; live visual verification was not performed because authentication is not automated.
+- **Status:** Fixed and automated-test verified; authenticated visual confirmation pending

@@ -221,3 +221,11 @@ Latest full-suite evidence is 291 Java tests (0 failures/errors, 42 skipped) and
 - **Browser:** Manual visual review was stopped by the user's physical Escape action. No browser interaction was performed after that stop. The UI changes are therefore automated-test verified but not live-browser verified in this session.
 - **Other checks:** `git diff --check` passed. `.env` remains ignored and was not staged; `.env.example` contains only blank R2 placeholders.
 - **Status:** Feature tests verified. Full-suite loopback integration and live browser/DB verification remain blocked.
+
+### Room-type icon and responsive rate-card follow-up (2026-10-26)
+
+- **Finding:** The “Hạng phòng” nav referenced an unsupported Lucide icon name, leaving no icon. The shared rate editor used a fixed two-column breakpoint; a single room type therefore occupied only half the available content width in the supplied screenshot.
+- **Fix:** Changed the nav icon to `layers`; rate cards now use `repeat(auto-fit, minmax(min(100%, 420px), 1fr))`, with a one-column rule for narrow screens. Root/public JavaScript and CSS copies and asset cache versions were updated together.
+- **Verification:** `node --test tests/room-types.test.mjs tests/portal.test.mjs`: **15 passed, 0 failed**. The regression test checks the Lucide icon key, auto-fit grid rule, small-screen single-column rule, and rendered rate-editor container. Source/public synchronization passed.
+- **Live UI:** The browser tab reached the portal sign-in screen. Computer-use policy forbids automating authentication, so the screenshot fix could not be visually rechecked in the authenticated admin page.
+- **Status:** Fixed and automated-test verified; authenticated visual confirmation pending
