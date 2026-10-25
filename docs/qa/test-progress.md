@@ -227,5 +227,5 @@ Latest full-suite evidence is 291 Java tests (0 failures/errors, 42 skipped) and
 - **Finding:** The “Hạng phòng” nav referenced an unsupported Lucide icon name, leaving no icon. The shared rate editor used a fixed two-column breakpoint; a single room type therefore occupied only half the available content width in the supplied screenshot.
 - **Fix:** Changed the nav icon to `layers`; rate cards now use `repeat(auto-fit, minmax(min(100%, 420px), 1fr))`, with a one-column rule for narrow screens. Root/public JavaScript and CSS copies and asset cache versions were updated together.
 - **Verification:** `node --test tests/room-types.test.mjs tests/portal.test.mjs`: **15 passed, 0 failed**. The regression test checks the Lucide icon key, auto-fit grid rule, small-screen single-column rule, and rendered rate-editor container. Source/public synchronization passed.
-- **Live UI:** The browser tab reached the portal sign-in screen. Computer-use policy forbids automating authentication, so the screenshot fix could not be visually rechecked in the authenticated admin page.
-- **Status:** Fixed and automated-test verified; authenticated visual confirmation pending
+- **Live UI:** Reloaded the already authenticated admin tab on port 3000. Confirmed the “Hạng phòng” sidebar now shows the layers icon and the single rate card spans the available content width. Narrow-screen one-column behavior is covered by the CSS breakpoint and regression test; a separate narrow-device screenshot was not captured.
+- **Status:** Desktop visual and automated-test verified

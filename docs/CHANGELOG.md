@@ -5,7 +5,7 @@
 - Replaced the unsupported room-type sidebar icon with Lucide's `layers` icon.
 - Changed the shared rate editor from a fixed two-column breakpoint to auto-fit columns with a 420px minimum; a single card now fills its available track and narrow screens use one column.
 - Added regression coverage for the navigation icon, adaptive grid rules, and editor markup. Focused portal and room-type tests passed 15/15.
-- Live visual confirmation remains pending because the open portal tab is signed out; authentication was not automated.
+- Reloaded the authenticated port-3000 admin page and visually confirmed the icon and full-width single card. Narrow-screen one-column behavior is covered by the responsive CSS regression test.
 
 ## [2026-10-26] — Shared account avatars and a dedicated room-type tab
 

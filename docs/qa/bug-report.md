@@ -392,5 +392,5 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Root cause:** Unsupported Lucide icon identifier and fixed large-screen grid columns without auto-fit behavior.
 - **Fix implemented:** Switched to the supported `layers` icon and an auto-fit grid with a 420px minimum card width, plus a narrow-screen one-column rule. Updated root/public copies and cache-busting versions.
 - **Regression tests:** `node --test tests/room-types.test.mjs tests/portal.test.mjs`.
-- **Verification:** 15 tests passed, including icon, auto-fit, narrow-screen and source/public synchronization checks. The current browser session is signed out; live visual verification was not performed because authentication is not automated.
-- **Status:** Fixed and automated-test verified; authenticated visual confirmation pending
+- **Verification:** 15 tests passed, including icon, auto-fit, narrow-screen and source/public synchronization checks. Reloaded the authenticated port-3000 admin page and visually confirmed the `layers` icon and the single rate card filling the available row. Narrow-screen behavior is covered by the one-column CSS rule and regression assertions.
+- **Status:** Verified
