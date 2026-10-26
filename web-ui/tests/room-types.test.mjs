@@ -28,17 +28,21 @@ test('separate room-type view includes CRUD and the moved shared stay-rate edito
   assert.match(root.querySelector('#room-types-body').textContent,/Synthetic Deluxe/);
   assert.equal(root.querySelectorAll('#room-types-rate-editor [data-rate]').length,3);
   assert.ok(root.querySelector('#room-types-rate-editor .room-rates-grid'));
+  assert.ok(root.querySelector('#room-types-rate-editor .room-rate-fields'));
+  assert.equal(root.querySelector('#room-types-rate-editor .room-rate-fields').querySelectorAll('[data-rate]').length,3);
   root.querySelector('#room-type-add').click();
   assert.ok(document.querySelector('#room-type-form'));
   assert.equal(document.querySelector('#global-modal-content [data-rate]'),null);
 });
 
-test('room-type navigation has a Lucide icon and rate cards flex to available width',async()=>{
+test('room-type navigation uses a room icon and rate cards and fields adapt to available width',async()=>{
   const portalApp=await readFile(fileURLToPath(new URL('../public/portal-app.js',import.meta.url)),'utf8');
   const adminCss=await readFile(fileURLToPath(new URL('../public/portal-admin.css',import.meta.url)),'utf8');
-  assert.match(portalApp,/\['room-types',\s*'Hạng phòng',\s*'layers'\]/);
+  assert.match(portalApp,/\['room-types',\s*'Hạng phòng',\s*'door-open'\]/);
   assert.match(adminCss,/grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*420px\),\s*1fr\)\)/);
+  assert.match(adminCss,/room-rate-fields\s*\{\s*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*190px\),\s*1fr\)\)/);
   assert.match(adminCss,/room-rates-grid\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\);/);
+  assert.match(adminCss,/html\[data-theme="light"\]\s+body\.admin-portal\s+#global-modal-content[^\{]+\{[^}]*background:\s*#fff;[^}]*color:\s*#29251f;/);
 });
 
 test('room-type form creates with validated room-class fields then refreshes list and rates',async t=>{

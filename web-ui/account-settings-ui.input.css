@@ -53,7 +53,10 @@ body.customer-portal .account-settings-view { --color-primary: var(--customer-pr
 .account-summary-identity { min-width: 150px; flex: 0 1 auto; overflow-wrap: anywhere; }
 .account-avatar-controls { min-width: min(100%, 260px); max-width: 420px; flex: 1 1 280px; display: grid; gap: 7px; }
 .account-avatar-controls > label { font-size: 12px; font-weight: 600; color: var(--portal-text); }
-.account-settings-view .ais-file-input { width: 100%; max-width: 100%; min-width: 0; background: var(--portal-bg); color: var(--portal-text); border-color: var(--portal-border); font: inherit; font-size: 12px; }
+.account-avatar-picker { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-width: 0; }
+.account-avatar-picker-button { flex: none; cursor: pointer; }
+.account-avatar-picker-button:focus-visible { outline: 2px solid var(--portal-gold); outline-offset: 3px; }
+.account-avatar-file-name { min-width: 0; color: var(--portal-muted); font-size: 12px; overflow-wrap: anywhere; }
 .account-avatar-controls .ais-card-actions { gap: 8px; }
 .account-summary strong { font-size: 15px; color: var(--portal-text); }
 .account-summary > div:nth-child(2) { min-width: 0; flex: 1; overflow-wrap: anywhere; }

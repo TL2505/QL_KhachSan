@@ -3012,6 +3012,17 @@ body.admin-portal .portal-view #room-types-rate-editor .room-rates-grid {
   align-items: stretch;
 }
 body.admin-portal .portal-view #room-types-rate-editor .room-rates-grid > .card { width: 100%; min-width: 0; }
+body.admin-portal .portal-view #room-types-rate-editor .room-rate-fields {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  min-width: 0;
+}
+body.admin-portal .portal-view #room-types-rate-editor .room-rate-fields > * { min-width: 0; }
+html[data-theme="light"] body.admin-portal #global-modal-content :is(.form-input, input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  background: #fff;
+  color: #29251f;
+  border-color: #d9d0c2;
+}
+html[data-theme="light"] body.admin-portal #global-modal-content :is(.form-input, input, select, textarea)::placeholder { color: #777168; }
 @media (max-width: 680px) {
   body.admin-portal .portal-view .room-types-toolbar { align-items: stretch; flex-direction: column; }
   body.admin-portal .portal-view .room-types-filters { min-width: 0; }

@@ -32,7 +32,8 @@ async function setup(t, role='ADMIN', verified=false, get, options={}) {
 
 for(const role of ['ADMIN','STAFF','CUSTOMER'])test(`${role} shares email verification and password UX`,async t=>{
     const {$,submit,calls}=await setup(t,role);
-    assert.ok($('#account-avatar-file'));assert.ok($('#account-avatar-save'));
+    assert.ok($('#account-avatar-file'));assert.ok($('#account-avatar-save'));assert.ok($('#account-avatar-pick').classList.contains('btn'));
+    assert.equal($('#account-avatar-file-name').textContent,'Chưa chọn ảnh');
     assert.equal($('.account-settings-view h1').textContent,'Hồ sơ & bảo mật');
     assert.match($('#account-devices-list').textContent,/Chrome · Windows/);
     assert.match($('#account-devices-list').textContent,/Thiết bị này/);
@@ -50,10 +51,13 @@ for(const role of ['ADMIN','STAFF','CUSTOMER'])test(`${role} shares email verifi
 
 test('shared avatar picker previews, uploads and stores the account-bound URL',async t=>{
     const {$,dom,calls}=await setup(t,'STAFF');
+    assert.equal($('#account-avatar-remove').hidden,true);
     dom.window.URL.createObjectURL=()=> 'blob:synthetic-avatar';dom.window.URL.revokeObjectURL=()=>{};
     const file=new dom.window.File([new Uint8Array([1,2,3])],'avatar.png',{type:'image/png'});
     Object.defineProperty($('#account-avatar-file'),'files',{configurable:true,value:[file]});
     $('#account-avatar-file').dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+    assert.equal($('#account-avatar-file-name').textContent,'avatar.png');
+    assert.equal($('#account-avatar-remove').hidden,true);
     assert.equal($('#account-avatar-image').src,'blob:synthetic-avatar');assert.equal($('#account-avatar-save').disabled,false);
     $('#account-avatar-save').click();await settle();await settle();
     assert.equal(calls.find(call=>call.path==='/account/avatar').body.fileName,'avatar.png');

@@ -25,7 +25,7 @@ Updated: 2026-10-26
 | Area | Result | Evidence |
 | --- | --- | --- |
 | Java compile and Maven tests | **291 run; 0 failures; 0 errors; 42 skipped** | Latest full Maven suite used JDK 17, isolated `.run/qa-full` output and project-local Maven cache. The skips are environment-gated database/integration/performance cases. |
-| Web UI tests | **140 passed; 0 failed; 0 skipped** | Latest `npm test` in `web-ui`, including the staff booking 401 and late-response regressions; DOM and local HTTP fixtures were used. |
+| Web UI tests | **153 passed; 0 failed; 0 skipped** | Latest `npm test` after popup-contrast regression coverage; local loopback access was enabled for local HTTP fixtures. |
 | Changed browser JavaScript syntax | **6 files passed** | `node --check` on admin/staff invoices, customer bookings/discovery, concierge chat, and concierge room tools. |
 | Static frontend smoke | **Passed** | Local server returned HTTP 200 for `/`; HTML contained the login and booking modals. API/backend was not running. |
 | Live booking, mock QR payment, history, cancellation/refund and expiry | **Passed** | Browser on port 3000 plus the authorized local MariaDB. A paid mock booking was confirmed and then cancelled/refunded through the mock flow; a second unpaid QR booking expired; a third paid mock QR booking remains confirmed. No real payment was made. |
@@ -108,6 +108,7 @@ Latest full-suite evidence is 291 Java tests (0 failures/errors, 42 skipped) and
 - `QA-2026-009`: Added staff counter/POS collection through the folio API and exposed the booking payment choice. **Verified end to end in the live UI and transaction history using an authorized synthetic cash collection on booking #5.**
 - `QA-2026-010`: Disabled check-in before the scheduled time and removed the action after checkout. **Pre-check-in UI verified; after-checkout UI branch not live-tested.**
 - `QA-2026-011`: Exposed the booking channel and labeled Web bookings as system-managed; suppresses manual check-in/check-out for those stays while retaining Web counter collection. **Live UI verified on bookings #3/#4.**
+- `QA-2026-029`: Corrected low-contrast form controls in admin popups under the light theme. **Room-type create/edit validation and account-role dialog verified live on port 3000; no form was saved.**
 
 ## Remaining risks and next actions
 
@@ -117,6 +118,7 @@ Latest full-suite evidence is 291 Java tests (0 failures/errors, 42 skipped) and
 4. The staff counter-collection write path is verified for a synthetic cash collection on booking #5; POS and partial/excess staff collections remain untested in the live UI.
 5. With MISA test credentials and an approved test seller account, exercise issue/sync/adjust/cancel/PDF operations in MISA's test environment before considering production setup.
 6. Run Docker bootstrap and performance tests on a host with Docker and MariaDB 11.
+7. QA-2026-012 overdue-notification fixture still needs a disposable MariaDB schema ending in `_test`; the current runtime database is deliberately not used by that integration test.
 
 ## Commands run
 
@@ -208,6 +210,7 @@ Latest full-suite evidence is 291 Java tests (0 failures/errors, 42 skipped) and
 
 - Added a backend Cloudflare R2 S3-compatible adapter using SigV4 for upload, read/proxy, and cleanup. Local disk remains the default; R2 activates only with `HOTEL_MEDIA_PROVIDER=r2`. A blank public base keeps the bucket private and serves via the backend; a configured HTTPS public base returns a direct image URL. No storage credentials are sent to the browser.
 - **Manual end-to-end passed:** The operator configured R2 variables in ignored `.env`. Started the local backend with `start-backend.bat`; MariaDB 11.4.13, schema, and vault checks all passed. On port 3000, uploaded the sample `standard.jpg` from the room-edit popup, saved QA-801, reopened the popup, and verified “Ảnh hiện tại của phòng” plus successful image load at 1200 × 900 from the configured R2 public base. Nightly price remained 1,500,000 đ and housekeeping status remained “Cần vệ sinh”.
+- **Room-type follow-up:** Uploaded the same sample from the “Hạng phòng” edit popup to QA Standard and reopened it; the saved R2 URL returned the image at 1200 × 900, and “Ảnh phòng mẫu QA Standard” remained as its alt text. No other room-type fields changed.
 - **Automated checks:** `R2ObjectStorageTest`: 4 passed; `RoomImageUrlValidationTest`: 3 passed; `node --test web-ui/tests/media-upload.test.mjs`: 2 passed. JavaScript syntax checks and `git diff --check` passed.
 - **Still open:** Verify whether the first local upload is unreferenced in `rooms` and `room_type_images` before removing its orphan file/row. R2 live upload and read are verified; the R2 bucket now contains the QA-801 sample image.
 
@@ -237,3 +240,27 @@ Latest full-suite evidence is 291 Java tests (0 failures/errors, 42 skipped) and
 - **Focused regressions:** `node --test tests/inline-validation.test.mjs tests/admin-room-validation.test.mjs tests/room-images.test.mjs tests/room-types.test.mjs tests/portal.test.mjs`: **22 passed, 0 failed**.
 - **Manual UI:** Submitted an empty add-room modal in both light and dark themes. Verified three field-level errors in Vietnamese, first-field focus, and error clearing after correcting the room number. Cancelled without saving; no database data changed. Restored light theme.
 - **Full suite:** `npm test` passed **153/153** when run with loopback access for its local HTTP fixtures. The initial sandbox-only run returned `connect EACCES`; it was environmental and cleared when the test command was allowed local loopback access.
+
+### Live room-type CRUD and backend rebuild (2026-10-26)
+
+- On the authenticated port-3000 room-type page, a valid create attempt returned “Phương thức không được hỗ trợ” and left the form open without creating a row.
+- Compared runtime and source timestamps: `.run/backend-build/classes/.../RoomController.class` was built at 06:07 while `RoomController.java` was updated at 06:27. The live process was stale.
+- Stopped only the workspace-owned process via `stop-backend.bat`, rebuilt/restarted with `start-backend.bat`, and passed database, schema and vault startup checks. Reloaded the page and confirmed it remained authenticated.
+- Manually created a hidden `QA TEMP CRUD 2026-10-26` room type (capacity 1, 100,000 VND, test description/amenities), edited its name/capacity/description/amenities, and deleted it through the in-page confirmation. The UI returned to one original type; the original room association and nightly price remained unchanged. The test type is absent afterward.
+- This resolves the live CRUD verification pending under QA-2026-022 and documents the stale runtime as QA-2026-026. The earlier 405 attempt made no database write.
+
+### Room-type icon clarity and responsive price fields (2026-10-26)
+
+- Rechecked the user's screenshot against the authenticated port-3000 page. The sidebar already rendered `layers`; the screenshot's numbered annotation sat over the icon, making it look absent. Replaced it with the more recognizable `door-open` symbol.
+- Replaced the stay-rate input row's viewport-based `md:grid-cols-3` with auto-fit columns sized to the card itself (190px minimum). Narrow cards can now flow to two or one columns while wide cards keep all three side by side.
+- Updated root/public copies and bumped the portal, stylesheet, and module cache versions.
+- Focused regression run `node --test tests/room-types.test.mjs tests/portal.test.mjs`: **15 passed, 0 failed**, including source/public synchronization.
+- Reloaded the authenticated page on port 3000 and confirmed the door icon and full-width rate card with all three prices visible. At 720px the fields reflow to two columns and at 390px to one column. Restored the original 1493 × 1224 viewport after testing.
+
+### Shared avatar picker UI review (2026-10-26)
+
+- Replaced the browser's raw English file input control with an accessible “Chọn ảnh” button and localized filename state in the shared Admin/Staff/Customer profile module.
+- The file picker continues to validate JPEG/PNG and 5 MB limits, shows a local preview and enables “Lưu ảnh”. “Gỡ ảnh” stays hidden when no saved avatar exists.
+- Rebuilt `account-settings-ui.css` from the project's Tailwind/DaisyUI input stylesheet.
+- Focused regression command `node --test tests/account-settings.test.mjs tests/room-types.test.mjs tests/portal.test.mjs`: **28 passed, 0 failed**, including cross-role and source/public-copy assertions.
+- Live Admin check on port 3000 selected the repository's `standard.jpg`; filename and preview rendered. Reloaded without saving, confirmed the avatar was not persisted; no R2 request or database mutation occurred.

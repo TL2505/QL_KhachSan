@@ -50,7 +50,7 @@ export async function renderRentalPolicy(container, { embedded = false, roomType
         const heading = document.createElement('div'); heading.className = 'flex flex-wrap items-center justify-between gap-2';
         const h = document.createElement('h2'); h.className = 'card-title'; h.textContent = type.name;
         const daily = document.createElement('span'); daily.className = 'badge badge-outline'; daily.textContent = `Giá ngày tham chiếu: ${money(type.daily_base_price)}`; heading.append(h, daily);
-        const fields = document.createElement('div'); fields.className = 'grid gap-3 md:grid-cols-3';
+        const fields = document.createElement('div'); fields.className = 'grid gap-3 room-rate-fields';
         fields.append(field('hourly_base_price', type.hourly_base_price, 'Block giờ đầu (2 giờ)'), field('hourly_extra_hour_price', type.hourly_extra_hour_price, 'Mỗi giờ phụ thu'), field('overnight_price', type.overnight_price, 'Gói qua đêm'));
         const actions = document.createElement('div'); actions.className = 'card-actions justify-end';
         const save = document.createElement('button'); save.className = 'btn btn-primary btn-sm'; save.type = 'submit'; save.textContent = 'Lưu giá'; actions.append(save);

@@ -1,7 +1,7 @@
 // Customer Views Module Coordinator
 import { renderDashboard } from "./customer/dashboard.js?v=3.6.20";
 import { renderBookings } from "./customer/bookings.js?v=1.0.10";
-import { renderAccountSettings } from "./shared/account-settings.js?v=1";
+import { renderAccountSettings } from "./shared/account-settings.js?v=2";
 import { renderDiscovery } from "./customer/discovery.js?v=1.0.9";
 import { renderLoyalty } from "./customer/loyalty.js";
 import { renderPromotions } from "./customer/promotions.js";

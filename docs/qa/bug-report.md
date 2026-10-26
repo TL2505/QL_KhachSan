@@ -343,9 +343,9 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Expected:** Choose an image file, see a preview before saving, and use the same upload interaction in both forms.
 - **Actual:** The earlier room form required a manually entered image URL, which was inconsistent with the existing catalog upload flow.
 - **Root cause:** Room and catalog image inputs had separate UI behavior and upload code.
-- **Fix implemented:** Added one shared upload helper for room/catalog images; room add/edit now accepts JPEG/PNG up to 5 MB, shows a local preview before save, and uploads only on submit. The existing backend keeps image bytes in its configured local media directory and stores metadata/public path in MariaDB; no external object-storage provider is configured.
-- **Verification:** On port 3000, the edit form previewed `standard.jpg` successfully (natural width 1200 px). The add form showed the same optional picker, preview area and accommodation-rate section. Both forms were cancelled without saving; QA-801 remained at 1,500,000 đ/night and “Cần vệ sinh”. Client validation tests passed for accepted JPEG/PNG and rejected empty, oversized, and unsupported files. The upload POST/persist/reload path was not submitted during this check. The full web suite ran 142 tests: 135 passed; five login/auth integration cases and two sandbox-blocked server socket cases failed, unrelated to this image flow.
-- **Status:** Fixed; upload persistence still needs a live save-and-reload QA run.
+- **Fix implemented:** Added one shared upload helper for room/catalog images; room add/edit accepts JPEG/PNG up to 5 MB, shows a local preview before save, and uploads only on submit. The backend stores image bytes in the configured local or R2 object storage and stores metadata/public path in MariaDB.
+- **Verification:** On port 3000 with `HOTEL_MEDIA_PROVIDER=R2`, selected the public sample `web-ui/public/standard.jpg`, saw its local preview, saved it on the QA Standard room type, then reopened the edit form. The persisted R2 URL loaded successfully at 1200 × 900 and its alt text was retained. No name, capacity, price, description, sale status or physical-room data changed. The QA Standard type now keeps this sample image in R2. Client validation covers JPEG/PNG and rejects empty, oversized, or unsupported files; the full web suite passed 153/153 with local loopback enabled for HTTP fixtures.
+- **Status:** Fixed; automated and live R2 save/reload verified
 
 ## QA-2026-022 — Room types lacked a dedicated management workflow
 
@@ -353,15 +353,15 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Discovered:** 2026-10-26
 - **Module / role:** Room catalog and room pricing; administrator
 - **Severity / priority:** P2 / P2
-- **Environment and test data:** Admin portal source and local test fixtures. Automated requests used synthetic room-type data; no room-type records were changed in MariaDB during this session.
+- **Environment and test data:** Authenticated admin portal on port 3000 and the local MariaDB runtime. A temporary hidden room type with no physical rooms was created, edited and deleted during verification.
 - **Reproduction:** Open Admin room management. The physical-room add/edit dialogs contain the shared hourly/overnight rate editor, but there is no separate room-type screen to create, edit, or remove a type.
 - **Expected:** Physical rooms and room types have separate management screens; an admin can manage type metadata and its shared stay-rate policy, while deletion is prevented if rooms still use that type.
 - **Actual:** Room-type creation was not available as a dedicated workflow and shared rates were presented inside individual room dialogs.
 - **Root cause:** The portal had room CRUD but no room-type CRUD view, route, or API write contract. Pricing controls were composed in the room form.
 - **Fix implemented:** Added Admin “Hạng phòng” route with searchable CRUD, server-side validation and a reference-count deletion guard. Reused the stay-rate editor there and removed it from physical-room dialogs.
 - **Regression tests:** `node --test tests/room-types.test.mjs tests/portal.test.mjs`; `RoomTypeControllerTest`.
-- **Verification:** 29 focused portal/avatar/media/room-type UI tests passed; Maven compilation and `RoomTypeControllerTest` passed. Live MariaDB CRUD was not exercised because the configured app user cannot drop the integration test's temporary schema; browser review was stopped by the user's physical Escape action.
-- **Status:** Fixed and automated-test verified; live UI/database verification pending
+- **Verification:** 29 focused portal/avatar/media/room-type UI tests passed; Maven compilation and `RoomTypeControllerTest` passed. On the live port-3000 admin page, created a hidden QA room type, edited its name, capacity, description and amenities, then deleted it through the custom confirmation dialog. The list returned to the single original type; QA-801's association and room count remained intact.
+- **Status:** Fixed; automated and live UI/MariaDB CRUD verified
 
 ## QA-2026-023 — Account settings did not provide a shared avatar workflow
 
@@ -376,8 +376,8 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Root cause:** The account profile schema and shared settings view did not include an avatar field or self-scoped avatar API operation.
 - **Fix implemented:** Added `users.avatar_url`, an idempotent migration, authenticated self-scoped upload/removal routes, and a reusable avatar picker in shared account settings for all three roles.
 - **Regression tests:** `node --test tests/account-settings.test.mjs tests/media-upload.test.mjs`; `AccountSecurityTest`; `MariaDbMigrationIntegrationTest` migration assertions.
-- **Verification:** Focused web tests passed and Java compilation plus `AccountSecurityTest` passed. The live migration integration could not finish because the app DB user lacked permission to drop its temporary test schema; live role-by-role browser review was stopped by the user's physical Escape action.
-- **Status:** Fixed and automated-test verified; live UI/database verification pending
+- **Verification:** Focused web tests passed and Java compilation plus `AccountSecurityTest` passed. The live migration integration could not finish because the app DB user lacked permission to drop its temporary test schema. The Admin picker was later verified live with a local preview only; no upload or database change was made. Shared automated tests cover Admin, Staff and Customer.
+- **Status:** Fixed; automated cross-role tests passed and Admin live preview verified
 
 ## QA-2026-024 — Room-type navigation icon was missing and rate cards stayed narrow
 
@@ -411,3 +411,65 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Live verification:** On authenticated port 3000, submitted the empty add-room modal in both light and dark themes. All three errors appeared inline in Vietnamese, focus moved to the room number, and correcting it cleared only that field's error. Cancelled the modal without submitting; no database changes were made.
 - **Full suite:** `npm test` passed **153/153** when run with loopback access for its local HTTP fixtures.
 - **Status:** Fixed and live UI verified
+
+## QA-2026-026 — Room-type create returned 405 from a stale running backend
+
+- **Type:** Confirmed runtime/source version mismatch
+- **Discovered:** 2026-10-26
+- **Module / role:** Admin room-type create/edit/delete; administrator
+- **Severity / priority:** P2 / P2
+- **Environment and evidence:** Authenticated admin portal at `http://127.0.0.1:3000/portal.html?view=room-types`, backed by the local MariaDB runtime. A valid hidden QA form returned “Phương thức không được hỗ trợ”; the form remained open and no row was created.
+- **Reproduction:** Submit a valid new room type while the older backend process is running.
+- **Expected:** The controller accepts POST `/api/v1/rooms/types` and returns the created room type.
+- **Actual:** The UI showed a localized 405 response even though current source implements POST/PUT/DELETE for room types.
+- **Root cause:** The running `RoomController.class` was built at 06:07, while `RoomController.java` had been updated at 06:27; the service could read room types but did not include the new write routes.
+- **Fix:** Stopped only the workspace backend using `stop-backend.bat`, then rebuilt and started it using `start-backend.bat`. Startup preflight passed for the configured keys, MariaDB schema and vault.
+- **Live verification:** Reloaded the admin page, created a hidden QA room type, edited it, and deleted it through the custom confirmation dialog. The list returned to its original one-room-type state and QA-801 remained associated with its original type and 1.500.000 đ/night price.
+- **Status:** Resolved by rebuilding/restarting the stale backend; live UI/MariaDB CRUD verified
+
+## QA-2026-027 — Rate fields did not reflow with the card width
+
+- **Type:** Confirmed responsive admin UI defect
+- **Discovered:** 2026-10-26
+- **Module / role:** Room-type stay-rate editor and admin navigation; administrator
+- **Severity / priority:** P3 / P2
+- **Environment and evidence:** User-provided screenshot of `http://127.0.0.1:3000/portal.html?view=room-types`; rate inputs were compressed into three columns inside a narrow card, causing labels to wrap. The live page had a `layers` icon, but the screenshot annotation covered that position and made it appear absent.
+- **Reproduction:** View the stay-rate editor at a compact card width or narrow portal viewport. Inspect the three price inputs and the “Hạng phòng” navigation symbol.
+- **Expected:** Price fields wrap according to the card's own available width, and the room-type navigation has a clearly recognizable room symbol.
+- **Actual:** `md:grid-cols-3` based the fixed three-column layout on viewport width, not the card width; on compact cards it squeezed all inputs into narrow columns. The navigation icon rendered but was generic and obscured by the annotation in the supplied screenshot.
+- **Root cause:** Rate fields used a viewport breakpoint instead of intrinsic sizing; `layers` was less recognizable for this navigation item.
+- **Fix:** Replaced the fixed field grid with auto-fit columns using a 190px minimum; changed the room-type icon from `layers` to the already-used and supported Lucide `door-open`. Updated source/public assets and cache versions together.
+- **Regression tests:** `node --test tests/room-types.test.mjs tests/portal.test.mjs`: **15 passed, 0 failed**. Checks the icon name, responsive CSS, rendered field grouping, and source/public synchronization.
+- **Live verification:** Reloaded the authenticated admin page on port 3000. Confirmed the door icon is visible and the fields reflow into two columns at 720px and one column at 390px. Restored the original 1493 × 1224 viewport after the responsive check.
+- **Status:** Fixed; automated and desktop UI verified
+
+## QA-2026-028 — Avatar file picker exposed the browser's English control
+
+- **Type:** Confirmed shared profile UI localization defect
+- **Discovered:** 2026-10-26
+- **Module / role:** Shared account avatar picker; administrator, staff, and customer
+- **Severity / priority:** P3 / P2
+- **Environment and evidence:** Live Admin account settings at `http://127.0.0.1:3000/portal.html?view=profile` showed the platform's raw “Choose File / No file chosen” control.
+- **Expected:** A consistent Vietnamese “Chọn ảnh” button and a localized file-selection state should appear across all three roles.
+- **Actual:** Native browser-provided English chooser text appeared in the shared profile UI.
+- **Root cause:** The raw `<input type="file">` was displayed directly.
+- **Fix:** Hid the native control behind an accessible DaisyUI button, displayed the chosen filename in Vietnamese UI, and kept the current preview, validation, save and remove behavior in the shared module. The remove action remains hidden when the user has no saved avatar.
+- **Regression tests:** `node --test tests/account-settings.test.mjs tests/room-types.test.mjs tests/portal.test.mjs`: **28 passed, 0 failed**; tests assert the accessible picker, localized initial/selected filename states, preview and cross-role availability.
+- **Live verification:** On the authenticated Admin page, selected `standard.jpg`; the filename and preview appeared and “Lưu ảnh” became active. Left the preview unsaved, so no image was sent to Cloudflare R2 and no database state changed.
+- **Status:** Fixed; automated cross-role tests and Admin live preview verified
+
+## QA-2026-029 — Admin popup fields had poor contrast in the light theme
+
+- **Type:** Confirmed admin modal accessibility defect
+- **Discovered:** 2026-10-26
+- **Module / role:** Admin create/edit modals, including room-type management; administrator
+- **Severity / priority:** P2 / P2
+- **Environment and evidence:** Authenticated admin portal on `http://127.0.0.1:3000/portal.html`. In the light theme, room-type modal fields rendered with a dark navy background (`rgb(11, 18, 32)`) and dark brown text (`rgb(41, 37, 31)`).
+- **Reproduction:** Open “Thêm hạng phòng” or “Sửa” while the light theme is active and inspect the input, select and textarea controls.
+- **Expected:** Modal controls use a light surface and readable dark text in the light theme; invalid fields show localized inline messages without submitting the form.
+- **Actual:** Dark control surfaces were paired with dark text; required-field messages themselves were localized correctly.
+- **Root cause:** Admin modal styles hard-coded the dark-theme input background, while the light theme changed the shared text token but had no general modal-control override.
+- **Fix:** Added a light-theme override for all text-entry controls within admin modal content, including white backgrounds, readable text, warm borders and placeholders. Updated both source and served CSS and bumped the portal stylesheet cache version.
+- **Regression tests:** `node --test tests/room-types.test.mjs`: **4 passed, 0 failed**; added an assertion for the light-theme modal-control rule. The full `npm test` suite passed **153/153** when local loopback access was enabled for its HTTP fixtures.
+- **Live verification:** On port 3000, opened both add and edit room-type modals. Computed styles confirmed white background, dark text and visible placeholders. Submitted each form with required values empty; Vietnamese errors appeared and focus moved to the first invalid field without an API write. Opened the account-role popup and confirmed its contents were legible with no stray “Đóng” label. Cancelled every dialog; no DB/account/permission state changed.
+- **Status:** Fixed; regression test and live popup UI verified

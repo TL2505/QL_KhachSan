@@ -22,7 +22,11 @@ export async function renderAccountSettings(container, session = getAuthSession(
         <div class="account-summary-identity"><strong id="account-display-name">${esc(session.fullName || session.username)}</strong><small>${esc(session.username)} · ${roleLabel}</small></div>
         <div class="account-avatar-controls">
           <label for="account-avatar-file">Ảnh đại diện</label>
-          <input class="ais-file-input ais-file-input-bordered ais-file-input-sm" id="account-avatar-file" type="file" accept="image/jpeg,image/png" aria-describedby="account-avatar-help account-avatar-message">
+          <div class="account-avatar-picker">
+            <input class="account-avatar-file-input" id="account-avatar-file" type="file" accept="image/jpeg,image/png" aria-describedby="account-avatar-help account-avatar-message" hidden>
+            <button class="btn btn-secondary btn-sm account-avatar-picker-button" id="account-avatar-pick" type="button" aria-controls="account-avatar-file">Chọn ảnh</button>
+            <span class="account-avatar-file-name" id="account-avatar-file-name" aria-live="polite">Chưa chọn ảnh</span>
+          </div>
           <small id="account-avatar-help">JPEG hoặc PNG, tối đa 5 MB. Ảnh được lưu trong kho dùng chung của khách sạn.</small>
           <div class="ais-card-actions"><button class="ais-btn ais-btn-primary ais-btn-sm" id="account-avatar-save" type="button" disabled>Lưu ảnh</button><button class="ais-btn ais-btn-ghost ais-btn-sm" id="account-avatar-remove" type="button" hidden>Gỡ ảnh</button></div>
           <p class="ais-alert ais-alert-soft account-notice" id="account-avatar-message" role="status" aria-live="polite"></p>
@@ -74,7 +78,7 @@ export async function renderAccountSettings(container, session = getAuthSession(
     </section>`;
     if (!document.getElementById('account-settings-ui')) {
         const link = document.createElement('link'); link.id = 'account-settings-ui'; link.rel = 'stylesheet';
-        link.href = new URL('../../css/account-settings-ui.css?v=4', import.meta.url).href; document.head.append(link);
+        link.href = new URL('../../css/account-settings-ui.css?v=5', import.meta.url).href; document.head.append(link);
     }
     const root = container.querySelector('.account-settings-view'), $ = selector => root.querySelector(selector);
     const on = (selector, event, handler) => $(selector)?.addEventListener(event, handler);
@@ -124,9 +128,10 @@ export async function renderAccountSettings(container, session = getAuthSession(
         $('#account-email-badge').textContent = !profile ? 'Đang tải hồ sơ…' : dirtyEmail ? 'Email chưa lưu' : profile.emailVerified ? 'Email đã xác minh' : 'Email chưa xác minh';
         $('#account-email-badge').classList.toggle('ais-badge-success', !!profile?.emailVerified && !dirtyEmail);
         disabled('#account-avatar-file', busy || !profile);
+        disabled('#account-avatar-pick', busy || !profile);
         disabled('#account-avatar-save', busy || !profile || !pendingAvatarFile);
         disabled('#account-avatar-remove', busy || !profile || !currentAvatarUrl || !!pendingAvatarFile);
-        hidden('#account-avatar-remove', !currentAvatarUrl && !pendingAvatarFile);
+        hidden('#account-avatar-remove', !currentAvatarUrl);
         if ($('#account-password-help')) $('#account-password-help').textContent = profile && !profile.mailConfigured ? 'Hiện chưa thể gửi email xác thực. Vui lòng liên hệ quản trị viên.' : profile?.emailVerified ? `Mã OTP sẽ được gửi đến ${profile.email}. Chỉ bạn mới nên sử dụng mã này.` : 'Xác minh email trước khi đổi mật khẩu.';
         for (const [name, flow] of [['email', emailFlow], ['password', passwordFlow]]) {
             const button = $(`#account-${name}-resend`), seconds = remaining(flow);
@@ -187,13 +192,15 @@ export async function renderAccountSettings(container, session = getAuthSession(
         if (!avatarPreviewUrl) return;
         window.URL.revokeObjectURL(avatarPreviewUrl); avatarPreviewUrl = '';
     };
+    on('#account-avatar-pick', 'click', () => $('#account-avatar-file')?.click());
     on('#account-avatar-file', 'change', event => {
         const file = event.currentTarget.files?.[0] || null;
         pendingAvatarFile = null; releaseAvatarPreview();
-        if (!file) { if (profile) apply(profile, false); return; }
+        if (!file) { $('#account-avatar-file-name').textContent = 'Chưa chọn ảnh'; if (profile) apply(profile, false); return; }
         try { validateImageFile(file); }
-        catch (error) { event.currentTarget.value = ''; message('#account-avatar-message', error.message, true); if (profile) apply(profile, false); return; }
+        catch (error) { event.currentTarget.value = ''; $('#account-avatar-file-name').textContent = 'Chưa chọn ảnh'; message('#account-avatar-message', error.message, true); if (profile) apply(profile, false); return; }
         pendingAvatarFile = file; avatarPreviewUrl = window.URL.createObjectURL(file);
+        $('#account-avatar-file-name').textContent = file.name;
         const avatar = $('#account-avatar-image'), initial = $('#account-avatar-initial'), frame = root.querySelector('.account-settings-avatar');
         avatar.src = avatarPreviewUrl; avatar.hidden = false; initial.hidden = true; frame.classList.remove('ais-avatar-placeholder');
         message('#account-avatar-message', `Đang xem trước ${file.name}. Bấm Lưu ảnh để cập nhật cho tài khoản này.`); sync();
@@ -204,6 +211,7 @@ export async function renderAccountSettings(container, session = getAuthSession(
         if (!active()) return;
         pendingAvatarFile = null; releaseAvatarPreview();
         if ($('#account-avatar-file')) $('#account-avatar-file').value = '';
+        $('#account-avatar-file-name').textContent = 'Chưa chọn ảnh';
         apply({ ...profile, avatarUrl: result.url }, false);
         message('#account-avatar-message', 'Đã cập nhật ảnh đại diện cho tài khoản.');
         window.dispatchEvent(new Event('hotel:profile-updated'));
@@ -213,6 +221,7 @@ export async function renderAccountSettings(container, session = getAuthSession(
         if (!active()) return;
         pendingAvatarFile = null; releaseAvatarPreview();
         if ($('#account-avatar-file')) $('#account-avatar-file').value = '';
+        $('#account-avatar-file-name').textContent = 'Chưa chọn ảnh';
         apply({ ...profile, avatarUrl: null }, false);
         message('#account-avatar-message', 'Đã gỡ ảnh đại diện khỏi tài khoản.');
         window.dispatchEvent(new Event('hotel:profile-updated'));

@@ -1,11 +1,29 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-26] — Improve light-theme admin popup form contrast
+
+- Fixed dark input backgrounds paired with dark text in admin create/edit modals under the light theme; inputs now use a light surface, readable text, warm borders and localized placeholders.
+- Added a room-type regression assertion and bumped the served admin stylesheet cache version.
+- Live port-3000 verification covered add/edit room-type form validation and the account-role dialog. No form was saved and no account or permission changed.
+- Full `npm test` passed **153/153** after allowing only the local loopback fixtures.
+
+## [2026-10-26] — Verify room image upload through Cloudflare R2
+
+- Saved the public QA sample photo on the QA Standard room type, then reopened the edit popup and confirmed the R2-backed image loaded at 1200 × 900 with its stored alt text.
+- No room-type pricing, name, capacity or sale status changed. The QA room type now keeps this sample image in the configured R2 bucket.
+
 ## [2026-10-26] — Localized validation in admin room forms
 
 - Added a reusable inline-validation helper for physical-room and room-type create/edit forms. Vietnamese field errors replace browser-native English validation bubbles, the first invalid field receives focus, and corrected field errors clear immediately.
 - Invalid forms are stopped before API submission. Source and served/public copies are kept in sync.
 - Focused room, room-type, image, portal and validation regressions passed 22/22. The live admin UI was checked on port 3000 in light and dark themes; the test modal was cancelled without saving.
 - Full `npm test` passed 153/153 with loopback access enabled for local HTTP test fixtures.
+
+## [2026-10-26] — Verify room-type CRUD against the rebuilt backend
+
+- Live testing found the port-3000 room-type create request returning 405 because the running `RoomController.class` predated its CRUD routes.
+- Restarted the workspace backend through `stop-backend.bat` and `start-backend.bat`; startup checks passed for MariaDB, schema and vault.
+- Manually created, edited and deleted a hidden QA room type through the admin UI. The test row was removed; the existing QA room and its pricing remained unchanged.
 
 ## [2026-10-26] — Fix room-type navigation icon and responsive rate cards
 
@@ -453,3 +471,15 @@
 - Kept local media as the default and documented private proxy reads and direct HTTPS public-base configuration.
 - Verified on port 3000 by uploading a sample image to QA-801, saving, reopening the room dialog, and loading the persisted 1200 × 900 image from R2. The room price and housekeeping state were unchanged.
 - Focused checks passed: 4 R2 adapter tests, 3 room-image URL validation tests, and 2 browser upload-helper tests.
+
+## [2026-10-26] — Responsive room-type rate editor
+
+- Changed the “Hạng phòng” navigation symbol to a clear room-door icon.
+- Made the stay-rate inputs automatically flow into columns based on the available card width.
+- Updated source/public copies and cache versions.
+
+## [2026-10-26] — Localized shared avatar picker
+
+- Replaced the native English file chooser display with a Vietnamese selection button and selected-filename label shared by Admin, Staff and Customer.
+- Preserved local preview and validated upload flow; rebuilt the DaisyUI/Tailwind profile stylesheet.
+- Verified a local preview in the Admin UI without saving or sending the image to storage.
