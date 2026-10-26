@@ -1,6 +1,6 @@
 import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.36';
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.36';
-import { loadAdminView } from './js/view-admin.js?v=3.6.23';
+import { loadAdminView } from './js/view-admin.js?v=3.6.24';
 import { loadStaffView } from './js/view-staff.js?v=3.6.65';
 import { loadCustomerView } from './js/view-customer.js?v=3.6.61';
 import { loadProfileView } from './js/view-shared.js';

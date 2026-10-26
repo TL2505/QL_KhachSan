@@ -1055,6 +1055,19 @@
   background: rgba(127, 29, 29, .25);
 }
 
+.admin-portal #global-modal .rooms-form-field-error {
+  grid-column: 2;
+  display: block;
+  margin: -7px 0 0;
+  color: #fda4af;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-portal #global-modal .rooms-form-field-error[hidden] { display: none; }
+
+html[data-theme="light"] .admin-portal #global-modal .rooms-form-field-error { color: #b4233b; }
+
 .admin-portal #global-modal .flex-row {
   display: flex;
   align-items: center;
@@ -1104,6 +1117,7 @@
 @media (max-width: 560px) {
   .admin-portal #global-modal .modal-content { padding: 20px; }
   .admin-portal #global-modal .form-group { grid-template-columns: 1fr; gap: 7px; }
+  .admin-portal #global-modal .rooms-form-field-error { grid-column: 1; margin-top: -2px; }
   .admin-portal #global-modal .flex-row { align-items: stretch; flex-direction: column-reverse; }
   .admin-portal #global-modal .flex-row .btn { width: 100%; }
 }

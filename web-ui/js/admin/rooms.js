@@ -1,4 +1,5 @@
 import { api } from "../../api.js";
+import { enableInlineValidation } from "../shared/inline-validation.js?v=1.0.0";
 import { uploadMedia, validateImageFile } from "../shared/media-upload.js";
 
 const ROOM_STATUSES = {
@@ -264,6 +265,20 @@ export async function renderRooms(container) {
         `;
         content.querySelectorAll("[data-close-room-modal]").forEach(button =>
             button.addEventListener("click", closeRoomModal));
+        enableInlineValidation(content.querySelector("#form-room-admin-action"), {
+            "ar-number": {
+                valueMissing: "Vui lòng nhập số phòng.",
+                patternMismatch: "Số phòng chỉ gồm chữ cái, chữ số và dấu gạch nối; không bắt đầu bằng dấu gạch nối."
+            },
+            "ar-type": { valueMissing: "Vui lòng chọn hạng phòng." },
+            "ar-price": {
+                valueMissing: "Vui lòng nhập đơn giá.",
+                badInput: "Vui lòng nhập đơn giá hợp lệ.",
+                rangeUnderflow: "Đơn giá phải lớn hơn 0.",
+                rangeOverflow: "Đơn giá không được vượt quá 99.999.999,99 đ.",
+                stepMismatch: "Đơn giá chỉ hỗ trợ tối đa 2 chữ số thập phân."
+            }
+        });
 
         const imageInput = content.querySelector("#ar-image-file");
         const imageFileName = content.querySelector("#ar-image-file-name");

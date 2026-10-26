@@ -1,7 +1,7 @@
 // Admin Views Module Coordinator
 import { renderDashboard } from "./admin/dashboard.js?v=3.6.6";
-import { renderRooms } from "./admin/rooms.js?v=3.6.12";
-import { renderRoomTypes } from "./admin/room-types.js?v=1.0.1";
+import { renderRooms } from "./admin/rooms.js?v=3.6.13";
+import { renderRoomTypes } from "./admin/room-types.js?v=1.0.2";
 import { renderBookings } from "./staff/bookings.js";
 import { renderUsers } from "./admin/users.js?v=1.0.5";
 import { renderPromotions } from "./admin/promotions.js?v=3.6.4";

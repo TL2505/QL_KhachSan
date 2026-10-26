@@ -229,3 +229,11 @@ Latest full-suite evidence is 291 Java tests (0 failures/errors, 42 skipped) and
 - **Verification:** `node --test tests/room-types.test.mjs tests/portal.test.mjs`: **15 passed, 0 failed**. The regression test checks the Lucide icon key, auto-fit grid rule, small-screen single-column rule, and rendered rate-editor container. Source/public synchronization passed.
 - **Live UI:** Reloaded the already authenticated admin tab on port 3000. Confirmed the “Hạng phòng” sidebar now shows the layers icon and the single rate card spans the available content width. Narrow-screen one-column behavior is covered by the CSS breakpoint and regression test; a separate narrow-device screenshot was not captured.
 - **Status:** Desktop visual and automated-test verified
+
+### Admin room form validation and modal review (2026-10-26)
+
+- Reproduced QA-2026-025 in the authenticated port-3000 admin page: an empty room form produced the browser's English “Please fill out this field” bubble.
+- Added a shared inline-validation helper and integrated it into physical-room and room-type forms. Required fields now show Vietnamese inline errors; the first invalid field receives focus, errors clear as inputs are corrected, and invalid forms do not call the API.
+- **Focused regressions:** `node --test tests/inline-validation.test.mjs tests/admin-room-validation.test.mjs tests/room-images.test.mjs tests/room-types.test.mjs tests/portal.test.mjs`: **22 passed, 0 failed**.
+- **Manual UI:** Submitted an empty add-room modal in both light and dark themes. Verified three field-level errors in Vietnamese, first-field focus, and error clearing after correcting the room number. Cancelled without saving; no database data changed. Restored light theme.
+- **Full suite:** `npm test` passed **153/153** when run with loopback access for its local HTTP fixtures. The initial sandbox-only run returned `connect EACCES`; it was environmental and cleared when the test command was allowed local loopback access.

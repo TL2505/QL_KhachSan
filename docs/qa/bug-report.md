@@ -394,3 +394,20 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Regression tests:** `node --test tests/room-types.test.mjs tests/portal.test.mjs`.
 - **Verification:** 15 tests passed, including icon, auto-fit, narrow-screen and source/public synchronization checks. Reloaded the authenticated port-3000 admin page and visually confirmed the `layers` icon and the single rate card filling the available row. Narrow-screen behavior is covered by the one-column CSS rule and regression assertions.
 - **Status:** Verified
+
+## QA-2026-025 — Room management form used an English browser validation tooltip
+
+- **Type:** Confirmed admin form validation and localization defect
+- **Discovered:** 2026-10-26
+- **Module / role:** Room and room-type add/edit modals; administrator
+- **Severity / priority:** P3 / P2
+- **Environment and evidence:** Authenticated admin portal at `http://127.0.0.1:3000/portal.html?view=rooms`. Clicking “Thêm phòng” with all required fields empty showed the browser tooltip “Please fill out this field.” on “Số phòng”. No data was submitted.
+- **Reproduction:** Open Quản lý phòng → Thêm phòng mới → submit without entering a room number, room type, or nightly price.
+- **Expected:** Required-field errors appear inline in Vietnamese, identify each invalid field, and focus the first invalid field without a browser-native tooltip.
+- **Actual:** The browser blocks the submit event before the app's inline API-error handler and displays an English native validation tooltip.
+- **Root cause:** The forms used native `required`, `pattern`, and numeric constraints without localized client-side validation; the application's submit handler never received an invalid native form submission.
+- **Fix implemented:** Added one shared inline-validation helper for physical-room and room-type forms. It retains browser validity constraints but disables native bubbles, renders Vietnamese field-specific errors, focuses the first invalid field, clears corrected errors, and blocks API requests until all fields are valid.
+- **Regression tests:** `node --test tests/inline-validation.test.mjs tests/admin-room-validation.test.mjs tests/room-images.test.mjs tests/room-types.test.mjs tests/portal.test.mjs`: **22 passed, 0 failed**.
+- **Live verification:** On authenticated port 3000, submitted the empty add-room modal in both light and dark themes. All three errors appeared inline in Vietnamese, focus moved to the room number, and correcting it cleared only that field's error. Cancelled the modal without submitting; no database changes were made.
+- **Full suite:** `npm test` passed **153/153** when run with loopback access for its local HTTP fixtures.
+- **Status:** Fixed and live UI verified

@@ -1,4 +1,5 @@
 import { api } from '../../api.js';
+import { enableInlineValidation } from '../shared/inline-validation.js?v=1.0.0';
 import { uploadMedia, validateImageFile } from '../shared/media-upload.js';
 import { renderRentalPolicy } from './rental-policy.js?v=3.6.4';
 
@@ -80,6 +81,12 @@ export async function renderRoomTypes(container) {
         <div class="flex-row mt-4" style="justify-content:flex-end;"><button type="button" class="btn btn-secondary" data-room-type-close>Hủy</button><button type="submit" class="btn btn-primary">${editing?'Lưu hạng phòng':'Thêm hạng phòng'}</button></div>
       </form>`;
     content.querySelectorAll('[data-room-type-close]').forEach(button=>button.addEventListener('click',close));
+    const roomTypeForm=content.querySelector('#room-type-form');
+    enableInlineValidation(roomTypeForm,{
+      'rt-name':{valueMissing:'Vui lòng nhập tên hạng phòng.',tooLong:'Tên hạng phòng không được vượt quá 100 ký tự.'},
+      'rt-capacity':{valueMissing:'Vui lòng nhập sức chứa.',badInput:'Vui lòng nhập sức chứa hợp lệ.',rangeUnderflow:'Sức chứa phải ít nhất là 1 khách.',rangeOverflow:'Sức chứa tối đa là 100 khách.',stepMismatch:'Sức chứa phải là số nguyên.'},
+      'rt-base-price':{valueMissing:'Vui lòng nhập giá ngày tham chiếu.',badInput:'Vui lòng nhập giá hợp lệ.',rangeUnderflow:'Giá ngày tham chiếu phải lớn hơn 0.',rangeOverflow:'Giá ngày tham chiếu không được vượt quá 99.999.999,99 đ.',stepMismatch:'Giá chỉ hỗ trợ tối đa 2 chữ số thập phân.'}
+    });
     const imageInput=content.querySelector('#rt-image-file'),image=content.querySelector('#rt-image-preview'),empty=content.querySelector('#rt-image-empty'),imageStatus=content.querySelector('#rt-image-status'),fileName=content.querySelector('#rt-image-file-name');
     let previewUrl='',storedImage=type?.imageUrl||null,uploadedImage='';
     const setPreview=(src,note)=>{image.onload=()=>{image.hidden=false;empty.hidden=true;imageStatus.textContent=note;};image.onerror=()=>{image.hidden=true;empty.hidden=false;imageStatus.textContent='Không tải được ảnh xem trước.';};image.src=src;};
@@ -90,7 +97,7 @@ export async function renderRoomTypes(container) {
       try{validateImageFile(file);}catch(error){imageInput.value='';fileName.textContent='Chưa chọn ảnh';imageStatus.textContent=error.message;return;}
       fileName.textContent=file.name;previewUrl=URL.createObjectURL(file);setPreview(previewUrl,`Đang xem trước ${file.name}. Ảnh tải lên khi lưu.`);
     });
-    content.querySelector('#room-type-form').addEventListener('submit',async event=>{
+    roomTypeForm.addEventListener('submit',async event=>{
       event.preventDefault();const form=event.currentTarget,submit=form.querySelector('button[type="submit"]'),error=form.querySelector('#room-type-error');submit.disabled=true;submit.textContent='Đang lưu…';error.hidden=true;
       const payload={name:form.querySelector('#rt-name').value.trim(),capacity:Number(form.querySelector('#rt-capacity').value),basePrice:Number(form.querySelector('#rt-base-price').value),description:form.querySelector('#rt-description').value.trim(),amenities:form.querySelector('#rt-amenities').value.trim(),imageUrl:storedImage,imageAlt:form.querySelector('#rt-image-alt').value.trim(),visible:form.querySelector('#rt-visible').value==='true'};
       try{

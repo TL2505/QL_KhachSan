@@ -1,5 +1,12 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-26] — Localized validation in admin room forms
+
+- Added a reusable inline-validation helper for physical-room and room-type create/edit forms. Vietnamese field errors replace browser-native English validation bubbles, the first invalid field receives focus, and corrected field errors clear immediately.
+- Invalid forms are stopped before API submission. Source and served/public copies are kept in sync.
+- Focused room, room-type, image, portal and validation regressions passed 22/22. The live admin UI was checked on port 3000 in light and dark themes; the test modal was cancelled without saving.
+- Full `npm test` passed 153/153 with loopback access enabled for local HTTP test fixtures.
+
 ## [2026-10-26] — Fix room-type navigation icon and responsive rate cards
 
 - Replaced the unsupported room-type sidebar icon with Lucide's `layers` icon.
