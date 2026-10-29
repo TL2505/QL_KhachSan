@@ -125,6 +125,7 @@ public class Main {
         registerContext(server, ipRateLimiter, "/api/v1/rooms/availability", new quanlykhachsan.backend.room.RoomAvailabilityController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/housekeeping/tasks", new quanlykhachsan.backend.room.HousekeepingController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/housekeeping/metrics", new quanlykhachsan.backend.room.HousekeepingController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/housekeeping/handovers", new quanlykhachsan.backend.room.HousekeepingHandoverController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/housekeeping/media", new quanlykhachsan.backend.catalog.MediaController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
         // Route Hồ sơ người dùng

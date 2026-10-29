@@ -21,3 +21,6 @@ v4_9_counter_checkout_overdue_marker.sql
 v4_10_staff_notifications.sql
 v4_11_room_images.sql
 v4_12_account_avatars.sql
+v4_13_housekeeping_task_assignments.sql
+v4_14_housekeeping_workbench.sql
+v4_15_housekeeping_shift_handovers.sql

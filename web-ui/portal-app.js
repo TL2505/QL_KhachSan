@@ -4,6 +4,7 @@ import { loadAdminView } from './js/view-admin.js?v=3.6.24';
 import { loadStaffView } from './js/view-staff.js?v=3.6.65';
 import { loadCustomerView } from './js/view-customer.js?v=3.6.62';
 import { loadHousekeepingView } from './js/view-housekeeping.js?v=1.0.1';
+import { loadHousekeepingHandoverView } from './js/view-housekeeping-handover.js?v=1.0.0';
 import { loadProfileView } from './js/view-shared.js?v=1.0.0';
 import './js/shared/theme.js';
 import './js/shared/pagination.js?v=3.6.4';
@@ -210,6 +211,7 @@ const menus = {
   ],
   HOUSEKEEPING: [
     ['housekeeping', 'Công việc dọn phòng', 'sparkles'],
+    ['shift-handover', 'Bàn giao ca', 'clipboard-check'],
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   CUSTOMER: [
@@ -552,6 +554,8 @@ function openView(session, role, tab) {
       loadCustomerView(tab);
     } else if (role === 'HOUSEKEEPING' && tab === 'housekeeping') {
       loadHousekeepingView();
+    } else if (role === 'HOUSEKEEPING' && tab === 'shift-handover') {
+      loadHousekeepingHandoverView();
     } else if (tab === 'profile') {
       loadProfileView();
     } else if (role === 'ADMIN') {

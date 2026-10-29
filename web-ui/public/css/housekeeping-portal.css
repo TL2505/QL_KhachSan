@@ -256,3 +256,58 @@ html[data-theme="light"] body.housekeeping-portal .portal-view .hk-filters > .in
 @media (max-width: 600px) {
   body.housekeeping-portal .hk-filters > .btn { justify-self: stretch; }
 }
+
+body.housekeeping-portal .hk-handover { display: grid; gap: 18px; min-width: 0; }
+body.housekeeping-portal .hk-handover-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+body.housekeeping-portal .hk-handover-stats .card { border-color: var(--portal-border); background: var(--portal-surface); }
+body.housekeeping-portal .hk-handover-stats .card-body { display: grid; gap: 7px; padding: 18px 20px; }
+body.housekeeping-portal .hk-handover-stats strong { color: var(--portal-text); font-size: 27px; line-height: 1; }
+body.housekeeping-portal .hk-handover-rule { align-items: flex-start; border-color: color-mix(in srgb, var(--portal-info, #38bdf8) 28%, var(--portal-border)); background: color-mix(in srgb, var(--portal-info, #38bdf8) 7%, var(--portal-surface)); color: var(--portal-soft); font-size: 13px; }
+body.housekeeping-portal .hk-handover-panel { border-color: var(--portal-border); background: var(--portal-surface); }
+body.housekeeping-portal .hk-handover-panel > .card-body { gap: 16px; padding: clamp(16px, 2vw, 24px); }
+body.housekeeping-portal .hk-handover-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+body.housekeeping-portal .hk-handover-section-heading h3 { margin: 0; color: var(--portal-text); font-size: 18px; font-weight: 700; }
+body.housekeeping-portal .hk-handover-section-heading p { margin: 5px 0 0; color: var(--portal-muted); font-size: 12px; line-height: 1.6; }
+body.housekeeping-portal .hk-handover-task-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+body.housekeeping-portal .hk-handover-task { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; min-width: 0; padding: 13px 14px; border: 1px solid var(--portal-border); border-radius: 12px; background: color-mix(in srgb, var(--portal-surface) 84%, var(--portal-bg)); cursor: pointer; }
+body.housekeeping-portal .hk-handover-task:has(input:checked) { border-color: var(--portal-gold); box-shadow: 0 0 0 2px color-mix(in srgb, var(--portal-gold) 13%, transparent); }
+body.housekeeping-portal .hk-handover-task.is-reserved { grid-template-columns: auto minmax(0, 1fr) auto; cursor: not-allowed; opacity: .76; }
+body.housekeeping-portal .hk-handover-task-main { display: grid; min-width: 0; gap: 4px; }
+body.housekeeping-portal .hk-handover-task-main strong { color: var(--portal-text); font-size: 13px; }
+body.housekeeping-portal .hk-handover-task-main small,
+body.housekeeping-portal .hk-handover-reserved-note { color: var(--portal-muted); font-size: 11px; overflow-wrap: anywhere; }
+body.housekeeping-portal .hk-handover-reserved-note { grid-column: 2 / -1; }
+body.housekeeping-portal .hk-handover-empty { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 14px; border: 1px dashed var(--portal-border); border-radius: 10px; color: var(--portal-muted); font-size: 13px; }
+body.housekeeping-portal .hk-handover-form { display: grid; gap: 14px; padding-top: 16px; border-top: 1px solid var(--portal-border); }
+body.housekeeping-portal .hk-handover-form .form-control { display: grid; gap: 7px; }
+body.housekeeping-portal .hk-handover-form .label-text { color: var(--portal-soft); font-size: 12px; }
+body.housekeeping-portal .hk-handover-form .label-text-alt { color: var(--portal-muted); font-size: 11px; }
+body.housekeeping-portal .hk-handover-form textarea { min-height: 92px; resize: vertical; }
+body.housekeeping-portal .hk-handover-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+body.housekeeping-portal .hk-handover-list { display: grid; gap: 12px; }
+body.housekeeping-portal .hk-handover-record { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--portal-border); border-radius: 12px; background: color-mix(in srgb, var(--portal-surface) 84%, var(--portal-bg)); }
+body.housekeeping-portal .hk-handover-record > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+body.housekeeping-portal .hk-handover-record > header small,
+body.housekeeping-portal .hk-handover-result { display: block; margin-top: 5px; color: var(--portal-muted); font-size: 11px; }
+body.housekeeping-portal .hk-handover-record-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--portal-text); }
+body.housekeeping-portal .hk-handover-notes { margin: 0; color: var(--portal-soft); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+body.housekeeping-portal .hk-handover-items { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+body.housekeeping-portal .hk-handover-items li { display: grid; grid-template-columns: minmax(110px, .6fr) minmax(130px, 1fr) auto; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 8px; background: color-mix(in srgb, var(--portal-bg) 45%, transparent); font-size: 12px; }
+body.housekeeping-portal .hk-handover-items li strong { color: var(--portal-text); }
+body.housekeeping-portal .hk-handover-items li span:nth-child(2) { color: var(--portal-muted); }
+body.housekeeping-portal .hk-handover-message { margin: 0; padding: 12px 14px; border: 1px solid color-mix(in srgb, #16a34a 30%, var(--portal-border)); border-radius: 10px; background: color-mix(in srgb, #16a34a 9%, var(--portal-surface)); color: var(--portal-soft); font-size: 13px; }
+body.housekeeping-portal .hk-handover-error { margin: 0; }
+
+@media (max-width: 900px) {
+  body.housekeeping-portal .hk-handover-task-list { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  body.housekeeping-portal .hk-handover-stats { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+  body.housekeeping-portal .hk-handover-stats .card-body { grid-template-columns: 1fr auto; align-items: center; padding: 13px 15px; }
+  body.housekeeping-portal .hk-handover-stats strong { font-size: 22px; }
+  body.housekeeping-portal .hk-handover-section-heading,
+  body.housekeeping-portal .hk-handover-form-footer,
+  body.housekeeping-portal .hk-handover-record > header { align-items: stretch; flex-direction: column; }
+  body.housekeeping-portal .hk-handover-items li { grid-template-columns: minmax(0, 1fr) auto; }
+  body.housekeeping-portal .hk-handover-items li span:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+}

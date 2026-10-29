@@ -136,8 +136,8 @@ class Phase4BootstrapTest {
             assertEquals(1,scalar(c,"SELECT COUNT(*) FROM bookings WHERE id=32 AND status='pending'").intValueExact(),"a booking inside the two-minute webhook grace must retain its room hold");
         }
         verifyHttpOrdersAndBank(c,schema,dao);
-        byte[] aesKey=new byte[32],blindKey=new byte[32];new java.security.SecureRandom().nextBytes(aesKey);new java.security.SecureRandom().nextBytes(blindKey);
-        var vault=new quanlykhachsan.backend.customer.GuestIdentityVaultDao(new AesGcmEncryptionUtil(aesKey),blindKey);
+        // The readiness check uses the configured keys, so backfill the fixture with that same vault.
+        var vault=quanlykhachsan.backend.customer.GuestIdentityVaultDao.configured();
         try(var s=c.createStatement()){s.execute("UPDATE customers SET identity_card='SYNTHETIC-ID-ONLY' WHERE id=1");}
         assertThrows(IllegalStateException.class,()->quanlykhachsan.backend.customer.IdentityVaultMigration.verifyReady(c));
         assertEquals(1,scalar(c,"SELECT COUNT(*) FROM customers WHERE identity_card='SYNTHETIC-ID-ONLY'").intValueExact());

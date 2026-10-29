@@ -30,6 +30,8 @@ public final class HousekeepingRoleFilter extends Filter {
         String path = exchange.getRequestURI().getPath();
         if ("GET".equals(method) && "/api/v1/housekeeping/tasks".equals(path)) return true;
         if ("GET".equals(method) && ("/api/v1/housekeeping/metrics".equals(path) || path.matches("/api/v1/housekeeping/tasks/[0-9]+/details"))) return true;
+        if (("GET".equals(method) || "POST".equals(method)) && "/api/v1/housekeeping/handovers".equals(path)) return true;
+        if ("POST".equals(method) && path.matches("/api/v1/housekeeping/handovers/[0-9]+/(accept|cancel)")) return true;
         if ("POST".equals(method) && path.matches("/api/v1/housekeeping/tasks/[0-9]+/(start|complete|checklist|incidents)")) return true;
         if ("POST".equals(method) && "/api/v1/housekeeping/media".equals(path)) return true;
         if (path.matches("/api/v1/account(?:/.*)?") && ACCOUNT_METHODS.contains(method)) return true;
