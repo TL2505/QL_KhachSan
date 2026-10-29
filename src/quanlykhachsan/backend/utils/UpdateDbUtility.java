@@ -227,6 +227,9 @@ public class UpdateDbUtility {
             runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_10_staff_notifications.sql"));
             runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_11_room_images.sql"));
             runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_12_account_avatars.sql"));
+            runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_13_housekeeping_task_assignments.sql"));
+            ensureForeignKey(conn, "cleaning_tasks", "fk_cleaning_task_assignee",
+                    "FOREIGN KEY (assigned_to_user_id) REFERENCES users(id) ON DELETE SET NULL");
             System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.");
     }
 
@@ -538,6 +541,22 @@ public class UpdateDbUtility {
         try (Statement stmt = conn.createStatement()) {
             stmt.executeUpdate(sql);
             System.out.println("[UpdateDbUtility]   ➕ Đã tạo index `" + indexName + "` trên `" + table + "`.");
+        }
+    }
+
+    private static void ensureForeignKey(Connection conn, String table, String constraintName,
+                                         String foreignKeyClause) throws SQLException {
+        try (PreparedStatement query = conn.prepareStatement(
+                "SELECT 1 FROM information_schema.TABLE_CONSTRAINTS "
+                + "WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME=? AND CONSTRAINT_NAME=? AND CONSTRAINT_TYPE='FOREIGN KEY'")) {
+            query.setString(1, table);
+            query.setString(2, constraintName);
+            try (ResultSet result = query.executeQuery()) {
+                if (result.next()) return;
+            }
+        }
+        try (Statement statement = conn.createStatement()) {
+            statement.executeUpdate("ALTER TABLE `" + table + "` ADD CONSTRAINT `" + constraintName + "` " + foreignKeyClause);
         }
     }
 

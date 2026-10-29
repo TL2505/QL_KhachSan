@@ -3,6 +3,7 @@ import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?
 import { loadAdminView } from './js/view-admin.js?v=3.6.24';
 import { loadStaffView } from './js/view-staff.js?v=3.6.65';
 import { loadCustomerView } from './js/view-customer.js?v=3.6.62';
+import { loadHousekeepingView } from './js/view-housekeeping.js?v=1.0.1';
 import { loadProfileView } from './js/view-shared.js?v=1.0.0';
 import './js/shared/theme.js';
 import './js/shared/pagination.js?v=3.6.4';
@@ -207,6 +208,10 @@ const menus = {
     ['chat', 'Tin nhắn', 'messages-square'],
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
+  HOUSEKEEPING: [
+    ['housekeeping', 'Công việc dọn phòng', 'sparkles'],
+    ['profile', 'Hồ sơ & bảo mật', 'settings']
+  ],
   CUSTOMER: [
     ['dashboard', 'Tổng quan', 'layout-dashboard'],
     ['discovery', 'Đặt phòng', 'calendar-plus'],
@@ -231,6 +236,7 @@ titles['security'] = 'Bảo mật & Mật khẩu';
 const roleNames = {
   ADMIN: 'Quản trị viên',
   STAFF: 'Nhân viên khách sạn',
+  HOUSEKEEPING: 'Nhân viên buồng phòng',
   CUSTOMER: 'Khách hàng'
 };
 
@@ -238,7 +244,8 @@ const roleOf = value => {
   const role = String(value || '').toUpperCase().replace(/[ -]/g, '_');
   if (role === 'ADMIN') return 'ADMIN';
   if (role === 'CUSTOMER' || role === 'GUEST') return 'CUSTOMER';
-  if (['STAFF', 'FRONT_DESK', 'HOUSEKEEPING', 'MAINTENANCE', 'F&B', 'FB', 'MANAGER', 'GM', 'REVENUE_MANAGER'].includes(role)) return 'STAFF';
+  if (role === 'HOUSEKEEPING') return 'HOUSEKEEPING';
+  if (['STAFF', 'FRONT_DESK', 'MAINTENANCE', 'F&B', 'FB', 'MANAGER', 'GM', 'REVENUE_MANAGER'].includes(role)) return 'STAFF';
   return null;
 };
 const byId = id => (typeof document !== 'undefined' ? document.getElementById(id) : null);
@@ -392,6 +399,7 @@ function showAuth(tab = 'login') {
       document.body.classList.remove('customer-portal');
       document.body.classList.remove('admin-portal');
       document.body.classList.remove('staff-portal');
+      document.body.classList.remove('housekeeping-portal');
       document.body.classList.remove('admin-sidebar-collapsed');
       document.body.classList.remove('portal-sidebar-collapsed');
     }
@@ -529,7 +537,7 @@ function openView(session, role, tab) {
     const heading = byId('portal-heading');
     if (heading) heading.textContent = (role === 'CUSTOMER' ? titles[tab] : menus[role]?.find(([key]) => key === tab)?.[1]) || 'Tổng quan';
     const contentBar = heading?.closest?.('.portal-content-bar');
-    if (contentBar) contentBar.style.display = role === 'ADMIN' || tab === 'profile' || (role === 'CUSTOMER' && tab === 'security') ? 'none' : '';
+    if (contentBar) contentBar.style.display = role === 'ADMIN' || role === 'HOUSEKEEPING' || tab === 'profile' || (role === 'CUSTOMER' && tab === 'security') ? 'none' : '';
 
     const msg = byId('portal-message');
     if (msg) msg.hidden = true;
@@ -542,6 +550,8 @@ function openView(session, role, tab) {
 
     if (role === 'CUSTOMER') {
       loadCustomerView(tab);
+    } else if (role === 'HOUSEKEEPING' && tab === 'housekeeping') {
+      loadHousekeepingView();
     } else if (tab === 'profile') {
       loadProfileView();
     } else if (role === 'ADMIN') {
@@ -793,6 +803,7 @@ function enterPortal(session) {
       document.body.classList.toggle('customer-portal', isCustomer);
       document.body.classList.toggle('admin-portal', role === 'ADMIN');
       document.body.classList.toggle('staff-portal', role === 'STAFF');
+      document.body.classList.toggle('housekeeping-portal', role === 'HOUSEKEEPING');
     }
 
     const appView = byId('app-view');
@@ -802,14 +813,14 @@ function enterPortal(session) {
     if (appView) {
       appView.hidden = false;
       appView.classList.remove('hidden', 'opacity-0');
-      appView.setAttribute('aria-label', isCustomer ? 'Cổng khách hàng Aurelia' : 'Cổng quản lý Aurelia');
+      appView.setAttribute('aria-label', isCustomer ? 'Cổng khách hàng Aurelia' : role === 'HOUSEKEEPING' ? 'Cổng nhân viên buồng phòng Aurelia' : 'Cổng quản lý Aurelia');
     }
     if (authView) {
       authView.hidden = true;
     }
 
     const requested = typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search).get('view') : null;
-    const defaultTab = role === 'STAFF' ? 'room-map' : 'dashboard';
+    const defaultTab = role === 'STAFF' ? 'room-map' : role === 'HOUSEKEEPING' ? 'housekeeping' : 'dashboard';
     openView(session, role, requested || defaultTab);
 
     // Initialize Lifecycle Notifications
@@ -872,7 +883,7 @@ export function completeLogin(result, defaultUsername) {
     }
     return;
   }
-  const destination = role === 'STAFF' ? 'room-map' : 'dashboard';
+  const destination = role === 'STAFF' ? 'room-map' : role === 'HOUSEKEEPING' ? 'housekeeping' : 'dashboard';
   if (typeof window !== 'undefined' && window.location?.replace) {
     window.location.replace(`portal.html?view=${encodeURIComponent(destination)}`);
   }

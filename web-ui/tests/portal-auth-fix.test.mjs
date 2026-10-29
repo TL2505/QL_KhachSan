@@ -172,7 +172,7 @@ function setupMockEnvironment() {
 // STATIC STRUCTURAL & LUXURY AUDIT
 // =============================================================================
 
-test('staff roles use the staff notification endpoint and never request customer notifications', async () => {
+test('housekeeping has a separate workbench role and no access to staff or customer notifications', async () => {
   const env = setupMockEnvironment();
   try {
     let staffRequests = 0, customerRequests = 0;
@@ -183,11 +183,13 @@ test('staff roles use the staff notification endpoint and never request customer
       return {ok:true,status:200,headers:{get:()=>null},text:async()=>JSON.stringify({status:'success',data:[]})};
     };
     const { initNotificationTray } = await loadModule('public/portal-app.js');
-    for (const role of ['ADMIN', 'STAFF', 'HOUSEKEEPING']) {
+    for (const role of ['ADMIN', 'STAFF']) {
       await initNotificationTray({ role, token: 'valid-test-token' });
       assert.equal(env.getOrCreate('btn-notification-bell').hidden, false);
     }
-    assert.equal(staffRequests, 3);
+    await initNotificationTray({ role: 'HOUSEKEEPING', token: 'valid-test-token' });
+    assert.equal(env.getOrCreate('btn-notification-bell').hidden, true);
+    assert.equal(staffRequests, 2);
     assert.equal(customerRequests, 0);
 
     env.getOrCreate('auth-view').hidden = true;
@@ -201,6 +203,18 @@ test('staff roles use the staff notification endpoint and never request customer
     assert.equal(env.getOrCreate('view-container').innerHTML, '');
     assert.equal(env.getOrCreate('auth-status').textContent, 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
     assert.equal(localStorage.getItem('auth_token'), null);
+  } finally { env.teardown(); }
+});
+
+test('housekeeping login opens its role-specific workbench by default', async () => {
+  const env = setupMockEnvironment();
+  try {
+    window.location.replace = destination => { window.location.href = destination; };
+    const { completeLogin } = await loadModule('public/portal-app.js');
+    completeLogin({ token: 'synthetic-housekeeping-session', role: 'housekeeping', userId: 27 });
+    const session = JSON.parse(localStorage.getItem('hotel_auth_session'));
+    assert.equal(session.role, 'HOUSEKEEPING');
+    assert.equal(window.location.href, 'portal.html?view=housekeeping');
   } finally { env.teardown(); }
 });
 

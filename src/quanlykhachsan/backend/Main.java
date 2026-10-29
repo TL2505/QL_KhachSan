@@ -231,6 +231,7 @@ public class Main {
         for (Filter filter : filters) {
             context.getFilters().add(filter);
         }
+        context.getFilters().add(new quanlykhachsan.backend.utils.HousekeepingRoleFilter());
     }
 
     private static void registerContext(HttpServer server, String path, HttpHandler handler, Filter... filters) {
