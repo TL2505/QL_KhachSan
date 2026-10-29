@@ -228,6 +228,7 @@ public class UpdateDbUtility {
             runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_11_room_images.sql"));
             runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_12_account_avatars.sql"));
             runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_13_housekeeping_task_assignments.sql"));
+            runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_14_housekeeping_workbench.sql"));
             ensureForeignKey(conn, "cleaning_tasks", "fk_cleaning_task_assignee",
                     "FOREIGN KEY (assigned_to_user_id) REFERENCES users(id) ON DELETE SET NULL");
             System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.");

@@ -34,6 +34,13 @@ public final class MediaController implements HttpHandler {
         String path = e.getRequestURI().getPath();
         if ("POST".equalsIgnoreCase(e.getRequestMethod()) && path.equals("/api/v1/admin/catalog/media")) {
             upload(e, false, 0);
+        } else if ("POST".equalsIgnoreCase(e.getRequestMethod()) && path.equals("/api/v1/housekeeping/media")) {
+            if (!"housekeeping".equalsIgnoreCase(String.valueOf(e.getAttribute("role")))
+                    && !"admin".equalsIgnoreCase(String.valueOf(e.getAttribute("role")))) {
+                ApiResponseUtil.sendError(e, 403, "ERR_403_FORBIDDEN", "Housekeeping role required.");
+                return;
+            }
+            upload(e, false, 0, false);
         } else if ("GET".equalsIgnoreCase(e.getRequestMethod()) && path.matches("/api/v1/media/[0-9a-fA-F-]{36}")) {
             serve(e, path.substring(path.lastIndexOf('/') + 1));
         } else {
@@ -50,7 +57,11 @@ public final class MediaController implements HttpHandler {
     }
 
     private void upload(HttpExchange e, boolean avatar, int accountId) throws IOException {
-        if (!avatar && !SecurityUtil.hasPermission(e, 1, 2)) return;
+        upload(e, avatar, accountId, !avatar);
+    }
+
+    private void upload(HttpExchange e, boolean avatar, int accountId, boolean requireCatalogPermission) throws IOException {
+        if (requireCatalogPermission && !SecurityUtil.hasPermission(e, 1, 2)) return;
         byte[] body = e.getRequestBody().readNBytes(7_100_001);
         if (body.length > 7_100_000) { ApiResponseUtil.sendError(e, 413, "ERR_413_PAYLOAD_TOO_LARGE", "Ảnh vượt quá dung lượng cho phép (5 MB). "); return; }
         Path stored = null;
