@@ -473,3 +473,48 @@ Session date: 2026-10-23. Environment: Windows 11, JDK 17.0.20.1, Maven 3.10.0, 
 - **Regression tests:** `node --test tests/room-types.test.mjs`: **4 passed, 0 failed**; added an assertion for the light-theme modal-control rule. The full `npm test` suite passed **153/153** when local loopback access was enabled for its HTTP fixtures.
 - **Live verification:** On port 3000, opened both add and edit room-type modals. Computed styles confirmed white background, dark text and visible placeholders. Submitted each form with required values empty; Vietnamese errors appeared and focus moved to the first invalid field without an API write. Opened the account-role popup and confirmed its contents were legible with no stray “Đóng” label. Cancelled every dialog; no DB/account/permission state changed.
 - **Status:** Fixed; regression test and live popup UI verified
+
+## QA-2026-030 — AI model discovery hid provider connectivity errors
+
+- **Type:** Confirmed AI integration diagnostics defect
+- **Discovered:** 2026-10-29
+- **Module / role:** Admin AI provider settings; administrator
+- **Severity / priority:** P2 / P2
+- **Environment and evidence:** User-provided screenshot from `http://127.0.0.1:3000/portal.html?view=ai-settings` showed a failed “Lấy danh sách model” action and only a generic message. Provider was selected and the key was masked in the UI. The key value was not read, copied, logged, or sent during this investigation.
+- **Expected:** Distinguish provider connection, timeout, provider rejection, and invalid provider-response failures with safe, actionable Vietnamese messages, while keeping secrets and internal server details hidden.
+- **Actual:** The first report showed a generic model-list failure. A later screenshot showed `AI_SETTINGS_UNAVAILABLE`; a fresh read-only Admin tab also could not load saved AI metadata. The provider key remained masked and was not read or sent by QA.
+- **Root cause:** Provider transport failures needed safe diagnostics. Separately, model discovery always decrypted the old saved AI config even when the administrator supplied a complete new key. If the saved file cannot be read, the new-key flow failed before reaching the selected provider. The exact cause of the local saved-file read failure was not inspected beyond the API/UI result.
+- **Fix:** Added safe provider-unreachable (503) and invalid-provider-response (502) classifications. The browser displays only allowlisted AI error messages on model discovery and connection-test routes. A complete new-key draft can now fetch models without reading the previous encrypted file; a complete replacement can replace it only after the administrator submits Save. Blank-key flows still read the old file to preserve its credential. A failed initial load now explains the draft recovery steps. Other endpoint 5xx messages remain hidden.
+- **Regression tests:** `node --test web-ui/tests/ai-settings.test.mjs web-ui/tests/transport.test.mjs`: **26 passed, 0 failed**. `mvn -q -Dtest=AiModelDiscoveryTest test`: **passed**, including a corrupted synthetic old-file recovery test. Synthetic keys and mocked providers only; no user credential or real provider request was used.
+- **Runtime verification:** Port-3000 page/assets and port-8081 health return HTTP 200; the read-only Admin page confirmed saved AI metadata still fails to load. The live third-party model-list request was not repeated with the user's key, so provider reachability, key validity, account permissions, and this machine's saved-file repair remain unverified.
+- **Status:** Code and targeted regressions fixed; actual provider discovery and explicit live reconfiguration pending user-side retry
+
+## QA-2026-031 — Save stayed disabled after selecting a model for recovery
+
+- **Type:** Confirmed AI settings recovery UI defect
+- **Discovered:** 2026-10-29
+- **Module / role:** Admin AI provider settings; administrator
+- **Severity / priority:** P2 / P2
+- **Environment and evidence:** The administrator reported that after selecting a model, saving and connection testing were unavailable. The AI settings page has a recovery path for a failed initial config load and backend support for a complete replacement key. No API key value was inspected or transmitted during diagnosis.
+- **Expected:** After entering a new provider key and selecting a model, “Lưu cấu hình” is enabled even if the old config could not be read. After a successful save, “Kiểm tra kết nối” becomes enabled and tests the saved server-side configuration.
+- **Actual:** Save was disabled whenever the initial config load left `saved` null. This contradicted the recovery instructions and backend replacement flow. Connection testing correctly remained unavailable before successful save, but the UI did not explain this sequence.
+- **Root cause:** `updateSavedActions` included `!saved` as an unconditional save-button gate, even when a new key and model were provided.
+- **Fix:** Removed the stale-config requirement from the save gate; saving still requires a model and either a complete new key or a saved key for the same provider. Clarified that connection testing becomes available after a successful save and removed the contradictory reload-before-save wording.
+- **Regression tests:** `node --test web-ui/tests/ai-settings.test.mjs web-ui/tests/transport.test.mjs`: **26 passed, 0 failed**. The recovery test simulates failed config load, model discovery with a synthetic key, model selection, replacement save, key clearing, and connection-test enablement. Provider calls are mocked.
+- **Live verification:** Not performed. Browser automation could not attach to a live user page, and the real API key was not used. If the current page has the new code, Save should enable after selecting the model. If the page is cached, preserve the unsaved key before reopening it.
+- **Status:** Fixed and regression-tested; live credential/provider flow remains unverified
+
+## QA-2026-032 — AI connection test waits too long before showing timeout
+
+- **Type:** Confirmed provider connection-test responsiveness defect
+- **Discovered:** 2026-10-29
+- **Module / role:** Admin AI provider settings; administrator
+- **Severity / priority:** P2 / P2
+- **Environment and evidence:** User screenshots show the test status remaining “Đang xử lý…” and the server returning “Nhà cung cấp AI không phản hồi trong 45 giây.” The user made a real provider test; this investigation did not repeat it and did not access the key.
+- **Expected:** The UI states that it is testing the provider and indicates a reasonable maximum wait. If the provider does not respond, return an actionable timeout within that limit.
+- **Actual:** The generic “Đang xử lý…” state persisted for up to 45 seconds before the test returned a timeout.
+- **Root cause:** Connection diagnostics reused the 45-second generation timeout intended for normal provider requests, and the frontend used the same generic loading copy as other operations.
+- **Fix:** Connection tests now have a 20-second provider request timeout; regular guest generations and model discovery keep the 45-second limit. The UI shows a connection-specific loading message with the 20-second limit, and the timeout response distinguishes connection tests from other provider requests.
+- **Regression tests:** `node --test web-ui/tests/ai-settings.test.mjs web-ui/tests/transport.test.mjs`: **26 passed, 0 failed**. Targeted Maven tests for separate connection-test timeout and timeout-message behavior passed using synthetic providers.
+- **Live verification:** Not performed. Browser automation could not attach to the live page, and `start-backend.bat` stopped at its database preflight because MariaDB at localhost:3306 was unavailable. The preflight ran no startup migration. No API key was read or sent.
+- **Status:** Fixed and regression-tested; actual provider reachability remains unverified

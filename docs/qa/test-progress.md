@@ -264,3 +264,30 @@ Latest full-suite evidence is 291 Java tests (0 failures/errors, 42 skipped) and
 - Rebuilt `account-settings-ui.css` from the project's Tailwind/DaisyUI input stylesheet.
 - Focused regression command `node --test tests/account-settings.test.mjs tests/room-types.test.mjs tests/portal.test.mjs`: **28 passed, 0 failed**, including cross-role and source/public-copy assertions.
 - Live Admin check on port 3000 selected the repository's `standard.jpg`; filename and preview rendered. Reloaded without saving, confirmed the avatar was not persisted; no R2 request or database mutation occurred.
+
+### AI provider model discovery diagnostics (2026-10-29)
+
+- Reproduced from the user's screenshot: model discovery showed a generic 5xx message. A second read-only Admin tab also failed to load saved AI metadata, confirming the error can occur before a provider request.
+- `forModels` previously decrypted the old saved configuration even when the admin supplied a complete new key. A complete key/workspace draft now avoids that dependency; saving a complete replacement writes a new encrypted file only after the explicit Save action. Blank-key use still requires reading the saved config.
+- Classified backend provider connection I/O failures separately from invalid/oversized provider responses. The frontend surfaces only allowlisted AI diagnostics on model discovery and connection-test routes; generic 5xx details remain hidden elsewhere. Initial config-load failures now explain the draft recovery steps.
+- Targeted web regressions: `node --test web-ui/tests/ai-settings.test.mjs web-ui/tests/transport.test.mjs` — **26 passed, 0 failed**.
+- Backend regression: `mvn -q -Dtest=AiModelDiscoveryTest test` — **passed**, including simulated corrupted saved-config recovery; only synthetic keys and mocked provider responses were used.
+- Local runtime smoke: port 3000 page and versioned assets returned HTTP 200; backend `/api/v1/health` on port 8081 returned HTTP 200 with MariaDB connected. The `start-backend.bat` attempt correctly refused to start a duplicate backend because port 8081 was already occupied.
+- No third-party request was sent using the user's key. The exact cause of the local saved-config read failure and provider key/reachability still need confirmation. The UI's new-key recovery path can be checked by retrying after a hard reload and saving only if the model list succeeds.
+
+### AI settings recovery after model selection (2026-10-29)
+
+- Found a UI gating bug: Save required successfully loaded old metadata even after the administrator entered a replacement key and selected a model. This blocked the recovery path already supported by the backend.
+- Removed the saved-metadata gate. Save now requires a selected model plus either a new key or the existing key for the same provider. Connection testing stays disabled until the replacement saves successfully; the page now explains this order.
+- Updated initial-load error copy so it no longer tells administrators to reload before saving a replacement draft.
+- Focused regressions `node --test tests/ai-settings.test.mjs tests/transport.test.mjs`: **26 passed, 0 failed**. Model discovery/save used mocked provider responses and synthetic credentials.
+- Did not send a request with the user's API key. Live UI and real provider connectivity remain unverified.
+
+### AI connection-test timeout and status (2026-10-29)
+
+- Reproduced the reported behavior from screenshots: the button remained in a generic “Đang xử lý…” state until the provider timeout at 45 seconds.
+- Added a 20-second timeout only for connection tests. Normal guest-generation and model-list requests retain their 45-second timeout.
+- The loading status now says that the provider connection is being checked and gives the 20-second maximum; the backend returns a matching actionable timeout message.
+- Node AI settings/API regressions: **26 passed, 0 failed**. Two targeted Maven tests passed for the distinct timeout values and message. All provider responses and credentials in these tests are synthetic.
+- Did not repeat a real provider request. Live connectivity and visual verification remain pending because the browser automation could not attach to the live page.
+- The requested `start-backend.bat` rebuild completed after redirecting Maven's home/repository into the workspace, but startup stopped safely at database preflight: MariaDB localhost:3306 was unavailable. No startup migration ran and no backend process was started.

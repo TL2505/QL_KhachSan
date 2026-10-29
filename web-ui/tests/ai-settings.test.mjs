@@ -46,7 +46,9 @@ test('connection tests use the saved server configuration and deletion clears th
       return response(options.method === 'DELETE' ? { ...metadata, has_key: false, enabled: false, model: '', knowledge: '' } : metadata);
     };
     await renderAiSettings(ui.container);
-    document.getElementById('ai-test').click(); await settle();
+    document.getElementById('ai-test').click();
+    assert.match(document.getElementById('ai-settings-feedback').textContent, /đang kiểm tra kết nối.*tối đa 20 giây/i);
+    await settle();
     assert.match(calls[1].url, /\/admin\/ai-settings\/test$/); assert.equal(calls[1].body, undefined);
     assert.match(document.getElementById('ai-settings-feedback').textContent, /thành công/);
     window.showCustomConfirm = async () => true;
@@ -67,6 +69,45 @@ test('forbidden configurations stay disabled and can recover through reload', as
     globalThis.fetch = async () => response(metadata);
     document.getElementById('ai-reload').click(); await settle();
     assert.equal(document.getElementById('ai-settings-fields').disabled, false);
+  } finally { ui.close(); }
+});
+
+test('a new-key draft can replace an unreadable saved configuration after model discovery', async () => {
+  const ui = fixture();
+  try {
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+      const body = options.body ? JSON.parse(options.body) : null;
+      calls.push({ url, method: options.method || 'GET', body });
+      if (calls.length === 1) return response(null, 503);
+      if (url.endsWith('/models')) return response({ provider: 'openai', models: [{ id: 'synthetic-recovery-model', name: 'Recovery model' }] });
+      if (options.method === 'PUT') return response({ ...metadata, model: body.model, api_key: undefined });
+      return response(metadata);
+    };
+    await renderAiSettings(ui.container);
+    const fields = document.getElementById('ai-settings-fields');
+    const key = document.getElementById('ai-api-key');
+    assert.equal(fields.disabled, false);
+    assert.match(document.getElementById('ai-settings-feedback').textContent, /nhập bản nháp/);
+    assert.match(document.getElementById('ai-settings-feedback').textContent, /key mới.*khôi phục/);
+    key.value = 'synthetic-temporary-key'; key.dispatchEvent(new window.Event('input'));
+    assert.equal(document.getElementById('ai-load-models').disabled, false);
+    assert.equal(document.getElementById('ai-save').disabled, true);
+    assert.equal(document.getElementById('ai-test').disabled, true);
+    assert.equal(document.getElementById('ai-delete').disabled, true);
+    assert.doesNotMatch(document.getElementById('ai-settings-feedback').textContent, /tải lại cấu hình trước khi lưu/);
+
+    document.getElementById('ai-load-models').click(); await settle();
+    const select = document.getElementById('ai-model-select'); select.value = 'synthetic-recovery-model'; select.dispatchEvent(new window.Event('change'));
+    assert.equal(document.getElementById('ai-save').disabled, false);
+    assert.equal(document.getElementById('ai-test').disabled, true);
+    document.getElementById('ai-settings-form').requestSubmit(); await settle();
+    assert.equal(calls.some(call => call.method === 'PUT' && call.body.model === 'synthetic-recovery-model'), true);
+    assert.equal(fields.disabled, false);
+    assert.equal(document.getElementById('ai-save').disabled, false);
+    assert.equal(document.getElementById('ai-test').disabled, false);
+    assert.match(document.getElementById('ai-settings-feedback').textContent, /Đã lưu cấu hình/);
+    assert.equal(key.value, '');
   } finally { ui.close(); }
 });
 
@@ -146,6 +187,28 @@ test('model discovery can use a saved key and provider rejection stays recoverab
     assert.equal(document.getElementById('ai-load-models').disabled, false);
     assert.equal(document.getElementById('ai-model-picker').hidden, true);
     assert.equal(document.getElementById('ai-model').value, metadata.model);
+  } finally { ui.close(); }
+});
+
+test('model discovery shows actionable provider connection failures without echoing the API key', async () => {
+  const ui = fixture();
+  try {
+    const secret = 'synthetic-private-provider-key';
+    globalThis.fetch = async (url) => url.endsWith('/models')
+      ? new Response(JSON.stringify({ error_code: 'AI_PROVIDER_UNREACHABLE', message: 'Backend không kết nối được tới Google Gemini.' }), { status: 503 })
+      : response(metadata);
+    await renderAiSettings(ui.container);
+    const key = document.getElementById('ai-api-key');
+    key.value = secret; key.dispatchEvent(new window.Event('input'));
+    document.getElementById('ai-load-models').click(); await settle();
+    const status = document.getElementById('ai-model-status');
+    assert.match(status.textContent, /Backend không kết nối được tới Google Gemini/);
+    assert.equal(status.dataset.state, 'error');
+    assert.equal(document.getElementById('ai-settings-fields').disabled, false);
+    assert.equal(document.getElementById('ai-load-models').disabled, false);
+    assert.equal(document.getElementById('ai-model-picker').hidden, true);
+    assert.doesNotMatch(status.textContent, new RegExp(secret));
+    assert.doesNotMatch(document.getElementById('ai-settings-feedback').textContent, new RegExp(secret));
   } finally { ui.close(); }
 });
 

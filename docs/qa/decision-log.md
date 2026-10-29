@@ -60,3 +60,27 @@
 - **Evidence:** The user asked for a dedicated form/queue for cleaning staff and then specified that the new interface should be integrated later, while staff work proceeds first.
 - **Decision:** Keep the current housekeeping queue on its own preview route with clearly labeled synthetic data and local-only state changes. Do not connect it to booking operations, MariaDB, payments, customer records, or staff permissions until the integration work is taken up.
 - **Approval needed:** None for the mock UI. Integration will require the actual housekeeping role and handoff/status API contract.
+
+## DL-2026-008 — Allow only safe AI provider diagnostics through the browser transport
+
+- **Date:** 2026-10-29
+- **Area:** Admin AI provider settings and frontend API error handling
+- **Evidence:** Model discovery returned a generic 5xx message when the backend could not reach the selected AI provider. Hiding arbitrary server messages is useful for protecting internal details, but it also hid this operational cause.
+- **Decision:** Return purpose-built, secret-free provider connectivity and malformed-response errors from the backend. The frontend may display only an explicit allowlist of AI diagnostic codes on AI model-discovery and connection-test routes. All other server 5xx messages remain redacted. A complete new-key draft must not depend on decrypting the prior saved configuration; only the admin's explicit Save may replace that prior file. Blank-key flows still require the prior saved key.
+- **Approval needed:** None; this is a diagnostics and secret-handling boundary, with no provider key or external request used in verification.
+
+## DL-2026-009 — Recover AI settings with a complete replacement draft
+
+- **Date:** 2026-10-29
+- **Area:** Admin AI provider settings recovery
+- **Evidence:** When saved AI metadata cannot be read, the settings screen permits entering a new key and discovering models. The backend accepts a complete replacement, but the Save button still required loading the old metadata.
+- **Decision:** Enable Save when a model and complete new key are present, even if old settings are unavailable. Keep connection testing tied to the saved server-side configuration so it becomes available after Save succeeds. Never persist the key in browser storage; clear the draft after the server accepts the save.
+- **Approval needed:** None; replacement requires the administrator's explicit Save action.
+
+## DL-2026-010 — Use a shorter timeout for AI connection checks
+
+- **Date:** 2026-10-29
+- **Area:** Admin AI provider connectivity checks
+- **Evidence:** The connection-test endpoint previously waited up to 45 seconds before returning a timeout, leaving the Admin screen on a generic processing message.
+- **Decision:** Limit the lightweight connection check to 20 seconds and show a connection-specific loading status and matching timeout explanation. Keep the separate 45-second timeout for normal provider answers and model discovery.
+- **Approval needed:** None; this is an operational responsiveness change and does not change saved settings or send any additional provider data.

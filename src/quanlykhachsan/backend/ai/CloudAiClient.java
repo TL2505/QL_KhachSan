@@ -8,6 +8,8 @@ import java.time.Duration;
 
 /** Fixed HTTPS destinations; keys never enter URLs, logs, or browser responses. */
 public final class CloudAiClient {
+    static final int PROVIDER_REQUEST_TIMEOUT_SECONDS = 45;
+    static final int CONNECTION_TEST_TIMEOUT_SECONDS = 20;
     @FunctionalInterface interface Transport { String send(HttpRequest request) throws IOException, InterruptedException; }
     private final Transport transport;
     public CloudAiClient() {
@@ -15,7 +17,7 @@ public final class CloudAiClient {
         transport = request -> {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) throw new ProviderException(response.statusCode(), response.body());
-            if (response.body().length() > 131072) throw new IOException("AI response too large");
+            if (response.body().length() > 131072) throw new ProviderResponseException();
             return response.body();
         };
     }
@@ -30,17 +32,30 @@ public final class CloudAiClient {
             case "groq" -> "https://api.groq.com/openai/v1/models";
             default -> throw new IOException("Unknown AI provider");
         };
-        HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(endpoint)).timeout(Duration.ofSeconds(45)).GET();
+        HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(endpoint)).timeout(Duration.ofSeconds(PROVIDER_REQUEST_TIMEOUT_SECONDS)).GET();
         if (c.provider().equals("gemini")) request.header("x-goog-api-key", c.apiKey());
         else request.header("Authorization", "Bearer " + c.apiKey());
         if (c.provider().equals("claude")) {
             request.header("anthropic-version", "2023-06-01");
             if (!c.workspaceId().isEmpty()) request.header("anthropic-workspace-id", c.workspaceId());
         }
+        final String responseBody;
         try {
-            JsonObject root = JsonParser.parseString(transport.send(request.build())).getAsJsonObject();
+            responseBody = transport.send(request.build());
+        } catch (ProviderException | ProviderResponseException ex) {
+            throw ex;
+        } catch (HttpTimeoutException ex) {
+            throw ex;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IOException("AI request interrupted");
+        } catch (IOException ex) {
+            throw new ProviderConnectionException(c.provider());
+        }
+        try {
+            JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
             JsonArray values = root.getAsJsonArray(c.provider().equals("gemini") ? "models" : "data");
-            if (values == null) throw new IOException("Invalid AI model list");
+            if (values == null) throw new ProviderResponseException();
             java.util.Map<String, Model> result = new java.util.TreeMap<>();
             for (JsonElement element : values) {
                 JsonObject item = element.getAsJsonObject();
@@ -58,8 +73,19 @@ public final class CloudAiClient {
             }
             boolean more = root.has("nextPageToken") && !root.get("nextPageToken").getAsString().isBlank() || root.has("has_more") && root.get("has_more").getAsBoolean();
             return new ModelList(java.util.List.copyOf(result.values()), more);
-        } catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IOException("AI request interrupted"); }
-        catch (RuntimeException e) { throw new IOException("Invalid AI model list"); }
+        } catch (RuntimeException e) { throw new ProviderResponseException(); }
+    }
+    static final class ProviderConnectionException extends IOException {
+        private final String provider;
+        ProviderConnectionException(String provider) { super("AI provider connection failed"); this.provider = provider; }
+        String publicMessage() {
+            String name = switch (provider) { case "gemini" -> "Google Gemini"; case "openai" -> "OpenAI"; case "claude" -> "Claude"; case "groq" -> "Groq"; default -> "nhà cung cấp AI"; };
+            return "Backend không kết nối được tới " + name + ". Kiểm tra Internet, DNS, proxy hoặc tường lửa trên máy chạy backend rồi thử lại.";
+        }
+    }
+    static final class ProviderResponseException extends IOException {
+        ProviderResponseException() { super("Invalid AI provider response"); }
+        String publicMessage() { return "Nhà cung cấp AI trả về danh sách model không hợp lệ. Vui lòng thử lại sau."; }
     }
     static final class ProviderException extends IOException {
         final int status;
@@ -176,7 +202,8 @@ public final class CloudAiClient {
             JsonObject user = new JsonObject(); user.addProperty("role", "user"); user.addProperty("content", message);
             JsonArray messages = new JsonArray(); messages.add(system); messages.add(user); body.add("messages", messages);
         } else throw new IOException("Unknown AI provider");
-        request.header("Content-Type", "application/json").timeout(Duration.ofSeconds(45)).POST(HttpRequest.BodyPublishers.ofString(body.toString()));
+        int timeoutSeconds = test ? CONNECTION_TEST_TIMEOUT_SECONDS : PROVIDER_REQUEST_TIMEOUT_SECONDS;
+        request.header("Content-Type", "application/json").timeout(Duration.ofSeconds(timeoutSeconds)).POST(HttpRequest.BodyPublishers.ofString(body.toString()));
         try {
             String json = transport.send(request.build());
             String reply = extract(c.provider(), json);

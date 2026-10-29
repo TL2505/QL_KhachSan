@@ -14,6 +14,10 @@ public final class AiProviderSettingsController implements HttpHandler {
     private final CloudAiClient client;
     public AiProviderSettingsController() { this(AiProviderSettings.instance(), new CloudAiClient()); }
     AiProviderSettingsController(AiProviderSettings settings, CloudAiClient client) { this.settings = settings; this.client = client; }
+    static String timeoutMessage(boolean connectionTest) {
+        if (connectionTest) return "Nhà cung cấp AI không phản hồi trong " + CloudAiClient.CONNECTION_TEST_TIMEOUT_SECONDS + " giây. Vui lòng thử lại hoặc kiểm tra kết nối mạng và model đã chọn.";
+        return "Nhà cung cấp AI không phản hồi trong " + CloudAiClient.PROVIDER_REQUEST_TIMEOUT_SECONDS + " giây. Vui lòng thử lại hoặc chọn model phản hồi nhanh hơn.";
+    }
     @Override public void handle(HttpExchange e) throws IOException {
         e.getResponseHeaders().set("Cache-Control", "no-store");
         if (e.getAttribute("userId") == null || !"admin".equalsIgnoreCase(String.valueOf(e.getAttribute("role")))) {
@@ -51,10 +55,14 @@ public final class AiProviderSettingsController implements HttpHandler {
             ApiResponseUtil.sendError(e, 422, ex.code, ex.publicMessage());
         } catch (CloudAiClient.ProviderException ex) {
             ApiResponseUtil.sendError(e, 422, "AI_PROVIDER_REJECTED", ex.publicMessage());
+        } catch (CloudAiClient.ProviderConnectionException ex) {
+            ApiResponseUtil.sendError(e, 503, "AI_PROVIDER_UNREACHABLE", ex.publicMessage());
+        } catch (CloudAiClient.ProviderResponseException ex) {
+            ApiResponseUtil.sendError(e, 502, "AI_PROVIDER_RESPONSE_INVALID", ex.publicMessage());
         } catch (IllegalArgumentException | JsonParseException | IllegalStateException ex) {
             ApiResponseUtil.sendError(e, 400, "AI_SETTINGS_INVALID", "Cấu hình không hợp lệ. Kiểm tra nhà cung cấp, model và API key.");
         } catch (java.net.http.HttpTimeoutException ex) {
-            ApiResponseUtil.sendError(e, 422, "AI_PROVIDER_TIMEOUT", "Nhà cung cấp AI không phản hồi trong 45 giây. Vui lòng thử lại hoặc chọn model phản hồi nhanh hơn.");
+            ApiResponseUtil.sendError(e, 422, "AI_PROVIDER_TIMEOUT", timeoutMessage(path.equals(PATH + "/test")));
         } catch (IOException | GeneralSecurityException ex) {
             ApiResponseUtil.sendError(e, 503, "AI_SETTINGS_UNAVAILABLE", "Không thể đọc/lưu cấu hình hoặc kết nối AI. Vui lòng kiểm tra dịch vụ máy chủ.");
         }

@@ -130,6 +130,7 @@ function setupMockEnvironment() {
 // =============================================================================
 test('Task 13: portal.html contains Royal Golden Shield emblem, circular close button, and pill tabs', () => {
   const portalHtml = fs.readFileSync(path.join(webUiDir, 'portal.html'), 'utf-8');
+  const portalThemeCss = fs.readFileSync(path.join(webUiDir, 'portal-theme.css'), 'utf-8');
 
   // Royal Golden Shield emblem
   assert.match(portalHtml, /royal-shield-emblem/, 'Header must contain Royal Golden Shield emblem');
@@ -142,6 +143,8 @@ test('Task 13: portal.html contains Royal Golden Shield emblem, circular close b
   assert.match(portalHtml, /auth-pill-tabs/, 'Auth card must contain pill-shaped tabs');
   assert.match(portalHtml, /id="show-login"/, 'Pill tabs must contain #show-login');
   assert.match(portalHtml, /id="show-register"/, 'Pill tabs must contain #show-register');
+  assert.match(portalThemeCss, /data-theme="light"[^}]*\.auth-pill-tabs\s*\{[^}]*background:\s*var\(--portal-surface\)/s, 'Light theme must use a light surface for auth tabs');
+  assert.match(portalThemeCss, /auth-pill-tabs \.auth-pill-tab:not\(\.active\):not\(\.tab-active\)\s*\{[^}]*color:\s*var\(--portal-muted\)/s, 'Inactive auth tabs must use the light theme text color');
 
   // Lifecycle Notification Tray
   assert.match(portalHtml, /id="btn-notification-bell"/, 'Must contain notification bell button');

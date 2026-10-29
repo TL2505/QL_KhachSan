@@ -96,6 +96,14 @@ test('freeze retains Retry-After and hides server internals',async()=>{
  globalThis.fetch=async()=>new Response(JSON.stringify({message:'PRIVATE_DATABASE_DETAILS'}),{status:503,headers:{'Retry-After':'300'}});
  await assert.rejects(apiFetch('/rooms'),error=>error.status===503&&error.retryAfter==='300'&&!error.message.includes('PRIVATE'));
 });
+test('AI model discovery exposes only allowlisted backend diagnostics',async()=>{
+ globalThis.fetch=async()=>new Response(JSON.stringify({error_code:'AI_PROVIDER_UNREACHABLE',message:'Backend không kết nối được tới Google Gemini.'}),{status:503});
+ await assert.rejects(apiFetch('/admin/ai-settings/models'),error=>error.status===503&&error.message==='Backend không kết nối được tới Google Gemini.');
+ globalThis.fetch=async()=>new Response(JSON.stringify({error_code:'PRIVATE_INTERNAL_ERROR',message:'PRIVATE_DATABASE_DETAILS'}),{status:503});
+ await assert.rejects(apiFetch('/admin/ai-settings/models'),error=>error.status===503&&!error.message.includes('PRIVATE'));
+ globalThis.fetch=async()=>new Response(JSON.stringify({error_code:'AI_PROVIDER_UNREACHABLE',message:'PRIVATE_DATABASE_DETAILS'}),{status:503});
+ await assert.rejects(apiFetch('/rooms'),error=>error.status===503&&!error.message.includes('PRIVATE'));
+});
 test('invalid JSON and invalid session storage fail safely',async()=>{
  store.set('hotel_auth_session','bad-json');assert.equal(getAuthSession(),null);globalThis.fetch=async()=>new Response('<html>private debug</html>');await assert.rejects(apiFetch('/rooms'),error=>!error.message.includes('private debug'));
 });

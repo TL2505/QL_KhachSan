@@ -65,6 +65,19 @@ html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view .card {
   box-shadow: 0 12px 32px rgba(67, 49, 29, .07);
 }
 
+html[data-theme="light"] .portal-body:not(.customer-portal) .auth-pill-tabs {
+  background: var(--portal-surface);
+  border-color: var(--portal-border);
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .auth-pill-tabs .auth-pill-tab:not(.active):not(.tab-active) {
+  color: var(--portal-muted);
+}
+
+html[data-theme="light"] .portal-body:not(.customer-portal) .auth-pill-tabs .auth-pill-tab:not(.active):not(.tab-active):hover {
+  color: var(--portal-text);
+}
+
 html[data-theme="light"] .portal-body:not(.customer-portal) .auth-form input,
 html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view input,
 html[data-theme="light"] .portal-body:not(.customer-portal) .portal-view select,
