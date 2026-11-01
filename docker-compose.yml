@@ -130,6 +130,12 @@ services:
       context: ./ai-service
       dockerfile: Dockerfile
     restart: unless-stopped
+    command: >
+      sh -c "if [ -f /run/secrets/ai_server_cert ]; then
+        exec python -m uvicorn app:app --host 0.0.0.0 --port 8082 --workers 1 --no-access-log --ssl-certfile /run/secrets/ai_server_cert --ssl-keyfile /run/secrets/ai_server_key --ssl-ca-certs /run/secrets/ai_ca --ssl-cert-reqs 2;
+      else
+        exec python -m uvicorn app:app --host 0.0.0.0 --port 8082 --workers 1 --no-access-log;
+      fi"
     ports:
       - "8083:8082"
     environment:
@@ -142,7 +148,7 @@ services:
     networks:
       - pms-internal-net
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8082/health" ]
+      test: [ "CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8082/health')\" || curl -f http://127.0.0.1:8082/health" ]
       interval: 5s
       timeout: 3s
       retries: 5
