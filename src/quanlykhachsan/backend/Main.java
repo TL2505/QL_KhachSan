@@ -176,6 +176,7 @@ public class Main {
         com.google.gson.JsonObject health = new com.google.gson.JsonObject();
         health.addProperty("status", "UP");
         health.addProperty("timestamp", System.currentTimeMillis());
+        health.addProperty("demo_early_checkin", Boolean.parseBoolean(System.getenv("HOTEL_DEMO_ALLOW_EARLY_CHECKIN")));
         try (java.sql.Connection c = quanlykhachsan.backend.utils.DatabaseConnection.getConnection();
              java.sql.Statement stmt = c.createStatement()) {
             stmt.setQueryTimeout(1);

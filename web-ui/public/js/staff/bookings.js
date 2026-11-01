@@ -20,6 +20,8 @@ const STATUS_LABEL = {
     no_show:    { label: 'Không đến', cls: 'badge-maintenance' },
 };
 
+let demoEarlyCheckInEnabled = false;
+
 function bookingTime(value) {
     const time = new Date(value || '').getTime();
     return Number.isFinite(time) ? time : null;
@@ -42,7 +44,7 @@ function checkInAvailability(booking) {
         return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
     };
     const today = dateOnly(Date.now());
-    if (today < dateOnly(checkIn)) return { allowed: false, reason: 'Chưa đến ngày nhận phòng' };
+    if (today < dateOnly(checkIn) && !demoEarlyCheckInEnabled) return { allowed: false, reason: 'Chưa đến ngày nhận phòng' };
     if (today >= dateOnly(checkOut)) return { allowed: false, reason: 'Đã quá ngày lưu trú' };
     return { allowed: true, reason: '' };
 }
@@ -217,6 +219,8 @@ export async function renderBookings(container, session) {
     const loadBookings = async () => {
         document.getElementById("staff-bookings-body").innerHTML = skeletonRows(6);
         try {
+            const health = await api.get("/health");
+            demoEarlyCheckInEnabled = health?.demo_early_checkin === true;
             allBookings = await api.get("/bookings") || [];
 
             const pending     = allBookings.filter(b => String(b.status || '').toLowerCase() === 'pending').length;

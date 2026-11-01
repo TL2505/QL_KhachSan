@@ -1,12 +1,12 @@
 // Admin Views Module Coordinator
-import { renderDashboard } from "./admin/dashboard.js?v=3.6.4";
+import { renderDashboard } from "./admin/dashboard.js?v=3.6.8";
 import { renderRooms } from "./admin/rooms.js?v=3.6.4";
 import { renderBookings } from "./staff/bookings.js";
-import { renderUsers } from "./admin/users.js?v=3.6.4";
+import { renderUsers } from "./admin/users.js?v=3.6.5";
 import { renderPromotions } from "./admin/promotions.js?v=3.6.4";
 import { renderReviews } from "./admin/reviews.js?v=3.6.4";
 import { renderInvoices } from "./admin/invoices.js?v=3.6.4";
-import { renderAdminCustomers } from "./admin/customers.js?v=3.6.4";
+import { renderAdminCustomers } from "./admin/customers.js?v=3.6.5";
 import { renderAdminMembership } from "./admin/loyalty.js?v=3.6.21";
 import { renderAiSettings } from "./admin/ai-settings.js?v=7";
 

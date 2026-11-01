@@ -612,6 +612,58 @@ button, input, select, textarea {
   color: var(--portal-muted);
 }
 
+/* Keep dashboard metrics in predictable columns as the sidebar narrows the page. */
+.portal-view .dashboard-overview-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+.portal-view .dashboard-overview-grid > .stat-card {
+  min-width: 0;
+}
+.portal-view .monthly-revenue-kpis {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0.75rem;
+}
+.portal-view .monthly-revenue-kpis > .stats {
+  min-width: 0;
+}
+.portal-view .monthly-revenue-kpis .stat {
+  min-width: 0;
+  padding: 1rem;
+}
+.portal-view .monthly-revenue-kpis .stat-value {
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
+}
+
+/* Let the dashboard's DaisyUI report card keep its component spacing and type scale. */
+.portal-view .monthly-revenue-card.card {
+  padding: 0;
+  background: var(--color-base-200, rgba(19, 27, 46, 0.8));
+  border-color: var(--portal-border);
+  border-radius: var(--radius-box, 14px);
+  color: var(--portal-text);
+}
+.portal-view .monthly-revenue-card .card-body {
+  gap: 1.25rem;
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+.portal-view .monthly-revenue-card .stat-title {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--portal-muted);
+}
+.portal-view .monthly-revenue-card .stat-value {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.portal-view .monthly-revenue-card .stat-desc {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--portal-muted);
+}
+
 /* Notification Tray Dropdown */
 .notif-item {
   transition: background 0.15s ease;
@@ -696,9 +748,16 @@ button, input, select, textarea {
   .portal-view .grid-cols-3, .portal-view .grid-cols-2 {
     grid-template-columns: 1fr;
   }
+  .portal-view .dashboard-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 480px) {
+  .portal-view .dashboard-overview-grid,
+  .portal-view .monthly-revenue-kpis {
+    grid-template-columns: 1fr;
+  }
   .portal-topbar {
     height: 68px;
     padding: 0 16px;
@@ -811,6 +870,30 @@ button, input, select, textarea {
 .portal-modal .modal-header h2 {
   margin: 0;
   font: 600 22px/1.25 'Playfair Display', Georgia, serif;
+}
+.portal-modal .modal-content--success {
+  width: min(440px, 100%);
+  padding: 30px;
+  text-align: center;
+}
+.portal-modal .modal-header--success {
+  position: relative;
+  justify-content: center;
+  margin-bottom: 22px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.portal-modal .modal-header--success .modal-close {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.portal-modal .modal-content--success .alert {
+  margin-top: 14px;
+}
+.portal-modal .modal-content--success .modal-actions--success {
+  margin-top: 22px;
 }
 .portal-modal .modal-close {
   display: inline-grid;

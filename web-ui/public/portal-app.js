@@ -1,6 +1,6 @@
 import { createGoogleSignIn } from './js/auth/google-signin.js?v=3.6.36';
 import { api, clearAuthSession, getAuthSession, setAuthSession } from './api.js?v=3.6.35';
-import { loadAdminView } from './js/view-admin.js?v=3.6.11';
+import { loadAdminView } from './js/view-admin.js?v=3.6.15';
 import { loadStaffView } from './js/view-staff.js';
 import { loadCustomerView } from './js/view-customer.js?v=3.6.20';
 import { loadProfileView } from './js/view-shared.js';
@@ -52,9 +52,11 @@ window.showCustomAlert = (message, options = {}) => new Promise(resolve => {
   const modal = document.getElementById('global-modal');
   const content = document.getElementById('global-modal-content');
   if (!modal || !content) { window.alert(message); resolve(); return; }
+  const isSuccess = options.kind === 'success';
   content.replaceChildren();
+  content.classList.toggle('modal-content--success', isSuccess);
   const heading = document.createElement('div');
-  heading.className = 'modal-header';
+  heading.className = `modal-header${isSuccess ? ' modal-header--success' : ''}`;
   const title = document.createElement('h2');
   title.textContent = options.title || (options.kind === 'success' ? 'Thành công' : 'Không thể thực hiện');
   const close = document.createElement('button');
@@ -62,12 +64,26 @@ window.showCustomAlert = (message, options = {}) => new Promise(resolve => {
   heading.append(title, close);
   const text = document.createElement('p');
   text.textContent = message || 'Đã xảy ra lỗi không xác định.';
-  text.style.cssText = 'margin:0;color:var(--portal-muted);line-height:1.65';
+  text.className = isSuccess ? 'alert alert-soft alert-success justify-center text-center leading-relaxed' : 'modal-message';
+  if (!isSuccess) text.style.cssText = 'margin:0;color:var(--portal-muted);line-height:1.65';
+  if (isSuccess) {
+    const mark = document.createElement('div');
+    mark.className = 'badge badge-success h-14 w-14 rounded-full text-3xl';
+    mark.setAttribute('aria-hidden', 'true');
+    mark.textContent = '✓';
+    const status = document.createElement('p');
+    status.className = 'text-sm font-semibold text-base-content/60';
+    status.textContent = 'Cập nhật trạng thái đặt phòng';
+    content.append(heading, mark, status, text);
+  }
   const actions = document.createElement('div');
-  actions.className = 'flex-row'; actions.style.justifyContent = 'flex-end'; actions.style.marginTop = '22px';
+  actions.className = `flex-row${isSuccess ? ' modal-actions--success' : ''}`;
+  actions.style.justifyContent = isSuccess ? 'center' : 'flex-end'; actions.style.marginTop = '22px';
   const acknowledge = document.createElement('button');
-  acknowledge.type = 'button'; acknowledge.className = `btn ${options.kind === 'success' ? 'btn-primary' : 'btn-secondary'}`; acknowledge.textContent = 'Đã hiểu';
-  actions.append(acknowledge); content.append(heading, text, actions);
+  acknowledge.type = 'button'; acknowledge.className = `btn ${isSuccess ? 'btn-success' : 'btn-secondary'}`; acknowledge.textContent = 'Đã hiểu';
+  actions.append(acknowledge);
+  if (!isSuccess) content.append(heading, text);
+  content.append(actions);
   const finish = () => { closeGlobalModal(); resolve(); };
   close.addEventListener('click', finish);
   acknowledge.addEventListener('click', finish);
