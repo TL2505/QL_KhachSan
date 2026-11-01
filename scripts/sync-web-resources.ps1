@@ -19,7 +19,7 @@ $files = Get-ChildItem -Path $SrcDir -Recurse -File | Where-Object {
     $_.FullName -notmatch '\\public($|\\)' -and
     $_.FullName -notmatch '\\node_modules($|\\)' -and
     $_.FullName -notmatch '\\tests($|\\)' -and
-    ($_.Extension -eq '.html' -or $_.Extension -eq '.js' -or $_.Extension -eq '.css' -or $_.Name -like '*.input.css') -and
+    ($_.Extension -in @('.html', '.js', '.css', '.jpg', '.jpeg', '.png', '.svg', '.ico', '.webp', '.woff', '.woff2') -or $_.Name -like '*.input.css') -and
     $_.Name -ne 'server.js'
 }
 

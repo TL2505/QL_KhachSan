@@ -138,17 +138,12 @@ export function clearAuthSession() {
   write('token', null);
 }
 
-function announceSessionExpiryIfCurrent(session) {
-  const currentSession = getAuthSession();
-  const sessionHasNotChanged = session?.token
-    ? currentSession?.token === session.token
-    : !currentSession?.token;
-  if (!sessionHasNotChanged) return false;
+function expireAuthSessionIfCurrent(session) {
+  if (session?.token && getAuthSession()?.token !== session.token) return;
   clearAuthSession();
   if (typeof window !== 'undefined' && window.dispatchEvent) {
     window.dispatchEvent(new Event('hotel:session-expired'));
   }
-  return true;
 }
 
 function messageFor(status) {
@@ -161,10 +156,11 @@ function messageFor(status) {
 }
 
 export async function apiFetch(path, init = {}) {
+  const { timeoutMs = 2500, retryOnNetworkError = true, ...fetchInit } = init;
+  const requestTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 2500;
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn yêu cầu không hợp lệ.');
   const cleanPath = path.startsWith('/') ? path : '/' + path;
-  const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/')
-    || cleanPath.startsWith('/public/room-types') || cleanPath.startsWith('/public/landing-content');
+  const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/');
   const session = getAuthSession();
   const token = (typeof session?.token === 'string' && session.token) ? session.token : getStoredCustomerToken();
   const headers = new Headers(init.headers || {});
@@ -189,11 +185,11 @@ export async function apiFetch(path, init = {}) {
       const controller = new AbortController();
       signal = controller.signal;
       timeoutId = setTimeout(() => {
-        controller.abort(new DOMException('Request timed out after 2.5s', 'TimeoutError'));
-      }, 2500);
+        controller.abort(new DOMException(`Request timed out after ${requestTimeoutMs / 1000}s`, 'TimeoutError'));
+      }, requestTimeoutMs);
     }
     try {
-      return await fetch(targetUrl, { ...init, headers, signal });
+      return await fetch(targetUrl, { ...fetchInit, headers, signal });
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
     }
@@ -205,7 +201,13 @@ export async function apiFetch(path, init = {}) {
     if (init.signal && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
       throw error;
     }
-    // Do not retry another host: local UI traffic must stay on its configured localhost backend.
+    // OTP requests must never be replayed against another host: the first
+    // request may already have sent a code even if its response was lost.
+    if (!retryOnNetworkError) {
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
+      throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
+    }
+    // Do not retry against another host; the selected local backend is authoritative.
     const altBase = getAlternativeApiBaseUrl(baseUrl);
     if (altBase && altBase !== baseUrl) {
       try {
@@ -220,9 +222,7 @@ export async function apiFetch(path, init = {}) {
     }
   }
 
-  if (!isPublic && response.status === 401) {
-    announceSessionExpiryIfCurrent(session);
-  }
+  if (!isPublic && response.status === 401) expireAuthSessionIfCurrent(session);
 
   if (response.status === 204) return null;
 
@@ -235,7 +235,9 @@ export async function apiFetch(path, init = {}) {
   }
 
   if (!response.ok) {
-    const serverMessage = (response.status < 500 && ![401, 403].includes(response.status) && result && typeof result.message === 'string') ? result.message.trim() : '';
+    const safeAiProviderError = ['/admin/ai-settings/models', '/admin/ai-settings/test'].includes(cleanPath)
+      && ['AI_PROVIDER_UNREACHABLE', 'AI_PROVIDER_RESPONSE_INVALID', 'AI_PROVIDER_TIMEOUT', 'AI_PROVIDER_REJECTED', 'AI_SETTINGS_INVALID', 'AI_SETTINGS_UNAVAILABLE'].includes(result?.error_code);
+    const serverMessage = ((response.status < 500 && ![401, 403].includes(response.status) || safeAiProviderError) && result && typeof result.message === 'string') ? result.message.trim() : '';
     throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'));
   }
 
@@ -267,7 +269,7 @@ export async function fetchAuthenticatedFile(path, init = {}) {
     if (error.name === 'AbortError') throw error;
     throw new ApiError('Không thể tải tệp. Vui lòng thử lại.');
   }
-  if (response.status === 401) announceSessionExpiryIfCurrent(session);
+  if (response.status === 401) expireAuthSessionIfCurrent(session);
   if (!response.ok) throw new ApiError(messageFor(response.status), response.status, response.headers.get('Retry-After'));
   if (!response.headers.get('Content-Type')?.toLowerCase().includes('application/pdf')) {
     throw new ApiError('Máy chủ không trả về tệp PDF hợp lệ.', response.status);
@@ -435,7 +437,6 @@ export function mapRoomCategory(roomTypeId, rawCategory, rawName) {
     if (n.includes('suite')) return 'Suite';
     if (n.includes('presidential') || n.includes('villa') || n.includes('penthouse')) return 'Presidential';
     if (n.includes('family')) return 'Family';
-    if (rawName.trim()) return rawName.trim();
   }
   const idNum = Number(roomTypeId);
   if (idNum === 2) return 'Suite';
@@ -507,19 +508,10 @@ export async function getRooms(filterParams = {}) {
 
       if (rawRooms.length === 0) return { rooms: [], source: 'api' };
       if (rawRooms.length > 0) {
-        const catalogueResponse = await fetch(`${root}/public/room-types`, {
-          method: 'GET', headers: { 'Accept': 'application/json', 'X-User-Role': 'guest' }, signal: AbortSignal.timeout(4000)
-        });
-        if (!catalogueResponse.ok) throw new ApiError('Không thể tải danh mục hạng phòng.', catalogueResponse.status);
-        const cataloguePayload = await catalogueResponse.json();
-        const publicTypes = Array.isArray(cataloguePayload?.data) ? cataloguePayload.data : [];
-        const typesById = new Map(publicTypes.map(type => [Number(type.id), type]));
-        const visibleRooms = rawRooms.filter(room => typesById.has(Number(room.room_type_id || room.roomTypeId || room.roomType)));
-        const rooms = visibleRooms.map((r, index) => {
+        const rooms = rawRooms.map((r, index) => {
           if (!Number.isInteger(r.id) || r.id < 1 || r.price == null || !Number.isFinite(Number(r.price)) || Number(r.price) < 0) throw new Error('Invalid room inventory');
           const typeId = r.roomTypeId || r.room_type_id || r.roomType || (index % 5 + 1);
-          const managedType = typesById.get(Number(typeId));
-          const typeName = managedType?.name || r.room_type_name || r.roomTypeName || r.name || '';
+          const typeName = r.room_type_name || r.roomTypeName || r.name || '';
           const category = mapRoomCategory(typeId, r.category, typeName);
           const fallback = LUXURY_ROOMS_CATALOG.find(room => 
             room.category.toLowerCase() === category.toLowerCase() ||
@@ -535,26 +527,22 @@ export async function getRooms(filterParams = {}) {
             category: category,
             price: Number(r.price),
             area: r.area || fallback.area,
-            capacity: managedType?.capacity || r.capacity || fallback.capacity,
+            capacity: r.capacity || fallback.capacity,
             childrenCapacity: fallback.childrenCapacity,
             bedType: r.bedType || fallback.bedType,
             view: r.view || fallback.view,
             rating: fallback.rating,
             reviewsCount: fallback.reviewsCount,
             badge: fallback.badge,
-            image: managedType?.image_url || r.image_url || r.imageUrl || '',
-            imageAlt: managedType?.image_alt || typeName,
+            image: r.image_url || r.imageUrl || fallback.image,
             gallery: fallback.gallery,
-            amenities: managedType ? String(managedType.amenities || '').split(',').map(v => v.trim()).filter(Boolean)
-              : r.amenities ? (Array.isArray(r.amenities) ? r.amenities : String(r.amenities).split(',').map(v => v.trim()).filter(Boolean)) : fallback.amenities,
-            description: managedType ? (managedType.description || '') : (r.description || fallback.description),
-            displayOrder: managedType?.display_order ?? 0,
+            amenities: r.amenities ? (Array.isArray(r.amenities) ? r.amenities : String(r.amenities).split(',').map(v => v.trim()).filter(Boolean)) : fallback.amenities,
+            description: r.description || fallback.description,
             isDemoCatalog: false,
             status: r.status || 'unknown',
             version: r.version ?? 0
           };
         });
-        rooms.sort((a, b) => Number(a.displayOrder) - Number(b.displayOrder) || Number(a.id) - Number(b.id));
         return { rooms, source: 'api' };
       }
     }
@@ -586,6 +574,7 @@ export async function submitBooking(payload) {
       totalAmount: Number(data.folio.balance), status: data.status, folio: data.folio,
       payment: data.payment || null };
   } catch (error) {
+    if (Number.isInteger(error?.status) && error.status >= 400 && error.status < 500) throw error;
     throw new ApiError(TRANSACTION_UNCONFIRMED, error.status || 503);
   }
 }

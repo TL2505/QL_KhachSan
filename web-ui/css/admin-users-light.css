@@ -1,0 +1,79 @@
+/* Align account management with the portal's selected theme. */
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page {
+  --users-border: #e6dfd3;
+  --users-muted: #6f6a62;
+  --users-text: #29251f;
+  --users-gold: #795522;
+  color: #29251f;
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-page-icon {
+  color: #795522;
+  background: linear-gradient(145deg, #f7edd8, #fffdf9);
+  border-color: #e6d8bd;
+  box-shadow: 0 5px 16px rgba(67, 49, 29, .08);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-page-heading h1,
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-directory-header h2 { color: #29251f; }
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-page-heading > div > p:last-child,
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-directory-header p { color: #625d54; }
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-stat {
+  color: #29251f;
+  background: linear-gradient(145deg, #fff, #f8f5ef);
+  border-color: #dfd5c5;
+  box-shadow: 0 8px 20px rgba(67, 49, 29, .07);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-stat .stat-title { color: #625d54; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-stat .stat-value { color: #29251f; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-stat .stat-desc { color: #6f6a62; }
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-directory.card {
+  color: #29251f;
+  background: linear-gradient(150deg, #fff, #fbf9f5);
+  border-color: #e6dfd3;
+  box-shadow: 0 12px 30px rgba(67, 49, 29, .08);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-directory-header .btn { color: #514b42; }
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-search-field .input,
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-filter-field .select {
+  color: #29251f;
+  background: #fff;
+  border-color: #d9d0c2;
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-search-field .input::placeholder { color: #777168; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-filter-field { color: #625d54; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-filter-field option { color: #29251f; background: #fff; }
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-table-wrap { border-color: #e6dfd3; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-table { color: #39342d; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-table :where(th, td) { border-color: #eee9e1; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-table thead th { color: #62513c; background: #f4f0e9; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-table tbody tr:hover { background: #faf6ed; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-account-copy strong { color: #29251f; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-account-copy span,
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-email-cell { color: #625d54; }
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-role-badge--admin { color: #73550b; background: #fbf4dc; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-role-badge--staff,
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-role-badge--front_desk { color: #15558a; background: #eaf4fc; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-role-badge--customer { color: #166534; background: #eaf7ee; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-role-badge--housekeeping { color: #6b21a8; background: #f5edfc; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-role-badge--maintenance { color: #9a3412; background: #fff1e8; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-role-badge--manager,
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-role-badge--gm,
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-role-badge--revenue_manager { color: #9f1239; background: #fff0f3; }
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-row-actions .btn-role-edit { color: #795522; border-color: #dfd2b7; background: #fbf8f2; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-row-actions .btn-role-edit:hover { color: #fff; background: #795522; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-row-actions .btn-delete-user { color: #be123c; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-loading,
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-empty-state { color: #625d54; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-empty-state strong { color: #29251f; }
+html[data-theme="light"] body.portal-body:not(.customer-portal) .portal-view .users-management-page .users-pagination { border-color: #e6dfd3; }

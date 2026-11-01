@@ -241,8 +241,8 @@ export async function renderRooms(container) {
                     </div>
                     <small class="rooms-form-note rooms-image-preview-status" id="ar-image-preview-status" role="status" aria-live="polite">${room?.imageUrl ? "Đang tải ảnh hiện tại…" : "Chọn tệp ảnh để xem trước trước khi lưu."}</small>
                 </div>
-                <div class="form-group">
-                    <label class="form-label" for="ar-price">Đơn giá / đêm (VND) *</label>
+                    <div class="form-group">
+                        <label class="form-label" for="ar-price">Đơn giá / đêm (VND) *</label>
                     <input class="form-input" type="number" id="ar-price" min="1" max="99999999.99" step="0.01"
                         value="${editing ? escapeHtml(room.price) : ""}" required placeholder="Ví dụ: 500000">
                 </div>

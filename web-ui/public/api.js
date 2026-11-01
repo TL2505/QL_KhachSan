@@ -574,6 +574,7 @@ export async function submitBooking(payload) {
       totalAmount: Number(data.folio.balance), status: data.status, folio: data.folio,
       payment: data.payment || null };
   } catch (error) {
+    if (Number.isInteger(error?.status) && error.status >= 400 && error.status < 500) throw error;
     throw new ApiError(TRANSACTION_UNCONFIRMED, error.status || 503);
   }
 }

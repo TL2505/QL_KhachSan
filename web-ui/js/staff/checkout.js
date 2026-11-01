@@ -7,7 +7,7 @@ export async function renderCheckout(container, session) {
         <div class="checkout-view">
             <div class="page-header">
                 <div>
-                        <h1>Thanh toán & trả phòng</h1>
+                    <h1>Thanh toán & trả phòng</h1>
                     <p>Tra cứu khách đang lưu trú để thực hiện thanh toán và trả phòng.</p>
                 </div>
                 <span id="checkout-count" class="badge checkout-count" role="status">Đang tải danh sách</span>

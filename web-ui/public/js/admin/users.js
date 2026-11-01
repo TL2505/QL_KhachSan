@@ -71,7 +71,7 @@ function roleOption(role, selectedId, user = null) {
 
 export async function renderUsers(container, session) {
     container.innerHTML = `
-        <section class="users-management-page" data-theme="dark">
+        <section class="users-management-page">
             <header class="users-page-header">
                 <div class="users-page-heading">
                     <span class="users-page-icon" aria-hidden="true"><i data-lucide="users-round"></i></span>
@@ -170,7 +170,6 @@ export async function renderUsers(container, session) {
                         </div>
                     </form>
                 </div>
-                <form method="dialog" class="modal-backdrop"><button aria-label="Đóng hộp thoại">Đóng</button></form>
             </dialog>
 
             <dialog id="user-create-dialog" class="modal modal-middle users-role-dialog users-create-dialog" aria-labelledby="user-create-title">
@@ -219,7 +218,6 @@ export async function renderUsers(container, session) {
                         </div>
                     </form>
                 </div>
-                <form method="dialog" class="modal-backdrop"><button aria-label="Đóng hộp thoại">Đóng</button></form>
             </dialog>
 
             <dialog id="user-delete-dialog" class="modal modal-middle users-role-dialog" aria-labelledby="user-delete-title">
@@ -239,7 +237,6 @@ export async function renderUsers(container, session) {
                         <button id="user-delete-confirm" class="btn btn-error" type="button">Xóa tài khoản</button>
                     </div>
                 </div>
-                <form method="dialog" class="modal-backdrop"><button aria-label="Đóng hộp thoại">Đóng</button></form>
             </dialog>
         </section>
     `;
@@ -255,6 +252,11 @@ export async function renderUsers(container, session) {
     const roleDialog = document.getElementById("user-role-dialog");
     const createDialog = document.getElementById("user-create-dialog");
     const deleteDialog = document.getElementById("user-delete-dialog");
+    [roleDialog, createDialog, deleteDialog].forEach(dialog => {
+        dialog.addEventListener("click", event => {
+            if (event.target === dialog) dialog.close();
+        });
+    });
 
     let allUsers = [];
     let roles = [];
