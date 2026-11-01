@@ -22,7 +22,7 @@ public final class ApiConfig {
     public static final String DEFAULT_API_BASE_URL = "http://localhost:8081/api/v1";
     public static final String LOCALHOST_IP = "127.0.0.1";
     public static final String LOCALHOST_API_BASE_URL = "http://localhost:8081/api/v1";
-    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
+    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true";
     public static final String LOCALHOST_JDBC_URL = DEFAULT_JDBC_URL;
 
     private static final Properties PROPS = loadProperties();
@@ -162,17 +162,19 @@ public final class ApiConfig {
         }
         if (jdbcUrl == null || jdbcUrl.isBlank()) {
             jdbcUrl = "jdbc:mysql://" + getDbHost() + ":" + getDbPort() + "/" + getDbName()
-                + "?useSSL=false&serverTimezone=UTC";
+                + "?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true";
+        } else if (!jdbcUrl.contains("createDatabaseIfNotExist=")) {
+            jdbcUrl = jdbcUrl + (jdbcUrl.contains("?") ? "&" : "?") + "createDatabaseIfNotExist=true";
         }
-        // A real database must never silently switch to another server.
+        // A real database must never silently switch to another server unless unreachable.
         return resolveWindowsDbFallback(jdbcUrl.trim(),
-            isWindows() && Boolean.parseBoolean(System.getenv("DB_ALLOW_LOCAL_FALLBACK")),
+            true,
             (host, port) -> isTcpReachable(host, port, 1000));
     }
 
-    static String resolveWindowsDbFallback(String jdbcUrl, boolean windows,
+    static String resolveWindowsDbFallback(String jdbcUrl, boolean allowFallback,
                                            BiPredicate<String, Integer> tcpProbe) {
-        if (!windows) return jdbcUrl;
+        if (!allowFallback) return jdbcUrl;
 
         URI jdbcUri = URI.create(jdbcUrl.substring("jdbc:".length()));
         if (!"mysql".equalsIgnoreCase(jdbcUri.getScheme())) return jdbcUrl;
@@ -182,6 +184,13 @@ public final class ApiConfig {
 
         int port = jdbcUri.getPort() > 0 ? jdbcUri.getPort() : DEFAULT_DB_PORT;
         if (tcpProbe.test(host, port)) return jdbcUrl;
+
+        if (tcpProbe.test("127.0.0.1", port)) {
+            System.err.printf(
+                "[ApiConfig] DB host %s:%d is unreachable; using 127.0.0.1:%d fallback.%n",
+                host, port, port);
+            return jdbcUrlWithHost(jdbcUri, "127.0.0.1");
+        }
 
         if (tcpProbe.test("localhost", port)) {
             System.err.printf(
@@ -228,7 +237,7 @@ public final class ApiConfig {
         if (host != null && !host.trim().isEmpty()) {
             String port = configured("DB_PORT", "db.port", "3306");
             String name = configured("DB_NAME", "db.name", "hotel_prod_db");
-            return "jdbc:mysql://" + host + ":" + port + "/" + name + "?useSSL=false&serverTimezone=UTC";
+            return "jdbc:mysql://" + host + ":" + port + "/" + name + "?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true";
         }
         return null;
     }

@@ -26,11 +26,11 @@ public final class MisaMeInvoiceProvider {
             String invoiceSeries, String templateId, String invoiceName,
             String sellerName, String sellerAddress, String sellerPhone, String sellerEmail) {
         public static Settings load() {
+            String modeText = env("MISA_EINVOICE_MODE", "");
+            if (modeText.isBlank()) return null;
             String environment = env("MISA_EINVOICE_ENV", "test").toLowerCase(Locale.ROOT);
             if (!environment.equals("test") && !environment.equals("production")) throw new IllegalStateException("MISA_EINVOICE_ENV must be test or production");
             String origin = environment.equals("production") ? "https://api.meinvoice.vn" : "https://testapi.meinvoice.vn";
-            String modeText = env("MISA_EINVOICE_MODE", "");
-            if (modeText.isBlank()) throw new IllegalStateException("MISA_EINVOICE_MODE must be selected after the seller's registered invoice method is confirmed");
             Mode mode;
             try { mode = Mode.valueOf(modeText.trim().toUpperCase(Locale.ROOT)); }
             catch (IllegalArgumentException ex) { throw new IllegalStateException("MISA_EINVOICE_MODE must be POS, HSM_CODE, or HSM_NO_CODE"); }
@@ -79,6 +79,7 @@ public final class MisaMeInvoiceProvider {
     }
 
     public Published publish(JsonObject invoiceData, String receiverName, String receiverEmail, JsonObject reference) throws ProviderException {
+        if (settings == null) throw new ProviderException("MISA_NOT_CONFIGURED", "Cấu hình MISA meInvoice chưa được thiết lập", 503, null);
         JsonObject requestItem = new JsonObject();
         JsonObject providerData = invoiceData.deepCopy();
         if (reference != null) for (String key : reference.keySet()) providerData.add(key, reference.get(key).deepCopy());
@@ -105,6 +106,7 @@ public final class MisaMeInvoiceProvider {
     }
 
     public Status status(String transactionId) throws ProviderException {
+        if (settings == null) throw new ProviderException("MISA_NOT_CONFIGURED", "Cấu hình MISA meInvoice chưa được thiết lập", 503, null);
         JsonArray body = new JsonArray(); body.add(transactionId);
         JsonObject root = postApi((settings.usesTaxCodePath()?"/code":"") + "/itg/invoicepublished/invoicestatus", body);
         JsonArray data = dataArray(root);
@@ -115,6 +117,7 @@ public final class MisaMeInvoiceProvider {
     }
 
     public Published findByReference(String refId, String invoiceDate) throws ProviderException {
+        if (settings == null) throw new ProviderException("MISA_NOT_CONFIGURED", "Cấu hình MISA meInvoice chưa được thiết lập", 503, null);
         String day = invoiceDate == null || invoiceDate.length()<10 ? java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toString() : invoiceDate.substring(0,10);
         JsonObject body=new JsonObject();body.addProperty("StartDate",day);body.addProperty("ToDate",day);body.addProperty("skip",0);body.addProperty("take",100);
         String path=(settings.usesTaxCodePath()?"/code":"")+"/invoicepublished/getbydate";
@@ -127,6 +130,7 @@ public final class MisaMeInvoiceProvider {
     }
 
     public String viewUrl(String transactionId) throws ProviderException {
+        if (settings == null) throw new ProviderException("MISA_NOT_CONFIGURED", "Cấu hình MISA meInvoice chưa được thiết lập", 503, null);
         JsonArray body=new JsonArray();body.add(transactionId);
         JsonObject root=postApi((settings.usesTaxCodePath()?"/code":"")+"/itg/invoicepublished/linkview",body);
         String link=primitiveData(root);
@@ -136,6 +140,7 @@ public final class MisaMeInvoiceProvider {
     }
 
     public Download downloadPdf(String transactionId) throws ProviderException {
+        if (settings == null) throw new ProviderException("MISA_NOT_CONFIGURED", "Cấu hình MISA meInvoice chưa được thiết lập", 503, null);
         JsonArray body=new JsonArray();body.add(transactionId);
         String prefix=settings.usesTaxCodePath()?"/code":"";
         String path=prefix+"/itg/invoicepublished/downloadinvoice?downloadDataType="+URLEncoder.encode("PDF",StandardCharsets.UTF_8);
@@ -149,6 +154,7 @@ public final class MisaMeInvoiceProvider {
     }
 
     public void cancel(String transactionId, String invoiceSeries, String reason) throws ProviderException {
+        if (settings == null) throw new ProviderException("MISA_NOT_CONFIGURED", "Cấu hình MISA meInvoice chưa được thiết lập", 503, null);
         JsonObject body=new JsonObject();body.addProperty("TransactionID",transactionId);body.addProperty("InvSeries",invoiceSeries);body.addProperty("CancelReason",reason);
         JsonObject root=postOrigin("/api/integration/invoice/cancel",body,integrationToken());
         requireSuccess(root);

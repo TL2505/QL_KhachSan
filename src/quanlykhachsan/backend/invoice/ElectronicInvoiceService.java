@@ -37,6 +37,7 @@ public final class ElectronicInvoiceService {
 
     private JsonObject createAndPublish(long invoiceId, Long parentId, String kind, String reason, int actor) throws Exception {
         MisaMeInvoiceProvider.Settings settings = provider.settings();
+        if (settings == null) throw new Conflict("Cấu hình MISA meInvoice chưa được thiết lập.");
         Snapshot snapshot;
         Snapshot publishSnapshot;
         JsonObject payload;

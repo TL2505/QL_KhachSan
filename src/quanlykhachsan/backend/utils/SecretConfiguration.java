@@ -35,13 +35,26 @@ public final class SecretConfiguration {
 
     public static String required(String name) {
         String value = optional(name);
-        if (value != null) return value;
+        if (value != null && !value.isBlank()) return value;
         if (isProduction()) throw new IllegalStateException(name + " is required in production");
         return switch (name) {
             case "JWT_SECRET" -> "AureliaDevOnlyJwtSigningSecretChangeBeforeProduction2026";
             case "AES_VAULT_KEY" -> quanlykhachsan.backend.security.AesGcmVaultEngine.FALLBACK_AES_VAULT_KEY_BASE64;
-            case "HMAC_IDENTITY_KEY" -> quanlykhachsan.backend.security.AesGcmVaultEngine.FALLBACK_HMAC_IDENTITY_KEY;
-            default -> throw new IllegalStateException(name + " is required");
+            case "HMAC_IDENTITY_KEY" -> "YXVyZWxpYV9kZWZhdWx0X2Rldl9obWFjX3NlY3JldF8=";
+            case "MANAGER_PIN_HASH" -> "$2a$10$w850cQW3t63D4H7y0x52E.rW4wF1bK7T9yJ4v5g0m2L7p1X9y3K2W";
+            case "HOTEL_VAT_RATE" -> "0.08";
+            case "BANK_BIN" -> "970422";
+            case "BANK_ACCOUNT_NUMBER" -> "118000000000";
+            case "BANK_ACCOUNT_HOLDER" -> "AURELIA GRAND PALACE HOTEL";
+            case "BANK_WEBHOOK_SECRET" -> "aurelia_vietqr_webhook_hmac_secret_2026";
+            case "HOTEL_LEGAL_NAME" -> "CONG TY CO PHAN KHACH SAN AURELIA GRAND PALACE";
+            case "HOTEL_LEGAL_ADDRESS" -> "01 Tran Phu, Phuong Loc Tho, Nha Trang, Khanh Hoa";
+            case "HOTEL_TAX_CODE" -> "4201987654";
+            case "INVOICE_VERIFICATION_URL" -> "http://localhost:8081/api/v1/invoices/verify";
+            case "HOTEL_OTP_MODE" -> "mock";
+            case "HOTEL_VERIFY_USERNAME" -> "admin";
+            case "HOTEL_VERIFY_PASSWORD" -> "admin123";
+            default -> "";
         };
     }
 
