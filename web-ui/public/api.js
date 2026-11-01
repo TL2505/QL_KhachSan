@@ -138,17 +138,12 @@ export function clearAuthSession() {
   write('token', null);
 }
 
-function announceSessionExpiryIfCurrent(session) {
-  const currentSession = getAuthSession();
-  const sessionHasNotChanged = session?.token
-    ? currentSession?.token === session.token
-    : !currentSession?.token;
-  if (!sessionHasNotChanged) return false;
+function expireAuthSessionIfCurrent(session) {
+  if (session?.token && getAuthSession()?.token !== session.token) return;
   clearAuthSession();
   if (typeof window !== 'undefined' && window.dispatchEvent) {
     window.dispatchEvent(new Event('hotel:session-expired'));
   }
-  return true;
 }
 
 function messageFor(status) {
@@ -227,9 +222,7 @@ export async function apiFetch(path, init = {}) {
     }
   }
 
-  if (!isPublic && response.status === 401) {
-    announceSessionExpiryIfCurrent(session);
-  }
+  if (!isPublic && response.status === 401) expireAuthSessionIfCurrent(session);
 
   if (response.status === 204) return null;
 
@@ -276,7 +269,7 @@ export async function fetchAuthenticatedFile(path, init = {}) {
     if (error.name === 'AbortError') throw error;
     throw new ApiError('Không thể tải tệp. Vui lòng thử lại.');
   }
-  if (response.status === 401) announceSessionExpiryIfCurrent(session);
+  if (response.status === 401) expireAuthSessionIfCurrent(session);
   if (!response.ok) throw new ApiError(messageFor(response.status), response.status, response.headers.get('Retry-After'));
   if (!response.headers.get('Content-Type')?.toLowerCase().includes('application/pdf')) {
     throw new ApiError('Máy chủ không trả về tệp PDF hợp lệ.', response.status);

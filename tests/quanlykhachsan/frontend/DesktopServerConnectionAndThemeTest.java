@@ -41,10 +41,10 @@ public class DesktopServerConnectionAndThemeTest {
     public void testDesktopConnectionConfiguration() {
         assertEquals("localhost", ApiConfig.DEFAULT_SERVER_HOST);
         assertEquals("http://localhost:8081/api/v1", ApiConfig.DEFAULT_API_BASE_URL);
-        assertEquals("jdbc:mysql://localhost:3306/hotel_runtime_20261022?useSSL=false&serverTimezone=UTC", ApiConfig.DEFAULT_JDBC_URL);
+        assertEquals("jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC", ApiConfig.DEFAULT_JDBC_URL);
 
         assertEquals("http://localhost:8081/api/v1", DBConnection.DEFAULT_API_BASE_URL);
-        assertEquals("jdbc:mysql://localhost:3306/hotel_runtime_20261022?useSSL=false&serverTimezone=UTC", DBConnection.DEFAULT_JDBC_URL);
+        assertEquals("jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC", DBConnection.DEFAULT_JDBC_URL);
 
         String activeApiUrl = ApiConfig.getBaseUrl();
         assertNotNull(activeApiUrl);
@@ -52,7 +52,7 @@ public class DesktopServerConnectionAndThemeTest {
 
         String activeJdbcUrl = ApiConfig.getJdbcUrl();
         assertNotNull(activeJdbcUrl);
-        assertTrue(activeJdbcUrl.contains("hotel_runtime_20261022"), "JDBC URL must target the local QA database");
+        assertTrue(activeJdbcUrl.contains("hotel_prod_db"), "JDBC URL must use the configured default schema");
     }
 
     @Test

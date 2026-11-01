@@ -35,6 +35,7 @@ public class JwtFilter extends Filter {
         "/api/v1/health",
         "/health",
         "/api/v1/rooms/availability",
+        "/api/v1/rooms/available",
         "/api/v1/pricing/quote",
         "/api/v1/promotions/validate",
         "/api/v1/bookings/public",
@@ -81,6 +82,9 @@ public class JwtFilter extends Filter {
                 || path.endsWith("/auth/register")
                 || path.endsWith("/health")
                 || path.endsWith("/reviews/public");
+        boolean permissivePublic = path.equals("/api/v1/bookings/public")
+                || path.equals("/api/v1/rooms/availability")
+                || path.equals("/api/v1/rooms/available");
 
         boolean isGuestRoleHeader = exchange.getRequestHeaders().containsKey("X-User-Role")
                 && "guest".equalsIgnoreCase(exchange.getRequestHeaders().getFirst("X-User-Role"));
@@ -97,6 +101,7 @@ public class JwtFilter extends Filter {
         }
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            if (permissivePublic) { continuePublic(exchange, chain); return; }
             ApiResponseUtil.sendError(
                     exchange,
                     401,
@@ -108,6 +113,7 @@ public class JwtFilter extends Filter {
 
         String token = authHeader.substring(7).trim();
         if (token.isEmpty()) {
+            if (permissivePublic) { continuePublic(exchange, chain); return; }
             ApiResponseUtil.sendError(
                     exchange,
                     401,
@@ -150,10 +156,12 @@ public class JwtFilter extends Filter {
             if (role == null || !Set.of(
                     "admin", "staff", "customer", "guest", "front_desk", "housekeeping", "maintenance", "f&b",
                     "ADMIN", "STAFF", "CUSTOMER", "1", "2", "3", "manager", "gm", "revenue_manager").contains(role)) {
+                if (permissivePublic) { continuePublic(exchange, chain); return; }
                 ApiResponseUtil.sendError(exchange, 403, "ERR_403_FORBIDDEN", "Role is not authorized");
                 return;
             }
         } catch (JwtException | IllegalArgumentException e) {
+            if (permissivePublic) { continuePublic(exchange, chain); return; }
             logger.warn("JWT authentication failed for path [{}]: {}", path, e.getMessage());
             ApiResponseUtil.sendError(
                     exchange,
@@ -167,10 +175,12 @@ public class JwtFilter extends Filter {
         if (currentRoleValidator != null && userId > 0) {
             try {
                 if (!currentRoleValidator.matches(userId, role)) {
+                    if (permissivePublic) { continuePublic(exchange, chain); return; }
                     ApiResponseUtil.sendError(exchange, 401, "ERR_401_ROLE_CHANGED", "Account permissions changed; sign in again");
                     return;
                 }
             } catch (java.sql.SQLException e) {
+                if (permissivePublic) { continuePublic(exchange, chain); return; }
                 logger.error("Current account role could not be checked for user [{}]", userId, e);
                 ApiResponseUtil.sendError(exchange, 503, "ERR_503_AUTHORIZATION_STATE", "Account permissions could not be verified");
                 return;
@@ -196,5 +206,12 @@ public class JwtFilter extends Filter {
      */
     private boolean isWhitelisted(String path) {
         return PUBLIC_PATHS.contains(path) || path.equals("/health");
+    }
+
+    private static void continuePublic(HttpExchange exchange, Chain chain) throws IOException {
+        if ("guest".equalsIgnoreCase(exchange.getRequestHeaders().getFirst("X-User-Role"))) {
+            exchange.setAttribute("role", "guest");
+        }
+        chain.doFilter(exchange);
     }
 }

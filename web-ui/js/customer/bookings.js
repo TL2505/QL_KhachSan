@@ -285,7 +285,7 @@ export async function renderBookings(container, session) {
           <div class="mt-2 text-xs text-slate-400" id="review-booking-summary">Kỳ nghỉ: ---</div>
         </div>
 
-        <form id="stay-review-form" class="space-y-4">
+        <form id="stay-review-form" class="space-y-4" onsubmit="return false;">
           <input type="hidden" id="review-booking-id" value="">
 
           <!-- 4 Interactive Star-Rating Rows -->

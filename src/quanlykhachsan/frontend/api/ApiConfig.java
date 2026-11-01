@@ -22,8 +22,8 @@ public final class ApiConfig {
     public static final String DEFAULT_API_BASE_URL = "http://localhost:8081/api/v1";
     public static final String LOCALHOST_IP = "127.0.0.1";
     public static final String LOCALHOST_API_BASE_URL = "http://localhost:8081/api/v1";
-    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_runtime_20261022?useSSL=false&serverTimezone=UTC";
-    public static final String LOCALHOST_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_runtime_20261022?useSSL=false&serverTimezone=UTC";
+    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
+    public static final String LOCALHOST_JDBC_URL = DEFAULT_JDBC_URL;
 
     private static final Properties PROPS = loadProperties();
 
@@ -89,11 +89,11 @@ public final class ApiConfig {
     public static synchronized String trySmartFallback() { return null; }
 
     public static String getDbHost() {
-        return getPropertyOrEnv("db.host", "DB_HOST", "localhost");
+        return configured("DB_HOST", "db.host", "localhost");
     }
 
     public static int getDbPort() {
-        String p = getPropertyOrEnv("db.port", "DB_PORT", String.valueOf(DEFAULT_DB_PORT));
+        String p = configured("DB_PORT", "db.port", String.valueOf(DEFAULT_DB_PORT));
         try {
             return Integer.parseInt(p);
         } catch (Exception e) {
@@ -102,11 +102,11 @@ public final class ApiConfig {
     }
 
     public static String getDbName() {
-        return getPropertyOrEnv("db.name", "DB_NAME", "hotel_runtime_20261022");
+        return configured("DB_NAME", "db.name", "hotel_prod_db");
     }
 
     public static String getDbUser() {
-        return getPropertyOrEnv("db.user", "DB_USER", "root");
+        return configured("DB_USER", "db.user", "root");
     }
 
     public static String getDbPassword() {
@@ -114,7 +114,8 @@ public final class ApiConfig {
         if(file != null && !file.isBlank())return quanlykhachsan.backend.utils.SecretConfiguration.required("DB_PASSWORD");
         String password = System.getenv("DB_PASSWORD");
         if (password != null) return password; // Empty local passwords and whitespace are explicit values.
-        return getPropertyOrEnv("db.password", "DB_PASSWORD", "");
+        password = quanlykhachsan.backend.utils.SecretConfiguration.optional("DB_PASSWORD");
+        return password != null ? password : PROPS.getProperty("db.password", "");
     }
 
     /**
@@ -124,7 +125,7 @@ public final class ApiConfig {
      * 3. Localhost default when no server is configured.
      */
     private static String resolveBaseUrl() {
-        String explicit=System.getProperty("pms.backend.url",System.getenv("PMS_BACKEND_URL"));
+        String explicit=System.getProperty("pms.backend.url",configured("PMS_BACKEND_URL","pms.backend.url",null));
         if(explicit!=null&&!explicit.isBlank())return normalizeApiUrl(explicit);
         String env=getEnvUrl();if(env!=null)return normalizeApiUrl(env);
         return normalizeApiUrl(PROPS.getProperty("server.url",LOCALHOST_API_BASE_URL));
@@ -132,7 +133,7 @@ public final class ApiConfig {
 
     private static String getEnvUrl() {
         for (String k : new String[]{"API_BASE_URL", "BACKEND_URL", "SERVER_URL"}) {
-            String val = System.getenv(k);
+            String val = quanlykhachsan.backend.utils.SecretConfiguration.optional(k);
             if (val != null && !val.trim().isEmpty()) {
                 return val.trim();
             }
@@ -157,7 +158,7 @@ public final class ApiConfig {
     private static String resolveJdbcUrl() {
         String jdbcUrl = getEnvJdbc();
         if (jdbcUrl == null) {
-            jdbcUrl = PROPS.getProperty("db.url");
+            jdbcUrl = configured("DB_URL", "db.url", null);
         }
         if (jdbcUrl == null || jdbcUrl.isBlank()) {
             jdbcUrl = "jdbc:mysql://" + getDbHost() + ":" + getDbPort() + "/" + getDbName()
@@ -216,15 +217,17 @@ public final class ApiConfig {
 
     private static String getEnvJdbc() {
         for (String k : new String[]{"DB_URL", "JDBC_URL"}) {
-            String val = System.getenv(k);
+            String val = "DB_URL".equals(k)
+                ? quanlykhachsan.backend.utils.SecretConfiguration.optional(k)
+                : System.getenv(k);
             if (val != null && !val.trim().isEmpty()) {
                 return val.trim();
             }
         }
-        String host = System.getenv("DB_HOST");
+        String host = configured("DB_HOST", "db.host", null);
         if (host != null && !host.trim().isEmpty()) {
-            String port = System.getenv("DB_PORT") != null ? System.getenv("DB_PORT") : "3306";
-            String name = System.getenv("DB_NAME") != null ? System.getenv("DB_NAME") : "hotel_runtime_20261022";
+            String port = configured("DB_PORT", "db.port", "3306");
+            String name = configured("DB_NAME", "db.name", "hotel_prod_db");
             return "jdbc:mysql://" + host + ":" + port + "/" + name + "?useSSL=false&serverTimezone=UTC";
         }
         return null;
@@ -236,6 +239,13 @@ public final class ApiConfig {
         val = PROPS.getProperty(propKey);
         if (val != null && !val.trim().isEmpty()) return val.trim();
         return fallback;
+    }
+
+    private static String configured(String envKey, String propKey, String fallback) {
+        String value = quanlykhachsan.backend.utils.SecretConfiguration.optional(envKey);
+        if (value != null && !value.isBlank()) return value;
+        value = PROPS.getProperty(propKey);
+        return value != null && !value.isBlank() ? value.trim() : fallback;
     }
 
     public static boolean isTcpReachable(String host, int port, int timeoutMs) {

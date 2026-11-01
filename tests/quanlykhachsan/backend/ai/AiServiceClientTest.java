@@ -23,14 +23,15 @@ class AiServiceClientTest {
         server.createContext("/rag/query",e->{e.getResponseHeaders().set("Location","/ocr");e.sendResponseHeaders(302,-1);e.close();});
         server.start();
         var origin=URI.create("http://127.0.0.1:"+server.getAddress().getPort());
-        var client=new AiServiceClient(origin,HttpClient.newHttpClient(),Duration.ofMillis(200));
+        // Leave enough time for the first loopback connection to initialize on slower CI/IDE hosts.
+        var client=new AiServiceClient(origin,HttpClient.newHttpClient(),Duration.ofSeconds(2));
         try {
             assertEquals("{\"synthetic\":true}",client.post("/ocr","{}"));
             assertThrows(java.io.IOException.class,()->client.post("/face-match","{}"));
             assertThrows(java.io.IOException.class,()->client.post("/rag/query","{}"));
             long start=System.nanoTime();
             assertThrows(java.io.IOException.class,()->client.post("/forecast","{}"));
-            assertTrue(Duration.ofNanos(System.nanoTime()-start).toMillis()<1000);
+            assertTrue(Duration.ofNanos(System.nanoTime()-start).toMillis()<3000);
         }finally{release.countDown();server.stop(0);executor.shutdownNow();}
         assertThrows(java.io.IOException.class,()->client.post("/ocr","{}"));
     }

@@ -20,6 +20,24 @@ public final class PublicBookingService {
     }
 
     public Result reserve(String key,Request request,int customerId,String channel) throws Exception {
+        var roomLocks=quanlykhachsan.backend.service.RoomLockManager.getInstance();
+        String lockChannel="Web".equalsIgnoreCase(channel)?"WEB_GUEST":"STAFF_POS";
+        if(!roomLocks.acquireLock(request.roomId(),lockChannel,key,600))
+            throw new IllegalStateException("Room is being reserved by another guest; please choose another room or retry shortly");
+        try {
+            Result result=reserveWithRoomLock(key,request,customerId,channel);
+            boolean qrHold="Web".equalsIgnoreCase(channel) && "qr".equalsIgnoreCase(request.paymentChoice())
+                && result.status()>=200 && result.status()<300;
+            if(qrHold)return result;
+            roomLocks.releaseLock(request.roomId(),key);
+            return result;
+        } catch(Exception ex) {
+            roomLocks.releaseLock(request.roomId(),key);
+            throw ex;
+        }
+    }
+
+    private Result reserveWithRoomLock(String key,Request request,int customerId,String channel) throws Exception {
         StayWindow stay=request.stay();
         String hash=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(
             (channel+"|"+customerId+"|"+request).getBytes(StandardCharsets.UTF_8)));

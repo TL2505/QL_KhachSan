@@ -56,7 +56,9 @@ public final class FolioPaymentService {
                 try(PreparedStatement q=c.prepareStatement("INSERT INTO bank_webhook_logs(bank_trans_id,folio_id,amount,signature,status,raw_payload,response_body,business_date) SELECT ?,?,?,?,'PROCESSED',?,?,business_date FROM hotel_business_state WHERE id=1")) {
                     q.setString(1,payment.bankTransId());q.setLong(2,folio);q.setBigDecimal(3,payment.amount());q.setString(4,payment.signature());q.setString(5,payment.rawPayload());q.setString(6,response);if(q.executeUpdate()!=1)throw new SQLException("Bank business date missing");
                 }
-                delivery(c,payment.bankTransId(),"PROCESSED");c.commit();return response;
+                delivery(c,payment.bankTransId(),"PROCESSED");c.commit();
+                quanlykhachsan.backend.service.RoomLockManager.getInstance().releaseLockForBooking(c,locked.bookingId());
+                return response;
             }catch(SQLException | RuntimeException ex){c.rollback();throw ex;}
             finally{c.setAutoCommit(true);locks.releaseLock(c,lockKey);}
         }

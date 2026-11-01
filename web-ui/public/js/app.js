@@ -1344,7 +1344,6 @@ function watchHomePayment(booking) {
       if(booking!==state.booking||!status.isConnected)return;
       status.textContent=paymentLabel(payment)+(paymentState(payment)==='PARTIAL'?` · Còn ${Number(payment.remaining_amount).toLocaleString('vi-VN')} đ`:'');
       if(paymentState(payment)==='PAID'){clearInterval(booking.countdownTimer);booking.countdownTimer=null;return;}
-      if(String(payment.booking_status||'').toLowerCase()==='cancelled'){clearTimeout(booking.paymentPollTimer);booking.paymentPollTimer=null;return;}
     }catch{status.textContent='Chưa lấy được xác nhận thanh toán. Đặt phòng vẫn được lưu; vui lòng kiểm tra lịch sử.';}
     booking.paymentPollTimer=setTimeout(poll,3000);
   };booking.paymentPollTimer=setTimeout(poll,2500);

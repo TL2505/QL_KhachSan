@@ -24,3 +24,4 @@ v4_12_account_avatars.sql
 v4_13_housekeeping_task_assignments.sql
 v4_14_housekeeping_workbench.sql
 v4_15_housekeeping_shift_handovers.sql
+12_unified_5star_booking_engine.sql

@@ -1,0 +1,153 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "./public/housekeeping-preview.html";
+@source "./public/js/housekeeping-preview.js";
+@plugin "daisyui" {
+  themes: light --default;
+  root: ".housekeeping-demo";
+  include: button, badge, card, input, select, stats, table, menu;
+  logs: false;
+}
+
+.housekeeping-demo {
+  color-scheme: light;
+  --color-primary: #c6a04c;
+  --color-primary-content: #201a0d;
+  --color-base-100: #fffdf9;
+  --color-base-200: #f5f1e9;
+  --color-base-300: #e7dfd1;
+  --color-base-content: #27241e;
+  --color-neutral: #211f1b;
+  --color-neutral-content: #f8f4ea;
+  --color-info: #4d81a8;
+  --color-info-content: #ffffff;
+  --color-success: #31856b;
+  --color-success-content: #ffffff;
+  --color-warning: #b47d18;
+  --color-warning-content: #231a09;
+  --color-error: #bb4d51;
+  --color-error-content: #ffffff;
+  --radius-selector: .5rem;
+  --radius-field: .65rem;
+  --radius-box: 1rem;
+  --size-selector: .25rem;
+  --size-field: .25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+  min-height: 100vh;
+  background: #f7f4ed;
+  color: #27241e;
+  font-family: Inter, "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.housekeeping-demo *,
+.housekeeping-demo *::before,
+.housekeeping-demo *::after { box-sizing: border-box; }
+
+body { margin: 0; background: #f7f4ed; }
+button, input, select { font: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid #2f80ed; outline-offset: 2px; }
+
+.hk-shell { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+.hk-sidebar { display: flex; flex-direction: column; min-height: 100vh; padding: 22px 14px 16px; color: #f8f4ea; background: #211f1b; }
+.hk-brand { display: flex; align-items: center; gap: 11px; padding: 0 9px 23px; border-bottom: 1px solid rgba(224, 190, 112, .26); }
+.hk-brand-mark { display: grid; width: 38px; height: 38px; place-items: center; flex: 0 0 auto; border: 1px solid #c6a04c; border-radius: 50%; color: #e4c36f; }
+.hk-brand-name { margin: 0; font-family: Georgia, serif; font-size: 19px; font-weight: 700; letter-spacing: .01em; }
+.hk-brand-caption { margin: 2px 0 0; color: #dfbf70; font-size: 9px; font-weight: 700; letter-spacing: .14em; }
+.hk-section-label { margin: 25px 10px 9px; color: #b7afa0; font-size: 10px; font-weight: 700; letter-spacing: .13em; }
+.hk-sidebar .menu { gap: 5px; padding: 0; }
+.hk-sidebar .menu li > button { width: 100%; min-height: 44px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #eee8db; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer; box-shadow: none; }
+.hk-sidebar .menu li > button:hover { background: rgba(255,255,255,.07); }
+.hk-sidebar .menu li > button[aria-current="page"] { border-color: rgba(224,190,112,.32); background: rgba(198,160,76,.13); color: #f1d482; }
+.hk-nav-icon { width: 17px; height: 17px; flex: 0 0 auto; color: #dfbf70; }
+.hk-sidebar-spacer { flex: 1; }
+.hk-account { display: flex; align-items: center; gap: 10px; padding: 16px 8px 2px; border-top: 1px solid rgba(224, 190, 112, .26); }
+.hk-avatar { display: grid; width: 35px; height: 35px; place-items: center; border-radius: 50%; background: #3a3529; color: #f1d482; font-weight: 700; }
+.hk-account strong, .hk-account small { display: block; }
+.hk-account strong { font-size: 12px; }
+.hk-account small { margin-top: 2px; color: #b7afa0; font-size: 10px; }
+.hk-main { min-width: 0; padding: 0 clamp(18px, 3.2vw, 52px) 42px; }
+.hk-topbar { display: flex; min-height: 70px; align-items: center; justify-content: flex-end; gap: 12px; border-bottom: 1px solid #e5ddd0; }
+.hk-prototype-tag { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border: 1px solid #e6d8b6; border-radius: 999px; background: #fffaf0; color: #785d22; font-size: 11px; font-weight: 700; }
+.hk-prototype-dot { width: 7px; height: 7px; border-radius: 50%; background: #c69a34; }
+.hk-page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; padding: 28px 0 17px; border-bottom: 1px solid #ddcfac; }
+.hk-page-header h1 { margin: 0; color: #27241e; font-family: Georgia, "Times New Roman", serif; font-size: clamp(26px, 3vw, 34px); font-weight: 600; line-height: 1.2; }
+.hk-page-header p { margin: 8px 0 0; color: #777166; font-size: 13px; }
+.hk-shift { flex: 0 0 auto; padding: 8px 12px; border: 1px solid #e3d8c6; border-radius: 9px; background: #fffdf9; color: #645c4e; font-size: 12px; }
+.hk-demo-note { display: flex; align-items: flex-start; gap: 9px; margin: 18px 0 20px; padding: 12px 14px; border: 1px solid #cbdbe6; border-radius: 10px; background: #eef5f9; color: #39566c; font-size: 12px; }
+.hk-demo-note svg { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 1px; }
+.hk-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 22px; }
+.hk-stats .stat { min-width: 0; border: 1px solid #e4dccf; border-radius: 13px; background: #fffdfa; box-shadow: 0 8px 18px rgba(50,42,26,.035); }
+.hk-stats .stat-title { color: #777166; font-size: 11px; font-weight: 600; }
+.hk-stats .stat-value { margin-top: 3px; color: #2c2923; font-size: clamp(24px, 2.4vw, 31px); line-height: 1.3; font-variant-numeric: tabular-nums; }
+.hk-stats .stat-desc { color: #827b6f; font-size: 11px; }
+.hk-panel { overflow: hidden; border: 1px solid #e3dbce; background: #fffdfa; box-shadow: 0 10px 26px rgba(42,35,21,.045); }
+.hk-panel .card-body { gap: 17px; padding: clamp(16px, 2.2vw, 24px); }
+.hk-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.hk-panel-head h2 { margin: 0; color: #2e2a23; font-family: Georgia, "Times New Roman", serif; font-size: 21px; font-weight: 600; }
+.hk-panel-head p { margin: 5px 0 0; color: #7c756a; font-size: 12px; }
+.hk-queue-count { flex: 0 0 auto; color: #78622d; font-size: 11px; font-weight: 700; }
+.hk-filter-row { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(170px, 220px) auto; gap: 10px; }
+.hk-filter-row .input, .hk-filter-row .select { width: 100%; min-height: 42px; border-color: #ddd5c8; background: #fff; color: #2e2a23; font-size: 12px; }
+.hk-filter-row .btn { min-height: 42px; height: auto; padding: 0 16px; border-color: #ded5c6; background: #f3efe6; color: #534a3d; font-size: 11px; }
+.hk-table-wrap { overflow-x: auto; border: 1px solid #e8e0d3; border-radius: 10px; }
+.hk-table { min-width: 970px; font-size: 12px; }
+.hk-table thead th { padding: 12px 14px; background: #f2eee6; color: #655b4b; font-size: 10px; font-weight: 800; letter-spacing: .035em; text-transform: uppercase; white-space: nowrap; }
+.hk-table tbody tr { border-color: #eee8dc; }
+.hk-table tbody tr:hover { background: #fbf8f2; }
+.hk-table tbody td { padding: 14px; color: #5e594e; vertical-align: middle; }
+.hk-room-cell strong, .hk-room-cell small { display: block; }
+.hk-room-cell strong { color: #302d27; font-size: 13px; }
+.hk-room-cell small { margin-top: 3px; color: #827a6f; font-size: 11px; }
+.hk-hand-off strong { display: block; color: #39352d; font-size: 12px; font-weight: 600; }
+.hk-hand-off small { display: block; margin-top: 3px; color: #81796c; font-size: 11px; }
+.hk-next-checkin { white-space: nowrap; }
+.hk-priority-cell { min-width: 110px; }
+.hk-priority-cell .badge, .hk-table .badge { height: auto; padding: 5px 9px; border-width: 1px; font-size: 10px; font-weight: 700; }
+.hk-status-text { display: block; margin-top: 4px; color: #81796c; font-size: 10px; }
+.hk-action-cell { min-width: 165px; text-align: right; }
+.hk-action-cell .btn { min-height: 35px; height: auto; padding: 6px 11px; font-size: 11px; white-space: nowrap; }
+.hk-btn-complete { border: 1px solid #b5d8cb; background: #e6f4ee; color: #216950; }
+.hk-btn-complete:hover { background: #d9eee5; }
+.hk-row-done { opacity: .76; }
+.hk-empty { padding: 30px !important; color: #81796c !important; text-align: center; }
+.hk-table-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #81796c; font-size: 11px; }
+.hk-table-footer strong { color: #514a3d; font-variant-numeric: tabular-nums; }
+.hk-priority-note { display: flex; align-items: flex-start; gap: 10px; padding: 13px 15px; border: 1px solid #ebe2cf; border-radius: 10px; background: #fbf8f1; color: #716754; font-size: 11px; line-height: 1.6; }
+.hk-priority-note strong { display: block; margin-bottom: 2px; color: #4d4536; font-size: 12px; }
+.hk-priority-icon { width: 17px; height: 17px; flex: 0 0 auto; color: #a47d2b; }
+.hk-toast { position: fixed; right: 22px; bottom: 22px; z-index: 20; max-width: min(420px, calc(100vw - 32px)); padding: 13px 16px; border: 1px solid #b8d8ca; border-radius: 12px; background: #edf8f2; color: #235e48; box-shadow: 0 12px 28px rgba(28,45,35,.16); font-size: 12px; font-weight: 600; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+.hk-toast.is-visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 1080px) {
+  .hk-shell { grid-template-columns: 205px minmax(0, 1fr); }
+  .hk-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .hk-shell { display: block; }
+  .hk-sidebar { min-height: 0; padding: 12px 14px; }
+  .hk-brand { padding-bottom: 11px; }
+  .hk-section-label, .hk-sidebar-spacer, .hk-account { display: none; }
+  .hk-sidebar .menu { display: flex; flex-direction: row; gap: 4px; margin-top: 10px; overflow-x: auto; }
+  .hk-sidebar .menu li { flex: 0 0 auto; }
+  .hk-sidebar .menu li > button { min-height: 38px; padding: 7px 10px; font-size: 11px; }
+  .hk-sidebar .menu li:nth-child(n+3) { display: none; }
+  .hk-main { padding: 0 14px 28px; }
+  .hk-topbar { min-height: 52px; }
+  .hk-page-header { align-items: flex-start; flex-direction: column; padding-top: 22px; }
+  .hk-shift { align-self: flex-start; }
+  .hk-stats { gap: 9px; }
+  .hk-stats .stat { padding: 13px; }
+  .hk-stats .stat-value { font-size: 23px; }
+  .hk-filter-row { grid-template-columns: 1fr; }
+  .hk-panel .card-body { padding: 14px; }
+  .hk-panel-head { flex-direction: column; gap: 5px; }
+  .hk-table-footer { align-items: flex-start; flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hk-toast { transition: none; }
+}

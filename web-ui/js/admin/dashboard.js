@@ -125,7 +125,7 @@ function drawRevenueChart(data, canvas) {
         gradient.addColorStop(0, "#d97706");
         gradient.addColorStop(1, "rgba(217, 119, 6, 0.2)");
         ctx.fillStyle = gradient;
-        
+
         ctx.beginPath();
         ctx.roundRect(x - barWidth/2, y, barWidth, barHeight, [4, 4, 0, 0]);
         ctx.fill();

@@ -123,6 +123,7 @@ public final class FolioDao {
               + "FROM bookings b WHERE b.id=?")){
             q.setInt(1,bookingId);if(q.executeUpdate()!=1)throw new SQLException("Cleaning task could not be created");
         }
+        quanlykhachsan.backend.room.HighVelocityTurnoverService.dispatchForCheckout(c,bookingId);
         // Physical checkout and room turnover may complete while a posted
         // incidental charge is still open. Finalize the invoice only after all
         // folios settle; FolioService will finalize it after a later payment.

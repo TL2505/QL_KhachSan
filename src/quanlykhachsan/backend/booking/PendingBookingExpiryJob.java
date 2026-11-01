@@ -15,6 +15,7 @@ public final class PendingBookingExpiryJob implements AutoCloseable {
         c.setAutoCommit(false);
         try {
             var ids=new java.util.ArrayList<Integer>();
+            var cancelledIds=new java.util.ArrayList<Integer>();
             long totalMinutes=quanlykhachsan.backend.payment.PaymentStatus.QR_WINDOW_MINUTES+quanlykhachsan.backend.payment.PaymentStatus.QR_WEBHOOK_GRACE_MINUTES;
             String eligibleSql="SELECT b.id FROM bookings b WHERE b.status='pending' AND b.customer_type='Web' AND b.payment_choice='qr' AND b.created_at<=DATE_SUB(CURRENT_TIMESTAMP,INTERVAL "+totalMinutes+" MINUTE) AND NOT EXISTS(SELECT 1 FROM invoices i WHERE i.booking_id=b.id) ORDER BY b.id LIMIT 50 FOR UPDATE";
             try(var q=c.prepareStatement(eligibleSql);var r=q.executeQuery()){while(r.next())ids.add(r.getInt(1));}
@@ -33,11 +34,14 @@ public final class PendingBookingExpiryJob implements AutoCloseable {
                 }
                 try(var q=c.prepareStatement("UPDATE payment_links SET state='EXPIRED' WHERE folio_id IN (SELECT id FROM folios WHERE booking_id=?) AND state IN ('CREATING','PENDING')")){q.setInt(1,id);q.executeUpdate();}
                 try(var q=c.prepareStatement("UPDATE folios SET balance=0,status='closed' WHERE booking_id=?")){q.setInt(1,id);q.executeUpdate();}
-                int cancelled;try(var q=c.prepareStatement("UPDATE bookings SET status='cancelled' WHERE id=? AND status='pending'")){q.setInt(1,id);cancelled=q.executeUpdate();expired+=cancelled;}
+                int cancelled;try(var q=c.prepareStatement("UPDATE bookings SET status='cancelled' WHERE id=? AND status='pending'")){q.setInt(1,id);cancelled=q.executeUpdate();expired+=cancelled;if(cancelled==1)cancelledIds.add(id);}
                 if(cancelled==1)quanlykhachsan.backend.notification.LifecycleNotifications.booking(c,id,"booking_cancelled","booking-qr-expired:"+id,"Đặt phòng đã hủy do QR hết hạn","Phiên thanh toán QR đã hết hạn sau 1 giờ nên đơn đặt phòng được tự động hủy. Quý khách có thể đặt phòng lại từ trang chủ.");
                 try(var q=c.prepareStatement("UPDATE rooms r JOIN bookings b ON b.room_id=r.id SET r.status='vacant_clean',r.version=r.version+1 WHERE b.id=? AND r.status='reserved' AND NOT EXISTS(SELECT 1 FROM bookings active WHERE active.room_id=r.id AND active.status IN ('pending','confirmed','checked_in') AND DATE(active.check_in_date)<=CURRENT_DATE AND DATE(active.check_out_date)>CURRENT_DATE)")){q.setInt(1,id);q.executeUpdate();}
             }
-            c.commit();return expired;
+            c.commit();
+            var roomLocks=quanlykhachsan.backend.service.RoomLockManager.getInstance();
+            for(int id:cancelledIds)roomLocks.releaseLockForBooking(c,id);
+            return expired;
         }catch(SQLException|RuntimeException ex){c.rollback();throw ex;}finally{c.setAutoCommit(true);}
     }
     public void close(){worker.shutdownNow();}

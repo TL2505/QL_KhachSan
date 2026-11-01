@@ -41,8 +41,8 @@ public final class MisaMeInvoiceProvider {
                     required("MISA_EINVOICE_NAME"), required("HOTEL_LEGAL_NAME"),
                     required("HOTEL_LEGAL_ADDRESS"), env("HOTEL_PHONE", ""), env("HOTEL_EMAIL", ""));
         }
-        private static String required(String key) { String v = System.getenv(key); if (v == null || v.isBlank()) throw new IllegalStateException(key + " is required"); return v.trim(); }
-        private static String env(String key, String fallback) { String v = System.getenv(key); return v == null || v.isBlank() ? fallback : v.trim(); }
+        private static String required(String key) { String v = quanlykhachsan.backend.utils.SecretConfiguration.optional(key); if (v == null || v.isBlank()) throw new IllegalStateException(key + " is required"); return v.trim(); }
+        private static String env(String key, String fallback) { String v = quanlykhachsan.backend.utils.SecretConfiguration.optional(key); return v == null || v.isBlank() ? fallback : v.trim(); }
         public boolean usesTaxCodePath() { return mode != Mode.HSM_NO_CODE; }
     }
 

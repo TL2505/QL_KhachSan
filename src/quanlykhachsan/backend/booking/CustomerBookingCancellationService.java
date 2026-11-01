@@ -70,7 +70,9 @@ public final class CustomerBookingCancellationService {
                     releaseRoomIfNoOverlap(c,bookingId);
                     String message=cancellationMessage(refund);
                     LifecycleNotifications.booking(c,bookingId,"booking_cancelled","booking-cancelled:"+bookingId,"Đã hủy đặt phòng",message);
-                    c.commit();return new Result(200,message,refund.amount(),refund.status());
+                    c.commit();
+                    quanlykhachsan.backend.service.RoomLockManager.getInstance().releaseLockForBooking(c,bookingId);
+                    return new Result(200,message,refund.amount(),refund.status());
                 }catch(SQLException|RuntimeException ex){c.rollback();throw ex;}finally{c.setAutoCommit(true);}
             }finally{locks.releaseLock(c,advisory);}
         }

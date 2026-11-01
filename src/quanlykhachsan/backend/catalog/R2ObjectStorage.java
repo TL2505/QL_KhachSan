@@ -60,10 +60,12 @@ final class R2ObjectStorage {
                 .connectTimeout(Duration.ofSeconds(10))
                 .followRedirects(HttpClient.Redirect.NEVER)
                 .build();
-        return new R2ObjectStorage(System.getenv("R2_ACCOUNT_ID"), System.getenv("R2_BUCKET_NAME"),
-                System.getenv("R2_ACCESS_KEY_ID"), System.getenv("R2_SECRET_ACCESS_KEY"),
-                System.getenv("R2_PUBLIC_BASE_URL"), client, Clock.systemUTC());
+        return new R2ObjectStorage(config("R2_ACCOUNT_ID"), config("R2_BUCKET_NAME"),
+                config("R2_ACCESS_KEY_ID"), config("R2_SECRET_ACCESS_KEY"),
+                config("R2_PUBLIC_BASE_URL"), client, Clock.systemUTC());
         }
+
+        private static String config(String key) { return quanlykhachsan.backend.utils.SecretConfiguration.optional(key); }
     }
 
     static R2ObjectStorage forTest(String accountId, String bucket, String accessKeyId,

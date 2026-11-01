@@ -68,7 +68,9 @@ public final class PaymentReconciliationService {
                     String status=reason!=null?"RECONCILIATION_ERROR":balance.signum()==0?"PAID":"PARTIAL";
                     String response=response(status,reason==null?"APPLIED":reason,folio,balance);
                     long id=record(c,p.provider(),"bank_transfer",p.transactionId(),p.hash(),folio,p.orderCode(),p.amount(),applied,excess,status,reason==null?"APPLIED":reason,p.occurredAt(),response);
-                    delivery(c,id,"RECEIVED");c.commit();return response;
+                    delivery(c,id,"RECEIVED");c.commit();
+                    if(booking>0)quanlykhachsan.backend.service.RoomLockManager.getInstance().releaseLockForBooking(c,booking);
+                    return response;
                 }catch(SQLException|RuntimeException e){c.rollback();throw e;}finally{c.setAutoCommit(true);}
             }finally{locks.releaseLock(c,lock);}
         }

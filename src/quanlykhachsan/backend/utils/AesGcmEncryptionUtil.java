@@ -19,10 +19,7 @@ public final class AesGcmEncryptionUtil {
     }
 
     public static AesGcmEncryptionUtil fromEnvironment() {
-        String encoded = SecretConfiguration.required("AES_VAULT_KEY");
-        byte[] bytes;
-        try { bytes = Base64.getDecoder().decode(encoded); }
-        catch (IllegalArgumentException e) { throw new IllegalStateException("AES_VAULT_KEY must be Base64 encoded"); }
+        byte[] bytes = SecretConfiguration.key256("AES_VAULT_KEY");
         try { return new AesGcmEncryptionUtil(bytes); }
         finally { Arrays.fill(bytes, (byte) 0); }
     }

@@ -73,6 +73,10 @@ public class BookingService {
     }
     public boolean cancelBooking(int bookingId){return updateBookingStatus(bookingId,"cancelled");}
 
+    public StayExtensionService.Result extendStay(int bookingId, java.time.LocalDateTime newCheckOut) throws java.sql.SQLException {
+        return new StayExtensionService().extend(bookingId, newCheckOut);
+    }
+
     /** All payments must use the transactional folio ledger. */
     public boolean processPayment(int bookingId, double amount, String method) {
         throw new IllegalStateException("Use FolioService with an authorized collection and Idempotency-Key");
