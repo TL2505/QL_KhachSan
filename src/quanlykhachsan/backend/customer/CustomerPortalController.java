@@ -57,6 +57,14 @@ public final class CustomerPortalController implements HttpHandler {
             if (path.endsWith("/overview")) ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(overview(connection, customerId)));
             else if (path.endsWith("/bookings")) ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(bookings(connection, customerId)));
             else if (path.endsWith("/invoices")) ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(invoices(connection, customerId)));
+            else if (path.equals("/api/v1/customer-portal/profile/identity")) {
+                String identity = CustomerProfileService.readIdentity(connection, ((Number) rawUserId).intValue(), GuestIdentityVaultDao.configured());
+                if (identity == null) ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Chưa có giấy tờ định danh được lưu"));
+                else {
+                    JsonObject data = new JsonObject(); data.addProperty("identityCard", identity);
+                    ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(data));
+                }
+            }
             else if (path.endsWith("/profile")) ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(profile(connection, ((Number) rawUserId).intValue())));
             else if (path.equals("/api/v1/customer-portal/vouchers")) ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(vouchers(connection)));
             else ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Not found"));

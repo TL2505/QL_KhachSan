@@ -109,6 +109,26 @@ body.customer-portal .portal-view .customer-booking-action:hover { border-color:
 }
 .customer-portal .customer-profile-summary > div { gap: 16px; align-items: start; }
 .customer-portal .customer-profile-summary > div > :last-child { text-align: right; overflow-wrap: anywhere; }
+.customer-portal .profile-field-hint {
+  display: block;
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.customer-portal .profile-field-error:not([hidden]) {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  margin-top: 6px;
+  color: var(--color-error, #ef4444);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.customer-portal .profile-field-error[hidden] { display: none !important; }
+.customer-portal .profile-field .input.input-error {
+  border-color: var(--color-error, #ef4444) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-error, #ef4444) 24%, transparent);
+}
 .customer-portal .portal-view .customer-profile-note {
   color: var(--customer-warning-text);
   background: var(--customer-warning-bg);

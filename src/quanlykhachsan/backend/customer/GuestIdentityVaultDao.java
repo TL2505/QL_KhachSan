@@ -85,7 +85,7 @@ public final class GuestIdentityVaultDao {
             }
         }catch(GeneralSecurityException e){throw new SQLException("Vault encryption unavailable",e);}
     }
-    /** No public HTTP decrypt endpoint. Caller must enforce Admin/Front Desk access. */
+    /** Callers must resolve the customer from the authenticated owner or an authorized staff scope. */
     public String readIdentity(Connection c,int customer) throws SQLException {
         try(var q=c.prepareStatement("SELECT encrypted_id_number FROM guest_identity_vault WHERE customer_id=?")){
             q.setInt(1,customer);try(var r=q.executeQuery()){

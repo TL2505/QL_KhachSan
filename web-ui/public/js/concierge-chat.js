@@ -1,4 +1,4 @@
-import { apiFetch, getAuthSession, getStoredCustomerToken } from './api.js';
+import { apiFetch, apiStream, getAuthSession, getStoredCustomerToken } from './api.js?v=9';
 import { conciergeRoomSearchIntent, searchConciergeRooms } from './concierge-room-tools.js';
 
 // Kept in memory: closing the panel preserves the conversation; reloading clears it.
@@ -12,8 +12,8 @@ export function initConciergeChat() {
   const root = host.attachShadow({ mode: 'open' });
   root.innerHTML = `
     <link rel="stylesheet" href="${new URL('../css/concierge-ui.css', import.meta.url)}">
-    <link rel="stylesheet" href="${new URL('../css/concierge-chat.css?v=6', import.meta.url)}">
-    <section class="card" data-theme="dark" role="dialog" aria-modal="false" aria-labelledby="concierge-title" hidden>
+    <link rel="stylesheet" href="${new URL('../css/concierge-chat.css?v=9', import.meta.url)}">
+    <section class="card" data-theme="light" role="dialog" aria-modal="false" aria-labelledby="concierge-title" hidden>
       <header>
         <span class="concierge-emblem" aria-hidden="true">✦</span>
         <div class="concierge-heading"><span class="eyebrow">AURELIA PALACE</span><h2 id="concierge-title">Quản gia AI</h2><p>Đồng hành cùng kỳ nghỉ của bạn</p></div>
@@ -40,6 +40,9 @@ export function initConciergeChat() {
     </section>`;
   const $ = selector => root.querySelector(selector);
   const panel = $('section');
+  const syncTheme = () => { panel.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'; };
+  syncTheme();
+  new MutationObserver(syncTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   const messages = $('.conversation');
   const input = $('input');
   const feedback = $('.feedback');
@@ -116,10 +119,48 @@ export function initConciergeChat() {
       return await apiFetch(path, { method: 'POST', body: JSON.stringify(body), signal: controller.signal });
     } finally { clearTimeout(timeout); }
   };
+  const streamRequest = async (body, onDelta) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 55000);
+    try {
+      return await apiStream('/ai/concierge/chat/stream', body, onDelta, { signal: controller.signal });
+    } finally { clearTimeout(timeout); }
+  };
   const fail = error => {
     login.hidden = error.status !== 401 && !!token();
     retry.hidden = [400, 401, 403].includes(error.status);
     escalate.hidden = [400, 401, 403, 409, 429].includes(error.status);
+    if (error.code === 'API_NETWORK_UNREACHABLE' || error.status === 0) {
+      return 'Không kết nối được máy chủ API. Nếu đang chạy cục bộ, hãy khởi động backend bằng start-backend.bat (cổng 8081) rồi thử lại.';
+    }
+    if (error.name === 'AbortError' || error.name === 'TimeoutError' || error.code === 'AI_PROVIDER_TIMEOUT') {
+      return 'Nhà cung cấp AI phản hồi quá chậm. Hãy thử lại sau hoặc nhờ quản trị viên kiểm tra model và thời gian phản hồi.';
+    }
+    if (error.code === 'AI_SETTINGS_UNAVAILABLE') {
+      return 'Máy chủ chưa đọc được cấu hình trợ lý AI. Quản trị viên cần kiểm tra cấu hình đã lưu và khóa mã hóa.';
+    }
+    if (error.code === 'AI_PROVIDER_UNREACHABLE') {
+      return 'Backend không kết nối được tới nhà cung cấp AI. Kiểm tra Internet, DNS hoặc tường lửa trên máy chạy backend.';
+    }
+    if (error.code === 'AI_PROVIDER_REJECTED') {
+      return 'Nhà cung cấp AI từ chối yêu cầu. Quản trị viên cần kiểm tra API key, quyền truy cập model và hạn mức trong log backend.';
+    }
+    if (error.code === 'AI_PROVIDER_RESPONSE_INVALID') {
+      return 'Nhà cung cấp AI trả về phản hồi không hợp lệ. Quản trị viên cần kiểm tra model đang cấu hình.';
+    }
+    if (error.code === 'AI_PROVIDER_UNAVAILABLE') {
+      return error.message || 'Dịch vụ AI đang tạm thời không khả dụng. Hãy thử lại sau; nếu lỗi còn tiếp diễn, quản trị viên cần kiểm tra log backend.';
+    }
+    if (error.code === 'AI_PROVIDER_RATE_LIMITED') {
+      return error.message || 'Nhà cung cấp AI đã giới hạn yêu cầu. Vui lòng thử lại sau.';
+    }
+    if (Number.isInteger(error.status) && error.status >= 500) {
+      const code = error.code ? ` · ${error.code}` : '';
+      return `Máy chủ trợ lý AI trả lỗi HTTP ${error.status}${code}. Quản trị viên có thể dùng mã này để tra log backend.`;
+    }
+    if (!Number.isInteger(error.status)) {
+      return 'Không nhận được phản hồi hợp lệ từ máy chủ AI. Hãy thử lại; nếu lỗi lặp lại, báo quản trị viên kiểm tra log backend.';
+    }
     return error.status === 401 ? 'Vui lòng đăng nhập để trò chuyện với Quản gia AI.'
       : error.status === 429 ? 'Bạn đã gửi nhiều câu hỏi. Vui lòng đợi một phút rồi thử lại.'
       : error.status === 403 ? 'Tài khoản hiện tại chưa thể sử dụng Quản gia AI. Vui lòng liên hệ lễ tân.'
@@ -305,10 +346,15 @@ export function initConciergeChat() {
     const pending = bubble('Đang kiểm tra thông tin khách sạn…');
     setBusy(true);
     try {
-      const answer = await request('/ai/concierge/chat', { session_id: sessionId, message: question });
+      let streamed = false;
+      const answer = await streamRequest({ session_id: sessionId, message: question }, chunk => {
+        if (!streamed) { pending.textContent = ''; streamed = true; }
+        pending.textContent += chunk;
+        messages.scrollTop = messages.scrollHeight;
+      });
       if (token() !== requestIdentity) { syncIdentity(); return; }
       if (typeof answer?.reply !== 'string' || !answer.reply.trim()) throw new Error('Empty AI response');
-      pending.textContent = answer.reply;
+      if (!streamed || pending.textContent !== answer.reply) pending.textContent = answer.reply;
       const sources = Array.isArray(answer.citations) ? answer.citations
         .filter(item => item && typeof (item.doc || item.source) === 'string')
         .map(item => [item.doc || item.source, typeof item.section === 'string' ? item.section : ''].filter(Boolean).join(' · ')) : [];

@@ -328,7 +328,6 @@ export function showToast(message, type = 'info', duration = 4000) {
 // ROOMS DATA & RENDERING
 // ==========================================
 async function loadRooms(filterParams = {}) {
-  renderRoomStatistics();
   const grid = document.getElementById('rooms-grid');
   if (grid) {
     grid.innerHTML = `
@@ -353,7 +352,6 @@ async function loadRooms(filterParams = {}) {
         if (!response.ok) throw new Error('Room status unavailable');
         const payload = await response.json();
         if (!Array.isArray(payload.data)) throw new Error('Invalid room status response');
-        renderRoomStatistics(payload.data, checkIn, checkOut);
         const statuses = new Map(payload.data.map(room => [String(room.id), room.availability_status]));
         state.rooms = state.rooms.map(room => ({ ...room, availabilityStatus: statuses.get(String(room.id)), statusDates: `${checkIn} → ${checkOut}` }));
       } catch {
@@ -429,29 +427,6 @@ async function loadLandingContent() {
     if (typeof legal?.notice === 'string') { const notice = document.getElementById('landing-legal-notice'); if (notice) { notice.textContent = legal.notice; notice.classList.toggle('hidden', !legal.notice.trim()); } }
   } catch {
     // Curated source content remains visible when the CMS is unavailable.
-  }
-}
-
-function renderRoomStatistics(rows = null, checkIn = '', checkOut = '') {
-  const container = document.getElementById('room-statistics');
-  if (!container) return;
-  const counts = { available: 0, reserved: 0, occupied: 0, maintenance: 0 };
-  let other = 0;
-  // Count API identities, not rendered/filterable cards or presentation labels.
-  const unique = new Map((rows || []).filter(room => room && room.id != null).map(room => [String(room.id), room]));
-  for (const room of unique.values()) {
-    if (Object.hasOwn(counts, room.availability_status)) counts[room.availability_status]++;
-    else other++;
-  }
-  container.querySelectorAll('[data-room-count]').forEach(node => {
-    node.textContent = rows === null ? '—' : String(counts[node.dataset.roomCount]);
-  });
-  const note = document.getElementById('room-statistics-note');
-  if (note) {
-    const source = rows === null
-      ? 'Chưa có dữ liệu thống kê. Vui lòng kiểm tra phòng hoặc thử lại.'
-      : 'Ngày {0} – {1} · Tổng {2} phòng' + (other ? ' · {3} phòng thuộc trạng thái khác/chưa đủ điều kiện nhận khách, chưa tính vào 4 nhóm trên.' : '');
-    setTranslatedText(note, source, [checkIn.split('-').reverse().join('/'), checkOut.split('-').reverse().join('/'), unique.size, other]);
   }
 }
 
@@ -1500,19 +1475,24 @@ function updateLightboxContent() {
 function initScrollObservers() {
   if (typeof window === 'undefined') return;
   const header = document.getElementById('main-header');
+  const localeDisclosure = document.getElementById('header-locale-disclosure');
   const backToTopBtn = document.getElementById('back-to-top');
+
+  const updateHeaderScrollState = () => {
+    if (!header) return;
+    const isScrolled = window.scrollY > 80;
+    const stateChanged = header.classList.contains('header-scrolled') !== isScrolled;
+    header.classList.toggle('header-scrolled', isScrolled);
+    if (stateChanged && localeDisclosure) localeDisclosure.open = false;
+  };
+
+  updateHeaderScrollState();
 
   window.addEventListener('scroll', () => {
     const scrollY = window.scrollY;
 
     // Sticky Header Glassmorphic background
-    if (header) {
-      if (scrollY > 80) {
-        header.classList.add('header-scrolled');
-      } else {
-        header.classList.remove('header-scrolled');
-      }
-    }
+    updateHeaderScrollState();
 
     // Back to top button visibility (appears past Hero Section > 450px)
     if (backToTopBtn) {
@@ -1559,6 +1539,19 @@ function initEventListeners() {
       link.addEventListener('click', () => {
         mobileMenuDrawer.classList.add('hidden');
       });
+    });
+  }
+
+  const localeDisclosure = document.getElementById('header-locale-disclosure');
+  if (localeDisclosure) {
+    document.addEventListener('pointerdown', event => {
+      if (localeDisclosure.open && !localeDisclosure.contains(event.target)) localeDisclosure.open = false;
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && localeDisclosure.open) {
+        localeDisclosure.open = false;
+        localeDisclosure.querySelector('summary')?.focus();
+      }
     });
   }
 
@@ -1686,6 +1679,20 @@ function initEventListeners() {
       showToast(tx`Đã chuyển đơn vị tiền tệ sang ${state.currency}`, 'info');
     });
   }
+
+  const headerLocaleSummary = document.getElementById('header-locale-summary-value');
+  const mobileLanguageValue = document.getElementById('mobile-language-value');
+  const mobileCurrencyValue = document.getElementById('mobile-currency-value');
+  const syncHeaderLocaleSummary = () => {
+    const language = langSelector?.value || 'vi';
+    const currency = currencySelector?.value || 'VND';
+    if (headerLocaleSummary) headerLocaleSummary.textContent = `${language.toUpperCase()} · ${currency}`;
+    if (mobileLanguageValue) mobileLanguageValue.textContent = language === 'en' ? 'EN 🇬🇧' : 'VI 🇻🇳';
+    if (mobileCurrencyValue) mobileCurrencyValue.textContent = currency === 'USD' ? 'USD ($)' : 'VND (₫)';
+  };
+  langSelector?.addEventListener('change', syncHeaderLocaleSummary);
+  currencySelector?.addEventListener('change', syncHeaderLocaleSummary);
+  syncHeaderLocaleSummary();
 
   // Booking Bar "Check Availability" Button
   const checkAvailabilityBtn = document.getElementById('btn-check-availability');

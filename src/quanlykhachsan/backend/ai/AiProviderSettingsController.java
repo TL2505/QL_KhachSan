@@ -54,7 +54,9 @@ public final class AiProviderSettingsController implements HttpHandler {
         } catch (CloudAiClient.GenerationException ex) {
             ApiResponseUtil.sendError(e, 422, ex.code, ex.publicMessage());
         } catch (CloudAiClient.ProviderException ex) {
-            ApiResponseUtil.sendError(e, 422, "AI_PROVIDER_REJECTED", ex.publicMessage());
+            if (ex.status == 429) ApiResponseUtil.sendError(e, 429, "AI_PROVIDER_RATE_LIMITED", ex.publicMessage());
+            else if (ex.status >= 500) ApiResponseUtil.sendError(e, 503, "AI_PROVIDER_UNAVAILABLE", ex.publicMessage());
+            else ApiResponseUtil.sendError(e, 422, "AI_PROVIDER_REJECTED", ex.publicMessage());
         } catch (CloudAiClient.ProviderConnectionException ex) {
             ApiResponseUtil.sendError(e, 503, "AI_PROVIDER_UNREACHABLE", ex.publicMessage());
         } catch (CloudAiClient.ProviderResponseException ex) {

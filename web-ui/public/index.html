@@ -44,7 +44,7 @@
 
   <!-- Custom Native CSS3 Luxury Design Tokens -->
   <link rel="stylesheet" href="css/style.css?v=3.5.0">
-  <link rel="stylesheet" href="css/theme-overrides.css?v=3.5.3">
+  <link rel="stylesheet" href="css/theme-overrides.css?v=3.5.16">
   <link rel="stylesheet" href="css/page-transition.css?v=3.5.0">
   <script src="js/shared/page-transition.js?v=3.5.0" defer></script>
 
@@ -93,7 +93,7 @@
 
       <!-- Desktop Navigation Links -->
       <nav
-        class="hidden xl:flex min-w-0 flex-1 items-center justify-center gap-3 2xl:gap-5 text-[11px] 2xl:text-xs font-semibold uppercase tracking-wider text-slate-300">
+        class="hidden xl:flex min-w-0 flex-1 items-center justify-center gap-3 2xl:gap-5 text-[11px] 2xl:text-xs font-semibold uppercase tracking-wider text-slate-300" aria-label="Điều hướng chính">
         <a href="#hero" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navHome">Trang Chủ</a>
         <a href="#rooms" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navRooms">Hạng Phòng</a>
         <a href="#services" class="whitespace-nowrap hover:text-amber-300 transition-colors py-1" data-i18n="navServices">Dịch Vụ</a>
@@ -109,27 +109,39 @@
       <!-- Right Actions: Locale, Theme, Account, Primary Booking CTA -->
       <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <!-- Move VI/VN, VND into hidden md:flex for < 768px screens -->
-        <div class="hidden md:flex items-center gap-2 border-r border-amber-500/20 pr-3" role="group"
-          aria-label="Tùy chọn ngôn ngữ và tiền tệ" data-i18n-aria-label="Tùy chọn ngôn ngữ và tiền tệ">
-          <div class="relative">
-            <select id="lang-selector"
-              class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
-              <option value="vi">VI 🇻🇳</option>
-              <option value="en">EN 🇬🇧</option>
-            </select>
-            <i data-lucide="chevron-down"
-              class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+        <details id="header-locale-disclosure" class="header-locale-disclosure">
+          <summary class="header-locale-summary" aria-label="Tùy chọn ngôn ngữ và tiền tệ" data-i18n-aria-label="Tùy chọn ngôn ngữ và tiền tệ">
+            <span id="header-locale-summary-value">VI · VND</span>
+            <i data-lucide="chevron-down" class="header-locale-chevron" aria-hidden="true"></i>
+          </summary>
+          <div id="header-locale-controls" class="items-center gap-2 border-r border-amber-500/20 pr-3" role="group"
+            aria-label="Tùy chọn ngôn ngữ và tiền tệ" data-i18n-aria-label="Tùy chọn ngôn ngữ và tiền tệ">
+            <div class="header-locale-field">
+              <label class="header-locale-field-label" for="lang-selector" data-i18n="Ngôn ngữ:">Ngôn ngữ:</label>
+              <div class="relative">
+                <select id="lang-selector"
+                  class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
+                  <option value="vi">VI 🇻🇳</option>
+                  <option value="en">EN 🇬🇧</option>
+                </select>
+                <i data-lucide="chevron-down"
+                  class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              </div>
+            </div>
+            <div class="header-locale-field">
+              <label class="header-locale-field-label" for="currency-selector" data-i18n="Tiền tệ:">Tiền tệ:</label>
+              <div class="relative">
+                <select id="currency-selector"
+                  class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
+                  <option value="VND">VND (₫)</option>
+                  <option value="USD">USD ($)</option>
+                </select>
+                <i data-lucide="chevron-down"
+                  class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              </div>
+            </div>
           </div>
-          <div class="relative">
-            <select id="currency-selector"
-              class="bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-400 cursor-pointer appearance-none pr-7">
-              <option value="VND">VND (₫)</option>
-              <option value="USD">USD ($)</option>
-            </select>
-            <i data-lucide="chevron-down"
-              class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-          </div>
-        </div>
+        </details>
 
         <button type="button" class="theme-toggle hidden sm:inline-flex" data-theme-toggle aria-label="Chọn giao diện" title="Chọn giao diện">
           <i data-lucide="sun-moon" data-theme-icon aria-hidden="true"></i>
@@ -160,7 +172,7 @@
         <!-- Mobile Menu Trigger - Fixed with flex-shrink-0 to remain clearly visible at 320px - 434px -->
         <button type="button" id="mobile-menu-btn"
           class="xl:hidden flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900/80 border border-amber-500/30 flex items-center justify-center text-amber-400 hover:bg-slate-800 transition-colors"
-          aria-label="Mở menu điều hướng" data-i18n-aria-label="Mở menu điều hướng">
+          aria-label="Mở menu điều hướng" aria-controls="mobile-menu-drawer" data-i18n-aria-label="Mở menu điều hướng">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
       </div>
@@ -233,11 +245,11 @@
       <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-3 text-xs text-slate-300">
         <div class="flex items-center gap-2">
           <span><span data-i18n="Ngôn ngữ:">Ngôn ngữ:</span></span>
-          <span class="text-amber-300 font-semibold">VI 🇻🇳</span>
+          <span id="mobile-language-value" class="text-amber-300 font-semibold">VI 🇻🇳</span>
         </div>
         <div class="flex items-center gap-2">
           <span><span data-i18n="Tiền tệ:">Tiền tệ:</span></span>
-          <span class="text-amber-300 font-semibold">VND (₫)</span>
+          <span id="mobile-currency-value" class="text-amber-300 font-semibold">VND (₫)</span>
         </div>
       </div>
     </div>
@@ -368,15 +380,6 @@
         </div>
       </div>
     </div>
-    <section id="room-statistics" class="room-statistics relative z-20" aria-label="Thống kê tình trạng phòng" data-i18n-aria-label="Thống kê tình trạng phòng">
-      <dl class="room-statistics-grid">
-        <div class="room-statistic room-statistic--available"><dt><span aria-hidden="true"><i data-lucide="bed-double"></i></span> <span data-i18n="Phòng trống">Phòng trống</span></dt><dd data-room-count="available">—</dd></div>
-        <div class="room-statistic room-statistic--reserved"><dt><span aria-hidden="true"><i data-lucide="calendar-check"></i></span> <span data-i18n="Phòng đã đặt">Phòng đã đặt</span></dt><dd data-room-count="reserved">—</dd></div>
-        <div class="room-statistic room-statistic--occupied"><dt><span aria-hidden="true"><i data-lucide="key-round"></i></span> <span data-i18n="Phòng đang sử dụng">Phòng đang sử dụng</span></dt><dd data-room-count="occupied">—</dd></div>
-        <div class="room-statistic room-statistic--maintenance"><dt><span aria-hidden="true"><i data-lucide="settings"></i></span> <span data-i18n="Phòng đang bảo trì">Phòng đang bảo trì</span></dt><dd data-room-count="maintenance">—</dd></div>
-      </dl>
-      <p id="room-statistics-note" role="status"><span data-i18n="Đang tải thống kê theo ngày nhận/trả phòng…">Đang tải thống kê theo ngày nhận/trả phòng…</span></p>
-    </section>
   </section>
 
 
@@ -1245,8 +1248,8 @@
   <div id="toast-container"></div>
 
   <!-- Main ES Module Script -->
-  <script type="module" src="js/app.js?v=3.5.6"></script>
-  <script type="module" src="js/concierge-chat.js?v=6"></script>
+  <script type="module" src="js/app.js?v=3.5.9"></script>
+  <script type="module" src="js/concierge-chat.js?v=9"></script>
 
 </body>
 

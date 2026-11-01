@@ -3,6 +3,7 @@ package quanlykhachsan.backend.ai;
 import com.google.gson.*;
 import com.sun.net.httpserver.*;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.security.GeneralSecurityException;
 import java.time.Clock;
@@ -12,6 +13,7 @@ import java.util.regex.Pattern;
 import quanlykhachsan.backend.utils.*;
 
 public final class VirtualConciergeController implements HttpHandler,AutoCloseable {
+    private static final org.slf4j.Logger LOG=org.slf4j.LoggerFactory.getLogger(VirtualConciergeController.class);
     @FunctionalInterface interface TicketCreator { int create(String session,String category,String correlation,Integer owner,String role) throws SQLException; }
     private final TicketCreator ticketCreator;
     private final java.util.function.Consumer<AiInteractionDao.Event> eventSink;
@@ -54,6 +56,7 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
         String path=e.getRequestURI().getPath(),role=String.valueOf(e.getAttribute("role")).toLowerCase(Locale.ROOT);
         boolean staff=Set.of("admin","manager","gm","staff","front_desk").contains(role),management=Set.of("admin","manager","gm","it","devops").contains(role);
         String correlation=UUID.randomUUID().toString();
+        StreamResponse stream=path.equals("/api/v1/ai/concierge/chat/stream")?new StreamResponse(e):null;
         try{
             if(path.matches("/api/v1/ai/concierge/tickets/[0-9]+/messages")){
                 int ticket=Integer.parseInt(path.split("/")[6]),actor=Integer.parseInt(String.valueOf(e.getAttribute("userId")));
@@ -101,7 +104,7 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
                 catch(java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException ex){error(e,503,"ERR_503_AI_AUDIT_UNAVAILABLE","Không thể ghi nhận lần tra cứu. Vui lòng thử lại.");return;}
                 ApiResponseUtil.sendSuccess(e,200,Map.of("logged",true),Map.of("correlation_id",correlation));return;
             }
-            if(!Set.of("/api/v1/ai/concierge/chat","/api/v1/ai/concierge/escalate").contains(path)){error(e,404,"ERR_404_NOT_FOUND","Route not found");return;}
+            if(!Set.of("/api/v1/ai/concierge/chat","/api/v1/ai/concierge/chat/stream","/api/v1/ai/concierge/escalate").contains(path)){error(e,404,"ERR_404_NOT_FOUND","Route not found");return;}
             if(!e.getRequestMethod().equals("POST")){error(e,405,"ERR_405_METHOD_NOT_ALLOWED","Method not allowed");return;}
             if(!staff&&!Set.of("guest","customer").contains(role)){error(e,403,"ERR_403_FORBIDDEN","Concierge access denied");return;}
             if(!Boolean.TRUE.equals(e.getAttribute("concierge_rate_checked"))&&!checkChatBudget(e))return;
@@ -121,6 +124,7 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
             AiProviderSettings.Configuration cloud;
             try { cloud=cloudSettings.read(); }
             catch (GeneralSecurityException | IllegalStateException | IOException ex) {
+                LOG.warn("AI chat settings unavailable; exception={} correlation={}",ex.getClass().getSimpleName(),correlation);
                 error(e,503,"AI_SETTINGS_UNAVAILABLE","Trợ lý AI tạm thời không khả dụng. Vui lòng liên hệ lễ tân.");return;
             }
             // Reserve before policy evaluation so concurrent duplicate sends cannot become complaints.
@@ -134,24 +138,48 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
                 try {
                     String reply;
                     if(conversation!=null) {
-                        var generated=cloudClient.generate(cloud,message,false,conversation.previous());
+                        var generated=stream==null
+                            ? cloudClient.generate(cloud,message,false,conversation.previous())
+                            : cloudClient.stream(cloud,message,conversation.previous(),stream::delta);
                         reply=generated.text();
                         conversation.commit(message,reply,generated.modelContent());
                     } else {
                         conversations.forget(bound);
-                        reply=cloudClient.answer(cloud,message,false);
+                        reply=stream==null?cloudClient.answer(cloud,message,false):cloudClient.stream(cloud,message,List.of(),stream::delta).text();
                     }
                     record(bound,staff,message,"ANSWER",0,correlation);
-                    ApiResponseUtil.sendSuccess(e,Map.of("reply",reply,"provider",cloud.provider(),"generated",true,"citations",List.of(),"escalate",false));
+                    var response=Map.of("reply",reply,"provider",cloud.provider(),"generated",true,"citations",List.of(),"escalate",false);
+                    if(stream==null)ApiResponseUtil.sendSuccess(e,response);else stream.done(response);
                 } catch(CloudAiClient.GenerationException ex) {
                     policy.forget(bound);
-                    error(e,422,ex.code,ex.publicMessage());
+                    chatError(e,stream,422,ex.code,ex.publicMessage());
                 } catch(CloudAiClient.ProviderException ex) {
                     policy.forget(bound);
-                    error(e,422,"AI_PROVIDER_REJECTED",management?ex.publicMessage():"Trợ lý AI chưa sẵn sàng do lỗi kết nối với nhà cung cấp. Vui lòng liên hệ lễ tân.");
+                    LOG.warn("AI provider rejected chat; provider={} status={} reason={} correlation={}",cloud.provider(),ex.status,ex.reason,correlation);
+                    if(ex.status==429) {
+                        chatError(e,stream,429,"AI_PROVIDER_RATE_LIMITED",management?ex.publicMessage():"Nhà cung cấp AI đã giới hạn yêu cầu. Vui lòng thử lại sau.");
+                    } else if(ex.status>=500) {
+                        chatError(e,stream,503,"AI_PROVIDER_UNAVAILABLE",ex.publicMessage());
+                    } else {
+                    chatError(e,stream,422,"AI_PROVIDER_REJECTED",management?ex.publicMessage():"Trợ lý AI chưa sẵn sàng do lỗi kết nối với nhà cung cấp. Vui lòng liên hệ lễ tân.");
+                    }
+                } catch(CloudAiClient.ProviderConnectionException ex) {
+                    policy.forget(bound);
+                    Throwable cause=ex.getCause();
+                    LOG.warn("AI provider connection failed; provider={} cause={} correlation={}",cloud.provider(),cause==null?"unknown":cause.getClass().getSimpleName(),correlation);
+                    chatError(e,stream,503,"AI_PROVIDER_UNREACHABLE",ex.publicMessage());
+                } catch(java.net.http.HttpTimeoutException ex) {
+                    policy.forget(bound);
+                    LOG.warn("AI provider request timed out; provider={} timeoutType={} correlation={}",cloud.provider(),ex.getClass().getSimpleName(),correlation);
+                    chatError(e,stream,504,"AI_PROVIDER_TIMEOUT","Nhà cung cấp AI không phản hồi trong thời gian cho phép. Vui lòng thử lại hoặc chọn model phản hồi nhanh hơn.");
+                } catch(CloudAiClient.ProviderResponseException ex) {
+                    policy.forget(bound);
+                    LOG.warn("AI provider returned an invalid response; provider={} correlation={}",cloud.provider(),correlation);
+                    chatError(e,stream,502,"AI_PROVIDER_RESPONSE_INVALID",ex.publicMessage());
                 } catch(IOException ex) {
                     policy.forget(bound);
-                    error(e,503,"AI_PROVIDER_UNAVAILABLE","Trợ lý AI tạm thời không khả dụng. Vui lòng thử lại hoặc liên hệ lễ tân.");
+                    LOG.error("AI chat failed; category=provider_io exception={} provider={} correlation={}",ex.getClass().getSimpleName(),cloud.provider(),correlation);
+                    chatError(e,stream,503,"AI_PROVIDER_UNAVAILABLE","Trợ lý AI tạm thời không khả dụng. Vui lòng thử lại hoặc liên hệ lễ tân.");
                 }
                 return;
             }
@@ -184,7 +212,8 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
                 e.getResponseHeaders().set("Retry-After","2");
                 error(e,409,"AI_CONVERSATION_BUSY","Câu hỏi trước đang được xử lý. Vui lòng đợi câu trả lời rồi gửi tiếp.");
             }
-        }catch(BodyTooLarge ex){error(e,413,"ERR_413_PAYLOAD_TOO_LARGE","Request too large");}
+        }catch(StreamResponse.ClientDisconnected ex){return;}
+        catch(BodyTooLarge ex){chatError(e,stream,413,"ERR_413_PAYLOAD_TOO_LARGE","Request too large");}
         catch(IllegalArgumentException | JsonParseException | IllegalStateException | NullPointerException ex){error(e,400,"ERR_400_BAD_REQUEST","Invalid concierge request");}
         catch(SQLException ex){error(e,503,"ERR_503_AI_UNAVAILABLE","Staff assistance could not be queued; contact the Front Desk directly");}
         catch(SecurityException ex){error(e,403,"ERR_403_FORBIDDEN","Ticket access denied");}
@@ -199,6 +228,28 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
         if(!message.isBlank())new TicketChatDao().append(ticket,Integer.parseInt(String.valueOf(e.getAttribute("userId"))),String.valueOf(e.getAttribute("role")).toLowerCase(Locale.ROOT),message.substring(0,Math.min(message.length(),2000)));
         record(session,staff,message,"ESCALATED",0,correlation);
         ApiResponseUtil.sendSuccess(e,200,Map.of("answer",EscalationPolicy.fallback(language),"reply",EscalationPolicy.fallback(language),"confidence_score",0,"citations",List.of(),"suggested_actions",List.of(),"escalate",true,"ticket_id",ticket),Map.of("correlation_id",correlation));
+    }
+    private static void chatError(HttpExchange e,StreamResponse stream,int status,String code,String message) throws IOException {
+        if(stream!=null&&stream.started())stream.error(status,code,message);else error(e,status,code,message);
+    }
+    private static final class StreamResponse {
+        private final HttpExchange exchange;
+        private boolean started;
+        private boolean closed;
+        StreamResponse(HttpExchange exchange){this.exchange=exchange;}
+        boolean started(){return started;}
+        void delta(String text){if(text==null||text.isEmpty())return;try{event("delta",Map.of("text",text));}catch(IOException ex){disconnect();}}
+        void done(Object data)throws IOException{event("done",data);close();}
+        void error(int status,String code,String message)throws IOException{event("error",Map.of("status",status,"code",code,"message",message));close();}
+        private void event(String name,Object data)throws IOException{
+            if(closed)throw new IOException("stream closed");
+            if(!started){Headers headers=exchange.getResponseHeaders();headers.set("Content-Type","text/event-stream; charset=utf-8");headers.set("Cache-Control","no-cache, no-transform");headers.set("X-Accel-Buffering","no");exchange.sendResponseHeaders(200,0);started=true;}
+            byte[] bytes=("event: "+name+"\ndata: "+new Gson().toJson(data)+"\n\n").getBytes(StandardCharsets.UTF_8);
+            try{exchange.getResponseBody().write(bytes);exchange.getResponseBody().flush();}catch(IOException ex){disconnect();}
+        }
+        private void close(){if(closed)return;closed=true;try{exchange.getResponseBody().close();}catch(IOException ignored){}exchange.close();}
+        private void disconnect(){close();throw new ClientDisconnected();}
+        static final class ClientDisconnected extends RuntimeException{}
     }
     private void record(String session,boolean staff,String message,String action,double confidence,String correlation){recordAsync(session,staff,message,action,confidence,correlation);}
     private java.util.concurrent.CompletableFuture<Void> recordAsync(String session,boolean staff,String message,String action,double confidence,String correlation){var event=new AiInteractionDao.Event(session,staff?"STAFF":"GUEST",message,action,confidence,correlation);if(eventSink==null)return audit.record(event);eventSink.accept(event);return java.util.concurrent.CompletableFuture.completedFuture(null);}

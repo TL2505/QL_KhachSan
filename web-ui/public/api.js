@@ -243,7 +243,7 @@ export async function apiFetch(path, init = {}) {
 
   if (!response.ok) {
     const safeAiProviderError = ['/admin/ai-settings/models', '/admin/ai-settings/test'].includes(cleanPath)
-      && ['AI_PROVIDER_UNREACHABLE', 'AI_PROVIDER_RESPONSE_INVALID', 'AI_PROVIDER_TIMEOUT', 'AI_PROVIDER_REJECTED', 'AI_SETTINGS_INVALID', 'AI_SETTINGS_UNAVAILABLE'].includes(result?.error_code);
+      && ['AI_PROVIDER_UNREACHABLE', 'AI_PROVIDER_RESPONSE_INVALID', 'AI_PROVIDER_TIMEOUT', 'AI_PROVIDER_REJECTED', 'AI_PROVIDER_UNAVAILABLE', 'AI_PROVIDER_RATE_LIMITED', 'AI_SETTINGS_INVALID', 'AI_SETTINGS_UNAVAILABLE'].includes(result?.error_code);
     const serverMessage = ((response.status < 500 && ![401, 403].includes(response.status) || safeAiProviderError) && result && typeof result.message === 'string') ? result.message.trim() : '';
     throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'));
   }

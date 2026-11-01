@@ -7,11 +7,12 @@
  */
 
 export class ApiError extends Error {
-  constructor(message, status = 500, retryAfter = null) {
+  constructor(message, status = 500, retryAfter = null, code = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.retryAfter = retryAfter;
+    this.code = code;
   }
 }
 
@@ -199,11 +200,11 @@ export async function apiFetch(path, init = {}) {
         response = await attemptFetch(altBase + cleanPath);
       } catch (altError) {
         if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
-        throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
+        throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.', 0, null, 'API_NETWORK_UNREACHABLE');
       }
     } else {
       if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
-      throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
+      throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.', 0, null, 'API_NETWORK_UNREACHABLE');
     }
   }
 
@@ -225,8 +226,11 @@ export async function apiFetch(path, init = {}) {
   }
 
   if (!response.ok) {
-    const serverMessage = (response.status < 500 && result && typeof result.message === 'string') ? result.message.trim() : '';
-    throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'));
+    const errorCode = typeof result?.error_code === 'string' ? result.error_code : null;
+    const safeAiErrorCodes = new Set(['AI_PROVIDER_UNAVAILABLE','AI_PROVIDER_UNREACHABLE','AI_PROVIDER_TIMEOUT','AI_PROVIDER_RESPONSE_INVALID','AI_PROVIDER_RATE_LIMITED','AI_SETTINGS_UNAVAILABLE']);
+    const canShowServerMessage = response.status < 500 || safeAiErrorCodes.has(errorCode);
+    const serverMessage = (canShowServerMessage && result && typeof result.message === 'string') ? result.message.trim() : '';
+    throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'), errorCode);
   }
 
   if (result && typeof result === 'object' && 'status' in result) {
@@ -238,6 +242,101 @@ export async function apiFetch(path, init = {}) {
   }
 
   return result;
+}
+
+/** POST an API request and consume Server-Sent Events as they arrive. JSON success responses remain supported for fallback routes. */
+export async function apiStream(path, body, onDelta, init = {}) {
+  if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn yêu cầu không hợp lệ.');
+  const cleanPath = path.startsWith('/') ? path : '/' + path;
+  const session = getAuthSession();
+  const token = (typeof session?.token === 'string' && session.token) ? session.token : getStoredCustomerToken();
+  const headers = new Headers(init.headers || {});
+  headers.set('Accept', 'text/event-stream, application/json');
+  headers.set('Content-Type', 'application/json; charset=utf-8');
+  if (typeof token === 'string' && token) headers.set('Authorization', 'Bearer ' + token);
+  headers.set('X-User-Role', 'guest');
+  headers.set('ngrok-skip-browser-warning', '69420');
+
+  let response;
+  try {
+    response = await fetch(getApiBaseUrl() + cleanPath, { ...init, method: 'POST', body: JSON.stringify(body), headers });
+  } catch (error) {
+    if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
+    throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.', 0, null, 'API_NETWORK_UNREACHABLE');
+  }
+  if (response.status === 401 && session?.token && getAuthSession()?.token === session.token) {
+    setAuthSession(null);
+    if (typeof window !== 'undefined' && window.dispatchEvent) window.dispatchEvent(new Event('hotel:session-expired'));
+  }
+
+  const safeAiErrorCodes = new Set(['AI_PROVIDER_UNAVAILABLE','AI_PROVIDER_UNREACHABLE','AI_PROVIDER_TIMEOUT','AI_PROVIDER_RESPONSE_INVALID','AI_PROVIDER_RATE_LIMITED','AI_SETTINGS_UNAVAILABLE']);
+  const readJsonResponse = async () => {
+    const text = await response.text();
+    let result;
+    try { result = text ? JSON.parse(text) : null; }
+    catch { throw new ApiError('Chưa thể đọc phản hồi. Vui lòng thử lại hoặc liên hệ lễ tân.', response.status); }
+    if (!response.ok) {
+      const code = typeof result?.error_code === 'string' ? result.error_code : null;
+      const canShow = response.status < 500 || safeAiErrorCodes.has(code);
+      throw new ApiError(canShow && typeof result?.message === 'string' ? result.message : messageFor(response.status), response.status, response.headers.get('Retry-After'), code);
+    }
+    if (result && typeof result === 'object' && 'status' in result) {
+      const status = String(result.status).toLowerCase();
+      if (status === 'success') return result.data ?? null;
+      if (['error', 'failed', 'failure'].includes(status)) throw new ApiError('Yêu cầu chưa được hoàn tất. Vui lòng kiểm tra lại.', response.status);
+    }
+    return result;
+  };
+
+  if (!response.ok || !response.headers.get('Content-Type')?.toLowerCase().includes('text/event-stream')) return readJsonResponse();
+  if (!response.body) throw new ApiError('Máy chủ không gửi được luồng phản hồi.', response.status);
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '', eventName = '', finalResult = null, receivedDone = false;
+  const dispatch = frame => {
+    if (!frame) return;
+    const lines = frame.split(/\r?\n/);
+    let name = '', data = '';
+    for (const line of lines) {
+      if (line.startsWith('event:')) name = line.slice(6).trim();
+      else if (line.startsWith('data:')) data += (data ? '\n' : '') + line.slice(5).replace(/^ /, '');
+    }
+    if (!data) return;
+    let payload;
+    try { payload = JSON.parse(data); }
+    catch { throw new ApiError('Phản hồi AI không đúng định dạng.', 502, null, 'AI_PROVIDER_RESPONSE_INVALID'); }
+    if (name === 'delta') {
+      if (typeof payload?.text === 'string' && payload.text) onDelta?.(payload.text);
+    } else if (name === 'done') {
+      finalResult = payload;
+      receivedDone = true;
+    } else if (name === 'error') {
+      const status = Number.isInteger(payload?.status) ? payload.status : 503;
+      const code = typeof payload?.code === 'string' ? payload.code : null;
+      const canShow = status < 500 || safeAiErrorCodes.has(code);
+      throw new ApiError(canShow && typeof payload?.message === 'string' ? payload.message : messageFor(status), status, null, code);
+    }
+  };
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+      let separator;
+      while ((separator = buffer.search(/\r?\n\r?\n/)) >= 0) {
+        const frame = buffer.slice(0, separator);
+        const match = buffer.slice(separator).match(/^\r?\n\r?\n/);
+        buffer = buffer.slice(separator + (match?.[0].length || 2));
+        dispatch(frame);
+      }
+      if (done) break;
+    }
+    if (buffer.trim()) dispatch(buffer);
+  } catch (error) {
+    try { await reader.cancel(); } catch {}
+    throw error;
+  } finally { reader.releaseLock(); }
+  if (!receivedDone) throw new ApiError('Luồng phản hồi AI bị ngắt trước khi hoàn tất.', 502, null, 'AI_PROVIDER_RESPONSE_INVALID');
+  return finalResult;
 }
 
 export async function fetchAuthenticatedFile(path, init = {}) {

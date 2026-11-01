@@ -1,4 +1,4 @@
-import { apiFetch } from '../../api.js?v=2';
+import { apiFetch } from '../../api.js?v=3';
 
 export async function renderAiSettings(container) {
     container.innerHTML = `
@@ -129,6 +129,7 @@ export async function renderAiSettings(container) {
         : error.status === 503 && context === 'load' ? 'Chưa tải được cấu hình AI đã lưu. Hãy tải lại; nếu lỗi vẫn còn, bạn vẫn có thể nhập bản nháp bằng key mới, lấy danh sách model rồi lưu để khôi phục.'
         : error.status === 503 && context === 'models' ? (error.message === 'Hệ thống đang tạm bận. Vui lòng thử lại sau.' ? 'Máy chủ chưa thể hoàn tất việc lấy danh sách model. Kiểm tra kết nối backend tới Internet hoặc nhà cung cấp rồi thử lại.' : error.message)
         : error.status === 502 && context === 'models' ? error.message
+        : error.status === 503 && context === 'test' ? (error.message || 'Nhà cung cấp AI đang tạm thời không khả dụng. Hãy thử lại sau.')
         : error.status === 503 ? 'Không thể lưu cấu hình hoặc kết nối AI. Kiểm tra dịch vụ máy chủ và kết nối tới nhà cung cấp.'
         : error.status === 401 ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
         : error.name === 'AbortError' ? 'Yêu cầu đã hết thời gian chờ. Vui lòng tải lại cấu hình để kiểm tra trước khi thử lại.'

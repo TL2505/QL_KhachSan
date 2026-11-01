@@ -279,7 +279,7 @@ export async function renderAccountSettings(container, session = getAuthSession(
         if (!event.currentTarget.open || identityLoaded) return;
         identityLoaded = true;
         const host = $('#account-identity-content'); host.textContent = 'Đang tải hồ sơ lưu trú…';
-        try { const { renderProfile } = await import('../customer/profile.js'); if (active()) await renderProfile(host, getAuthSession()); }
+        try { const { renderProfile } = await import('../customer/profile.js?v=1.0.2'); if (active()) await renderProfile(host, getAuthSession()); }
         catch { if (active()) { host.textContent = 'Chưa thể tải hồ sơ lưu trú. Đóng và mở lại để thử lại.'; identityLoaded = false; } }
     });
     await Promise.all([load(), loadDevices()]);

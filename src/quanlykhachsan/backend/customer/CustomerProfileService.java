@@ -12,7 +12,10 @@ public final class CustomerProfileService {
 
     public static Update validate(JsonObject body) {
         String fullName = PortalValidation.text(body, "fullName", 100, true);
-        String phone = PortalValidation.phone(PortalValidation.text(body, "phone", 20, true));
+        // Keep the submitted value raw until save() can compare it with the current
+        // value under the profile row lock. Unchanged legacy numbers remain usable;
+        // changed numbers still pass the strict phone validator.
+        String phone = PortalValidation.text(body, "phone", 20, true);
         String email = PortalValidation.email(PortalValidation.text(body, "email", 100, true));
         String identity = PortalValidation.text(body, "identityCard", 20, false);
         if (identity != null && !identity.matches("(?:[0-9]{12}|[A-Za-z][A-Za-z0-9]{4,19})"))
@@ -43,24 +46,40 @@ public final class CustomerProfileService {
         }
     }
 
+    /** Reveals only the encrypted identity linked to the authenticated user's own customer record. */
+    public static String readIdentity(Connection c, int userId, GuestIdentityVaultDao vault) throws SQLException {
+        try (var q = c.prepareStatement("SELECT customer_id FROM users WHERE id=?")) {
+            q.setInt(1, userId);
+            try (var r = q.executeQuery()) {
+                if (!r.next() || r.getObject(1) == null) return null;
+                return vault.readIdentity(c, r.getInt(1));
+            }
+        }
+    }
+
     public static JsonObject save(Connection c, int userId, Update data, GuestIdentityVaultDao vault) throws SQLException {
         if (!c.getAutoCommit()) throw new SQLException("Profile update must own its transaction");
         c.setAutoCommit(false);
         try {
             int customerId;
-            try (var q = c.prepareStatement("SELECT customer_id FROM users WHERE id=? FOR UPDATE")) {
+            String currentPhone;
+            try (var q = c.prepareStatement("SELECT u.customer_id,COALESCE(NULLIF(u.phone,''),c.phone) FROM users u JOIN customers c ON c.id=u.customer_id WHERE u.id=? FOR UPDATE")) {
                 q.setInt(1, userId);
                 try (var r = q.executeQuery()) {
                     if (!r.next() || r.getObject(1) == null) throw new IllegalArgumentException("Customer profile is not linked");
                     customerId = r.getInt(1);
+                    currentPhone = r.getString(2);
                 }
             }
+            String phoneToSave = currentPhone != null && data.phone().equals(currentPhone.trim())
+                    ? currentPhone
+                    : PortalValidation.phone(data.phone());
             try (var q = c.prepareStatement("UPDATE customers SET full_name=?,phone=?,email=?,address=?,date_of_birth=? WHERE id=?")) {
-                q.setString(1, data.fullName()); q.setString(2, data.phone()); q.setString(3, data.email());
+                q.setString(1, data.fullName()); q.setString(2, phoneToSave); q.setString(3, data.email());
                 q.setString(4, data.address()); q.setObject(5, data.dob()); q.setInt(6, customerId); q.executeUpdate();
             }
             try (var q = c.prepareStatement("UPDATE users SET full_name=?,phone=?,email=? WHERE id=?")) {
-                q.setString(1, data.fullName()); q.setString(2, data.phone()); q.setString(3, data.email()); q.setInt(4, userId); q.executeUpdate();
+                q.setString(1, data.fullName()); q.setString(2, phoneToSave); q.setString(3, data.email()); q.setInt(4, userId); q.executeUpdate();
             }
             if (data.identityCard() != null) {
                 try (var q = c.prepareStatement("UPDATE guest_identity_vault SET encrypted_raw_payload=NULL,face_embedding_blob=NULL WHERE customer_id=?")) {

@@ -197,7 +197,6 @@ const menus = {
     ['profile', 'Hồ sơ & bảo mật', 'settings']
   ],
   STAFF: [
-    ['catalog-content', 'Danh mục & landing page', 'images'],
     ['room-map', 'Sơ đồ phòng', 'panels-top-left'],
     ['front-desk', 'Xử lý tại quầy', 'concierge-bell'],
     ['bookings', 'Đặt phòng', 'calendar-check'],

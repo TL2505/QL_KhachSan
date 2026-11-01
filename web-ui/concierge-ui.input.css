@@ -2,7 +2,7 @@
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 @source "./public/js/concierge-chat.js";
 @plugin "daisyui" {
-  themes: dark;
+  themes: light --default, dark;
   include: button, input, chat, card;
   logs: false;
 }
