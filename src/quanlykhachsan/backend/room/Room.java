@@ -4,6 +4,7 @@ public class Room {
     private int id;
     private String roomNumber;
     private int roomTypeId;
+    private String imageUrl;
     private double price;
     private String status;
     private String typeName;
@@ -28,6 +29,8 @@ public class Room {
     public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
     public int getRoomTypeId() { return roomTypeId; }
     public void setRoomTypeId(int roomTypeId) { this.roomTypeId = roomTypeId; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
     public String getStatus() { return status; }

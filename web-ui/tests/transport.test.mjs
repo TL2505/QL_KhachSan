@@ -32,8 +32,25 @@ test('HTTP denial cannot be converted to success by a response envelope',async()
 });
 test('expired session is cleared and announced without clearing a replacement session',async()=>{
  let count=0;events.addEventListener('hotel:session-expired',()=>count++,{once:true});setAuthSession({token:'old'});
- globalThis.fetch=async()=>new Response('{}',{status:401});await assert.rejects(apiFetch('/rooms'));assert.equal(getAuthSession(),null);assert.equal(count,1);
+ globalThis.fetch=async()=>new Response(JSON.stringify({message:'Missing or malformed Authorization header (Bearer <token>)'}),{status:401});
+ await assert.rejects(apiFetch('/rooms'),error=>error.status===401&&error.message==='Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');assert.equal(getAuthSession(),null);assert.equal(count,1);
  setAuthSession({token:'old'});globalThis.fetch=async()=>{setAuthSession({token:'new'});return new Response('{}',{status:401});};await assert.rejects(apiFetch('/rooms'));assert.equal(getAuthSession().token,'new');
+});
+test('401 without a structured session clears legacy token and hides backend diagnostics',async()=>{
+ store.set('auth_token','synthetic-invalid-token');
+ let count=0;const listener=()=>count++;events.addEventListener('hotel:session-expired',listener);
+ globalThis.fetch=async()=>new Response(JSON.stringify({message:'Missing or malformed Authorization header (Bearer <token>)'}),{status:401});
+ await assert.rejects(apiFetch('/bookings'),error=>error.status===401&&!error.message.includes('Authorization header')&&error.message.includes('đăng nhập lại'));
+ assert.equal(store.has('auth_token'),false);assert.equal(getAuthSession(),null);assert.equal(count,1);
+ events.removeEventListener('hotel:session-expired',listener);
+});
+test('expired invoice download clears a legacy token and announces session expiry',async()=>{
+ store.set('customer_token','synthetic-invalid-token');
+ let count=0;const listener=()=>count++;events.addEventListener('hotel:session-expired',listener);
+ globalThis.fetch=async()=>new Response('unauthorized',{status:401});
+ await assert.rejects(fetchAuthenticatedFile('/invoices/1/pdf'),error=>error.status===401&&error.message.includes('đăng nhập lại'));
+ assert.equal(store.has('customer_token'),false);assert.equal(count,1);
+ events.removeEventListener('hotel:session-expired',listener);
 });
 test('abort remains distinguishable from connection failure',async()=>{
  globalThis.fetch=async()=>{throw new DOMException('cancelled','AbortError');};await assert.rejects(apiFetch('/rooms'),error=>error.name==='AbortError');
@@ -78,6 +95,14 @@ test('OTP failures are never replayed to an alternative host and the chosen dead
 test('freeze retains Retry-After and hides server internals',async()=>{
  globalThis.fetch=async()=>new Response(JSON.stringify({message:'PRIVATE_DATABASE_DETAILS'}),{status:503,headers:{'Retry-After':'300'}});
  await assert.rejects(apiFetch('/rooms'),error=>error.status===503&&error.retryAfter==='300'&&!error.message.includes('PRIVATE'));
+});
+test('AI model discovery exposes only allowlisted backend diagnostics',async()=>{
+ globalThis.fetch=async()=>new Response(JSON.stringify({error_code:'AI_PROVIDER_UNREACHABLE',message:'Backend không kết nối được tới Google Gemini.'}),{status:503});
+ await assert.rejects(apiFetch('/admin/ai-settings/models'),error=>error.status===503&&error.message==='Backend không kết nối được tới Google Gemini.');
+ globalThis.fetch=async()=>new Response(JSON.stringify({error_code:'PRIVATE_INTERNAL_ERROR',message:'PRIVATE_DATABASE_DETAILS'}),{status:503});
+ await assert.rejects(apiFetch('/admin/ai-settings/models'),error=>error.status===503&&!error.message.includes('PRIVATE'));
+ globalThis.fetch=async()=>new Response(JSON.stringify({error_code:'AI_PROVIDER_UNREACHABLE',message:'PRIVATE_DATABASE_DETAILS'}),{status:503});
+ await assert.rejects(apiFetch('/rooms'),error=>error.status===503&&!error.message.includes('PRIVATE'));
 });
 test('invalid JSON and invalid session storage fail safely',async()=>{
  store.set('hotel_auth_session','bad-json');assert.equal(getAuthSession(),null);globalThis.fetch=async()=>new Response('<html>private debug</html>');await assert.rejects(apiFetch('/rooms'),error=>!error.message.includes('private debug'));

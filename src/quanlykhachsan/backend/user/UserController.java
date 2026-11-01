@@ -62,6 +62,9 @@ public class UserController implements HttpHandler {
             handleGetAllUsers(exchange);
         } else if ("POST".equalsIgnoreCase(method) && (pathInfo.isEmpty() || pathInfo.equals("/"))) {
             handleAddUser(exchange);
+        } else if ("PUT".equalsIgnoreCase(method) && pathInfo.matches("/\\d+/role")) {
+            int userId = Integer.parseInt(pathInfo.substring(1, pathInfo.length() - "/role".length()));
+            handleUpdateRole(exchange, userId);
         } else if ("PUT".equalsIgnoreCase(method) && pathInfo.matches("/\\d+")) {
             int userId = Integer.parseInt(pathInfo.substring(1));
             handleUpdateUser(exchange, userId);
@@ -90,8 +93,79 @@ public class UserController implements HttpHandler {
     }
 
     private void handleGetAllRoles(HttpExchange exchange) throws IOException {
+        if (!SecurityUtil.checkAdmin(exchange)) return;
         List<quanlykhachsan.backend.user.Role> roles = userDAO.selectAllRoles();
         ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(roles));
+    }
+
+    private void handleUpdateRole(HttpExchange exchange, int userId) throws IOException {
+        if (!SecurityUtil.checkAdmin(exchange)) return;
+        try {
+            String body = new String(exchange.getRequestBody().readNBytes(4097), StandardCharsets.UTF_8);
+            if (body.length() > 4096) {
+                ApiResponseUtil.write(exchange, 413, ApiResponseUtil.error("Yêu cầu quá lớn"));
+                return;
+            }
+            JsonObject request = gson.fromJson(body, JsonObject.class);
+            if (request == null || !request.has("roleId") || !request.get("roleId").isJsonPrimitive()
+                    || !request.getAsJsonPrimitive("roleId").isNumber()) {
+                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu mã vai trò hợp lệ"));
+                return;
+            }
+            int roleId = request.get("roleId").getAsInt();
+            List<quanlykhachsan.backend.user.Role> roles = userDAO.selectAllRoles();
+            quanlykhachsan.backend.user.Role targetRole = roles.stream()
+                    .filter(role -> role.getId() == roleId).findFirst().orElse(null);
+            if (targetRole == null) {
+                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Vai trò không tồn tại"));
+                return;
+            }
+
+            List<User> users = userDAO.selectUser();
+            User target = users.stream().filter(user -> user.getId() == userId).findFirst().orElse(null);
+            if (target == null) {
+                ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Không tìm thấy tài khoản"));
+                return;
+            }
+            int actorId = exchange.getAttribute("userId") instanceof Number n ? n.intValue() : -1;
+            if (actorId == userId && target.getRoleId() != roleId) {
+                ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error("Không thể tự thay đổi quyền của tài khoản đang đăng nhập"));
+                return;
+            }
+            int adminRoleId = roles.stream().filter(role -> "admin".equalsIgnoreCase(role.getName()))
+                    .mapToInt(quanlykhachsan.backend.user.Role::getId).findFirst().orElse(-1);
+            if (target.getRoleId() == adminRoleId && roleId != adminRoleId) {
+                long activeAdmins = users.stream()
+                        .filter(user -> user.getRoleId() == adminRoleId && isActive(user.getStatus())).count();
+                if (activeAdmins <= 1) {
+                    ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error("Cần giữ lại ít nhất một quản trị viên đang hoạt động"));
+                    return;
+                }
+            }
+            int customerRoleId = roles.stream().filter(role -> "customer".equalsIgnoreCase(role.getName()))
+                    .mapToInt(quanlykhachsan.backend.user.Role::getId).findFirst().orElse(-1);
+            if (roleId == customerRoleId && target.getCustomerId() == null) {
+                ApiResponseUtil.write(exchange, 409, ApiResponseUtil.error("Tài khoản này chưa có hồ sơ khách hàng để gán vai trò khách hàng"));
+                return;
+            }
+            if (target.getRoleId() == roleId || userDAO.updateRole(userId, roleId)) {
+                System.out.printf("[ACCESS_CONTROL] admin=%d changed user=%d role=%d->%d%n",
+                        actorId, userId, target.getRoleId(), roleId);
+                ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Cập nhật quyền truy cập thành công"));
+            } else {
+                ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Tài khoản đã thay đổi hoặc không còn tồn tại"));
+            }
+        } catch (com.google.gson.JsonParseException | IllegalArgumentException ex) {
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thông tin vai trò không hợp lệ"));
+        } catch (Exception ex) {
+            ApiResponseUtil.write(exchange, 503, ApiResponseUtil.error("Chưa thể cập nhật quyền truy cập"));
+        }
+    }
+
+    private static boolean isActive(String status) {
+        return status == null || status.isBlank()
+                || !java.util.Set.of("inactive", "disabled", "locked", "suspended", "deleted")
+                        .contains(status.toLowerCase(java.util.Locale.ROOT));
     }
 
     private void handleAddUser(HttpExchange exchange) throws IOException {
@@ -118,7 +192,7 @@ public class UserController implements HttpHandler {
                 // Nếu là khách hàng, tạo hồ sơ khách hàng trước
                 quanlykhachsan.backend.customer.Customer c = new quanlykhachsan.backend.customer.Customer();
                 c.setFullName(user.getFullName() != null ? user.getFullName() : user.getUsername());
-                c.setIdentityCard("AUTO-" + System.currentTimeMillis());
+                c.setIdentityCard(null);
                 c.setPhone(user.getPhone() != null ? user.getPhone() : "");
                 c.setEmail(user.getEmail() != null ? user.getEmail() : "");
                 
@@ -248,9 +322,8 @@ public class UserController implements HttpHandler {
             customer.setFullName(user.getFullName());
             customer.setEmail(user.getEmail());
             customer.setPhone(user.getPhone());
-            customer.setIdentityCard(reqObj.has("identityCard") && !reqObj.get("identityCard").getAsString().isEmpty() 
-                ? reqObj.get("identityCard").getAsString() 
-                : "REG-" + System.currentTimeMillis());
+            customer.setIdentityCard(reqObj.has("identityCard") && !reqObj.get("identityCard").getAsString().isEmpty()
+                ? reqObj.get("identityCard").getAsString() : null);
             customer.setAddress(reqObj.has("address") ? reqObj.get("address").getAsString() : "");
 
             boolean success = authService.registerCustomer(user, customer);

@@ -1,4 +1,5 @@
 import { api } from "../../api.js";
+import { escapeHtml } from "../shared/ui.js";
 
 function avatarColor(str) {
     const colors = ['#d97706','#10b981','#3b82f6','#8b5cf6','#06b6d4','#ef4444','#f59e0b'];
@@ -105,26 +106,29 @@ export async function renderCustomers(container, session) {
         paginatedList.forEach((c, i) => {
             const initials = getInitials(c.fullName);
             const color    = avatarColor(c.fullName);
+            const displayName = escapeHtml(c.fullName || '—');
+            const identity = escapeHtml(c.identityCard || (c.hasIdentityCard ? 'Đã lưu bảo mật' : '—'));
+            const safePhone = String(c.phone || '').replace(/[^+\d]/g, '');
             const tr = document.createElement("tr");
             tr.className = "table-row-animate";
             tr.style.animationDelay = `${i * 0.04}s`;
             tr.innerHTML = `
-                <td><div class="user-avatar" style="background:${color};">${initials}</div></td>
+                <td><div class="user-avatar" style="background:${color};">${escapeHtml(initials)}</div></td>
                 <td>
-                    <div style="font-weight:600;">${c.fullName || '—'}</div>
-                    <div style="font-size:11px;color:var(--text-muted);">ID: ${c.id}</div>
+                    <div style="font-weight:600;">${displayName}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">ID: ${escapeHtml(c.id)}</div>
                 </td>
-                <td style="font-size:13px;font-family:monospace;">${c.identityCard || '—'}</td>
+                <td style="font-size:13px;font-family:monospace;">${identity}</td>
                 <td style="font-size:13px;">${c.phone
-                    ? `<a href="tel:${c.phone}" style="color:var(--text-main);text-decoration:none;">${c.phone}</a>`
+                    ? `<a href="tel:${escapeHtml(safePhone)}" style="color:var(--text-main);text-decoration:none;">${escapeHtml(c.phone)}</a>`
                     : '<span style="color:var(--text-muted);">—</span>'}</td>
                 <td style="font-size:13px;">${c.email
-                    ? `<a href="mailto:${c.email}" style="color:var(--primary);text-decoration:none;">${c.email}</a>`
+                    ? `<a href="mailto:${escapeHtml(c.email)}" style="color:var(--primary);text-decoration:none;">${escapeHtml(c.email)}</a>`
                     : '<span style="color:var(--text-muted);">—</span>'}</td>
-                <td style="font-size:12px;color:var(--text-muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.address||''}">${c.address || '—'}</td>
+                <td style="font-size:12px;color:var(--text-muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(c.address || '')}">${escapeHtml(c.address || '—')}</td>
                 <td style="text-align:right;">
                     <div class="action-btns" style="justify-content:flex-end;">
-                        <button class="btn-icon btn-view-sc" data-id="${c.id}" title="Xem chi tiết">
+                        <button class="btn-icon btn-view-sc" data-id="${escapeHtml(c.id)}" title="Xem chi tiết">
                             <i data-lucide="eye" style="width:14px;height:14px;"></i>
                         </button>
                     </div>
@@ -141,22 +145,22 @@ export async function renderCustomers(container, session) {
                         <button class="modal-close" onclick="closeModal('global-modal')">&times;</button>
                     </div>
                     <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:14px;background:var(--bg-card);border-radius:var(--radius-md);">
-                        <div class="user-avatar" style="width:52px;height:52px;font-size:18px;background:${color};">${initials}</div>
+                        <div class="user-avatar" style="width:52px;height:52px;font-size:18px;background:${color};">${escapeHtml(initials)}</div>
                         <div>
-                            <div style="font-size:17px;font-weight:700;">${c.fullName || '—'}</div>
-                            <div style="font-size:12px;color:var(--text-muted);">Khách hàng #${c.id}</div>
+                            <div style="font-size:17px;font-weight:700;">${displayName}</div>
+                            <div style="font-size:12px;color:var(--text-muted);">Khách hàng #${escapeHtml(c.id)}</div>
                         </div>
                     </div>
                     <div class="grid grid-cols-2" style="gap:10px;margin-bottom:20px;">
                         ${[
-                            ['CCCD / Hộ chiếu', c.identityCard],
+                            ['CCCD / Hộ chiếu', c.identityCard || (c.hasIdentityCard ? 'Đã lưu bảo mật' : '')],
                             ['Điện thoại',       c.phone],
                             ['Email',            c.email],
                             ['Địa chỉ',          c.address],
                         ].map(([label, val]) => `
                         <div style="background:var(--bg-card);border-radius:var(--radius-sm);padding:12px;">
                             <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">${label}</div>
-                            <div style="font-weight:600;">${val || '—'}</div>
+                            <div style="font-weight:600;">${escapeHtml(val || '—')}</div>
                         </div>`).join('')}
                     </div>
                     <div class="flex-row" style="justify-content:flex-end;">
@@ -225,7 +229,8 @@ export async function renderCustomers(container, session) {
             (c.fullName     || '').toLowerCase().includes(q) ||
             (c.identityCard || '').toLowerCase().includes(q) ||
             (c.phone        || '').toLowerCase().includes(q) ||
-            (c.email        || '').toLowerCase().includes(q)
+            (c.email        || '').toLowerCase().includes(q) ||
+            (c.address      || '').toLowerCase().includes(q)
         ));
     });
 

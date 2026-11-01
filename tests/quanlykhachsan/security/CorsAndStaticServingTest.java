@@ -36,7 +36,8 @@ class CorsAndStaticServingTest {
             for (String path : new String[]{"/api/v1/rooms", "/api/v1/rooms/availability", "/api/v1/pricing/quote",
                     "/api/v1/auth/guest-otp/request", "/api/v1/auth/guest-otp/verify", "/api/v1/bookings/public"}) {
                 assertEquals(200, send(client, base, path, "GET", null).statusCode());
-                assertEquals(401, send(client, base, path, "GET", "Bearer invalid").statusCode());
+                int expected = path.equals("/api/v1/bookings/public") || path.equals("/api/v1/rooms/availability") ? 200 : 401;
+                assertEquals(expected, send(client, base, path, "GET", "Bearer invalid").statusCode());
             }
             for (String path : new String[]{"/api/v1/rooms/availability/private",
                     "/api/v1/bookings/publicity", "/api/v1/auth/guest-otp/admin", "/api/v1/users"}) {

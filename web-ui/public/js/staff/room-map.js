@@ -89,7 +89,7 @@ async function handleRoomAction(room, reloadCallback) {
                 <h2>Đặt Phòng ${room.roomNumber}</h2>
                 <button class="modal-close" onclick="closeModal('global-modal')">&times;</button>
             </div>
-            <form id="form-quick-booking">
+            <form id="form-quick-booking" onsubmit="return false;">
                 <div class="form-group">
                     <label class="form-label">Chọn Khách hàng</label>
                     <select class="form-input" id="qb-customer" required>
@@ -173,7 +173,7 @@ async function handleRoomAction(room, reloadCallback) {
                     <p><strong>Đơn giá:</strong> ${room.price.toLocaleString('vi-VN')} đ/đêm</p>
                     <h3 class="mt-4" style="color: var(--primary);">Tổng cộng: ${baseCost.toLocaleString('vi-VN')} VNĐ</h3>
                 </div>
-                <form id="form-checkout-payment">
+                <form id="form-checkout-payment" onsubmit="return false;">
                     <div class="form-group">
                         <label class="form-label">Phương thức thanh toán</label>
                         <select class="form-input" id="pay-method">

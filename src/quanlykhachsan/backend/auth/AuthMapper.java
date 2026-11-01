@@ -22,6 +22,12 @@ public class AuthMapper {
         return response;
     }
 
+    public static AuthResponse fieldError(String message, String field, String fieldMessage) {
+        AuthResponse response = error(message);
+        response.setFieldErrors(java.util.Map.of(field, fieldMessage));
+        return response;
+    }
+
     public static AuthUserInfo toUserInfo(User user, String roleStr) {
         AuthUserInfo info = new AuthUserInfo();
         info.setUserId(user.getId());

@@ -18,6 +18,8 @@ public final class DatabaseConnection {
         config.setUsername(quanlykhachsan.frontend.api.ApiConfig.getDbUser());
         config.setPassword(quanlykhachsan.frontend.api.ApiConfig.getDbPassword());
         config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        // Business DATETIME values and bank timestamps are Vietnam wall time.
+        config.setConnectionInitSql("SET time_zone = '+07:00'");
         config.setMaximumPoolSize(20);
         config.setMinimumIdle(5);
         config.setConnectionTimeout(30000);

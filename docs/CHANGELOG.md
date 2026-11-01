@@ -1,5 +1,143 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-10-26] — Improve light-theme admin popup form contrast
+
+- Fixed dark input backgrounds paired with dark text in admin create/edit modals under the light theme; inputs now use a light surface, readable text, warm borders and localized placeholders.
+- Added a room-type regression assertion and bumped the served admin stylesheet cache version.
+- Live port-3000 verification covered add/edit room-type form validation and the account-role dialog. No form was saved and no account or permission changed.
+- Full `npm test` passed **153/153** after allowing only the local loopback fixtures.
+
+## [2026-10-26] — Verify room image upload through Cloudflare R2
+
+- Saved the public QA sample photo on the QA Standard room type, then reopened the edit popup and confirmed the R2-backed image loaded at 1200 × 900 with its stored alt text.
+- No room-type pricing, name, capacity or sale status changed. The QA room type now keeps this sample image in the configured R2 bucket.
+
+## [2026-10-26] — Localized validation in admin room forms
+
+- Added a reusable inline-validation helper for physical-room and room-type create/edit forms. Vietnamese field errors replace browser-native English validation bubbles, the first invalid field receives focus, and corrected field errors clear immediately.
+- Invalid forms are stopped before API submission. Source and served/public copies are kept in sync.
+- Focused room, room-type, image, portal and validation regressions passed 22/22. The live admin UI was checked on port 3000 in light and dark themes; the test modal was cancelled without saving.
+- Full `npm test` passed 153/153 with loopback access enabled for local HTTP test fixtures.
+
+## [2026-10-26] — Verify room-type CRUD against the rebuilt backend
+
+- Live testing found the port-3000 room-type create request returning 405 because the running `RoomController.class` predated its CRUD routes.
+- Restarted the workspace backend through `stop-backend.bat` and `start-backend.bat`; startup checks passed for MariaDB, schema and vault.
+- Manually created, edited and deleted a hidden QA room type through the admin UI. The test row was removed; the existing QA room and its pricing remained unchanged.
+
+## [2026-10-26] — Fix room-type navigation icon and responsive rate cards
+
+- Replaced the unsupported room-type sidebar icon with Lucide's `layers` icon.
+- Changed the shared rate editor from a fixed two-column breakpoint to auto-fit columns with a 420px minimum; a single card now fills its available track and narrow screens use one column.
+- Added regression coverage for the navigation icon, adaptive grid rules, and editor markup. Focused portal and room-type tests passed 15/15.
+- Reloaded the authenticated port-3000 admin page and visually confirmed the icon and full-width single card. Narrow-screen one-column behavior is covered by the responsive CSS regression test.
+
+## [2026-10-26] — Shared account avatars and a dedicated room-type tab
+
+- Added one avatar picker to the shared account settings used by Admin, Staff and Customer. Each upload is attached to the authenticated user's account, uses the configured media provider, and supports preview, save and remove.
+- Added the idempotent `users.avatar_url` migration and self-scoped avatar API routes.
+- Added an Admin “Hạng phòng” tab with create, edit and delete for room types. Deletion is blocked while physical rooms use the type.
+- Removed shared stay-rate controls from physical-room dialogs and reused the existing rate editor in the new tab.
+- Verification: focused portal, avatar, media-upload and room-type UI tests passed 29/29; room-type authorization and account profile Java tests passed; Java test compilation succeeded. The full web suite ran 147 cases (140 passed, 7 blocked by loopback HTTP test-server failures). Browser-driven review was stopped by the user during this turn.
+
+## [2026-10-26] — Upload and preview room images
+
+- Replaced the room URL field with an optional JPEG/PNG picker (up to 5 MB) in both add and edit forms; selected images preview locally before submission.
+- Consolidated catalog and room upload requests through a shared helper. The current backend stores file bytes in its configured local media directory and the URL/metadata in MariaDB; an external object-storage provider is not configured yet.
+- Verified both room dialogs on port 3000, previewed `standard.jpg`, then cancelled without changing QA-801 or uploading the image. Image validation tests passed 2/2; modified JavaScript syntax and `git diff --check` passed.
+- Revisited the admin dashboard after backend restart and verified the live report/chart, resolving QA-2026-020.
+- Full web regression run: 142 tests, 135 passed, 7 failed (five login/auth integration failures due to unavailable test API and two loopback `EACCES` failures in server tests); focused image-upload validation passed 2/2.
+
+### QA follow-up — Room image persistence
+
+- Fixed room updates rejecting the managed media path returned by the upload API; only strict UUID media paths and absolute HTTP/HTTPS URLs are accepted. Retry after a successful upload reuses its URL.
+- Manually uploaded `standard.jpg` and saved it to QA-801 through the admin room dialog. Reopening the dialog fetched the persisted image (1200 px natural width). The room price and housekeeping state were unchanged.
+- Added backend URL-validation regression coverage (3 passed). The failed first room update left one unattached media asset; its cleanup is pending a DB reference check because MariaDB is currently stopped.
+- Added a Cloudflare R2 S3-compatible media provider with signed server-side uploads and reads. Local storage remains the default; R2 is selected through `.env` and returns a direct URL only when an HTTPS public base is configured. The secret key stays on the backend.
+- After the operator filled the R2 settings, restarted with `start-backend.bat` and manually saved `standard.jpg` to QA-801 on port 3000. Reopening the room popup loaded the 1200 × 900 R2 image. Room price and housekeeping status were unchanged. R2 credentials were not printed or added to versioned files.
+
+## [2026-10-26] — Consolidate room pricing and improve admin visibility
+
+- Added a business-date admin overview with occupancy, collections, refund rate, pending refunds, cancellations, arrivals/departures, cleaning work and six-month net revenue.
+- Moved hourly and overnight price controls into the add/update room dialog. The dialog states that these rates apply to every room in the selected room type; room-level nightly price remains separate.
+- Fixed low-contrast text and controls in light-theme account management, and removed the stray visible “Đóng” text from role/create/delete dialogs.
+- Verification: backend compile succeeded and all 140 existing web UI tests passed. Port-3000 admin account and dialog UI checks passed; dashboard API integration failed against a stale running backend build and is tracked as QA-2026-020.
+
+## [2026-10-24] — Link payment history to guest and booking
+
+- Added booking code, customer name and room number to payment audit rows using the existing Folio → booking relationships.
+- Kept customer phone and identity numbers out of the transaction table and updated the API contract.
+- Rebuilt through `start-backend.bat` and verified guest, booking code and room on the existing folio-5 transaction in the live port-3000 staff page; no extra payment was submitted.
+
+## [2026-10-24] — Improve staff payment history readability
+
+- Kept transaction date/time, amounts and result badges together in the staff payment history; wide tables now scroll horizontally instead of squeezing every field.
+- Aligned filter controls in one row on wide screens and kept a responsive layout for smaller screens.
+- Verified the refreshed port-3000 staff view against existing synthetic transactions; no extra payment was submitted.
+
+## [2026-10-24] — Clarify front-desk room cards
+
+- Added staff-scoped styles for the shared room-card image placeholder/status, room details, amenity chips, price, actions and unavailable reason. The “Cần dọn phòng” selection remains disabled.
+- Updated QA-2026-014 with the live port-3000 visual check; no booking or payment was submitted.
+
+## [2026-10-24] — Verify staff counter collection end to end
+
+- Recorded the authorized synthetic cash collection for Web booking #5 and verified the booking's paid state in the live staff list.
+- Confirmed transaction history contains one applied cash entry for 850,500 VND with zero excess; no real funds or external gateway were used.
+- Updated QA-2026-009 and test progress; POS and partial/excess collection paths remain open.
+
+## [2026-10-24] — Reuse customer room search in front-desk bookings
+
+- Reused the same stay/guest search controls, availability query builder, and room-card renderer in customer discovery and staff front-desk booking.
+- Replaced manual customer lookup with debounced suggestions while staff enter a name, phone, identity number, or email. Only matching customer profiles are suggested; an unmatched guest continues as a new customer.
+- Verification: seven focused browser UI tests passed. On the live staff portal, a synthetic unmatched name produced no suggestion; today's room search returned no eligible clean rooms, so no live room selection, booking, or payment was submitted.
+
+## [2026-10-24] — Restore customer profile details in staff and admin lists
+
+- Fixed the customer list API/UI field-name mismatch, included email and address in search results, and exposed whether an identity number is present in the encrypted vault without decrypting it for list views.
+- Customer creation now preserves submitted addresses. The customer list endpoint is restricted to Admin/FrontDesk, matching its PII scope.
+- Added QA-2026-013 and documented the list response fields and verification status.
+
+## [2026-10-23] — Overdue checkout charges and staff notification center
+
+- Added a 30-minute checkout grace period, per-started-hour overstay charges and one hourly penalty after six hours, with idempotent folio reconciliation across background processing and staff checkout.
+- Kept unpaid Web counter bookings in-house after checkout, marked them overdue after the grace period, and added a durable, deduplicated alert to the staff notification center with contact and collection details.
+- Documented staff notification API access and the overdue checkout policy. Added lifecycle regression coverage for grace boundaries, fee posting and notification deduplication.
+- Validation: pending focused backend and frontend checks; no live payment or email delivery was triggered.
+
+## [2026-10-23] — @codex — Correct MISA POS invoice payload
+
+- Set MISA's required `IsInvoiceCalculatingMachine` marker on POS invoice data, placed the reference ID at the documented nested level, and preserved the caller's invoice object when adding correction data.
+- Added synthetic HTTP contract tests for POS/HSM routes, token caching and separation, status calls, safe view links, PDF validation, and cancellation. Updated the e-invoice API contract and QA records. The operations guide now cites Circular 91/2026/TT-BTC alongside Decree 254/2026/NĐ-CP, and records seller-specific legal configuration as an accounting confirmation.
+- Validation: **6 focused adapter tests passed**; the POS marker regression also failed as expected when the old payload was temporarily restored. No MISA sandbox request was made because test credentials were unavailable.
+
+## [2026-10-22] — @codex — Shared payment audit and durable lifecycle notifications
+
+- Added a common provider/method/direction transaction audit for cash, POS, legacy bank receipts and future gateway adapters, with payOS as the first new QR integration. Added signature and beneficiary validation, partial/excess handling, duplicate/conflict audits, and late-payment exceptions without reopening cancelled stays.
+- Added transactional in-app/email outbox events, check-in/out reminders, bounded retries and conservative UNKNOWN delivery handling. Added customer-owned and staff audit APIs and a portal history view; removed fabricated notification fallback and fixed hard-coded checkout QR/manual transfer confirmation.
+- Added [Vietnamese setup and operations guide](vi/payments-notifications.md), configuration placeholders and disposable MariaDB integration checks. Live gateway activation awaits merchant/bank credentials; email delivery remains opt-in.
+
+## [2026-10-22] — @codex — Backend stop batch launcher
+
+- Added `stop-backend.bat` to invoke the existing PID- and workspace-verified PowerShell stop script. It preserves the script exit code and keeps the console open on failure. Updated startup guides for the start/stop pair; the desktop build and standalone web batch wrappers remain removed.
+
+## [2026-10-22] — @codex — Single backend batch launcher
+
+- Added only `start-backend.bat` at the user's request, with the complete command invoking `scripts/start-backend.ps1 -Background`. Startup reads the existing `.env`; on failure the window shows separate database/key checks and log paths. Removed the newly proposed VS Code tasks in favor of this batch launcher; the other batch wrappers remain removed.
+- Updated startup guides for the single double-click entry point.
+
+## [2026-10-22] — @codex — Remove batch wrappers before rebuilding startup
+
+- At the user's request, removed all four project-owned `.bat` files: backend start/stop, desktop build and standalone web start. Existing PowerShell and Node entry points remain available; updated their current setup instructions and desktop task references.
+- This cleanup does not replace the running backend or modify the database, `.env`, identity keys or application source.
+
+## [2026-10-22] — @codex — Persistent real database startup and developer database handoff
+
+- Real Windows launchers now load the ignored `.env`, retain stable DB/AES/HMAC/JWT configuration, prefer `JAVA_HOME`, run read-only preflight and start backend `Main` directly. Removed implicit localhost database switching by default and secret generation at restart. Scripts restore the caller's environment after temporary configuration checks.
+- Added separate connection/schema/key/account diagnostics, explicit one-time fresh database provisioning and an identity-key companion exporter for SQL handoff. Startup authenticates stored AES envelopes and compares HMAC indexes before migration, then verifies readiness after migration. Removed implicit HMAC fallback/padding in vault configuration and the conflicting production Compose HMAC sources. Login database errors no longer become credential mismatches.
+- Added the [Vietnamese real database and per-developer handoff runbook](vi/real-database-startup.md), updated startup instructions/template, and recorded [verification and limits](verification/real-database-startup-20261022.md). The operator authorized a new local database after confirming the original VM database's keys were lost; this does not establish recovery of its historical ciphertext.
+- Validation: 13 focused Java tests; 8 environment-loader assertions; live MariaDB startup/login/profile/vault checks across restart, negative AES/HMAC/password/network checks, and separate fresh-provision/configuration-switch checks. Secret values are retained only in ignored local configuration.
+
 ## [2026-10-22] — @codex — CORS response pipeline — Restore Google OTP login from localhost:3000
 
 - Fixed `ApiResponseUtil` overwriting the origin selected by `CorsFilter` with `*`. Credentialed Google requests from port 3000 could send an OTP email successfully while the browser rejected the response, leaving the OTP form hidden and preventing device verification from completing. JSON responses now preserve the selected origin; dynamic CORS responses include `Vary: Origin`.
@@ -305,3 +443,43 @@
 # 2026-10-16 — Room status labels
 
 - Added the optional read-only `include_status=true` availability projection to `dev-spec/api-contracts.md`; existing endpoint behavior remains unchanged by default. No schema or data changes.
+
+## [2026-10-23] — Invoice tests, database bootstrap, API contract, and QA tracking
+
+- Updated internal invoice PDF tests to match the current payment-statement contract and moved their generated PDF to `target/qa-artifacts/`.
+- Added the electronic-invoice migration to the shared fresh-database bootstrap manifest.
+- Documented the MISA meInvoice routes and access rules in `docs/dev-spec/api-contracts.md`.
+- Added the QA bug report, test progress, and decision log. Maven ran 278 tests: 236 passed, 0 failed, and 42 guarded skips; the web UI suite passed all 133 tests.
+
+## [2026-10-24] — Shared payment history pagination
+
+- Added exact totals to payment and notification history responses and reused the portal-wide pagination component for page size, result ranges, page indicators, and navigation states.
+- Grouped the history table in the shared card treatment and moved “Thanh toán & thông báo” below “Hóa đơn” with a wallet icon.
+- Recorded the live verification as QA-2026-017; no database records, payments, or emails were changed.
+
+## [2026-10-26] — Admin operations dashboard
+
+- Reworked the administrator overview to combine payment collections, room occupancy, pending reservations, arrivals/departures, housekeeping, refunds and cancellations in one responsive dashboard.
+- Added the admin-only `GET /api/v1/reports/admin-overview` report, using business-date folio records and auditable refund statuses; documented calculation periods and denominators in the API contract.
+- Replaced the single-month invoice chart request with a six-month net folio revenue series. No database schema or records were changed.
+- Moved accommodation-type hourly and overnight rate editing into room management, added a shortcut to the section, and redirected old rate-page links to the room screen.
+- Manual port-3000 checks: account list and add/role/delete dialogs rendered correctly; no account or permission mutation was submitted. The admin dashboard error is reproducible because the running 8081 process predates the latest report route; tracked as QA-2026-020 and pending rebuild/restart verification.
+
+## [2026-10-26] — Cloudflare R2 room images
+
+- Added optional Cloudflare R2 storage for room images using server-side S3 SigV4 credentials; the browser receives only image URLs and credentials remain in the backend environment.
+- Kept local media as the default and documented private proxy reads and direct HTTPS public-base configuration.
+- Verified on port 3000 by uploading a sample image to QA-801, saving, reopening the room dialog, and loading the persisted 1200 × 900 image from R2. The room price and housekeeping state were unchanged.
+- Focused checks passed: 4 R2 adapter tests, 3 room-image URL validation tests, and 2 browser upload-helper tests.
+
+## [2026-10-26] — Responsive room-type rate editor
+
+- Changed the “Hạng phòng” navigation symbol to a clear room-door icon.
+- Made the stay-rate inputs automatically flow into columns based on the available card width.
+- Updated source/public copies and cache versions.
+
+## [2026-10-26] — Localized shared avatar picker
+
+- Replaced the native English file chooser display with a Vietnamese selection button and selected-filename label shared by Admin, Staff and Customer.
+- Preserved local preview and validated upload flow; rebuilt the DaisyUI/Tailwind profile stylesheet.
+- Verified a local preview in the Admin UI without saving or sending the image to storage.

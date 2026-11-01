@@ -11,23 +11,26 @@ import static org.junit.jupiter.api.Assertions.*;
 class VirtualConciergeControllerTest {
     @org.junit.jupiter.api.io.TempDir java.nio.file.Path aiSettingsDirectory;
     private HttpServer server;
+    private java.util.concurrent.ExecutorService serverExecutor;
     private VirtualConciergeController controller;
     private AtomicInteger tickets;
-    private final HttpClient client=HttpClient.newHttpClient();
     @BeforeEach void start() throws Exception {
         tickets=new AtomicInteger();
         controller=new VirtualConciergeController((session,category,correlation,owner,role)->{
             tickets.incrementAndGet();throw new SQLException("Synthetic queue outage");
         },event->assertTrue(java.util.Set.of("BLOCKED","ESCALATED").contains(event.decision())),new AiProviderSettings(aiSettingsDirectory),new CloudAiClient(request->{throw new java.io.IOException("Cloud is disabled in this test");}));
         server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
+        serverExecutor=java.util.concurrent.Executors.newFixedThreadPool(4);
+        server.setExecutor(serverExecutor);
         server.createContext("/api/v1/ai/concierge",e->{
             e.setAttribute("role","customer");e.setAttribute("userId",123);
             if(e.getRequestURI().getPath().endsWith("/budget")){
+                e.getRequestBody().readAllBytes();
                 if(controller.checkChatBudget(e)){e.sendResponseHeaders(204,-1);e.close();}
             }else controller.handle(e);
         });server.start();
     }
-    @AfterEach void stop(){server.stop(0);controller.close();}
+    @AfterEach void stop(){server.stop(0);serverExecutor.shutdownNow();controller.close();}
     @Test void supervisedGuestFailsClearlyWhenTicketCannotBePersisted() throws Exception {
         var response=send("/chat","What services are available?","token-a");
         assertEquals(503,response.statusCode());assertTrue(response.body().contains("could not be queued"));
@@ -49,6 +52,6 @@ class VirtualConciergeControllerTest {
         var body=new com.google.gson.JsonObject();body.addProperty("session_id",java.util.UUID.randomUUID().toString());body.addProperty("message",message);
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+server.getAddress().getPort()+"/api/v1/ai/concierge"+route));
         if(token!=null)request.header("Authorization","Bearer "+token);
-        return client.send(request.POST(HttpRequest.BodyPublishers.ofString(body.toString())).build(),HttpResponse.BodyHandlers.ofString());
+        return HttpClient.newHttpClient().send(request.POST(HttpRequest.BodyPublishers.ofString(body.toString())).build(),HttpResponse.BodyHandlers.ofString());
     }
 }

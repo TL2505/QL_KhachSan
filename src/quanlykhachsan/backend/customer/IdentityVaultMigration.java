@@ -16,6 +16,9 @@ public final class IdentityVaultMigration {
         try(var q=c.createStatement();var r=q.executeQuery("SELECT COUNT(*) FROM customers WHERE identity_card IS NOT NULL")){
             if(!r.next()||r.getLong(1)>0)throw new IllegalStateException("Plain identities require the explicit backed-up IdentityVaultMigration --apply maintenance workflow");
         }
+        long records = GuestIdentityVaultDao.configured().verifyExistingRecords(c);
+        System.out.println("[VAULT] AES/HMAC verified records=" + records
+                + (records == 0 ? "; empty vault: historical key ownership cannot be proven" : ""));
         finalizeSchema(c);
     }
     public static void main(String[] args)throws Exception {

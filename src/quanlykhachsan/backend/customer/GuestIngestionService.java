@@ -1,6 +1,8 @@
 package quanlykhachsan.backend.customer;
 
 import java.sql.*;
+import java.security.MessageDigest;
+import java.util.Arrays;
 import quanlykhachsan.backend.utils.DatabaseConnection;
 import quanlykhachsan.backend.utils.PortalValidation;
 
@@ -20,10 +22,30 @@ public final class GuestIngestionService {
                 int id = ingest(c,name,phone,email);
                 if(identity!=null) {
                     if(!identity.matches("[A-Za-z0-9]{5,20}"))throw new IllegalArgumentException("Invalid identity");
-                    try(PreparedStatement q=c.prepareStatement("SELECT identity_card FROM customers WHERE id=? FOR UPDATE")) {
-                        q.setInt(1,id);try(ResultSet r=q.executeQuery()){r.next();String existing=r.getString(1);if(existing!=null && !existing.equals(identity))throw new IllegalStateException("Guest identity requires Front Desk review");}
+                    String existingIdentity;
+                    byte[] existingHash;
+                    try(PreparedStatement q=c.prepareStatement("SELECT identity_card,identity_hash FROM customers WHERE id=? FOR UPDATE")) {
+                        q.setInt(1,id);try(ResultSet r=q.executeQuery()){
+                            if(!r.next())throw new SQLException("Guest profile disappeared during ingestion");
+                            existingIdentity=r.getString(1);existingHash=r.getBytes(2);
+                        }
                     }
-                    try(PreparedStatement q=c.prepareStatement("UPDATE customers SET identity_card=? WHERE id=? AND identity_card IS NULL")){q.setString(1,identity);q.setInt(2,id);q.executeUpdate();}
+                    if(existingIdentity!=null && !existingIdentity.isBlank() && !existingIdentity.equals(identity)) {
+                        if(existingHash!=null)Arrays.fill(existingHash,(byte)0);
+                        throw new IllegalStateException("Guest identity requires Front Desk review");
+                    }
+                    GuestIdentityVaultDao vault=GuestIdentityVaultDao.configured();
+                    byte[] suppliedHash=vault.blindIndex(identity);
+                    try {
+                        if(existingHash!=null) {
+                            if(!MessageDigest.isEqual(existingHash,suppliedHash))throw new IllegalStateException("Guest identity requires Front Desk review");
+                        } else {
+                            vault.save(c,id,identity,null,null);
+                        }
+                    } finally {
+                        Arrays.fill(suppliedHash,(byte)0);
+                        if(existingHash!=null)Arrays.fill(existingHash,(byte)0);
+                    }
                 }
                 c.commit(); return id;
             } catch (SQLException | RuntimeException ex) { c.rollback(); throw ex; }

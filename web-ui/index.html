@@ -258,7 +258,7 @@
 
     <!-- Hero Background Image with Multi-layer Gradient -->
     <div class="absolute inset-0 z-0">
-      <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=2000&q=85"
+      <img id="hero-background-image" src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=2000&q=85"
         alt="Aurelia Grand Palace" class="hero-image-breathe w-full h-full object-cover">
       <div id="hero-image-overlay"
         class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/75 to-obsidian/40"></div>
@@ -276,19 +276,19 @@
         </span>
       </div>
 
-      <h1
+      <h1 id="hero-title"
         class="text-4xl sm:text-6xl md:text-7xl font-serif text-white font-medium tracking-tight leading-tight sm:leading-tight mb-6">
         <span data-i18n="Khẳng Định">Khẳng Định</span> <span class="text-gold-gradient italic"><span data-i18n="Đẳng Cấp">Đẳng Cấp</span></span> <span data-i18n="Thượng Lưu">Thượng Lưu</span>
       </h1>
 
-      <p
+      <p id="hero-subtitle"
         class="text-base sm:text-lg md:text-xl font-sans text-slate-300 max-w-2xl mx-auto font-light leading-relaxed mb-10">
         <span data-i18n="Nơi hội tụ tinh hoa kiến trúc tân cổ điển Indochine, dịch vụ quản gia vương giả 24/7 và trải nghiệm nghỉ dưỡng 5 sao đỉnh cao bên bờ vịnh di sản.">Nơi hội tụ tinh hoa kiến trúc tân cổ điển Indochine, dịch vụ quản gia vương giả 24/7 và trải nghiệm nghỉ dưỡng 5
         sao đỉnh cao bên bờ vịnh di sản.</span>
       </p>
 
       <div class="flex flex-wrap items-center justify-center gap-4">
-        <a href="#rooms"
+        <a id="hero-cta" href="#rooms"
           class="btn-gold px-8 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider flex items-center gap-2 shadow-xl">
           <span><span data-i18n="Khám Phá Hạng Phòng">Khám Phá Hạng Phòng</span></span>
           <i data-lucide="arrow-down" class="w-4 h-4"></i>
@@ -393,11 +393,11 @@
             <i data-lucide="feather" class="w-4 h-4"></i>
             <span><span data-i18n="Di Sản &amp; Triết Lý Nghỉ Dưỡng">Di Sản &amp; Triết Lý Nghỉ Dưỡng</span></span>
           </div>
-          <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium leading-tight mb-6">
+          <h2 id="about-heading" class="text-3xl sm:text-4xl md:text-5xl font-serif text-white font-medium leading-tight mb-6">
             <span data-i18n="Kiệt Tác Kiến Trúc Hoàng Gia">Kiệt Tác Kiến Trúc Hoàng Gia</span> <br class="hidden sm:inline"><span data-i18n="Giữa Lòng">Giữa Lòng</span> <span class="text-gold-gradient"><span data-i18n="Vịnh Ngọc Di Sản">Vịnh
               Ngọc Di Sản</span></span>
           </h2>
-          <p class="text-slate-300 font-sans text-sm sm:text-base leading-relaxed mb-6 font-light">
+          <p id="about-description" class="text-slate-300 font-sans text-sm sm:text-base leading-relaxed mb-6 font-light">
             <span data-i18n="Khởi nguồn từ khao khát kiến tạo biểu tượng lưu trú xa hoa bậc nhất, Aurelia Grand Palace kết hợp hoàn hảo giữa nét cổ kính tráng lệ của kiến trúc Pháp thế kỷ 19 và sự tinh tế, duy mỹ của văn hóa Á Đông.">Khởi nguồn từ khao khát kiến tạo biểu tượng lưu trú xa hoa bậc nhất, Aurelia Grand Palace kết hợp hoàn hảo
             giữa nét cổ kính tráng lệ của kiến trúc Pháp thế kỷ 19 và sự tinh tế, duy mỹ của văn hóa Á Đông.</span>
           </p>
@@ -467,6 +467,20 @@
     </div>
   </section>
 
+  <section id="landing-featured" class="hidden border-t border-amber-500/10 bg-slateNight/60 px-4 py-16 sm:px-8" aria-labelledby="landing-featured-heading">
+    <div class="mx-auto grid max-w-7xl items-center gap-8 md:grid-cols-2">
+      <div class="card card-border overflow-hidden rounded-3xl border border-amber-500/20 bg-slate-900/60">
+        <img id="landing-featured-image" class="h-64 w-full object-cover" alt="" loading="lazy">
+        <div id="landing-featured-image-fallback" class="hidden h-64 items-center justify-center text-sm text-slate-400">Ảnh đang được cập nhật</div>
+      </div>
+      <div>
+        <h2 id="landing-featured-heading" class="font-serif text-3xl text-white sm:text-4xl"></h2>
+        <p id="landing-featured-description" class="mt-4 text-sm leading-7 text-slate-300"></p>
+        <a id="landing-featured-cta" class="btn btn-gold mt-6 inline-flex rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider"></a>
+      </div>
+    </div>
+  </section>
+
 
   <!-- =========================================================================
        4. ROOM SHOWCASE / ROOM GRID (Bộ sưu tập hạng phòng đẳng cấp)
@@ -487,7 +501,7 @@
         </div>
 
         <!-- Category Filter Pills -->
-        <div class="flex flex-wrap items-center gap-2 font-sans text-xs">
+        <div id="room-category-tabs" class="flex flex-wrap items-center gap-2 font-sans text-xs">
           <button type="button"
             class="room-filter-tab bg-amber-500 text-slate-950 font-bold px-4 py-2 rounded-xl transition-all"
             data-category="all">
@@ -925,6 +939,7 @@
       <div
         class="pt-8 border-t border-amber-500/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-4">
         <div>
+          <p id="landing-legal-notice" class="hidden mb-4 max-w-3xl text-xs leading-6 text-slate-400"></p>
           <span data-i18n="© 2026 Aurelia Grand Luxury Hotel &amp; Resort PMS Platform. Toàn bộ quyền được bảo lưu.">© 2026 Aurelia Grand Luxury Hotel &amp; Resort PMS Platform. Toàn bộ quyền được bảo lưu.</span>
         </div>
         <div class="flex items-center gap-6">
@@ -1230,7 +1245,7 @@
   <div id="toast-container"></div>
 
   <!-- Main ES Module Script -->
-  <script type="module" src="js/app.js?v=3.5.4"></script>
+  <script type="module" src="js/app.js?v=3.5.6"></script>
   <script type="module" src="js/concierge-chat.js?v=5"></script>
 
 </body>

@@ -1,5 +1,7 @@
 # Start the backend on Windows
 
+For the persistent database workflow, per-machine `.env` setup and transferring a database with its matching keys, use the [real database runbook (Vietnamese)](vi/real-database-startup.md). Double-click `start-backend.bat` to invoke the existing PowerShell launcher with `-Background`, or `stop-backend.bat` to stop the recorded workspace backend. Desktop build and standalone web batch wrappers remain removed.
+
 ## Local demo for frontend testing
 
 With local MariaDB running on port `3306`, run from the repository root:
@@ -31,7 +33,7 @@ Reloading creates another new demo schema and switches to it only after successf
 
 - Install JDK 17 and Maven. Set `JAVA_HOME` to the JDK folder and add Maven's `bin` folder to `PATH`.
 - Start MySQL/MariaDB (or MySQL in XAMPP) on port `3306`.
-- The `hotel_prod_db` database must already exist. For a new local database, initialize it from `database/hotel.sql`; do not import this dump over a database containing data you need.
+- The database configured by `DB_URL` or `DB_NAME` in `.env` must already exist. The current local QA setup uses `hotel_runtime_20261022`; initialize a new local schema from `database/hotel.sql` only when you intend to create a fresh demo database.
 
 Check Java and Maven in PowerShell:
 
@@ -60,7 +62,7 @@ cd D:\dulieucam\JAVA\QL_KhachSan
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1
 ```
 
-The launcher compiles the current source, generates a random local JWT signing secret when none is set, sets the default VAT rate to 8%, and starts `quanlykhachsan.backend.Main`. The Maven main class is configurable through `-Dexec.mainClass`; its default remains the desktop frontend. Keep the terminal open. Startup also runs the application's database schema updates and scheduled jobs.
+The launcher reads the repository-root `.env`, validates the stable AES/HMAC/JWT configuration, compiles current source into `.run/backend-build`, runs read-only database/vault preflight and starts `quanlykhachsan.backend.Main` directly. It never generates replacement keys or imports sample data. Keep the terminal open, or pass `-Background` for a detached backend with logs in `.run/backend-real-stdout.log` and `.run/backend-real-stderr.log`. Startup also runs the application's existing database schema updates and scheduled jobs after preflight succeeds.
 
 If Maven is not on `PATH`, specify its location (this is the installed path on the current computer):
 
@@ -68,17 +70,17 @@ If Maven is not on `PATH`, specify its location (this is the installed path on t
 .\scripts\start-backend.ps1 -MavenCommand 'C:\Users\Admin\AppData\Local\Programs\Apache\Maven\apache-maven-3.10.0\bin\mvn.cmd'
 ```
 
-The checked-in `config.properties` targets the VM at `192.168.56.102:3306`; on Windows, an unreachable VM falls back to localhost on the same port. To explicitly select your local database, set these variables in the same terminal before starting:
+The checked-in `config.properties` and local `.env` target the MariaDB QA database on `localhost:3306` (`hotel_runtime_20261022`). `start-backend.bat` loads `.env`; keep `DB_URL` and `DB_HOST` pointed at the same local instance used by HeidiSQL. To select that database in the terminal instead, set:
 
 ```powershell
 $env:DB_HOST = 'localhost'
 $env:DB_PORT = '3306'
-$env:DB_NAME = 'hotel_prod_db'
+$env:DB_NAME = 'hotel_runtime_20261022'
 $env:DB_USER = 'root'
 $env:DB_PASSWORD = 'your-local-database-password'
 ```
 
-The Java backend does not automatically load `.env` files. Pass settings through environment variables. `JWT_SECRET` must contain at least 32 UTF-8 bytes; the launcher handles this for local testing. A new generated secret invalidates tokens from previous runs, so log in again after restarting. For deployment, provide a stable secret through your deployment's secret configuration.
+The Windows launcher loads `.env`; process variables take precedence, treating a secret value and its `_FILE` form as one setting. Direct Java invocation still requires exported environment variables. Put a stable `JWT_SECRET` with at least 32 UTF-8 bytes in `.env` or a secret file; no secret is generated at startup. Also configure `HOTEL_VAT_RATE=0.08`. New independent local databases can be provisioned once with `scripts/initialize-database.ps1`; received SQL dumps must retain the sender's original AES/HMAC keys instead. Do not commit `.env` or transfer unrelated SMTP/API credentials.
 
 ## 3. Verify and test
 
@@ -96,14 +98,15 @@ Expected: `status` is `UP` and `database` is `CONNECTED`.
 
 ## 4. Stop or restart
 
-Press **Ctrl+C** in the backend terminal. Wait for shutdown before starting again. Only one backend can use port `8081` at a time.
+For a foreground launch, press **Ctrl+C** in the backend terminal. For a background launch, double-click `stop-backend.bat` or run `scripts/stop-backend.ps1`. Wait for shutdown before starting again. Only one backend can use port `8081` at a time.
 
 ## Troubleshooting
 
 | Problem | Action |
 | --- | --- |
 | `AES_VAULT_KEY is required` or `HMAC_IDENTITY_KEY is required` | Supply the original database keys using the environment variables or `_FILE` settings above. |
-| Login crashes with `Configure a JWT signing secret with at least 32 bytes` | Restart using the launcher above. Health alone does not verify JWT configuration. |
+| JWT signing secret is missing/too short | Supply a stable `JWT_SECRET` in `.env`; startup now checks it before migration and HTTP traffic. |
+| Vault `VLT01` / `VLT02` | Restore the matching original AES / HMAC key; do not rewrite existing ciphertext or indexes. See the real database runbook. |
 | Login returns HTTP 401 | Check the account username and password. |
 | `Communications link failure` | Start MySQL/MariaDB and check the `DB_*` settings. |
 | `Access denied for user` | Correct the database username/password and database permissions. |

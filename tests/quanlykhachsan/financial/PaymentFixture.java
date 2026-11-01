@@ -22,6 +22,8 @@ public final class PaymentFixture implements AutoCloseable {
     }
     @Override public void close()throws SQLException {
         try(Connection c=DatabaseConnection.getConnection()) {
+            for(String sql:new String[]{"DELETE a FROM notification_delivery_attempts a JOIN notification_outbox o ON o.id=a.outbox_id WHERE o.booking_id=?","DELETE FROM notification_outbox WHERE booking_id=?","DELETE FROM customer_notifications WHERE booking_id=?"})try(var q=c.prepareStatement(sql)){q.setInt(1,booking);q.executeUpdate();}
+            for(String sql:new String[]{"DELETE d FROM payment_webhook_deliveries d JOIN payment_reconciliations p ON p.id=d.reconciliation_id WHERE p.folio_id=?","DELETE FROM payment_reconciliations WHERE folio_id=?","DELETE FROM payment_links WHERE folio_id=?"})try(var q=c.prepareStatement(sql)){q.setLong(1,folio);q.executeUpdate();}
             for(String sql:new String[]{"DELETE d FROM bank_webhook_deliveries d JOIN bank_webhook_logs l ON l.bank_trans_id=d.bank_trans_id WHERE l.folio_id=?","DELETE FROM bank_webhook_logs WHERE folio_id=?","DELETE FROM folios WHERE id=?"})try(PreparedStatement q=c.prepareStatement(sql)){q.setLong(1,folio);q.executeUpdate();}
             try(PreparedStatement q=c.prepareStatement("DELETE FROM bookings WHERE id=?")){q.setInt(1,booking);q.executeUpdate();}
         }

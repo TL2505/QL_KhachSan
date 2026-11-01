@@ -45,8 +45,7 @@ public class NotificationController implements HttpHandler {
                 ApiResponseUtil.sendError(exchange, 405, "ERR_405_METHOD_NOT_ALLOWED", "Method not allowed");
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            ApiResponseUtil.sendError(exchange, 500, "ERR_500_INTERNAL", "Lỗi xử lý thông báo: " + e.getMessage());
+            ApiResponseUtil.sendError(exchange, 503, "ERR_503_UNAVAILABLE", "Chưa tải được thông báo; vui lòng thử lại.");
         }
     }
 
@@ -73,7 +72,7 @@ public class NotificationController implements HttpHandler {
             }
         }
 
-        List<Notification> list = notificationDAO.getNotificationsByCustomer(customerId, unreadOnly, limit);
+        List<Notification> list = notificationDAO.getNotificationsByCustomer(customerId, unreadOnly, Math.min(100,Math.max(1,limit)));
         int unreadCount = notificationDAO.getUnreadCount(customerId);
 
         JsonObject envelope = new JsonObject();

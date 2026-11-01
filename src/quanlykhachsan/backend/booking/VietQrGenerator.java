@@ -21,11 +21,14 @@ public final class VietQrGenerator {
         String payload=tlv("00","01")+tlv("01","12")+tlv("38",merchant)+tlv("53","704")
             +tlv("54",amount.stripTrailingZeros().toPlainString())+tlv("58","VN")+tlv("62",tlv("08",reference))+"6304";
         payload+=Crc16Ccitt.checksum(payload);
+        return new Qr(payload,encodePng(payload));
+    }
+    public static String encodePng(String payload)throws IOException {
         Image qr=new BarcodeQRCode(payload,300,300,null).createAwtImage(Color.BLACK,Color.WHITE);
         BufferedImage png=new BufferedImage(300,300,BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics=png.createGraphics();try{graphics.drawImage(qr,0,0,300,300,null);}finally{graphics.dispose();}
         ByteArrayOutputStream bytes=new ByteArrayOutputStream();if(!ImageIO.write(png,"png",bytes))throw new IOException("PNG writer unavailable");
-        return new Qr(payload,Base64.getEncoder().encodeToString(bytes.toByteArray()));
+        return Base64.getEncoder().encodeToString(bytes.toByteArray());
     }
     private static String tlv(String tag,String value) {
         int length=value.getBytes(StandardCharsets.UTF_8).length;

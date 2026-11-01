@@ -44,12 +44,14 @@ public final class AiProviderSettings {
         String provider = text(body, "provider", 20, false);
         if (!Set.of("openai", "gemini", "claude", "groq").contains(provider)) throw new IllegalArgumentException("Nhà cung cấp không hợp lệ.");
         String key = text(body, "api_key", 512, true);
-        Configuration old = read();
-        if (key.isEmpty() && provider.equals(old.provider())) key = old.apiKey();
+        Configuration old = null;
+        if (key.isEmpty() || (provider.equals("claude") && !body.has("workspace_id"))) old = read();
+        if (key.isEmpty() && old != null && provider.equals(old.provider())) key = old.apiKey();
         if (key.length() < 12 || !key.matches("[!-~]+")) throw new IllegalArgumentException("Vui lòng nhập API key cho nhà cung cấp đã chọn.");
         String workspace = "";
         if (provider.equals("claude")) {
-            workspace = !body.has("workspace_id") && old.provider().equals(provider) ? old.workspaceId() : text(body, "workspace_id", 128, true);
+            workspace = body.has("workspace_id") ? text(body, "workspace_id", 128, true)
+                    : old != null && old.provider().equals(provider) ? old.workspaceId() : "";
             if (!workspace.isEmpty() && !workspace.matches("wrkspc_[A-Za-z0-9]{1,100}")) throw new IllegalArgumentException("Workspace ID không hợp lệ.");
         }
         return new Configuration(provider, "", key, false, "", workspace);
@@ -63,13 +65,15 @@ public final class AiProviderSettings {
         String key = text(body, "api_key", 512, true);
         String knowledge = text(body, "knowledge", 10000, true);
         if (!body.has("enabled") || !body.get("enabled").isJsonPrimitive() || !body.getAsJsonPrimitive("enabled").isBoolean()) throw new IllegalArgumentException("Trạng thái chatbot không hợp lệ.");
-        Configuration old = read();
+        Configuration old = null;
+        if (key.isEmpty() || (provider.equals("claude") && !body.has("workspace_id"))) old = read();
         String workspace = "";
         if (provider.equals("claude")) {
-            workspace = !body.has("workspace_id") && old.provider().equals("claude") ? old.workspaceId() : text(body, "workspace_id", 128, true);
+            workspace = body.has("workspace_id") ? text(body, "workspace_id", 128, true)
+                    : old != null && old.provider().equals("claude") ? old.workspaceId() : "";
             if (!workspace.isEmpty() && !workspace.matches("wrkspc_[A-Za-z0-9]{1,100}")) throw new IllegalArgumentException("Workspace ID không hợp lệ.");
         }
-        if (key.isEmpty() && provider.equals(old.provider())) key = old.apiKey();
+        if (key.isEmpty() && old != null && provider.equals(old.provider())) key = old.apiKey();
         if (key.length() < 12 || !key.matches("[!-~]+")) throw new IllegalArgumentException("Vui lòng nhập API key hợp lệ cho nhà cung cấp đã chọn.");
         write(new Configuration(provider, model, key, body.get("enabled").getAsBoolean(), knowledge, workspace));
     }

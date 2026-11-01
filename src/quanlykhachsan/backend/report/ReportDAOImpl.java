@@ -1,6 +1,8 @@
 package quanlykhachsan.backend.report;
 
 import quanlykhachsan.backend.utils.DBconn;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,8 +12,137 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.TreeMap;
 
 public class ReportDAOImpl implements ReportDAO {
+
+    @Override
+    public AdminOverviewStats getAdminOverview() throws SQLException {
+        AdminOverviewStats data = new AdminOverviewStats();
+        try (Connection con = DBconn.getConnection()) {
+            LocalDate businessDate = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+            try (PreparedStatement ps = con.prepareStatement("SELECT business_date FROM hotel_business_state WHERE id=1");
+                 ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) businessDate = rs.getDate(1).toLocalDate();
+            }
+
+            LocalDate monthStart = businessDate.withDayOfMonth(1);
+            LocalDate nextMonth = monthStart.plusMonths(1);
+            LocalDate chartStart = monthStart.minusMonths(5);
+            data.setBusinessDate(businessDate.toString());
+
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT COUNT(*), "
+                    + "COALESCE(SUM(status NOT IN ('out_of_order','out_of_service')),0), "
+                    + "COALESCE(SUM(status IN ('occupied_clean','occupied_dirty')),0), "
+                    + "COALESCE(SUM(status='vacant_dirty'),0) FROM rooms");
+                 ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    data.setTotalRooms(rs.getInt(1));
+                    data.setSellableRooms(rs.getInt(2));
+                    data.setOccupiedRooms(rs.getInt(3));
+                    data.setRoomsNeedCleaning(rs.getInt(4));
+                }
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT COALESCE(SUM(status='pending'),0), "
+                    + "COALESCE(SUM(DATE(check_in_date)=? AND status IN ('pending','confirmed')),0), "
+                    + "COALESCE(SUM(DATE(check_out_date)=? AND status='checked_in'),0) FROM bookings")) {
+                ps.setDate(1, Date.valueOf(businessDate));
+                ps.setDate(2, Date.valueOf(businessDate));
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        data.setPendingBookings(rs.getInt(1));
+                        data.setArrivalsToday(rs.getInt(2));
+                        data.setDeparturesToday(rs.getInt(3));
+                    }
+                }
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT COALESCE(SUM(CASE WHEN business_date=? THEN amount ELSE 0 END),0), "
+                    + "COALESCE(SUM(CASE WHEN business_date>=? AND business_date<? THEN amount ELSE 0 END),0) "
+                    + "FROM folio_transactions WHERE transaction_type='credit' AND charge_type='payment'")) {
+                ps.setDate(1, Date.valueOf(businessDate));
+                ps.setDate(2, Date.valueOf(monthStart));
+                ps.setDate(3, Date.valueOf(nextMonth));
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        data.setCollectionsToday(rs.getBigDecimal(1));
+                        data.setCollectionsThisMonth(rs.getBigDecimal(2));
+                    }
+                }
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT COALESCE(SUM(CASE WHEN status='REFUNDED' AND resolved_at>=? AND resolved_at<? THEN amount ELSE 0 END),0), "
+                    + "COALESCE(SUM(CASE WHEN status='MANUAL_REQUIRED' THEN amount ELSE 0 END),0), "
+                    + "COALESCE(SUM(status='MANUAL_REQUIRED'),0) FROM booking_refunds")) {
+                ps.setTimestamp(1, Timestamp.valueOf(monthStart.atStartOfDay()));
+                ps.setTimestamp(2, Timestamp.valueOf(nextMonth.atStartOfDay()));
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        data.setRefundsThisMonth(rs.getBigDecimal(1));
+                        data.setOutstandingManualRefundAmount(rs.getBigDecimal(2));
+                        data.setOutstandingManualRefundCount(rs.getInt(3));
+                    }
+                }
+            }
+            data.setRefundRate(percentage(data.getRefundsThisMonth(), data.getCollectionsThisMonth()));
+
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT COUNT(*), COALESCE(SUM(status='cancelled'),0) FROM bookings WHERE created_at>=? AND created_at<?")) {
+                ps.setTimestamp(1, Timestamp.valueOf(monthStart.atStartOfDay()));
+                ps.setTimestamp(2, Timestamp.valueOf(nextMonth.atStartOfDay()));
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        data.setBookingsCreatedThisMonth(rs.getInt(1));
+                        data.setCancelledBookingsThisMonth(rs.getInt(2));
+                    }
+                }
+            }
+            data.setCancellationRate(percentage(
+                    BigDecimal.valueOf(data.getCancelledBookingsThisMonth()),
+                    BigDecimal.valueOf(data.getBookingsCreatedThisMonth())));
+
+            Map<String, BigDecimal> revenueByMonth = new TreeMap<>();
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT DATE_FORMAT(business_date,'%Y-%m') AS month, "
+                    + "COALESCE(SUM(CASE WHEN transaction_type='debit' THEN amount "
+                    + "WHEN transaction_type='credit' AND charge_type IN ('adjustment','refund') THEN -amount ELSE 0 END),0) AS revenue "
+                    + "FROM folio_transactions WHERE business_date>=? AND business_date<? "
+                    + "GROUP BY DATE_FORMAT(business_date,'%Y-%m') ORDER BY month")) {
+                ps.setDate(1, Date.valueOf(chartStart));
+                ps.setDate(2, Date.valueOf(nextMonth));
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) revenueByMonth.put(rs.getString("month"), rs.getBigDecimal("revenue"));
+                }
+            }
+
+            List<MonthlyRevenue> monthly = new ArrayList<>();
+            DateTimeFormatter monthFormat = DateTimeFormatter.ofPattern("yyyy-MM");
+            for (LocalDate month = chartStart; month.isBefore(nextMonth); month = month.plusMonths(1)) {
+                String key = month.format(monthFormat);
+                MonthlyRevenue item = new MonthlyRevenue();
+                item.setMonth(key);
+                item.setGrossRevenue(revenueByMonth.getOrDefault(key, BigDecimal.ZERO).doubleValue());
+                monthly.add(item);
+            }
+            data.setRevenueByMonth(monthly);
+        }
+        return data;
+    }
+
+    private static BigDecimal percentage(BigDecimal numerator, BigDecimal denominator) {
+        if (numerator == null || denominator == null || denominator.signum() <= 0) return BigDecimal.ZERO;
+        return numerator.multiply(BigDecimal.valueOf(100)).divide(denominator, 1, RoundingMode.HALF_UP);
+    }
 
     @Override
     public List<MonthlyRevenue> getMonthlyRevenue() {

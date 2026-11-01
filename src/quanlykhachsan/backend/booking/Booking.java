@@ -10,7 +10,10 @@ public class Booking {
     private Date checkOutDate;
     private double totalPrice;
     private String status;
+    private String paymentChoice;
+    private String customerType;
     private Date createdAt;
+    private Date checkoutOverdueAt;
 
     public Booking() {
     }
@@ -39,7 +42,13 @@ public class Booking {
     public void setTotalPrice(double totalPrice) { this.totalPrice = totalPrice; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getPaymentChoice() { return paymentChoice; }
+    public void setPaymentChoice(String paymentChoice) { this.paymentChoice = paymentChoice; }
+    public String getCustomerType() { return customerType; }
+    public void setCustomerType(String customerType) { this.customerType = customerType; }
 
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
+    public Date getCheckoutOverdueAt() { return checkoutOverdueAt; }
+    public void setCheckoutOverdueAt(Date checkoutOverdueAt) { this.checkoutOverdueAt = checkoutOverdueAt; }
 }

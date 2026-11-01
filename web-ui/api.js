@@ -63,28 +63,8 @@ export const getDynamicApiBaseUrl = () => {
   return `${protocol}//${hostname}:8081/api/v1`; 
 }; 
 
-export function getAlternativeApiBaseUrl(primaryUrl) {
-  if (typeof window === 'undefined' || !window.location) {
-    return null;
-  }
-  const hostname = window.location.hostname;
-  let port = window.location.port;
-  if (!port && window.location.origin) {
-    try {
-      port = new URL(window.location.origin).port;
-    } catch {}
-  }
-  // If window.location is configured for a specific custom port (like unit test mock server), do not fallback
-  if (port && port !== '3000' && port !== '8081' && port !== '80' && port !== '443') {
-    return null;
-  }
-  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-  if (hostname === '192.168.56.102') {
-    return `${protocol}//localhost:8081/api/v1`;
-  }
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return `${protocol}//192.168.56.102:8081/api/v1`;
-  }
+export function getAlternativeApiBaseUrl() {
+  // Keep requests on the selected host so local development cannot fall back to an unavailable VM.
   return null;
 }
 
@@ -93,7 +73,18 @@ export const API_BASE_URL = getDynamicApiBaseUrl();
 export function getApiBaseUrl() {
   const saved = read('hotel_api_url') || read('aurelia_api_base') || read('hotel_api_base');
   if (saved) {
-    try { return normalizeApiBase(saved); } catch {}
+    try {
+      const normalized = normalizeApiBase(saved);
+      const pageHost = typeof window !== 'undefined' && window.location ? window.location.hostname : '';
+      const localPage = pageHost === 'localhost' || pageHost === '127.0.0.1';
+      if (localPage && new URL(normalized).hostname === '192.168.56.102') {
+        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        const localBase = `${protocol}//${pageHost}:8081/api/v1`;
+        setApiBaseUrl(localBase);
+        return localBase;
+      }
+      return normalized;
+    } catch {}
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     const host = window.location.hostname || 'localhost';
@@ -145,6 +136,14 @@ export function clearAuthSession() {
   write('customer_token', null);
   write('auth_token', null);
   write('token', null);
+}
+
+function expireAuthSessionIfCurrent(session) {
+  if (session?.token && getAuthSession()?.token !== session.token) return;
+  clearAuthSession();
+  if (typeof window !== 'undefined' && window.dispatchEvent) {
+    window.dispatchEvent(new Event('hotel:session-expired'));
+  }
 }
 
 function messageFor(status) {
@@ -208,7 +207,7 @@ export async function apiFetch(path, init = {}) {
       if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
       throw new ApiError('Không thể kết nối. Vui lòng thử lại hoặc liên hệ lễ tân.');
     }
-    // Task 5: Network Fallback & Resilience - Try alternative host if primary fails or times out
+    // Do not retry against another host; the selected local backend is authoritative.
     const altBase = getAlternativeApiBaseUrl(baseUrl);
     if (altBase && altBase !== baseUrl) {
       try {
@@ -223,12 +222,7 @@ export async function apiFetch(path, init = {}) {
     }
   }
 
-  if (!isPublic && response.status === 401 && session?.token && getAuthSession()?.token === session.token) {
-    setAuthSession(null);
-    if (typeof window !== 'undefined' && window.dispatchEvent) {
-      window.dispatchEvent(new Event('hotel:session-expired'));
-    }
-  }
+  if (!isPublic && response.status === 401) expireAuthSessionIfCurrent(session);
 
   if (response.status === 204) return null;
 
@@ -241,7 +235,9 @@ export async function apiFetch(path, init = {}) {
   }
 
   if (!response.ok) {
-    const serverMessage = (response.status < 500 && result && typeof result.message === 'string') ? result.message.trim() : '';
+    const safeAiProviderError = ['/admin/ai-settings/models', '/admin/ai-settings/test'].includes(cleanPath)
+      && ['AI_PROVIDER_UNREACHABLE', 'AI_PROVIDER_RESPONSE_INVALID', 'AI_PROVIDER_TIMEOUT', 'AI_PROVIDER_REJECTED', 'AI_SETTINGS_INVALID', 'AI_SETTINGS_UNAVAILABLE'].includes(result?.error_code);
+    const serverMessage = ((response.status < 500 && ![401, 403].includes(response.status) || safeAiProviderError) && result && typeof result.message === 'string') ? result.message.trim() : '';
     throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'));
   }
 
@@ -273,12 +269,7 @@ export async function fetchAuthenticatedFile(path, init = {}) {
     if (error.name === 'AbortError') throw error;
     throw new ApiError('Không thể tải tệp. Vui lòng thử lại.');
   }
-  if (response.status === 401 && session?.token && getAuthSession()?.token === session.token) {
-    setAuthSession(null);
-    if (typeof window !== 'undefined' && window.dispatchEvent) {
-      window.dispatchEvent(new Event('hotel:session-expired'));
-    }
-  }
+  if (response.status === 401) expireAuthSessionIfCurrent(session);
   if (!response.ok) throw new ApiError(messageFor(response.status), response.status, response.headers.get('Retry-After'));
   if (!response.headers.get('Content-Type')?.toLowerCase().includes('application/pdf')) {
     throw new ApiError('Máy chủ không trả về tệp PDF hợp lệ.', response.status);

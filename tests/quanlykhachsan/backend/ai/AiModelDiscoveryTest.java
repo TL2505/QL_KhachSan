@@ -23,6 +23,7 @@ class AiModelDiscoveryTest {
     void modelsUseFixedHostsWithoutCredentialsInTheUrlAndNormalizeIds(String provider) throws Exception {
         var cloud = new CloudAiClient(request -> {
             assertEquals("GET", request.method()); assertTrue(request.bodyPublisher().isEmpty());
+            assertEquals(CloudAiClient.PROVIDER_REQUEST_TIMEOUT_SECONDS, request.timeout().orElseThrow().toSeconds());
             String host = switch(provider) { case "openai" -> "api.openai.com"; case "gemini" -> "generativelanguage.googleapis.com"; case "claude" -> "api.anthropic.com"; default -> "api.groq.com"; };
             assertEquals(host, request.uri().getHost()); assertEquals("https", request.uri().getScheme()); assertFalse(request.uri().toString().contains(KEY));
             assertEquals(provider.equals("gemini") ? KEY : "Bearer " + KEY, request.headers().firstValue(provider.equals("gemini") ? "x-goog-api-key" : "Authorization").orElseThrow());
@@ -32,6 +33,30 @@ class AiModelDiscoveryTest {
         });
         var list = cloud.models(new AiProviderSettings.Configuration(provider, "", KEY, false, "", "wrkspc_test"));
         assertEquals(1, list.models().size()); assertEquals("synthetic-model", list.models().get(0).id()); assertEquals("Synthetic label", list.models().get(0).name()); assertEquals(provider.equals("gemini"), list.moreAvailable());
+    }
+    @Test void connectionChecksUseShorterTimeoutThanGuestRequests() throws Exception {
+        var timeouts = new ArrayList<Long>();
+        var cloud = new CloudAiClient(request -> {
+            timeouts.add(request.timeout().orElseThrow().toSeconds());
+            return "{\"candidates\":[{\"finishReason\":\"STOP\",\"content\":{\"parts\":[{\"text\":\"OK\"}]}}]}";
+        });
+        var config = new AiProviderSettings.Configuration("gemini", "synthetic-model", KEY, false, "");
+        cloud.answer(config, "OK", true);
+        cloud.answer(config, "Khách hỏi giờ nhận phòng", false);
+        assertEquals(List.of(CloudAiClient.CONNECTION_TEST_TIMEOUT_SECONDS, CloudAiClient.PROVIDER_REQUEST_TIMEOUT_SECONDS), timeouts.stream().map(Long::intValue).toList());
+    }
+    @Test void connectionTestTimeoutMessageIsShortAndActionable() {
+        assertTrue(AiProviderSettingsController.timeoutMessage(true).contains("20 giây"));
+        assertTrue(AiProviderSettingsController.timeoutMessage(true).contains("kiểm tra kết nối mạng"));
+        assertTrue(AiProviderSettingsController.timeoutMessage(false).contains("45 giây"));
+    }
+    @Test void networkFailuresAreClassifiedWithoutExposingTransportDetailsOrKeys() {
+        var cloud = new CloudAiClient(request -> { throw new java.io.IOException("synthetic-private-transport-detail"); });
+        var failure = assertThrows(CloudAiClient.ProviderConnectionException.class,
+                () -> cloud.models(new AiProviderSettings.Configuration("gemini", "", KEY, false, "")));
+        assertTrue(failure.publicMessage().contains("Google Gemini"));
+        assertFalse(failure.publicMessage().contains(KEY));
+        assertFalse(failure.publicMessage().contains("synthetic-private-transport-detail"));
     }
     @Test void draftsNeedNoModelAndNeverChangeSavedConfigurationOrReuseAnotherProviderKey() throws Exception {
         var settings = new AiProviderSettings(directory);
@@ -44,6 +69,27 @@ class AiModelDiscoveryTest {
         assertEquals("claude", settings.metadata().get("provider"));
         assertEquals("synthetic-model", settings.read().model());
     }
+    @Test void aCompleteNewProviderDraftCanRecoverFromAnUnreadableSavedConfiguration() throws Exception {
+        var settings = new AiProviderSettings(directory);
+        var original = draft("openai", KEY); original.addProperty("model", "old-model"); original.addProperty("enabled", true);
+        settings.update(original);
+        byte[] encrypted = java.nio.file.Files.readAllBytes(directory.resolve("provider.enc"));
+        encrypted[encrypted.length - 1] ^= 1;
+        java.nio.file.Files.write(directory.resolve("provider.enc"), encrypted);
+        assertThrows(java.security.GeneralSecurityException.class, settings::metadata);
+
+        var resolved = settings.forModels(draft("gemini", KEY));
+        assertEquals("gemini", resolved.provider());
+        assertEquals(KEY, resolved.apiKey());
+
+        var replacement = draft("gemini", KEY); replacement.addProperty("model", "new-model");
+        replacement.addProperty("enabled", false); replacement.addProperty("knowledge", ""); replacement.addProperty("workspace_id", "");
+        settings.update(replacement);
+        assertEquals("gemini", settings.metadata().get("provider"));
+        assertEquals(true, settings.metadata().get("has_key"));
+        assertEquals("new-model", settings.read().model());
+    }
+
     @Test void adminOnlyCatalogRouteDoesNotSaveKeysOrLeakThem() throws Exception {
         var settings = new AiProviderSettings(directory); var count = new AtomicInteger();
         var cloud = new CloudAiClient(request -> { count.incrementAndGet(); return "{\"data\":[{\"id\":\"developer/synthetic-model\"}]}"; });

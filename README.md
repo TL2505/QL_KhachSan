@@ -13,9 +13,8 @@ Xem [hướng dẫn cấu hình chatbot AI riêng cho máy dev](docs/chatbot-ai-
 
 2. Cấu hình database
    - Mở `config.properties` và đảm bảo `server.url=http://localhost:8081/api`.
-   - Trên Windows, backend thử DB được cấu hình trước; nếu host đó không truy cập được và `localhost` cùng cổng đang chạy MariaDB/MySQL, backend tự chuyển sang `localhost`. Fallback giữ nguyên tên database và các tham số JDBC; hãy đảm bảo DB local là DB phù hợp để chạy ứng dụng.
-   - Trên Linux/Docker, backend không tự chuyển host; Docker Compose dùng service `mariadb` trong network nội bộ.
-   - Nếu MySQL không có mật khẩu cho root, cấu hình mặc định đã dùng `root` với mật khẩu rỗng.
+   - Sao chép `.env.example` thành `.env` và cấu hình đúng database cùng key đi kèm. Backend mặc định không tự chuyển host khi DB không truy cập được. Docker Compose dùng service `mariadb` trong network nội bộ.
+   - Xem [cấu hình DB thật, tạo DB mới và nhận DB từ dev khác](docs/vi/real-database-startup.md). DB riêng có key riêng; các máy dùng chung DB hoặc cùng SQL dump phải giữ cùng AES/HMAC key.
    - Nếu dùng cấu hình khác, set biến môi trường:
      - `DB_HOST`
      - `DB_PORT`
@@ -23,17 +22,18 @@ Xem [hướng dẫn cấu hình chatbot AI riêng cho máy dev](docs/chatbot-ai-
      - `DB_USER`
      - `DB_PASSWORD`
    - Mức VAT được phê duyệt hiện tại là `HOTEL_VAT_RATE=0.08` (8%); cấu hình này được dùng khi báo giá, đặt phòng và lập hóa đơn. Nếu quy định áp dụng thay đổi, chỉ đổi sang `0.10` sau khi được phê duyệt. Booking không được tính giá nếu chưa có mức thuế hợp lệ.
+   - PDF bảng kê thanh toán được đánh dấu là tài liệu nội bộ. Tích hợp MISA meInvoice, hồ sơ cần xác nhận với kế toán/nhà cung cấp và luồng đồng bộ/hủy xem tại [docs/electronic-invoices.md](docs/electronic-invoices.md); phát hành production chưa bật khi chưa cấu hình tài khoản và chế độ đã đăng ký.
    - Chatbot trên trang chủ hỗ trợ nhà cung cấp cloud cấu hình tại **Admin > API key AI**: Gemini, Groq, Claude và OpenAI. Luồng này không cần chạy RAG/Python. Nếu dùng RAG nội bộ thay cho cloud, cấu hình `AI_SERVICE_URL` cùng mTLS theo `ai-service/README.md`; backend không chấp nhận HTTP ở cấu hình transport production hiện tại.
 
 3. Build và chạy backend
    - Trong PowerShell, chạy `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-backend.ps1` để biên dịch và khởi chạy backend. Cấu hình khóa vault theo `docs/run-project.md` trước khi chạy.
-   - Trên Windows, có thể chạy `start-backend.bat` để khởi động backend demo ở chế độ nền; trình duyệt tự mở website tại `http://localhost:8081/` sau khi backend sẵn sàng.
+   - Nhấp đúp `start-backend.bat` để chạy sẵn lệnh PowerShell khởi động backend nền với `.env`. Nếu lỗi, cửa sổ giữ lại thông báo và gợi ý kiểm tra DB/key. Nhấp đúp `stop-backend.bat` để dừng đúng backend của dự án qua `scripts/stop-backend.ps1`. Demo là lựa chọn riêng qua `scripts/start-demo.ps1`.
    - Khởi chạy backend bằng `Main`:
      - `quanlykhachsan.backend.Main`
    - Backend hiện đang lắng nghe trên cổng `8081`.
 
 4. Chạy giao diện frontend
-   - Trên Windows, chạy `web-ui\start-web.bat` để khởi động web UI riêng và tự mở `http://localhost:3000/`. Backend cần đang chạy tại `http://localhost:8081` để web UI gọi API.
+   - Chạy `node web-ui/server.js`, rồi mở `http://localhost:3000/`. Backend cần đang chạy tại `http://localhost:8081` để web UI gọi API.
    - Trang tích hợp sẵn của backend cũng có thể mở tại `http://localhost:8081/`.
 
 5. Chạy kiểm thử Maven

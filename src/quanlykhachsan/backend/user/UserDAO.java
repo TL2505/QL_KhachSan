@@ -7,11 +7,14 @@ public interface UserDAO {
     // ... logic existing
     public void addUser(User user) throws Exception;
     public void updateUser(User user) throws Exception;
+    public boolean updateRole(int userId, int roleId) throws Exception;
     public void deleteUser(User user) throws Exception;
     public ArrayList<User> selectUser();
     public void comboBoxUser();
     public User findByUsername(String username);
     public boolean insert(User user) throws Exception;
+    /** Inserts on a caller-owned transaction. */
+    public boolean insert(java.sql.Connection connection, User user) throws Exception;
     public int getRoleIdByName(String roleName);
     public List<Role> selectAllRoles();
 }

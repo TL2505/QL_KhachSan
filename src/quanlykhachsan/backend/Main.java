@@ -20,10 +20,20 @@ public class Main {
 
     public static void main(String[] args) {
         HttpServer server = null;
+        String stage = "CONFIG";
         try {
+            quanlykhachsan.backend.customer.GuestIdentityVaultDao.configured();
+            quanlykhachsan.backend.utils.JwtTokenUtil.signingKey();
+            System.out.println("[STARTUP CONFIG] Vault keys and JWT configuration accepted");
+            stage = "DATABASE_PREFLIGHT";
+            if (!quanlykhachsan.backend.utils.BackendDiagnostics.run("startup"))
+                throw new IllegalStateException("Read-only database/key preflight failed; no migration was run");
+            stage = "DATABASE_MIGRATION";
             // Required schema and vault readiness must succeed before accepting traffic.
             quanlykhachsan.backend.utils.UpdateDbUtility.main(new String[0]);
+            stage = "VAULT";
             quanlykhachsan.backend.customer.IdentityVaultMigration.requireReady();
+            stage = "HTTP";
             server=createServer(8081);
             server.start();
             var nightAuditJob = new quanlykhachsan.backend.system.NightAuditJob();
@@ -34,22 +44,25 @@ public class Main {
             expiryJob.start();
             var piiJob = new quanlykhachsan.backend.system.PiiAnonymizerJob();
             piiJob.start();
+            var notifications=new quanlykhachsan.backend.notification.NotificationWorker();
+            notifications.start();
 
             final HttpServer runningServer = server;
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 noShowJob.close();
                 expiryJob.close();
                 piiJob.close();
+                notifications.close();
                 closeBackgroundServices(runningServer);
                 nightAuditJob.close();
                 runningServer.stop(10);
                 quanlykhachsan.backend.utils.DatabaseConnection.close();
             }, "hotel-shutdown"));
 
-            System.out.println("API sẵn sàng: POST http://localhost:8081/api/v1/auth/login hoặc http://192.168.56.102:8081/api/v1/auth/login");
+            System.out.println("[STARTUP READY] POST http://localhost:8081/api/v1/auth/login");
 
         } catch (Throwable e) {
-            System.err.println("Lỗi nghiêm trọng khi khởi động Server: " + e.getMessage());
+            System.err.println("[STARTUP FAILED] stage=" + stage);
             if(server!=null){closeBackgroundServices(server);server.stop(0);}
             throw new IllegalStateException("PMS startup failed",e);
         }
@@ -62,11 +75,13 @@ public class Main {
         HttpServer server = HttpServer.create(new InetSocketAddress(bindAddress, port), 0);
         // Khởi tạo các Filter
         Filter corsFilter = new CorsFilter();
-        Filter jwtFilter = new JwtFilter();
+        Filter jwtFilter = new JwtFilter((userId, tokenRole) ->
+                new quanlykhachsan.backend.user.UserDAOImpl().isRoleCurrent(userId, tokenRole));
         Filter exceptionFilter = new GlobalExceptionHandler();
         Filter systemStatusFilter = new SystemStatusFilter();
         Filter idempotencyFilter = new IdempotencyFilter();
         Filter ipRateLimiter = new quanlykhachsan.backend.utils.IpRateLimiter();
+        Filter staticIpRateLimiter = new quanlykhachsan.backend.utils.IpRateLimiter(70);
 
         // --- ĐĂNG KÝ CÁC ROUTE (API ENDPOINTS) TẠI ĐÂY ---
         // Route Health (Cả /api/v1/health và /health đều public)
@@ -90,6 +105,13 @@ public class Main {
         registerContext(server, ipRateLimiter, "/api/v1/ai/face-verify", aiCheckin, exceptionFilter, corsFilter, jwtFilter);
         var concierge = new quanlykhachsan.backend.ai.VirtualConciergeController();
         registerContext(server, ipRateLimiter, "/api/v1/admin/ai-settings", new quanlykhachsan.backend.ai.AiProviderSettingsController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/admin/rental-policy", new quanlykhachsan.backend.pricing.RentalPolicyAdminController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/admin/catalog", new quanlykhachsan.backend.catalog.RoomCatalogController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/admin/catalog/content", new quanlykhachsan.backend.catalog.LandingContentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/admin/catalog/media", new quanlykhachsan.backend.catalog.MediaController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
+        registerContext(server, "/api/v1/public/room-types", new quanlykhachsan.backend.catalog.RoomCatalogController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, "/api/v1/public/landing-content", new quanlykhachsan.backend.catalog.LandingContentController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/media", new quanlykhachsan.backend.catalog.MediaController(), exceptionFilter, corsFilter);
         BACKGROUND_SERVICES.put(server, concierge);
         Filter conciergeBudget = new Filter() {
             public String description() { return "Verified-token concierge budget before prompt validation"; }
@@ -101,6 +123,10 @@ public class Main {
         // Route Quản lý phòng
         registerContext(server, ipRateLimiter, "/api/v1/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/rooms/availability", new quanlykhachsan.backend.room.RoomAvailabilityController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/housekeeping/tasks", new quanlykhachsan.backend.room.HousekeepingController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/housekeeping/metrics", new quanlykhachsan.backend.room.HousekeepingController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/housekeeping/handovers", new quanlykhachsan.backend.room.HousekeepingHandoverController(), exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/housekeeping/media", new quanlykhachsan.backend.catalog.MediaController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/rooms", new quanlykhachsan.backend.room.RoomController(), exceptionFilter, corsFilter, jwtFilter);
         // Route Hồ sơ người dùng
         registerContext(server, ipRateLimiter, "/api/v1/users/update-profile", new quanlykhachsan.backend.user.UserController(), exceptionFilter, corsFilter, jwtFilter);
@@ -130,6 +156,9 @@ public class Main {
         registerContext(server, ipRateLimiter, "/api/bookings", bookingController, exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
         // Route Thanh toán (Payment)
         registerContext(server, ipRateLimiter, "/api/v1/webhooks/vietqr", new quanlykhachsan.backend.booking.BankWebhookController(), exceptionFilter, corsFilter, systemStatusFilter);
+        // Bank events must still be durably received during a night audit.
+        registerContext(server, ipRateLimiter, "/api/v1/webhooks/payos", new quanlykhachsan.backend.payment.PayOsWebhookController(), exceptionFilter, corsFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/payment-operations", new quanlykhachsan.backend.payment.PaymentOperationsController(), exceptionFilter, corsFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/payments", new quanlykhachsan.backend.booking.PaymentController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter);
         registerContext(server, ipRateLimiter, "/api/v1/folios", new quanlykhachsan.backend.booking.FolioController(), exceptionFilter, corsFilter, systemStatusFilter, jwtFilter, idempotencyFilter);
@@ -146,6 +175,7 @@ public class Main {
         // Route Thông báo Vòng đời & Voucher Khách hàng (Phase 2.1)
         var notificationController = new quanlykhachsan.backend.customer.NotificationController();
         registerContext(server, ipRateLimiter, "/api/v1/notifications", notificationController, exceptionFilter, corsFilter, jwtFilter);
+        registerContext(server, ipRateLimiter, "/api/v1/staff-notifications", new quanlykhachsan.backend.notification.StaffNotificationController(), exceptionFilter, corsFilter, jwtFilter);
         // Route Đánh giá (Review)
         registerContext(server, ipRateLimiter, "/api/v1/reviews", new quanlykhachsan.backend.interaction.ReviewController(), exceptionFilter, corsFilter, jwtFilter);
         // Route Chat
@@ -161,8 +191,8 @@ public class Main {
                 java.nio.file.Path.of("web-ui", "public"));
         // A page loads dozens of scripts/styles without a bearer header. Static assets must
         // not consume the shared unauthenticated API budget during login navigation.
-        registerContext(server, "/booking", staticFiles, exceptionFilter, corsFilter);
-        registerContext(server, "/", staticFiles, exceptionFilter, corsFilter);
+        registerContext(server, staticIpRateLimiter, "/booking", staticFiles, exceptionFilter, corsFilter);
+        registerContext(server, staticIpRateLimiter, "/", staticFiles, exceptionFilter, corsFilter);
         server.setExecutor(Executors.newFixedThreadPool(20));
 
         return server;
@@ -204,6 +234,7 @@ public class Main {
         for (Filter filter : filters) {
             context.getFilters().add(filter);
         }
+        context.getFilters().add(new quanlykhachsan.backend.utils.HousekeepingRoleFilter());
     }
 
     private static void registerContext(HttpServer server, String path, HttpHandler handler, Filter... filters) {

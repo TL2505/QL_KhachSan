@@ -7,7 +7,7 @@ export async function renderCheckout(container, session) {
         <div class="checkout-view">
             <div class="page-header">
                 <div>
-                    <h1>Thanh toán & trả phòng</h1>
+                        <h1>Thanh toán & trả phòng</h1>
                     <p>Tra cứu khách đang lưu trú để thực hiện thanh toán và trả phòng.</p>
                 </div>
                 <span id="checkout-count" class="badge checkout-count" role="status">Đang tải danh sách</span>
@@ -76,6 +76,10 @@ export async function renderCheckout(container, session) {
         filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).forEach(b => {
             const card = document.createElement('article');
             card.className = 'card checkout-card';
+            const counterPayment = String(b.paymentChoice ?? b.payment_choice ?? '').toLowerCase() === 'counter';
+            const overdue = String(b.status || '').toLowerCase() === 'overdue';
+            const phone = String(b.customerPhone || '').trim();
+            const safePhone = phone.replace(/[^+\d]/g, '');
             card.innerHTML = `
                 <div class="card-body">
                     <div class="checkout-card-heading">
@@ -83,17 +87,18 @@ export async function renderCheckout(container, session) {
                             <span class="checkout-room-icon"><i data-lucide="door-open" aria-hidden="true"></i></span>
                             <div><h2 class="card-title">Phòng ${escapeHtml(b.roomNumber || 'N/A')}</h2><span class="checkout-booking-id">Đặt phòng #${escapeHtml(b.id)}</span></div>
                         </div>
-                        <span class="badge room-badge badge-occupied">Đang lưu trú</span>
+                        <span class="badge room-badge ${overdue ? 'badge-maintenance' : 'badge-occupied'}">${overdue ? 'Quá hạn trả phòng' : 'Đang lưu trú'}</span>
                     </div>
                     <dl class="checkout-details">
-                        <div class="checkout-guest"><dt>Khách hàng</dt><dd>${escapeHtml(b.customerName || 'Khách vãng lai')}</dd></div>
+                        <div class="checkout-guest"><dt>Khách hàng</dt><dd>${escapeHtml(b.customerName || 'Khách vãng lai')}${phone ? `<small>${escapeHtml(phone)}</small>` : ''}</dd></div>
                         <div><dt>Nhận phòng</dt><dd>${formatDate(b.checkInDate)}</dd></div>
                         <div><dt>Trả phòng dự kiến</dt><dd>${formatDate(b.checkOutDate)}</dd></div>
                     </dl>
                     <div class="card-actions checkout-card-actions">
                         <div class="checkout-amount"><span>Giá trị đặt phòng</span><strong>${formatCurrency(b.totalPrice)}</strong></div>
+                        ${overdue ? `<small class="checkout-overdue-note">Đã quá hạn 30 phút. Gọi khách, thu đủ số dư ${formatCurrency(b.payment?.remaining_amount)} rồi hoàn tất trả phòng.${safePhone ? ` <a href="tel:${escapeHtml(safePhone)}">Gọi ${escapeHtml(phone)}</a>` : ''}</small>` : counterPayment ? '<small class="checkout-counter-note">Thu tiền tại quầy trước khi hoàn tất trả phòng.</small>' : ''}
                         <button class="btn btn-primary btn-pay" type="button" data-id="${escapeHtml(b.id)}" aria-label="Thanh toán phòng ${escapeHtml(b.roomNumber || 'N/A')}, đơn ${escapeHtml(b.id)}">
-                            <span>Thanh toán</span><i data-lucide="arrow-right" aria-hidden="true"></i>
+                            <span>${counterPayment ? 'Thu tiền & trả phòng' : 'Thanh toán & trả phòng'}</span><i data-lucide="arrow-right" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>`;
@@ -116,10 +121,10 @@ export async function renderCheckout(container, session) {
         try {
             const [response, rooms, customers] = await Promise.all([api.get('/bookings'), api.get('/rooms'), api.get('/customers')]);
             if (!grid.isConnected) return;
-            activeBookings = response.filter(b => b.status === 'checked_in').map(b => {
+            activeBookings = response.filter(b => ['checked_in','overdue'].includes(String(b.status || '').toLowerCase())).map(b => {
                 const room = rooms.find(r => r.id === b.roomId);
                 const customer = customers.find(c => c.id === b.customerId);
-                return { ...b, roomNumber: room?.roomNumber || 'N/A', customerName: customer?.fullName || 'Khách vãng lai' };
+                return { ...b, roomNumber: room?.roomNumber || 'N/A', customerName: customer?.fullName || 'Khách vãng lai', customerPhone: customer?.phone || '' };
             });
             currentPage = 1;
             renderCards();
@@ -140,6 +145,12 @@ export async function renderCheckout(container, session) {
     refresh.addEventListener('click', loadData);
     refreshIcons();
 
+    const checkoutRefreshTimer = window.setInterval(() => {
+        if (!grid.isConnected) { window.clearInterval(checkoutRefreshTimer); return; }
+        const modal = document.getElementById('global-modal');
+        if (document.visibilityState === 'visible' && !modal?.classList.contains('active')) loadData();
+    }, 30000);
+
     const openModal = (bookingId) => {
         const b = activeBookings.find(x => x.id == bookingId);
         if (!b) return;
@@ -150,7 +161,7 @@ export async function renderCheckout(container, session) {
 
         content.innerHTML = `
             <div class="modal-header">
-                <h2>Xác nhận Thanh toán</h2>
+                <h2>${String(currentProcessBooking.paymentChoice ?? currentProcessBooking.payment_choice ?? '').toLowerCase() === 'counter' ? 'Thu tiền tại quầy & trả phòng' : 'Thanh toán & trả phòng'}</h2>
                 <button class="modal-close" onclick="closeModal('global-modal')">&times;</button>
             </div>
             <div class="modal-body" id="modal-checkout-form" style="padding-top:10px;">
@@ -158,11 +169,11 @@ export async function renderCheckout(container, session) {
                     <p style="margin: 0 0 8px 0; color: var(--text-muted); font-size: 14px;">Phòng: <strong style="color: var(--text-color); font-size: 16px; float: right;">${b.roomNumber || 'N/A'}</strong></p>
                     <p style="margin: 0; color: var(--text-muted); font-size: 14px;">Khách hàng: <strong style="color: var(--text-color); font-size: 16px; float: right;">${b.customerName || 'Khách vãng lai'}</strong></p>
                 </div>
-                <div class="form-group" style="margin-bottom: 15px;">
+                <div class="form-group" id="pay-amount-group" style="margin-bottom: 15px; display:none;">
                     <label style="display:block;margin-bottom:5px;font-size:14px;color:var(--text-muted);">Số tiền thu (VNĐ)</label>
-                    <input type="number" class="form-control" id="pay-amount" value="${b.totalPrice || 0}" required style="width:100%;">
+                    <input type="number" class="form-control" id="pay-amount" value="${b.totalPrice || 0}" min="0.01" step="0.01" required style="width:100%;">
                 </div>
-                <div class="form-group" style="margin-bottom: 15px;">
+                <div class="form-group" id="pay-method-group" style="margin-bottom: 15px; display:none;">
                     <label style="display:block;margin-bottom:5px;font-size:14px;color:var(--text-muted);">Phương thức thanh toán</label>
                     <select class="form-control" id="pay-method" style="width:100%;">
                         <option value="Cash">Tiền mặt</option>
@@ -174,11 +185,12 @@ export async function renderCheckout(container, session) {
                     <p style="font-size: 14px; color: var(--success); margin-bottom: 10px;">Quét mã VietQR để thanh toán</p>
                     <img id="qr-image" src="" alt="VietQR" style="width: 200px; height: 200px; border-radius: 8px; border: 2px solid var(--border);">
                 </div>
+                <div id="pay-balance-status" class="alert alert-info" role="status">Đang kiểm tra số dư folio…</div>
             </div>
             <div class="modal-body" id="modal-success-screen" style="display: none; text-align: center; padding: 40px 20px;">
                 <i data-lucide="check-circle" style="width: 64px; height: 64px; color: var(--success); margin-bottom: 20px; display: inline-block;"></i>
-                <h3 style="margin-bottom: 10px;">Thanh Toán Thành Công!</h3>
-                <p style="color: var(--text-muted); margin-bottom: 25px;">Hệ thống đã ghi nhận doanh thu và chuyển phòng sang trạng thái Đang Dọn Dẹp.</p>
+                <h3 id="checkout-success-heading" style="margin-bottom: 10px;">Thanh Toán Thành Công!</h3>
+                <p id="checkout-success-message" style="color: var(--text-muted); margin-bottom: 25px;">Hệ thống đã ghi nhận doanh thu và chuyển phòng sang trạng thái Đang Dọn Dẹp.</p>
                 <button class="btn btn-primary" id="btn-print-invoice">
                     <i data-lucide="printer" style="width:16px;height:16px;"></i> In Hóa Đơn PDF
                 </button>
@@ -198,48 +210,96 @@ export async function renderCheckout(container, session) {
         const qrImage = document.getElementById("qr-image");
         const btnConfirm = document.getElementById("btn-confirm-pay");
         
-        const updateQRCode = () => {
+        const amountGroup=document.getElementById('pay-amount-group');
+        const methodGroup=document.getElementById('pay-method-group');
+        const balanceStatus=document.getElementById('pay-balance-status');
+        const successHeading=document.getElementById('checkout-success-heading');
+        const successMessage=document.getElementById('checkout-success-message');
+        let transferPaid=false,folioId=null,pollTimer,folioBalance=null,alreadyPaid=false;
+        const qrStatus=document.createElement('p');qrStatus.className='alert';qrStatus.setAttribute('role','status');qrCodeSection.append(qrStatus);
+        async function findFolio(){const response=await api.get(`/folios/booking/${currentProcessBooking.id}`);const folios=Array.isArray(response)?response:response.data;const f=folios?.find(f=>f.id===folioId&&Number(f.balance)>0)||folios?.find(f=>Number(f.balance)>0)||folios?.find(f=>f.folio_type==='master')||folios?.[0];if(!f)throw new Error('Không tìm thấy folio');folioId=f.id;return f;}
+        const showFolioBalance=(folio,{preserveAmount=false}={})=>{
+            folioBalance=Number(folio.balance);
+            if(!Number.isFinite(folioBalance)||folioBalance<0)throw new Error('Không xác minh được số dư folio.');
+            alreadyPaid=folioBalance===0;
+            amountGroup.style.display=alreadyPaid?'none':'block';
+            methodGroup.style.display=alreadyPaid?'none':'block';
+            balanceStatus.style.display=alreadyPaid?'block':'none';
+            balanceStatus.className=alreadyPaid?'alert alert-success':'alert alert-info';
+            balanceStatus.textContent=alreadyPaid?'Khách đã thanh toán đủ. Không phát sinh giao dịch mới; chỉ cần xác nhận trả phòng.':'';
+            if(!preserveAmount||alreadyPaid)payAmountInput.value=alreadyPaid?'0':folioBalance.toFixed(2);
+            btnConfirm.disabled=false;
+            btnConfirm.textContent=alreadyPaid?'Xác nhận trả phòng':'Hoàn tất Thanh toán';
+        };
+        const updateQRCode = async () => {
+            clearTimeout(pollTimer);transferPaid=false;btnConfirm.disabled=false;payAmountInput.readOnly=false;
             if (payMethodSelect.value === "Chuyển khoản") {
-                const amount = payAmountInput.value || 0;
-                const bookingId = currentProcessBooking ? currentProcessBooking.id : '';
-                qrImage.src = `https://img.vietqr.io/image/970436-1012345678-compact2.png?amount=${amount}&addInfo=Thanh toan don ${bookingId}&accountName=QUAN LY KHACH SAN`;
                 qrCodeSection.style.display = "block";
+                btnConfirm.disabled=true;payAmountInput.readOnly=true;qrImage.removeAttribute('src');qrStatus.textContent='Đang lấy QR từ máy chủ…';
+                try{
+                    const f=await findFolio();if(!btnConfirm.isConnected||payMethodSelect.value!=='Chuyển khoản')return;
+                    payAmountInput.value=f.balance;
+                    const state=await api.get(`/folios/${folioId}/payment-status`);
+                    if(state.payment_status==='PAID'){transferPaid=true;btnConfirm.disabled=false;qrStatus.textContent='Đã thanh toán. Có thể trả phòng.';return;}
+                    const qr=await api.get(`/folios/${folioId}/payment-qr`,{timeoutMs:20000});
+                    if(!btnConfirm.isConnected||payMethodSelect.value!=='Chuyển khoản')return;
+                    qrImage.src=`data:image/png;base64,${qr.qr_image_base64}`;qrStatus.textContent=`${qr.account_holder} · ${qr.account_number} · ${qr.reference_code}. Đang chờ ngân hàng xác nhận.`;
+                    const poll=async()=>{
+                        if(!btnConfirm.isConnected||!modal.classList.contains('active')||payMethodSelect.value!=='Chuyển khoản')return;
+                        try{const p=await api.get(`/folios/${folioId}/payment-status`);
+                            if(!btnConfirm.isConnected||payMethodSelect.value!=='Chuyển khoản')return;
+                            transferPaid=p.payment_status==='PAID';btnConfirm.disabled=!transferPaid;
+                            qrStatus.textContent=transferPaid?'Đã thanh toán. Có thể trả phòng.':p.payment_status==='PARTIAL'?`Thanh toán thiếu. Còn ${p.remaining_amount} đ.`:p.payment_status==='RECONCILIATION_ERROR'?'Lỗi đối soát. Thanh toán chưa hoàn tất.':'Đang chờ xác nhận từ ngân hàng.';
+                        }catch{qrStatus.textContent='Chưa lấy được xác nhận. Vui lòng kiểm tra kết nối.';}
+                        if(!transferPaid)pollTimer=setTimeout(poll,3000);
+                    };pollTimer=setTimeout(poll,2500);
+                }catch(error){qrStatus.textContent=error.message||'Chưa thể tạo QR. Kiểm tra cấu hình cổng thanh toán.';}
             } else {
                 qrCodeSection.style.display = "none";
             }
         };
 
         payMethodSelect.addEventListener("change", updateQRCode);
-        payAmountInput.addEventListener("input", updateQRCode);
+        btnConfirm.disabled=true;
+        findFolio().then(f=>{if(btnConfirm.isConnected)showFolioBalance(f);}).catch(error=>{if(!btnConfirm.isConnected)return;balanceStatus.className='alert alert-error';balanceStatus.textContent=error.message||'Không kiểm tra được số dư folio.';btnConfirm.disabled=true;});
         
         btnConfirm.addEventListener('click', async () => {
             if (!currentProcessBooking) return;
             
-            const amount = document.getElementById("pay-amount").value;
             const method = document.getElementById("pay-method").value;
-            
-            if (!amount || amount < 0) {
-                alert("Vui lòng nhập số tiền hợp lệ!");
-                return;
-            }
-
-            const payload = {
-                bookingId: currentProcessBooking.id,
-                customerId: currentProcessBooking.customerId,
-                amount: parseFloat(amount),
-                paymentMethod: method
-            };
 
             try {
                 btnConfirm.disabled = true;
                 btnConfirm.textContent = "Đang xử lý...";
-                
-                await api.post("/payments", payload);
+                const previousBalance=folioBalance;
+                const latestFolio=await findFolio();
+                showFolioBalance(latestFolio,{preserveAmount:Number(latestFolio.balance)===previousBalance});
+                btnConfirm.disabled=true;
+                btnConfirm.textContent='Đang xử lý...';
+                const amount=alreadyPaid?0:Number(payAmountInput.value);
+                if(!alreadyPaid&&(!Number.isFinite(amount)||amount<=0))throw new Error('Số tiền thu phải lớn hơn 0.');
+                if(method==='Chuyển khoản'&&!alreadyPaid&&!transferPaid)throw new Error('Ngân hàng chưa xác nhận thanh toán.');
+                const payment={amount:method==='Chuyển khoản'||alreadyPaid?0:amount,payment_method:method==='Credit Card'?'POS':'cash',checkout:true};
+                const signature=JSON.stringify(payment);const attempt=currentProcessBooking.collectionAttempt;
+                const key=attempt?.signature===signature?attempt.key:crypto.randomUUID();currentProcessBooking.collectionAttempt={signature,key};
+                const result=await api.post(`/folios/${folioId}/pay`,payment,{headers:{'Idempotency-Key':key},timeoutMs:15000,retryOnNetworkError:false});
+                clearTimeout(pollTimer);
+                if(result?.checkout_required_payment){
+                    currentProcessBooking.collectionAttempt=null;
+                    let due=Number(result.balance||0);
+                    if(due<=0){folioId=null;try{const next=await findFolio();due=Number(next.balance||0);}catch{due=0;}}
+                    if(method==='Chuyển khoản'){transferPaid=false;await updateQRCode();}
+                    else {showFolioBalance({balance:due});btnConfirm.disabled=true;btnConfirm.textContent='Đang xử lý...';}
+                    const message=result.checked_out?'Phòng đã được trả.':'Đã ghi nhận khoản thu; chưa thể hoàn tất trả phòng.';
+                    await window.showCustomAlert(`${message} Còn ${Number(result.booking_balance||due).toLocaleString('vi-VN')} đ trên các folio. Số tiền kế tiếp là folio ${due.toLocaleString('vi-VN')} đ.`, { title: 'Chưa thể hoàn tất trả phòng' });
+                    return;
+                }
                 
                 // Handle success
                 document.getElementById("modal-checkout-form").style.display = 'none';
                 document.getElementById("modal-footer-form").style.display = 'none';
                 document.getElementById("modal-success-screen").style.display = 'block';
+                if(alreadyPaid){successHeading.textContent='Trả phòng thành công!';successMessage.textContent='Khách đã thanh toán đủ. Hệ thống đã hoàn tất trả phòng và chuyển phòng sang trạng thái cần dọn dẹp.';}
                 if (window.lucide) lucide.createIcons();
 
                 document.getElementById("btn-print-invoice").onclick = async () => {
@@ -249,7 +309,7 @@ export async function renderCheckout(container, session) {
                         if (invoice) {
                             window.open(getApiBaseUrl() + "/invoices/" + invoice.id + "/pdf", "_blank");
                         } else {
-                            alert("Không tìm thấy hóa đơn cho đơn đặt phòng này!");
+                            await window.showCustomAlert("Không tìm thấy hóa đơn cho đơn đặt phòng này!", { title: 'Không tìm thấy hóa đơn' });
                         }
                     } catch (err) {
                         console.error(err);
@@ -259,10 +319,10 @@ export async function renderCheckout(container, session) {
                 };
             } catch (e) {
                 console.error(e);
-                alert("Lỗi thanh toán: " + e.message);
+                await window.showCustomAlert("Lỗi thanh toán: " + e.message, { title: 'Không thể ghi nhận thanh toán' });
             } finally {
                 btnConfirm.disabled = false;
-                btnConfirm.textContent = "Hoàn tất Thanh toán";
+                btnConfirm.textContent = alreadyPaid ? "Xác nhận trả phòng" : "Hoàn tất Thanh toán";
             }
         });
     };

@@ -81,6 +81,10 @@ public class RoomService {
         return roomTypeDAO.findById(id);
     }
 
+    public boolean addRoomType(RoomType type) { return roomTypeDAO.create(type); }
+    public boolean updateRoomType(RoomType type) { return roomTypeDAO.update(type); }
+    public boolean deleteRoomType(int id) { return roomTypeDAO.delete(id); }
+
     public List<Room> findAvailableRooms(java.util.Date checkIn, java.util.Date checkOut) {
         return roomDAO.findAvailableRooms(checkIn, checkOut);
     }

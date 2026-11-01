@@ -13,8 +13,8 @@ final class AccountSecurityRepository implements AccountSecurityService.Reposito
         try(var c=connections.open()) { return read(c,id); }
     }
     private Account read(Connection c,int id) throws SQLException {
-        try(var q=c.prepareStatement("SELECT id,username,full_name,phone,email,verified_email,password FROM users WHERE id=? AND status='active'")) {
-            q.setInt(1,id); try(var r=q.executeQuery()) { return r.next()?new Account(r.getInt(1),r.getString(2),r.getString(3),r.getString(4),r.getString(5),r.getString(6),r.getString(7)):null; }
+        try(var q=c.prepareStatement("SELECT id,username,full_name,phone,email,verified_email,password,avatar_url FROM users WHERE id=? AND status='active'")) {
+            q.setInt(1,id); try(var r=q.executeQuery()) { return r.next()?new Account(r.getInt(1),r.getString(2),r.getString(3),r.getString(4),r.getString(5),r.getString(6),r.getString(7),r.getString(8)):null; }
         }
     }
     public Account profile(int id,String name,String phone,String email) throws Exception {

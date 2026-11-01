@@ -11,7 +11,10 @@ import quanlykhachsan.backend.utils.SecurityUtil;
 
 /** User-bound, purpose-bound email OTPs. No plaintext codes or passwords are retained. */
 public final class AccountSecurityService {
-    public record Account(int id, String username, String fullName, String phone, String email, String verifiedEmail, String passwordHash) {
+    public record Account(int id, String username, String fullName, String phone, String email, String verifiedEmail, String passwordHash, String avatarUrl) {
+        public Account(int id, String username, String fullName, String phone, String email, String verifiedEmail, String passwordHash) {
+            this(id, username, fullName, phone, email, verifiedEmail, passwordHash, null);
+        }
         public boolean emailVerified() { return !clean(email).isEmpty() && clean(email).equals(clean(verifiedEmail)); }
     }
     public interface Repository {
@@ -65,7 +68,7 @@ public final class AccountSecurityService {
     private Map<String,Object> publicProfile(Account a) {
         var result=new LinkedHashMap<String,Object>();
         result.put("userId",a.id()); result.put("username",a.username()); result.put("fullName",a.fullName());
-        result.put("phone",a.phone()); result.put("email",a.email()); result.put("emailVerified",a.emailVerified()); result.put("mailConfigured",configured.getAsBoolean());
+        result.put("phone",a.phone()); result.put("email",a.email()); result.put("avatarUrl",a.avatarUrl()); result.put("emailVerified",a.emailVerified()); result.put("mailConfigured",configured.getAsBoolean());
         return result;
     }
     public Start beginEmail(int userId) throws Exception { return begin(userId,"email",null); }

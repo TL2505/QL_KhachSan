@@ -255,7 +255,7 @@ public final class GoogleOtpAuthService {
     private static User user(ResultSet r) throws Exception { return new User(r.getInt("id"), r.getString("username"), r.getString("password"), r.getInt("role_id"), r.getString("status"), r.getString("full_name"), r.getString("email"), r.getString("phone"), (Integer) r.getObject("customer_id")); }
     private void requireConfigured() throws AuthFailure { if (!isConfigured()) throw new AuthFailure(503, "Đăng nhập Google chưa được cấu hình trên máy chủ."); }
     private boolean smtpConfigured() { return !value("SMTP_HOST").isBlank() && !value("SMTP_USERNAME").isBlank() && !value("SMTP_APP_PASSWORD").isBlank() && !value("SMTP_FROM").isBlank(); }
-    private static String value(String key) { String v = System.getenv(key); return v == null ? "" : v.trim(); }
+    private static String value(String key) { String v = quanlykhachsan.backend.utils.SecretConfiguration.optional(key); return v == null ? "" : v.trim(); }
     private static String string(JsonObject o, String key) { return o.has(key) && !o.get(key).isJsonNull() ? o.get(key).getAsString().trim() : ""; }
     private static byte[] randomBytes(int count) { byte[] bytes = new byte[count]; RANDOM.nextBytes(bytes); return bytes; }
     private static String randomId() { return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes(32)); }

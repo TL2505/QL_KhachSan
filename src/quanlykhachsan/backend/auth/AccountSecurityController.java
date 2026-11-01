@@ -8,6 +8,7 @@ import quanlykhachsan.backend.utils.*;
 
 public final class AccountSecurityController implements HttpHandler {
     private static final AccountSecurityService SHARED = new AccountSecurityService();
+    private static final quanlykhachsan.backend.catalog.MediaController MEDIA = new quanlykhachsan.backend.catalog.MediaController();
     private final AccountSecurityService service;
     private final Devices devices;
     @FunctionalInterface interface Devices { Object read(HttpExchange exchange,int userId) throws Exception; }
@@ -26,6 +27,7 @@ public final class AccountSecurityController implements HttpHandler {
         int userId=((Number)identity).intValue();
         try {
             String method=e.getRequestMethod();
+            if ("avatar".equals(action)) { MEDIA.handleAvatar(e,userId); return; }
             if ("profile".equals(action) && "GET".equals(method)) { ok(e,service.profile(userId));return; }
             if ("devices".equals(action) && "GET".equals(method)) { service.account(userId);ok(e,devices.read(e,userId));return; }
             if (!"POST".equals(method) && !"PUT".equals(method)) { ApiResponseUtil.write(e,405,ApiResponseUtil.error("Method Not Allowed"));return; }

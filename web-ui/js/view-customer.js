@@ -1,15 +1,16 @@
 // Customer Views Module Coordinator
 import { renderDashboard } from "./customer/dashboard.js?v=3.6.20";
-import { renderBookings } from "./customer/bookings.js";
-import { renderAccountSettings } from "./shared/account-settings.js?v=1";
-import { renderDiscovery } from "./customer/discovery.js";
+import { renderBookings } from "./customer/bookings.js?v=1.0.10";
+import { renderAccountSettings } from "./shared/account-settings.js?v=2";
+import { renderDiscovery } from "./customer/discovery.js?v=1.0.9";
 import { renderLoyalty } from "./customer/loyalty.js";
 import { renderPromotions } from "./customer/promotions.js";
 import { renderChat } from "./customer/chat.js";
-import { renderConcierge } from "./customer/concierge.js?v=3.6.20";
+import { renderConcierge } from "./customer/concierge.js?v=3.6.21";
 import { renderSupport } from "./customer/support.js";
 import { api, getAuthSession } from "../api.js";
 import { getLegacyTierInfo, membershipPoints } from "./customer/tier-helper.js";
+import { renderPaymentOperations } from './shared/payment-operations.js?v=3.6.66';
 
 let navigationVersion = 0;
 
@@ -52,7 +53,9 @@ export async function loadCustomerView(tab = "dashboard") {
   if (navigation !== navigationVersion || getAuthSession()?.token !== session.token) return;
 
   try {
-    if (tab === "dashboard") {
+    if (tab === 'payment-operations') {
+      await renderPaymentOperations(container, session);
+    } else if (tab === "dashboard") {
       await renderDashboard(container, session);
     } else if (tab === "bookings") {
       await renderBookings(container, session);

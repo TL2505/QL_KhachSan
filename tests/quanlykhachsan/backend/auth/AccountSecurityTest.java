@@ -54,7 +54,8 @@ class AccountSecurityTest {
         var f=new Fixture();var start=f.service.beginEmail(1);
         assertEquals("g***@example.invalid",start.maskedEmail());
         assertEquals(422,status(()->f.service.verifyEmail(1,start.challengeId(),"not-otp")));
-        assertEquals(true,f.service.verifyEmail(1,start.challengeId(),f.code()).get("emailVerified"));
+        var profile=f.service.verifyEmail(1,start.challengeId(),f.code());
+        assertEquals(true,profile.get("emailVerified"));assertTrue(profile.containsKey("avatarUrl"));assertNull(profile.get("avatarUrl"));
         assertEquals(410,status(()->f.service.verifyEmail(1,start.challengeId(),f.code())));
         assertFalse(f.service.profile(1).containsKey("passwordHash"));
     }

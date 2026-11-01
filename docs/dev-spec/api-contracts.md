@@ -1,5 +1,37 @@
 # API CONTRACTS & INTEGRATION GUIDE (PHASE 1, 2 & 3 REST API)
 
+## 2026-10-22 additive payment/notification contract
+
+These additions use the existing `{status:"success",data:...}` envelope. See [operations/setup](../vi/payments-notifications.md). Earlier frozen contracts retain their fields; `folios.status` remains the accounting state, separate from the canonical `payment_status`.
+
+| Route | Access | Result |
+| --- | --- | --- |
+| POST `/api/v1/webhooks/payos` | Public, verified body HMAC required | Atomically audit and settle a signed provider transaction. Invalid signature 401; malformed/oversized 400/413; missing configuration or transient DB failure 503. Persisted business exceptions return 200 with `data.payment_status=RECONCILIATION_ERROR` and `reason`; never infer payment from HTTP 200. |
+| GET `/api/v1/folios/{id-or-code}/payment-qr` | Staff or owning customer/guest | Provider QR image/payload, account details, reference, order_code, amount, currency, expires_in_seconds. Existing `/vietqr` is a compatibility alias. Missing payOS configuration returns 503 without a fabricated QR. |
+| GET `/api/v1/folios/{id-or-code}/payment-status` | Same ownership | Existing balance/status plus `payment_status` (WAITING/PAID/PARTIAL/RECONCILIATION_ERROR), `paid_amount`, `remaining_amount`, `reconciliation_reason`. |
+| GET `/api/v1/folios/{id-or-code}/payment-history` | Same ownership | Latest 100 normalized provider/method receipts and reconciliation exceptions. |
+| GET `/api/v1/payment-operations/transactions` | Staff sees all; customer/guest sees own | Paginated transaction audit; optional `folio_id`, `limit` 1–100 (default 50), `offset` >=0. Returns `{items, total}` for accurate page controls. Includes linked booking ID/code, customer name and room number when the folio resolves to a booking; no phone or identity number. Unknown-reference transactions visible only to staff. |
+| GET `/api/v1/payment-operations/notifications` | Same scope | Returns `{items, total}` with outbox state, booking/event reference, attempts, sanitized last_error, due/sent timestamps; no credentials or recipient addresses. |
+| GET `/api/v1/payment-operations/attempts?id={outbox-id}` | Same scope | Attempt number/state/error/start/finish timestamps; no access to another customer's deliveries. |
+| GET `/api/v1/payment-operations/configuration` | Staff only | QR provider/configuration presence and email opt-in flag; does not verify provider credentials. |
+
+Transaction audit includes provider, payment_method, direction (current collections IN), transaction_id, folio_id (nullable), amount, applied_amount, excess_amount, payment_status, reason, transaction_at and webhook delivery count. Linked booking/customer context is returned as `booking_id`, `booking_code`, `customer_name`, and `room_number`; the portal can associate a payment with its guest without exposing phone or identity data. The payment and notification history endpoints return a `total` count alongside the current page's `items` for exact shared pagination. `HISTORICAL_COLLECTION` identifies imported authoritative receipts without new ledger credits. Historical cash/POS status uses the folio balance at migration time. Current state must always come from the status projection.
+
+Customer portal booking results now include canonical `paymentStatus` and a `payment` object containing the same status/paid/remaining fields aggregated over the booking's folios. Booking lifecycle status does not imply a payment state.
+
+Cash/POS collection continues through POST `/folios/{id}/pay` with UUIDv4 `Idempotency-Key`, `amount`, `payment_method` and optional `checkout`. Transfers cannot be manually recorded with this route. Verified payments atomically queue in-app notifications and an email outbox record; replays never create duplicate events. Email states: PENDING, SENDING, RETRY, SENT (accepted by SMTP), FAILED, UNKNOWN (ambiguous acceptance; no blind resend), SKIPPED. Event types add booking_created, payment_paid, payment_partial, payment_error, checkin_reminder and checkout_reminder to existing lifecycle types. Reminder defaults are 24 hours before check-in and 2 hours before checkout, Vietnam time.
+
+The gateway extension boundary is `PaymentGateway` plus a provider-specific authenticated webhook adapter producing `VerifiedPayment`. New providers must never trust unsigned browser redirects or reuse another provider's signature algorithm. Shared audit/outbox tables are provider-independent; future refunds/outgoing transactions still need their own accounting and authorization rules.
+
+## 2026-10-23 staff overdue notification and checkout lifecycle
+
+| Route | Access | Result |
+| --- | --- | --- |
+| GET `/api/v1/staff-notifications?limit=20&unread_only=false` | Admin or staff | Latest operational notices with per-user `is_read`, `unread_count`, linked booking and an allowlisted action URL. `limit` is clamped to 1–100. |
+| PUT `/api/v1/staff-notifications/{id}/read` | Admin or staff | Marks that notice read for the signed-in staff member only. |
+
+When a Web booking selected counter payment and still has a balance after scheduled checkout, it remains checked in. After a 30-minute grace period, the lifecycle worker marks it overdue and inserts one durable staff alert in the same transaction. The alert includes the booking, room, guest, phone number and folio balance, and links to checkout collection. Reading the alert is per staff account. Re-running the worker does not create duplicates. Late checkout is free for the first 30 minutes, then adds one `hourly_extra_hour_price` for each started hour and one extra hourly amount after six hours. A stable folio reference prevents duplicate charges between worker cycles and staff checkout. QR-paid Web bookings continue through automatic checkout.
+
 > **Contract Freeze Status:** FROZEN (OpenAPI 3.0.3 Contract Parity Verified)
 > **Target Document:** [`openapi-p1.json`](file:///c:/Users/Admin/OneDrive/Documents/NetBeansProjects/QL_KhachSan_main/docs/dev-spec/openapi-p1.json)
 > **Server Base URL:** `http://localhost:8081`
@@ -177,6 +209,24 @@ curl -X GET http://localhost:8081/api/v1/rooms \
 
 ---
 
+### 3.1 Room image upload and serving
+
+- **Upload:** `POST /api/v1/admin/catalog/media` with a Bearer token and JSON body `{"fileName":"room.jpg","dataBase64":"<base64>"}`. Only valid JPEG/PNG images up to 5 MB and 6000 × 6000 px are accepted.
+- **Serving:** `GET /api/v1/media/{uuid}` serves managed images. The endpoint reads image bytes from the configured storage provider; file bytes are never stored in MariaDB.
+- **Local default:** `HOTEL_MEDIA_PROVIDER=local` stores bytes under `HOTEL_MEDIA_DIR` and records media metadata plus the API URL in `media_assets`.
+- **Cloudflare R2:** Set `HOTEL_MEDIA_PROVIDER=r2`, `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY`. The endpoint is derived as `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`; use an R2 S3 API token scoped to Object Read & Write for the target bucket. `R2_PUBLIC_BASE_URL` is optional: when absent, the backend proxies reads from the private bucket; when configured to an HTTPS `r2.dev` or custom domain, the returned image URL points directly to it.
+- `media_assets.storage_key` records a provider marker and object key; `public_url` is the URL returned to room and catalog forms. Credentials remain server-side and must not be sent to the browser.
+
+### 3.2 Account avatars and room-type catalog
+
+- **Read profile:** `GET /api/v1/account/profile` includes `avatarUrl` for the authenticated account.
+- **Upload avatar:** `POST /api/v1/account/avatar` accepts the same `fileName` and `dataBase64` JSON shape and JPEG/PNG limits as the room image endpoint. The server uses the authenticated user ID, stores the image through the configured media provider, and updates only that account's `users.avatar_url` in the same database transaction as the media metadata.
+- **Remove avatar:** `DELETE /api/v1/account/avatar` clears only the authenticated user's avatar reference. The media object is retained to avoid deleting an image that may still be referenced.
+- **Room-type catalog:** Admin-only `POST /api/v1/rooms/types`, `PUT /api/v1/rooms/types/{id}`, and `DELETE /api/v1/rooms/types/{id}` manage room type name, description, capacity, day reference price, amenities, image and visibility. Deletion returns `409` while a physical room still uses that type.
+- **Stay rates:** `GET /api/v1/admin/rental-policy` and `PUT /api/v1/admin/rental-policy/{id}` remain the shared editor for hourly, overnight and extra-hour rates. These settings belong to the room type and are no longer embedded in a physical-room create/edit form.
+
+---
+
 ### 4. Dynamic Room Availability Search
 - **Method:** `GET`
 - **Route:** `/api/v1/rooms/availability?check_in=2026-10-15&check_out=2026-10-18&room_type=Deluxe`
@@ -226,7 +276,28 @@ curl -X POST http://localhost:8081/api/v1/customers \
 ### 6. Search Customer Profiles
 - **Method:** `GET`
 - **Route:** `/api/v1/customers?search=Tran`
-- **Auth:** Bearer JWT
+- **Auth:** Bearer JWT; Admin or FrontDesk role
+- **Response:** `data` is an array of customer objects using camelCase fields. `email` and `address` are included when present. `hasIdentityCard` indicates that an identity document exists in plaintext or the encrypted identity vault; vaulted numbers are not returned as plaintext.
+
+```json
+{
+  "status": "SUCCESS",
+  "data": [
+    {
+      "id": 1001,
+      "fullName": "Synthetic Guest",
+      "phone": "0900000000",
+      "identityCard": null,
+      "hasIdentityCard": true,
+      "email": "guest@example.invalid",
+      "address": "Synthetic address",
+      "loyaltyLevel": "Member",
+      "createdAt": "2026-10-24 10:00:00"
+    }
+  ],
+  "meta": { "total": 1 }
+}
+```
 
 ```bash
 curl -X GET "http://localhost:8081/api/v1/customers?search=Tran" \
@@ -915,3 +986,29 @@ These public routes use the standard success/error envelope. The portal uses one
 | `POST /api/v1/auth/facebook` | Removed login route: returns 410 and never creates an account/session. |
 
 Unavailable Google/SMTP configuration or transport returns 503. Invalid input/credentials or a wrong code return 400/401. An expired code returns 422 and can be resent within fifteen minutes of the most recent successful send. Missing, used or expired sessions return 410 and the portal restores the Google button. Exhausted attempts/resends return 429. Code validity starts after successful SMTP delivery; failed resend delivery preserves the previous code and resend budget. Challenges are process-local and do not survive a backend restart. Frontend stores only the final hotel session, including `customerId`; Google credentials remain transient.
+
+### Electronic invoices — 2026-10-23
+
+The internal invoice remains a payment statement. Provider-issued MISA meInvoice documents use a separate record and are created only by an explicit staff action after payment, checkout, ledger, buyer, and VAT checks pass. These operations do not create bookings or change payments.
+
+| Method and route | Access and behavior |
+| --- | --- |
+| `POST /api/v1/invoices/{invoiceId}/electronic/issue` | Admin, staff, or front desk. Issues an original invoice after validating the paid internal statement and its ledger. A request already in progress or with an uncertain result must be synchronized before another attempt. |
+| `POST /api/v1/invoices/{invoiceId}/electronic/adjust` | Admin, staff, or front desk. Accepts `{parent_einvoice_id, document_type, reason}`. `document_type` is `adjustment` or `replacement`; only an issued original belonging to this statement may be referenced. |
+| `POST /api/v1/invoices/{invoiceId}/electronic/{electronicId}/sync` | Admin, staff, or front desk. Reconciles an uncertain publish result by provider reference and refreshes provider/tax-authority status. |
+| `POST /api/v1/invoices/{invoiceId}/electronic/{electronicId}/cancel` | Admin, staff, or front desk. Accepts `{reason}` and records `cancel_pending`; the invoice becomes `cancelled` only after provider status confirms deletion/cancellation. |
+| `GET /api/v1/invoices/{invoiceId}/electronic/{electronicId}/pdf` | Admin, staff, front desk, or the owning customer/guest. Returns the provider PDF only for a confirmed issued or cancelled record, with `Cache-Control: private, no-store`. |
+
+Successful JSON operations use the existing `{status:"success",data:...}` envelope. The returned e-invoice projection contains `id`, `internalInvoiceId`, `bookingId`, `documentType`, `status`, `environment`, `providerMode`, `transactionId`, `templateNo`, `series`, `number`, `taxAuthorityCode`, `sendTaxStatus`, `invoiceDate`, `amountWithoutVat`, `vatAmount`, `totalAmount`, `viewUrl`, sanitized `errorCode`/`errorMessage`, `lastSyncedAt`, `parentId`, and operation `events`.
+
+The MISA adapter supports `POS`, `HSM_CODE`, and `HSM_NO_CODE`. POS requests use `/api/v3/code/itg/invoice-calculating/invoiceandpublish`, place the reference inside `OrgInvoiceData`, and set `IsInvoiceCalculatingMachine: true`. HSM requests use `/api/v3/code/itg/invoicepublishing/publishhsm` for coded invoices and `/api/v3/itg/invoicepublishing/publishhsm` for uncoded invoices. The adapter uses the corresponding code/no-code status, view-link and PDF routes. Provider credentials are sent only to token endpoints; cancellation uses MISA's separate integration token.
+
+Invalid requests return 400; authorization failures return 403; business conflicts and uncertain provider outcomes return 409; definite provider rejection returns 502; missing provider configuration or persistence/transport availability failures return 503. Provider credentials and raw customer request data are not included in events or responses. See [the operations guide](../electronic-invoices.md) for configuration and staff workflow.
+
+### Admin operations dashboard — 2026-10-26
+
+| Method and route | Access and behavior |
+| --- | --- |
+| `GET /api/v1/reports/admin-overview` | Admin only. Returns the hotel's business date, today's payment collections, occupied/sellable room counts, pending bookings, arrivals/departures and rooms needing cleaning, current-month collections and completed refunds, outstanding manual refund requests, booking cancellation ratio, and six months of net folio revenue. |
+
+Refund ratio is `refunds resolved during the current business month / payment collections posted in that month`; cancellation ratio is cancelled bookings among bookings created during the month. Revenue chart uses folio debits less `adjustment` and `refund` credits by business date. All monetary values are VND; a ratio is zero when its denominator is zero. The response uses the standard `{status:"success",data:...}` envelope and is read-only.

@@ -14,24 +14,8 @@ public final class JwtTokenUtil {
     private JwtTokenUtil() { }
 
     private static String resolveSecret() {
-        String secret = System.getenv("JWT_SECRET");
-        if (System.getenv("JWT_SECRET_FILE") != null) {
-            secret = SecretConfiguration.required("JWT_SECRET");
-        }
-        if (secret == null || secret.isBlank()) {
-            secret = System.getProperty("hotel.jwt.secret");
-        }
-        if (secret == null || secret.isBlank()) {
-            java.io.File file = new java.io.File(System.getProperty("hotel.config.file", "config.properties"));
-            if (file.exists()) {
-                try (java.io.FileInputStream fis = new java.io.FileInputStream(file)) {
-                    java.util.Properties p = new java.util.Properties();
-                    p.load(fis);
-                    String val = p.getProperty("jwt.secret");
-                    if (val != null && !val.isBlank()) secret = val.trim();
-                } catch (Exception ignored) {}
-            }
-        }
+        String secret = System.getProperty("hotel.jwt.secret");
+        if (secret == null || secret.isBlank()) secret = SecretConfiguration.required("JWT_SECRET");
         if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
             throw new IllegalStateException("JWT_SECRET must be securely configured with at least 32 bytes");
         }
@@ -57,14 +41,19 @@ public final class JwtTokenUtil {
     }
 
     public static String issueToken(int userId, String username, String role) {
+        return issueToken(userId, username, role, null, null);
+    }
+
+    public static String issueToken(int userId, String username, String role, String phone, Integer customerId) {
         Instant now = Instant.now();
-        return Jwts.builder()
+        var token = Jwts.builder()
             .subject(Integer.toString(userId))
             .claim("username", username)
-            .claim("role", role)
-            .issuedAt(Date.from(now))
+            .claim("role", role);
+        if (phone != null && !phone.isBlank()) token.claim("phone", phone);
+        if (customerId != null && customerId > 0) token.claim("customer_id", customerId);
+        return token.issuedAt(Date.from(now))
             .expiration(Date.from(now.plusSeconds(3600)))
-            .signWith(KEY)
-            .compact();
+            .signWith(KEY).compact();
     }
 }

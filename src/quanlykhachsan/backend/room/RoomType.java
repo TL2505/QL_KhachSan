@@ -8,6 +8,11 @@ public class RoomType {
     private String description;
     private double basePrice;
     private int capacity;
+    private String imageUrl;
+    private String imageAlt;
+    private String amenities;
+    private boolean visible = true;
+    private int roomCount;
     private Date createdAt;
     private Date updatedAt;
 
@@ -36,6 +41,17 @@ public class RoomType {
 
     public int getCapacity() { return capacity; }
     public void setCapacity(int capacity) { this.capacity = capacity; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public String getImageAlt() { return imageAlt; }
+    public void setImageAlt(String imageAlt) { this.imageAlt = imageAlt; }
+    public String getAmenities() { return amenities; }
+    public void setAmenities(String amenities) { this.amenities = amenities; }
+    public boolean isVisible() { return visible; }
+    public void setVisible(boolean visible) { this.visible = visible; }
+    public int getRoomCount() { return roomCount; }
+    public void setRoomCount(int roomCount) { this.roomCount = roomCount; }
 
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }

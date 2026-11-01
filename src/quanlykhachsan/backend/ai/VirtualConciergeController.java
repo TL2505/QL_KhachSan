@@ -86,6 +86,21 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
                 if(!tickets.acknowledge(id,Integer.parseInt(String.valueOf(e.getAttribute("userId"))))){error(e,409,"ERR_409_CONFLICT","Ticket already acknowledged or unavailable");return;}
                 ApiResponseUtil.sendSuccess(e,Map.of("ticket_id",id,"status","ACKNOWLEDGED"));return;
             }
+            if(path.equals("/api/v1/ai/concierge/tool-log")){
+                if(!e.getRequestMethod().equals("POST")){error(e,405,"ERR_405_METHOD_NOT_ALLOWED","Method not allowed");return;}
+                if(!staff&&!Set.of("guest","customer").contains(role)){error(e,403,"ERR_403_FORBIDDEN","Concierge access denied");return;}
+                if(!checkChatBudget(e))return;
+                JsonObject toolEvent=body(e);
+                if(toolEvent.size()!=2)throw new IllegalArgumentException();
+                String session=field(toolEvent,"session_id",64),outcome=field(toolEvent,"outcome",20);
+                if(!session.matches("[A-Za-z0-9_-]{1,64}")||!Set.of("success","no_results","unavailable").contains(outcome))throw new IllegalArgumentException();
+                String bound=AiInteractionDao.hash(role+"|"+e.getAttribute("userId")+"|"+session);
+                String decision=switch(outcome){case "success"->"TOOL_SEARCH";case "no_results"->"TOOL_NO_RESULTS";default->"TOOL_UNAVAILABLE";};
+                try { recordAsync(bound,staff,"room_search:"+outcome,decision,0,correlation).get(3,java.util.concurrent.TimeUnit.SECONDS); }
+                catch(InterruptedException ex){Thread.currentThread().interrupt();error(e,503,"ERR_503_AI_AUDIT_UNAVAILABLE","Không thể ghi nhận lần tra cứu. Vui lòng thử lại.");return;}
+                catch(java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException ex){error(e,503,"ERR_503_AI_AUDIT_UNAVAILABLE","Không thể ghi nhận lần tra cứu. Vui lòng thử lại.");return;}
+                ApiResponseUtil.sendSuccess(e,200,Map.of("logged",true),Map.of("correlation_id",correlation));return;
+            }
             if(!Set.of("/api/v1/ai/concierge/chat","/api/v1/ai/concierge/escalate").contains(path)){error(e,404,"ERR_404_NOT_FOUND","Route not found");return;}
             if(!e.getRequestMethod().equals("POST")){error(e,405,"ERR_405_METHOD_NOT_ALLOWED","Method not allowed");return;}
             if(!staff&&!Set.of("guest","customer").contains(role)){error(e,403,"ERR_403_FORBIDDEN","Concierge access denied");return;}
@@ -185,7 +200,8 @@ public final class VirtualConciergeController implements HttpHandler,AutoCloseab
         record(session,staff,message,"ESCALATED",0,correlation);
         ApiResponseUtil.sendSuccess(e,200,Map.of("answer",EscalationPolicy.fallback(language),"reply",EscalationPolicy.fallback(language),"confidence_score",0,"citations",List.of(),"suggested_actions",List.of(),"escalate",true,"ticket_id",ticket),Map.of("correlation_id",correlation));
     }
-    private void record(String session,boolean staff,String message,String action,double confidence,String correlation){var event=new AiInteractionDao.Event(session,staff?"STAFF":"GUEST",message,action,confidence,correlation);if(eventSink==null)audit.record(event);else eventSink.accept(event);}
+    private void record(String session,boolean staff,String message,String action,double confidence,String correlation){recordAsync(session,staff,message,action,confidence,correlation);}
+    private java.util.concurrent.CompletableFuture<Void> recordAsync(String session,boolean staff,String message,String action,double confidence,String correlation){var event=new AiInteractionDao.Event(session,staff?"STAFF":"GUEST",message,action,confidence,correlation);if(eventSink==null)return audit.record(event);eventSink.accept(event);return java.util.concurrent.CompletableFuture.completedFuture(null);}
     private int ticket(HttpExchange e,String session,String category,String correlation)throws SQLException{return ticketCreator.create(session,category,correlation,Integer.parseInt(String.valueOf(e.getAttribute("userId"))),String.valueOf(e.getAttribute("role")).toLowerCase(Locale.ROOT));}
     private static JsonObject body(HttpExchange e) throws IOException {
         byte[] bytes=e.getRequestBody().readNBytes(16_385);if(bytes.length>16_384)throw new BodyTooLarge();

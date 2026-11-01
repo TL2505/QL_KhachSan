@@ -63,28 +63,8 @@ export const getDynamicApiBaseUrl = () => {
   return `${protocol}//${hostname}:8081/api/v1`; 
 }; 
 
-export function getAlternativeApiBaseUrl(primaryUrl) {
-  if (typeof window === 'undefined' || !window.location) {
-    return null;
-  }
-  const hostname = window.location.hostname;
-  let port = window.location.port;
-  if (!port && window.location.origin) {
-    try {
-      port = new URL(window.location.origin).port;
-    } catch {}
-  }
-  // If window.location is configured for a specific custom port (like unit test mock server), do not fallback
-  if (port && port !== '3000' && port !== '8081' && port !== '80' && port !== '443') {
-    return null;
-  }
-  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-  if (hostname === '192.168.56.102') {
-    return `${protocol}//localhost:8081/api/v1`;
-  }
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return `${protocol}//192.168.56.102:8081/api/v1`;
-  }
+export function getAlternativeApiBaseUrl() {
+  // Keep requests on the selected host so local development cannot fall back to an unavailable VM.
   return null;
 }
 
@@ -93,7 +73,18 @@ export const API_BASE_URL = getDynamicApiBaseUrl();
 export function getApiBaseUrl() {
   const saved = read('hotel_api_url') || read('aurelia_api_base') || read('hotel_api_base');
   if (saved) {
-    try { return normalizeApiBase(saved); } catch {}
+    try {
+      const normalized = normalizeApiBase(saved);
+      const pageHost = typeof window !== 'undefined' && window.location ? window.location.hostname : '';
+      const localPage = pageHost === 'localhost' || pageHost === '127.0.0.1';
+      if (localPage && new URL(normalized).hostname === '192.168.56.102') {
+        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        const localBase = `${protocol}//${pageHost}:8081/api/v1`;
+        setApiBaseUrl(localBase);
+        return localBase;
+      }
+      return normalized;
+    } catch {}
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     const host = window.location.hostname || 'localhost';
@@ -147,6 +138,19 @@ export function clearAuthSession() {
   write('token', null);
 }
 
+function announceSessionExpiryIfCurrent(session) {
+  const currentSession = getAuthSession();
+  const sessionHasNotChanged = session?.token
+    ? currentSession?.token === session.token
+    : !currentSession?.token;
+  if (!sessionHasNotChanged) return false;
+  clearAuthSession();
+  if (typeof window !== 'undefined' && window.dispatchEvent) {
+    window.dispatchEvent(new Event('hotel:session-expired'));
+  }
+  return true;
+}
+
 function messageFor(status) {
   return ({
     401: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
@@ -159,7 +163,8 @@ function messageFor(status) {
 export async function apiFetch(path, init = {}) {
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn yêu cầu không hợp lệ.');
   const cleanPath = path.startsWith('/') ? path : '/' + path;
-  const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/');
+  const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/')
+    || cleanPath.startsWith('/public/room-types') || cleanPath.startsWith('/public/landing-content');
   const session = getAuthSession();
   const token = (typeof session?.token === 'string' && session.token) ? session.token : getStoredCustomerToken();
   const headers = new Headers(init.headers || {});
@@ -200,7 +205,7 @@ export async function apiFetch(path, init = {}) {
     if (init.signal && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
       throw error;
     }
-    // Task 5: Network Fallback & Resilience - Try alternative host if primary fails or times out
+    // Do not retry another host: local UI traffic must stay on its configured localhost backend.
     const altBase = getAlternativeApiBaseUrl(baseUrl);
     if (altBase && altBase !== baseUrl) {
       try {
@@ -215,11 +220,8 @@ export async function apiFetch(path, init = {}) {
     }
   }
 
-  if (!isPublic && response.status === 401 && session?.token && getAuthSession()?.token === session.token) {
-    setAuthSession(null);
-    if (typeof window !== 'undefined' && window.dispatchEvent) {
-      window.dispatchEvent(new Event('hotel:session-expired'));
-    }
+  if (!isPublic && response.status === 401) {
+    announceSessionExpiryIfCurrent(session);
   }
 
   if (response.status === 204) return null;
@@ -233,7 +235,7 @@ export async function apiFetch(path, init = {}) {
   }
 
   if (!response.ok) {
-    const serverMessage = (response.status < 500 && result && typeof result.message === 'string') ? result.message.trim() : '';
+    const serverMessage = (response.status < 500 && ![401, 403].includes(response.status) && result && typeof result.message === 'string') ? result.message.trim() : '';
     throw new ApiError(serverMessage || messageFor(response.status), response.status, response.headers.get('Retry-After'));
   }
 
@@ -265,12 +267,7 @@ export async function fetchAuthenticatedFile(path, init = {}) {
     if (error.name === 'AbortError') throw error;
     throw new ApiError('Không thể tải tệp. Vui lòng thử lại.');
   }
-  if (response.status === 401 && session?.token && getAuthSession()?.token === session.token) {
-    setAuthSession(null);
-    if (typeof window !== 'undefined' && window.dispatchEvent) {
-      window.dispatchEvent(new Event('hotel:session-expired'));
-    }
-  }
+  if (response.status === 401) announceSessionExpiryIfCurrent(session);
   if (!response.ok) throw new ApiError(messageFor(response.status), response.status, response.headers.get('Retry-After'));
   if (!response.headers.get('Content-Type')?.toLowerCase().includes('application/pdf')) {
     throw new ApiError('Máy chủ không trả về tệp PDF hợp lệ.', response.status);
@@ -438,6 +435,7 @@ export function mapRoomCategory(roomTypeId, rawCategory, rawName) {
     if (n.includes('suite')) return 'Suite';
     if (n.includes('presidential') || n.includes('villa') || n.includes('penthouse')) return 'Presidential';
     if (n.includes('family')) return 'Family';
+    if (rawName.trim()) return rawName.trim();
   }
   const idNum = Number(roomTypeId);
   if (idNum === 2) return 'Suite';
@@ -509,10 +507,19 @@ export async function getRooms(filterParams = {}) {
 
       if (rawRooms.length === 0) return { rooms: [], source: 'api' };
       if (rawRooms.length > 0) {
-        const rooms = rawRooms.map((r, index) => {
+        const catalogueResponse = await fetch(`${root}/public/room-types`, {
+          method: 'GET', headers: { 'Accept': 'application/json', 'X-User-Role': 'guest' }, signal: AbortSignal.timeout(4000)
+        });
+        if (!catalogueResponse.ok) throw new ApiError('Không thể tải danh mục hạng phòng.', catalogueResponse.status);
+        const cataloguePayload = await catalogueResponse.json();
+        const publicTypes = Array.isArray(cataloguePayload?.data) ? cataloguePayload.data : [];
+        const typesById = new Map(publicTypes.map(type => [Number(type.id), type]));
+        const visibleRooms = rawRooms.filter(room => typesById.has(Number(room.room_type_id || room.roomTypeId || room.roomType)));
+        const rooms = visibleRooms.map((r, index) => {
           if (!Number.isInteger(r.id) || r.id < 1 || r.price == null || !Number.isFinite(Number(r.price)) || Number(r.price) < 0) throw new Error('Invalid room inventory');
           const typeId = r.roomTypeId || r.room_type_id || r.roomType || (index % 5 + 1);
-          const typeName = r.room_type_name || r.roomTypeName || r.name || '';
+          const managedType = typesById.get(Number(typeId));
+          const typeName = managedType?.name || r.room_type_name || r.roomTypeName || r.name || '';
           const category = mapRoomCategory(typeId, r.category, typeName);
           const fallback = LUXURY_ROOMS_CATALOG.find(room => 
             room.category.toLowerCase() === category.toLowerCase() ||
@@ -528,22 +535,26 @@ export async function getRooms(filterParams = {}) {
             category: category,
             price: Number(r.price),
             area: r.area || fallback.area,
-            capacity: r.capacity || fallback.capacity,
+            capacity: managedType?.capacity || r.capacity || fallback.capacity,
             childrenCapacity: fallback.childrenCapacity,
             bedType: r.bedType || fallback.bedType,
             view: r.view || fallback.view,
             rating: fallback.rating,
             reviewsCount: fallback.reviewsCount,
             badge: fallback.badge,
-            image: r.image_url || r.imageUrl || fallback.image,
+            image: managedType?.image_url || r.image_url || r.imageUrl || '',
+            imageAlt: managedType?.image_alt || typeName,
             gallery: fallback.gallery,
-            amenities: r.amenities ? (Array.isArray(r.amenities) ? r.amenities : String(r.amenities).split(',').map(v => v.trim()).filter(Boolean)) : fallback.amenities,
-            description: r.description || fallback.description,
+            amenities: managedType ? String(managedType.amenities || '').split(',').map(v => v.trim()).filter(Boolean)
+              : r.amenities ? (Array.isArray(r.amenities) ? r.amenities : String(r.amenities).split(',').map(v => v.trim()).filter(Boolean)) : fallback.amenities,
+            description: managedType ? (managedType.description || '') : (r.description || fallback.description),
+            displayOrder: managedType?.display_order ?? 0,
             isDemoCatalog: false,
             status: r.status || 'unknown',
             version: r.version ?? 0
           };
         });
+        rooms.sort((a, b) => Number(a.displayOrder) - Number(b.displayOrder) || Number(a.id) - Number(b.id));
         return { rooms, source: 'api' };
       }
     }

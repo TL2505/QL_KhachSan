@@ -26,7 +26,7 @@ DỊCH VỤ VÀ TIỆN ÍCH CÔNG BỐ
 - Tình trạng hoạt động hôm nay, suất trống và giá dịch vụ cụ thể cần kiểm tra danh mục dịch vụ hoặc xác nhận với lễ tân.
 
 HƯỚNG DẪN SỬ DỤNG WEBSITE
-- Tìm phòng: trên trang chủ, chọn ngày nhận phòng, ngày trả phòng, số khách và mã ưu đãi nếu có, sau đó bấm Kiểm tra phòng trống. Xem các hạng phòng ở mục Phòng nghỉ (index.html#rooms).
+- Tìm phòng: trong Quản gia AI, chọn Tìm phòng rồi nhập ngày, giờ nhận/trả phòng, số khách và tiện nghi mong muốn. Gợi ý chỉ hiển thị sau khi máy chủ trả về tình trạng phòng và báo giá hiện tại. Nếu chưa có kết quả công cụ, không nêu tình trạng hoặc giá.
 - Đặt phòng: chọn phòng từ kết quả tìm kiếm và làm theo luồng đặt phòng trên website. Chỉ hệ thống đặt phòng mới xác nhận kết quả; câu trả lời chatbot không phải một đơn đặt phòng.
 - Khách đăng nhập mở cổng thành viên: Tổng quan, Đặt phòng/Lịch sử đặt phòng, Dịch vụ & Ví ưu đãi, Hồ sơ, Bảo mật.
 - Xem đơn của mình: cổng thành viên > Lịch sử đặt phòng (portal.html?view=bookings). Chatbot này không tự đọc hoặc tiết lộ đơn của bất kỳ khách nào.

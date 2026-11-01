@@ -92,11 +92,7 @@ public class SecurityUtil {
     }
 
     public static String getHmacIdentityKey() {
-        String key = System.getenv().getOrDefault("HMAC_IDENTITY_KEY", "aurelia_default_dev_hmac_secret_2026_fallback");
-        if (key == null || key.isBlank()) {
-            return "aurelia_default_dev_hmac_secret_2026_fallback";
-        }
-        return key;
+        return SecretConfiguration.required("HMAC_IDENTITY_KEY");
     }
 
     private static void sendError(HttpExchange exchange, int code, String message) throws IOException {

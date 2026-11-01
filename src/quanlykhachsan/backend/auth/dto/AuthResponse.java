@@ -4,6 +4,7 @@ public class AuthResponse {
     private String status;
     private String message;
     private Object data;
+    private java.util.Map<String, String> fieldErrors;
 
     public String getStatus() {
         return status;
@@ -28,4 +29,7 @@ public class AuthResponse {
     public void setData(Object data) {
         this.data = data;
     }
+
+    public java.util.Map<String, String> getFieldErrors() { return fieldErrors; }
+    public void setFieldErrors(java.util.Map<String, String> fieldErrors) { this.fieldErrors = fieldErrors; }
 }
