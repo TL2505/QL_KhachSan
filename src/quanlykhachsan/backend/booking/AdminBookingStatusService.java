@@ -150,7 +150,6 @@ final class AdminBookingStatusService {
             reconciliation.setInt(1, bookingId);
             try (ResultSet rows = reconciliation.executeQuery()) { return rows.next(); }
         }
-        return false;
     }
 
     private static boolean hasNegativeFolioBalance(Connection connection,int bookingId)throws SQLException {
