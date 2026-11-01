@@ -22,13 +22,28 @@ public class GlobalExceptionHandler extends Filter {
     }
 
     public static void handle(HttpExchange exchange, Throwable exception) throws IOException {
-        exception.printStackTrace();
         Throwable cause = exception;
         while (cause.getCause() != null && cause.getCause() != cause) cause = cause.getCause();
+        if (isClientDisconnect(cause)) {
+            // Client closed socket (normal during navigation or page refresh)
+            return;
+        }
+        exception.printStackTrace();
         if (cause instanceof IllegalArgumentException) sendError(exchange,400,"ERR_400_BAD_REQUEST",cause.getMessage());
         else if (cause instanceof SecurityException) sendError(exchange,403,"ERR_403_FORBIDDEN",cause.getMessage());
         else if (cause instanceof IllegalStateException || cause instanceof OptimisticLockException) sendError(exchange,409,"ERR_409_CONFLICT",cause.getMessage());
         else sendError(exchange,500,"ERR_500_SERVER_ERROR","The request could not be completed.");
+    }
+
+    private static boolean isClientDisconnect(Throwable t) {
+        if (t instanceof java.io.IOException) {
+            String msg = t.getMessage();
+            if (msg != null) {
+                msg = msg.toLowerCase(java.util.Locale.ROOT);
+                return msg.contains("connection was aborted") || msg.contains("broken pipe") || msg.contains("connection reset");
+            }
+        }
+        return false;
     }
 
     public static void sendError(HttpExchange exchange, int statusCode, String errorCode, String message) throws IOException {

@@ -156,8 +156,8 @@ function messageFor(status) {
 }
 
 export async function apiFetch(path, init = {}) {
-  const { timeoutMs = 2500, retryOnNetworkError = true, ...fetchInit } = init;
-  const requestTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 2500;
+  const { timeoutMs = 10000, retryOnNetworkError = true, ...fetchInit } = init;
+  const requestTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 10000;
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn yêu cầu không hợp lệ.');
   const cleanPath = path.startsWith('/') ? path : '/' + path;
   const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/');
