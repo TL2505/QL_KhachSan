@@ -138,17 +138,27 @@ export function clearAuthSession() {
   write('token', null);
 }
 
-function announceSessionExpiryIfCurrent(session) {
-  const currentSession = getAuthSession();
-  const sessionHasNotChanged = session?.token
-    ? currentSession?.token === session.token
-    : !currentSession?.token;
-  if (!sessionHasNotChanged) return false;
+function isPublicApiPath(path) {
+  const pathOnly = String(path || '').split('?', 1)[0].replace(/\/+$/, '') || '/';
+  const routes = [
+    '/rooms/availability', '/auth', '/pricing/quote', '/promotions/validate',
+    '/bookings/public', '/booking', '/reviews/public', '/public/room-types',
+    '/public/landing-content', '/health'
+  ];
+  return routes.some(route => pathOnly === route || pathOnly.startsWith(`${route}/`));
+}
+
+async function expireRejectedSession(response, session, authenticated) {
+  if (response.status !== 401 || !authenticated || !session?.token) return;
+  const error = await response.clone().json().catch(() => null);
+  console.warn('[auth] Request rejected', { path: error?.instance, code: error?.error_code });
+  // A handler's 401 is not proof that the signed session has expired.
+  if (!['ERR_401_TOKEN_INVALID', 'ERR_401_ROLE_CHANGED'].includes(error?.error_code)) return;
+  if (getAuthSession()?.token !== session.token) return;
   clearAuthSession();
   if (typeof window !== 'undefined' && window.dispatchEvent) {
     window.dispatchEvent(new Event('hotel:session-expired'));
   }
-  return true;
 }
 
 function messageFor(status) {
@@ -165,7 +175,7 @@ export async function apiFetch(path, init = {}) {
   const requestTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 2500;
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn yêu cầu không hợp lệ.');
   const cleanPath = path.startsWith('/') ? path : '/' + path;
-  const isPublic = cleanPath.startsWith('/rooms/availability') || cleanPath.startsWith('/auth/');
+  const isPublic = isPublicApiPath(cleanPath);
   const session = getAuthSession();
   const token = (typeof session?.token === 'string' && session.token) ? session.token : getStoredCustomerToken();
   const headers = new Headers(init.headers || {});
@@ -227,9 +237,7 @@ export async function apiFetch(path, init = {}) {
     }
   }
 
-  if (!isPublic && response.status === 401) {
-    announceSessionExpiryIfCurrent(session);
-  }
+  await expireRejectedSession(response, session, headers.has('Authorization'));
 
   if (response.status === 204) return null;
 
@@ -263,9 +271,10 @@ export async function fetchAuthenticatedFile(path, init = {}) {
   if (!path || /^(?:[a-z]+:|\/\/)/i.test(path)) throw new ApiError('Đường dẫn tải xuống không hợp lệ.');
   const session = getAuthSession();
   const token = (typeof session?.token === 'string' && session.token) ? session.token : getStoredCustomerToken();
+  const isPublic = isPublicApiPath(path.startsWith('/') ? path : '/' + path);
   const headers = new Headers(init.headers || {});
   headers.set('Accept', 'application/pdf');
-  if (typeof token === 'string' && token) {
+  if (!isPublic && typeof token === 'string' && token) {
     headers.set('Authorization', 'Bearer ' + token);
   }
   headers.set('X-User-Role', 'guest');
@@ -276,7 +285,7 @@ export async function fetchAuthenticatedFile(path, init = {}) {
     if (error.name === 'AbortError') throw error;
     throw new ApiError('Không thể tải tệp. Vui lòng thử lại.');
   }
-  if (response.status === 401) announceSessionExpiryIfCurrent(session);
+  await expireRejectedSession(response, session, headers.has('Authorization'));
   if (!response.ok) throw new ApiError(messageFor(response.status), response.status, response.headers.get('Retry-After'));
   if (!response.headers.get('Content-Type')?.toLowerCase().includes('application/pdf')) {
     throw new ApiError('Máy chủ không trả về tệp PDF hợp lệ.', response.status);

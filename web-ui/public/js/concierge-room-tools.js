@@ -1,4 +1,4 @@
-import { apiFetch } from './api.js';
+import { apiFetch } from './api.js?v=3.5.8';
 
 const within = async (path, signal) => apiFetch(path, { method: 'GET', signal });
 

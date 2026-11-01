@@ -23,7 +23,7 @@ import {
   formatCurrency,
   generateVietQRUrl,
   LUXURY_ROOMS_CATALOG
-} from './api.js?v=3.5.7';
+} from './api.js?v=3.5.8';
 import './shared/theme.js';
 
 // Cross-environment safe global reference (Browser Window vs Node.js test environment)

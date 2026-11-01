@@ -450,3 +450,83 @@ html[data-theme="light"] body.customer-portal[data-customer-tier="vip"] {
   --customer-input-border: #dacbe5;
   --customer-primary-bg: #8055aa;
 }
+
+/* Keep the shared staff/admin notification tray readable in light mode. */
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-dropdown {
+  color: var(--portal-text);
+  background: rgba(255, 255, 255, .98);
+  border-color: var(--portal-border);
+  box-shadow: 0 16px 40px rgba(67, 49, 29, .16);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .notification-header {
+  color: var(--portal-text);
+  background: #faf8f4;
+  border-color: var(--portal-border);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .notification-title,
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list > div:not(.notif-item) {
+  color: var(--portal-text);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) .notification-header svg {
+  color: var(--portal-gold);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #btn-mark-all-read {
+  color: var(--portal-soft);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #btn-mark-all-read:hover {
+  color: var(--portal-text);
+  background: var(--portal-surface);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list {
+  color: var(--portal-text);
+  border-color: var(--portal-border);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list .notif-item {
+  color: var(--portal-text);
+  background: #fff;
+  border: 1px solid var(--portal-border);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list .notif-item.border-l-2 {
+  background: #fbf7ef;
+  border-left: 3px solid var(--portal-gold);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list .notif-item:hover {
+  background: #f6f0e6;
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list .notification-item-heading h4 {
+  color: var(--portal-text);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list .notification-time,
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list .notif-item p {
+  color: var(--portal-muted);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list .notification-voucher {
+  color: var(--portal-text);
+  background: var(--portal-surface);
+  border-color: var(--portal-border);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list .notification-voucher > span {
+  color: var(--portal-soft);
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list .btn-copy-notif-voucher {
+  color: var(--portal-text);
+  background: #eee8dd;
+}
+
+html[data-theme="light"] body.portal-body:not(.customer-portal) #notification-list .notification-use-voucher {
+  color: var(--portal-soft);
+}

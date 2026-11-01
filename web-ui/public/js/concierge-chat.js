@@ -1,5 +1,5 @@
-import { apiFetch, apiStream, getAuthSession, getStoredCustomerToken } from './api.js?v=9';
-import { conciergeRoomSearchIntent, searchConciergeRooms } from './concierge-room-tools.js';
+import { apiFetch, apiStream, getAuthSession, getStoredCustomerToken } from './api.js?v=3.5.8';
+import { conciergeRoomSearchIntent, searchConciergeRooms } from './concierge-room-tools.js?v=3';
 
 // Kept in memory: closing the panel preserves the conversation; reloading clears it.
 export function initConciergeChat() {
