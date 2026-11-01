@@ -123,6 +123,44 @@
           <span id="show-login" class="hidden" aria-hidden="true"></span>
           <span id="show-register" class="hidden" aria-hidden="true"></span>
         </div>
+        <script>
+          (function() {
+            function switchAuthTab(mode) {
+              var tabLogin = document.getElementById('tab-login');
+              var tabRegister = document.getElementById('tab-register');
+              var loginForm = document.getElementById('login-form');
+              var registerForm = document.getElementById('register-form');
+              var showLogin = document.getElementById('show-login');
+              var showRegister = document.getElementById('show-register');
+              if (mode === 'login') {
+                [tabLogin, showLogin].forEach(function(el) { if (el) { el.classList.add('active', 'tab-active'); el.setAttribute('aria-selected', 'true'); } });
+                [tabRegister, showRegister].forEach(function(el) { if (el) { el.classList.remove('active', 'tab-active'); el.setAttribute('aria-selected', 'false'); } });
+                if (loginForm) { loginForm.hidden = false; loginForm.style.display = ''; }
+                if (registerForm) { registerForm.hidden = true; registerForm.style.display = 'none'; }
+              } else {
+                [tabRegister, showRegister].forEach(function(el) { if (el) { el.classList.add('active', 'tab-active'); el.setAttribute('aria-selected', 'true'); } });
+                [tabLogin, showLogin].forEach(function(el) { if (el) { el.classList.remove('active', 'tab-active'); el.setAttribute('aria-selected', 'false'); } });
+                if (registerForm) { registerForm.hidden = false; registerForm.style.display = ''; }
+                if (loginForm) { loginForm.hidden = true; loginForm.style.display = 'none'; }
+              }
+            }
+            function attachTabEvents() {
+              var tl = document.getElementById('tab-login');
+              var tr = document.getElementById('tab-register');
+              var sl = document.getElementById('show-login');
+              var sr = document.getElementById('show-register');
+              if (tl) tl.addEventListener('click', function(e) { if (e && e.preventDefault) e.preventDefault(); switchAuthTab('login'); });
+              if (tr) tr.addEventListener('click', function(e) { if (e && e.preventDefault) e.preventDefault(); switchAuthTab('register'); });
+              if (sl) sl.addEventListener('click', function(e) { if (e && e.preventDefault) e.preventDefault(); switchAuthTab('login'); });
+              if (sr) sr.addEventListener('click', function(e) { if (e && e.preventDefault) e.preventDefault(); switchAuthTab('register'); });
+            }
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', attachTabEvents);
+            } else {
+              attachTabEvents();
+            }
+          })();
+        </script>
 
         <p id="auth-status" class="auth-status" role="status" aria-live="polite"></p>
 

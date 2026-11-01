@@ -62,3 +62,4 @@ foreach ($js in $jsFiles) {
 }
 
 Write-Host "Completed bringing colleague UI assets to web-ui/." -ForegroundColor Green
+

@@ -1178,6 +1178,11 @@ export async function sendGoogleCredential(credential) {
 // Initial DOM events setup wrapped in try...catch
 try {
   initAuthEvents();
+  if (typeof document !== 'undefined' && document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      try { initAuthEvents(); } catch {}
+    });
+  }
 
   byId('logout-button')?.addEventListener('click', () => {
     clearAuthSession();

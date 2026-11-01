@@ -31,7 +31,7 @@ class StaticFileHandlerTest {
                 assertEquals("<html>Booking</html>", response.body());
                 assertEquals("text/html; charset=UTF-8", response.headers().firstValue("Content-Type").orElseThrow());
             }
-            String[][] types = {{"css", "text/css"}, {"js", "application/javascript"},
+            String[][] types = {{"css", "text/css; charset=UTF-8"}, {"js", "application/javascript; charset=UTF-8"},
                     {"png", "image/png"}, {"svg", "image/svg+xml"}};
             for (String[] type : types) {
                 Files.writeString(publicRoot.resolve("asset." + type[0]), "asset");

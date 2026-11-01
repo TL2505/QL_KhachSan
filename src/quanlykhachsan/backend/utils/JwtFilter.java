@@ -70,7 +70,15 @@ public class JwtFilter extends Filter {
             path = path.substring(0, path.length() - 1);
         }
 
-        boolean isPublic = PUBLIC_PATHS.contains(path)
+        boolean isStaticAsset = !path.startsWith("/api/") && (
+                path.endsWith(".html") || path.endsWith(".js") || path.endsWith(".mjs") ||
+                path.endsWith(".css") || path.endsWith(".png") || path.endsWith(".jpg") ||
+                path.endsWith(".jpeg") || path.endsWith(".svg") || path.endsWith(".ico") ||
+                path.endsWith(".json") || path.endsWith(".webp") || path.endsWith(".woff") ||
+                path.endsWith(".woff2") || path.equals("/") || path.equals("/favicon.ico")
+        );
+
+        boolean isPublic = isStaticAsset || PUBLIC_PATHS.contains(path)
                 || path.equals("/booking") || path.startsWith("/booking/")
                 || path.startsWith("/api/v1/auth/google")
                 || path.startsWith("/api/v1/auth/facebook")

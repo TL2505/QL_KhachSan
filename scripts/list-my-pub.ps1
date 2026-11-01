@@ -6,3 +6,4 @@ Get-ChildItem -Recurse $myPub -File | ForEach-Object {
     $rel = $_.FullName.Substring($myPub.Length).TrimStart('\', '/')
     Write-Host "$rel ($($_.Length) bytes)"
 }
+

@@ -54,10 +54,23 @@ public final class StaticFileHandler implements HttpHandler {
                 return;
             }
             if (!Files.exists(file) || !Files.exists(root)) {
-                respond(exchange, 404, "Not found");
-                return;
+                Path parentRoot = root.getParent();
+                if (root.getFileName() != null && root.getFileName().toString().equals("public")
+                        && parentRoot != null && Files.exists(parentRoot)) {
+                    Path fallbackFile = parentRoot.resolve(relative).normalize();
+                    if (fallbackFile.startsWith(parentRoot) && Files.isRegularFile(fallbackFile)) {
+                        file = fallbackFile;
+                    } else {
+                        respond(exchange, 404, "Not found");
+                        return;
+                    }
+                } else {
+                    respond(exchange, 404, "Not found");
+                    return;
+                }
             }
-            if (!file.toRealPath().startsWith(root.toRealPath())) {
+            Path baseCheck = file.startsWith(root) ? root : root.getParent();
+            if (baseCheck != null && !file.toRealPath().startsWith(baseCheck.toRealPath())) {
                 respond(exchange, 403, "Forbidden");
                 return;
             }
@@ -67,6 +80,9 @@ public final class StaticFileHandler implements HttpHandler {
             }
             exchange.getResponseHeaders().set("Content-Type", mimeType(file));
             exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "*");
             long size = Files.size(file);
             exchange.getResponseHeaders().set("Content-Length", Long.toString(size));
             exchange.sendResponseHeaders(200, method.equals("HEAD") || size == 0 ? -1 : size);
@@ -79,16 +95,23 @@ public final class StaticFileHandler implements HttpHandler {
     private static String mimeType(Path file) {
         String name = file.getFileName().toString().toLowerCase(Locale.ROOT);
         if (name.endsWith(".html")) return "text/html; charset=UTF-8";
-        if (name.endsWith(".css")) return "text/css";
-        if (name.endsWith(".js")) return "application/javascript";
+        if (name.endsWith(".css")) return "text/css; charset=UTF-8";
+        if (name.endsWith(".js") || name.endsWith(".mjs")) return "application/javascript; charset=UTF-8";
+        if (name.endsWith(".json")) return "application/json; charset=UTF-8";
         if (name.endsWith(".png")) return "image/png";
+        if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
         if (name.endsWith(".svg")) return "image/svg+xml";
+        if (name.endsWith(".ico")) return "image/x-icon";
+        if (name.endsWith(".webp")) return "image/webp";
+        if (name.endsWith(".woff")) return "font/woff";
+        if (name.endsWith(".woff2")) return "font/woff2";
         return "application/octet-stream";
     }
 
     private static void respond(HttpExchange exchange, int status, String message) throws IOException {
         byte[] body = message.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.sendResponseHeaders(status, exchange.getRequestMethod().equals("HEAD") ? -1 : body.length);
         if (!exchange.getRequestMethod().equals("HEAD")) exchange.getResponseBody().write(body);
     }

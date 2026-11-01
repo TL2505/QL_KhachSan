@@ -13,3 +13,4 @@ Get-ChildItem -Recurse $colRoot -File | Where-Object {
         Write-Host "In Colleague Root but NOT in Colleague Public: $rel"
     }
 }
+

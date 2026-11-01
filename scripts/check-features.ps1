@@ -12,3 +12,4 @@ Write-Host "Shield logo: $([bool]($portal -match 'shield|logo'))"
 Write-Host "Account Settings: $([bool]($portal -match 'account-settings'))"
 Write-Host "Concierge Chat: $([bool]($portal -match 'concierge'))"
 Write-Host "PayOS / QR: $([bool]($portal -match 'payos|vietqr|payment'))"
+

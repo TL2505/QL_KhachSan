@@ -16,3 +16,4 @@ Get-ChildItem -Path $colleaguePub -Filter "*.html" | ForEach-Object {
         Write-Host "HTML MISSING IN MINE: $($_.Name)"
     }
 }
+

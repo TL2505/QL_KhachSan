@@ -26,3 +26,4 @@ foreach ($file in $diffFiles) {
     $f2 = Join-Path $myPub $file
     git diff --no-index $f2 $f1 | Select-Object -First 50 | ForEach-Object { Write-Host $_ }
 }
+

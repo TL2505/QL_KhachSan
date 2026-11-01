@@ -24,3 +24,4 @@ Get-ChildItem -Recurse $myPub -File | ForEach-Object {
         Write-Host "ONLY IN MY PUB: $rel ($($_.Length) bytes)"
     }
 }
+
