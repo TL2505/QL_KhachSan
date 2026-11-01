@@ -64,7 +64,7 @@ services:
     volumes:
       - ai_settings_data:/app/.data/ai
     ports:
-      - "127.0.0.1:8081:8081"
+      - "8081:8081"
     networks:
       - pms-internal-net
     healthcheck:
@@ -79,7 +79,7 @@ services:
     image: nginx:1.25-alpine
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:80"
+      - "3000:80"
     volumes:
       - ./web-ui:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
