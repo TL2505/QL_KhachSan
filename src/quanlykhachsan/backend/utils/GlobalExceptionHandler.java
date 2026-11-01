@@ -22,6 +22,7 @@ public class GlobalExceptionHandler extends Filter {
     }
 
     public static void handle(HttpExchange exchange, Throwable exception) throws IOException {
+        exception.printStackTrace();
         Throwable cause = exception;
         while (cause.getCause() != null && cause.getCause() != cause) cause = cause.getCause();
         if (cause instanceof IllegalArgumentException) sendError(exchange,400,"ERR_400_BAD_REQUEST",cause.getMessage());
