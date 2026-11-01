@@ -81,7 +81,7 @@ public class Main {
         Filter systemStatusFilter = new SystemStatusFilter();
         Filter idempotencyFilter = new IdempotencyFilter();
         Filter ipRateLimiter = new quanlykhachsan.backend.utils.IpRateLimiter();
-        Filter staticIpRateLimiter = new quanlykhachsan.backend.utils.IpRateLimiter(70);
+        Filter staticIpRateLimiter = new quanlykhachsan.backend.utils.IpRateLimiter(500);
 
         // --- ĐĂNG KÝ CÁC ROUTE (API ENDPOINTS) TẠI ĐÂY ---
         // Route Health (Cả /api/v1/health và /health đều public)

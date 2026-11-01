@@ -31,7 +31,7 @@ public class SecurityHardeningFilter extends Filter {
             "default-src 'self'; " +
             "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://accounts.google.com/gsi/client; " +
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://accounts.google.com/gsi/style; " +
-            "connect-src 'self' https://accounts.google.com/gsi/; " +
+            "connect-src 'self' https://accounts.google.com/gsi/ https://unpkg.com; " +
             "frame-src 'self' https://accounts.google.com/gsi/; " +
             "font-src 'self' https://fonts.gstatic.com data:; " +
             "img-src 'self' data: https:;";
