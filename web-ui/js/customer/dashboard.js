@@ -1,6 +1,6 @@
 import { renderBookingAction } from '../shared/booking-action.js';
 import { escapeHtml } from '../shared/ui.js';
-import { api } from "../../api.js";
+import { api, getAuthSession, setAuthSession } from "../../api.js";
 import { getLegacyTierInfo, membershipPoints } from "./tier-helper.js";
 
 function refreshIcons() {
@@ -17,12 +17,7 @@ export async function renderDashboard(container, session) {
   const customerId = session.customerId || session.userId || session.id || 1;
   const memberIdFormatted = `AURELIA-${String(customerId).padStart(6, '0')}`;
 
-  const initials = (() => {
-    const parts = String(rawDisplayName).trim().split(' ');
-    return parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      : (rawDisplayName[0] || 'A').toUpperCase();
-  })();
+  const initials = String(rawDisplayName).trim().charAt(0).toUpperCase() || 'A';
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
@@ -33,8 +28,11 @@ export async function renderDashboard(container, session) {
     <!-- Top Greeting Banner -->
     <div class="greeting-banner mb-6 p-6 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-950/90 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl backdrop-blur-md">
       <div class="flex items-center gap-4">
-        <div class="greeting-avatar w-14 h-14 rounded-2xl font-bold flex items-center justify-center text-xl shadow-lg shrink-0">
-          ${escapeHtml(initials)}
+        <div class="avatar avatar-placeholder greeting-avatar w-14 h-14 rounded-full font-bold text-xl shadow-lg shrink-0" aria-hidden="true">
+          <div>
+            <span class="greeting-avatar-initial">${escapeHtml(initials)}</span>
+            <img class="greeting-avatar-image" alt="" hidden>
+          </div>
         </div>
         <div class="greeting-text">
           <h2 class="text-xl md:text-2xl font-bold font-serif customer-text tracking-wide">${greeting}, ${displayName}! 👋</h2>
@@ -81,6 +79,46 @@ export async function renderDashboard(container, session) {
     </div>
   `;
   refreshIcons();
+
+  const greetingAvatar = container.querySelector('.greeting-avatar');
+  const greetingAvatarInitial = greetingAvatar?.querySelector('.greeting-avatar-initial');
+  const greetingAvatarImage = greetingAvatar?.querySelector('.greeting-avatar-image');
+  const applyGreetingAvatar = avatarUrl => {
+    if (!greetingAvatar || !greetingAvatarInitial || !greetingAvatarImage) return;
+    greetingAvatarImage.onload = () => {
+      greetingAvatarImage.hidden = false;
+      greetingAvatarInitial.hidden = true;
+      greetingAvatar.classList.remove('avatar-placeholder');
+    };
+    greetingAvatarImage.onerror = () => {
+      greetingAvatarImage.removeAttribute('src');
+      greetingAvatarImage.hidden = true;
+      greetingAvatarInitial.hidden = false;
+      greetingAvatar.classList.add('avatar-placeholder');
+    };
+    if (!avatarUrl) {
+      greetingAvatarImage.removeAttribute('src');
+      greetingAvatarImage.hidden = true;
+      greetingAvatarInitial.hidden = false;
+      greetingAvatar.classList.add('avatar-placeholder');
+      return;
+    }
+    greetingAvatarImage.hidden = true;
+    greetingAvatarInitial.hidden = false;
+    greetingAvatar.classList.add('avatar-placeholder');
+    greetingAvatarImage.src = String(avatarUrl);
+  };
+  const sessionAvatarUrl = session.avatarUrl || session.avatar_url || session.profileImage || session.profile_image || session.photoURL || session.picture || '';
+  applyGreetingAvatar(sessionAvatarUrl);
+  if (!sessionAvatarUrl) {
+    api.get('/account/profile').then(profile => {
+      const avatarUrl = profile?.avatarUrl || '';
+      const currentSession = getAuthSession();
+      if (!avatarUrl || !container.isConnected || !session.token || currentSession?.token !== session.token) return;
+      setAuthSession({ ...currentSession, avatarUrl });
+      applyGreetingAvatar(avatarUrl);
+    }).catch(() => {});
+  }
 
   try {
     const renderMarker = container.querySelector('#member-card-wrapper');
