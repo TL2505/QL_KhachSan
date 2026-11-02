@@ -1,5 +1,28 @@
 # CHANGELOG — Hotel PMS Documentation
 
+## [2026-11-02] — Fix Nginx crash on backend stop, static rate limiting, and standardize mock local mode
+
+- **Prevented Nginx port 3000 crash when Docker backend container is stopped:**
+  - `docker-compose.yml`: Removed hard `depends_on: backend: condition: service_healthy` from service `web`, added `extra_hosts: - "host.docker.internal:host-gateway"`.
+  - `nginx.conf`: Replaced hardcoded `http://backend:8081` with dynamic `$backend_upstream` variable coupled with Docker embedded resolver `127.0.0.11 valid=10s ipv6=off;`. Added automatic `@fallback_host` location that routes API requests to `http://host.docker.internal:8081` (host IDE backend) when container backend is offline. Port 3000 remains operational independently.
+- **Fixed JavaScript button unresponsiveness and MIME type errors on port 8081:**
+  - Diagnosed root cause: `staticIpRateLimiter` in `Main.java` was capped at 70 burst tokens; `portal.html` loaded >67 static assets concurrently, triggering `429 Too Many Requests` with `Content-Type: application/json`. Chrome's strict MIME checking blocked script/style execution.
+  - Increased `staticIpRateLimiter` burst tokens from 70 to 500.
+  - Added full MIME type definitions with UTF-8 (`application/javascript; charset=utf-8`, `text/css; charset=utf-8`, etc.) and CORS headers to `StaticFileHandler.java`.
+  - Whitelisted CDN sources (`https://cdn.jsdelivr.net`, `https://unpkg.com`) and `data:` fonts in `SecurityHardeningFilter.java` CSP header.
+  - Whitelisted static file extensions in `JwtFilter.java` to prevent 401/403 intercepts on ES6 module imports.
+  - Added instant tab switching fallback and `DOMContentLoaded` listener in `portal-app.js` and `portal.html`.
+- **Improved network resilience and client disconnect handling:**
+  - `GlobalExceptionHandler.java`: Suppressed noisy socket write exception logs (`WSAECONNABORTED`, `Broken pipe`) on client refresh/cancel via `isClientDisconnect(cause)` check.
+  - `web-ui/api.js`: Increased client request timeout from 2500ms to 10000ms (10 seconds) to avoid aborting slower database operations.
+- **Standardized out-of-the-box Mock mode for testing and handoff:**
+  - Updated `MockPaymentController.java`, `PaymentLinkService.java`, and `GuestAuthService.java` to resolve `PAYMENT_QR_PROVIDER` and `HOTEL_OTP_MODE` through `SecretConfiguration` dotEnv loader.
+  - Preconfigured defaults: `PAYMENT_QR_PROVIDER=mock` and `HOTEL_OTP_MODE=mock`. Enables simulated VietQR payments, automated folio confirmation, internal invoicing, and database-persisted OTP generation without requiring PayOS accounts, CCCD eKYC, or credit cards.
+- **Populated `.env.example` with working development defaults:**
+  - Added seeded database-matching Vault keys (`AES_VAULT_KEY`, `HMAC_IDENTITY_KEY`, `JWT_SECRET`), MariaDB credentials (`hotel_admin`), and bank identifiers.
+  - Synchronized all 107 web assets to `web-ui/public/` with verified SHA-256 parity.
+  - Successfully compiled with `BUILD SUCCESS` and pushed to remote branch `complete_run_docker&local`.
+
 ## [2026-10-26] — Improve light-theme admin popup form contrast
 
 - Fixed dark input backgrounds paired with dark text in admin create/edit modals under the light theme; inputs now use a light surface, readable text, warm borders and localized placeholders.

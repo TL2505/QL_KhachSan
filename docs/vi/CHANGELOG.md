@@ -1,5 +1,29 @@
 # NHẬT KÝ THAY ĐỔI (CHANGELOG) — Tài liệu hệ thống PMS Khách sạn
 
+## [2026-11-02] — Sửa lỗi Nginx sập khi tắt Backend Docker, Rate Limiting tài nguyên tĩnh, và chuẩn hóa chế độ Mock Local
+
+- **Khắc phục lỗi Nginx sập cổng 3000 khi dừng container Backend Docker:**
+  - `docker-compose.yml`: Gỡ bỏ ràng buộc cứng `depends_on: backend: condition: service_healthy` khỏi service `web`, bổ sung `extra_hosts: - "host.docker.internal:host-gateway"`.
+  - `nginx.conf`: Thay thế địa chỉ proxy cứng `http://backend:8081` bằng biến upstream động `$backend_upstream` kết hợp Docker internal resolver (`resolver 127.0.0.11 valid=10s ipv6=off;`). Bổ sung cơ chế fallback tự động `@fallback_host` chuyển tiếp request API sang `http://host.docker.internal:8081` (Backend chạy trên máy host/NetBeans) khi container backend tắt. Cổng 3000 luôn sống độc lập.
+- **Sửa dứt điểm lỗi liệt nút bấm JavaScript và lỗi MIME type trên cổng 8081:**
+  - Tìm ra nguyên nhân gốc rễ: `staticIpRateLimiter` trong `Main.java` bị giới hạn ở 70 tokens; khi `portal.html` tải đồng thời hơn 67 file JS/CSS đã làm cạn token và trả về `429 Too Many Requests` với `Content-Type: application/json`. Trình duyệt bật strict MIME checking chặn toàn bộ file script/style.
+  - Tăng giới hạn burst capacity của `staticIpRateLimiter` từ 70 lên 500 tokens.
+  - Bổ sung định dạng MIME type chuẩn kèm UTF-8 (`application/javascript; charset=utf-8`, `text/css; charset=utf-8`, ...) và CORS trong `StaticFileHandler.java`.
+  - Whitelist các nguồn CDN (`https://cdn.jsdelivr.net`, `https://unpkg.com`) và font `data:` trong `SecurityHardeningFilter.java` để khắc phục vi phạm Content Security Policy.
+  - Whitelist toàn bộ phần mở rộng file tĩnh trong `JwtFilter.java` đảm bảo các lệnh `import` ES6 không bị chặn 401/403.
+  - Thêm cơ chế chuyển tab tức thì và xử lý sự kiện `DOMContentLoaded` trong `portal-app.js` và `portal.html`.
+- **Nâng cao khả năng chịu lỗi mạng và xử lý Client Disconnect:**
+  - `GlobalExceptionHandler.java`: Bổ sung kiểm tra `isClientDisconnect(cause)` để bắt êm các lỗi socket ngắt kết nối đột ngột (`WSAECONNABORTED`, `Broken pipe`) khi người dùng tải lại trang hoặc hủy request giữa chừng, không gây spam stack trace ra console.
+  - `web-ui/api.js`: Tăng thời gian chờ timeout mặc định từ 2.500ms lên 10.000ms (10 giây) để tránh ngắt socket khi truy vấn database phức tạp.
+- **Tích hợp & Chuẩn hóa chế độ Mock toàn diện (Thanh toán VietQR & OTP Email):**
+  - Cập nhật `MockPaymentController.java`, `PaymentLinkService.java`, và `GuestAuthService.java` để đọc cấu hình `PAYMENT_QR_PROVIDER` và `HOTEL_OTP_MODE` từ `SecretConfiguration` (hỗ trợ đọc từ `.env` ngay cả khi chạy trên NetBeans mà không cần biến môi trường hệ thống).
+  - Cấu hình mặc định `PAYMENT_QR_PROVIDER=mock` và `HOTEL_OTP_MODE=mock`: Người dùng có thể thử nghiệm 100% luồng đặt phòng, sinh mã QR VietQR, bấm nút "Mô phỏng thanh toán thành công", ghi nhận thanh toán vào DB, xuất hóa đơn và sinh mã OTP lưu bảng `guest_otps` mà không cần tài khoản PayOS, CCCD hay thẻ Visa.
+- **Chuẩn hóa cấu hình `.env.example` phục vụ bàn giao:**
+  - Cung cấp sẵn các khóa mã hóa bảo mật Vault (`AES_VAULT_KEY`, `HMAC_IDENTITY_KEY`, `JWT_SECRET`) khớp chuẩn với dữ liệu mẫu trong `database/hotel.sql`, tránh lỗi `[FAIL VAULT]`.
+  - Điền sẵn tài khoản MariaDB mặc định (`hotel_admin` / `hotel_secret_pass`) và thông tin ngân hàng.
+  - Đồng bộ 100% tài nguyên giữa `web-ui/` và `web-ui/public/` (107 files), kiểm tra SHA-256 hoàn hảo.
+  - Biên dịch dự án thành công (`BUILD SUCCESS`), kiểm tra test suite đạt yêu cầu và đồng bộ lên branch `complete_run_docker&local`.
+
 ## [2026-10-22] — @codex — Luồng phản hồi CORS — Sửa đăng nhập Google/OTP từ localhost:3000
 
 - Sửa `ApiResponseUtil` ghi đè origin đã được `CorsFilter` chọn thành `*`. Khi trang ở cổng 3000 gửi yêu cầu Google kèm cookie, backend vẫn gửi OTP nhưng trình duyệt chặn phản hồi, khiến ô nhập OTP không xuất hiện và việc xác minh thiết bị chưa hoàn tất. Phản hồi JSON nay giữ nguyên origin được cho phép; CORS động bổ sung `Vary: Origin`.
