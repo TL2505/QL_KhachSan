@@ -17,7 +17,9 @@ public final class GuestAuthService {
     private final ConcurrentHashMap<String, Attempts> attempts = new ConcurrentHashMap<>();
     public GuestAuthService() {
         this((phone,email,otp) -> {
-            if (!"mock".equals(System.getenv("HOTEL_OTP_MODE"))) throw new IllegalStateException("OTP delivery is not configured");
+            String otpMode = quanlykhachsan.backend.utils.SecretConfiguration.optional("HOTEL_OTP_MODE");
+            if (otpMode == null || otpMode.isBlank()) otpMode = System.getenv("HOTEL_OTP_MODE");
+            if (!"mock".equals(otpMode)) throw new IllegalStateException("OTP delivery is not configured");
             // Approved development sink. Codes can be observed only by injected test fixtures.
         });
     }

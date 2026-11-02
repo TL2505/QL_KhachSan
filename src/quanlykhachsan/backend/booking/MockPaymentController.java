@@ -25,7 +25,9 @@ public final class MockPaymentController implements HttpHandler {
             ApiResponseUtil.write(exchange, 405, ApiResponseUtil.error("Method not allowed"));
             return;
         }
-        if (!"mock".equals(System.getenv().getOrDefault("PAYMENT_QR_PROVIDER", "payos"))) {
+        String provider = quanlykhachsan.backend.utils.SecretConfiguration.optional("PAYMENT_QR_PROVIDER");
+        if (provider == null || provider.isBlank()) provider = System.getenv().getOrDefault("PAYMENT_QR_PROVIDER", "payos");
+        if (!"mock".equals(provider)) {
             ApiResponseUtil.write(exchange, 404, ApiResponseUtil.error("Mock payment is disabled"));
             return;
         }

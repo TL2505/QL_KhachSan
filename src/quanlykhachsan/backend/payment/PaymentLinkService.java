@@ -12,7 +12,8 @@ public final class PaymentLinkService {
     public PaymentLinkService(){this(defaultGateway());}
     public PaymentLinkService(PaymentGateway g){gateway=g;config=g.beneficiary();}
     private static PaymentGateway defaultGateway(){
-        String provider=System.getenv().getOrDefault("PAYMENT_QR_PROVIDER","payos");
+        String provider = quanlykhachsan.backend.utils.SecretConfiguration.optional("PAYMENT_QR_PROVIDER");
+        if (provider == null || provider.isBlank()) provider = System.getenv().getOrDefault("PAYMENT_QR_PROVIDER", "payos");
         return gatewayForProvider(provider);
     }
     private static PaymentGateway gatewayForProvider(String provider){
