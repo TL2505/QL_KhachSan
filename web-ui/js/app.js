@@ -1,4 +1,4 @@
-import { t, tx, setLanguage, initTranslations, translateUI, setTranslatedText } from './shared/home-i18n.js';
+import { t, tx, setLanguage, initTranslations, translateUI, setTranslatedText } from './shared/home-i18n.js?v=3.5.7';
 import {paymentState,paymentLabel,paymentBadge} from './shared/payment-state.js';
 import { bindRoomImageFallbacks } from './shared/room-images.js';
 /**
@@ -50,6 +50,7 @@ function translatedLabel(source) {
 
 
 // Application State
+const ROOM_PAGE_SIZE = 9;
 const state = {
   language: (typeof localStorage !== 'undefined' ? localStorage.getItem('aurelia_lang') : null) || 'vi',
   currency: (typeof localStorage !== 'undefined' ? localStorage.getItem('aurelia_currency') : null) || 'VND',
@@ -57,6 +58,7 @@ const state = {
   roomsAreLive: false,
   roomsSearchedFor: null,
   filteredRooms: [],
+  roomPage: 1,
   selectedCategory: 'all',
   activeGalleryTab: 'all',
   
@@ -328,6 +330,7 @@ export function showToast(message, type = 'info', duration = 4000) {
 // ROOMS DATA & RENDERING
 // ==========================================
 async function loadRooms(filterParams = {}) {
+  state.roomPage = 1;
   renderRoomStatistics();
   const grid = document.getElementById('rooms-grid');
   if (grid) {
@@ -455,6 +458,71 @@ function renderRoomStatistics(rows = null, checkIn = '', checkOut = '') {
   }
 }
 
+function renderRoomPagination(totalItems) {
+  const container = document.getElementById('rooms-pagination');
+  if (!container) return;
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / ROOM_PAGE_SIZE));
+  state.roomPage = Math.min(totalPages, Math.max(1, state.roomPage));
+  if (totalPages <= 1) {
+    container.replaceChildren();
+    container.classList.add('hidden');
+    return;
+  }
+
+  container.classList.remove('hidden');
+  const firstItem = (state.roomPage - 1) * ROOM_PAGE_SIZE + 1;
+  const lastItem = Math.min(state.roomPage * ROOM_PAGE_SIZE, totalItems);
+  const layout = document.createElement('div');
+  layout.className = 'flex flex-col items-center justify-between gap-4 sm:flex-row';
+
+  const summary = document.createElement('p');
+  summary.className = 'text-sm text-slate-400';
+  summary.textContent = tx`Hiển thị ${firstItem}–${lastItem} / ${totalItems} phòng`;
+
+  const nav = document.createElement('nav');
+  nav.className = 'join inline-flex flex-wrap justify-center gap-2';
+  nav.setAttribute('aria-label', t('Phân trang danh sách phòng'));
+
+  const makeButton = (label, page, { disabled = false, current = false, ariaLabel = '' } = {}) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `join-item btn rounded-lg border px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${current ? 'border-amber-400 bg-amber-500 text-slate-950' : 'border-amber-500/20 bg-slate-900/70 text-slate-300 hover:border-amber-400/60 hover:text-amber-200'} disabled:cursor-not-allowed disabled:opacity-40`;
+    button.textContent = label;
+    button.disabled = disabled;
+    if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
+    if (current) button.setAttribute('aria-current', 'page');
+    button.addEventListener('click', () => {
+      if (disabled || page === state.roomPage) return;
+      state.roomPage = page;
+      filterAndRenderRooms();
+      document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return button;
+  };
+
+  nav.append(makeButton(t('Trước'), state.roomPage - 1, { disabled: state.roomPage === 1, ariaLabel: t('Trang trước') }));
+
+  const pageNumbers = totalPages <= 7
+    ? Array.from({ length: totalPages }, (_, index) => index + 1)
+    : [...new Set([1, state.roomPage - 1, state.roomPage, state.roomPage + 1, totalPages])].filter(page => page >= 1 && page <= totalPages).sort((a, b) => a - b);
+  let previousPage = 0;
+  for (const page of pageNumbers) {
+    if (page - previousPage > 1) {
+      const ellipsis = document.createElement('span');
+      ellipsis.className = 'join-item px-1 py-2 text-slate-500';
+      ellipsis.textContent = '…';
+      nav.append(ellipsis);
+    }
+    nav.append(makeButton(String(page), page, { current: page === state.roomPage, ariaLabel: tx`Trang ${page}` }));
+    previousPage = page;
+  }
+
+  nav.append(makeButton(t('Sau'), state.roomPage + 1, { disabled: state.roomPage === totalPages, ariaLabel: t('Trang sau') }));
+  layout.append(summary, nav);
+  container.replaceChildren(layout);
+}
+
 function filterAndRenderRooms() {
   const grid = document.getElementById('rooms-grid');
   if (!grid) return;
@@ -467,6 +535,7 @@ function filterAndRenderRooms() {
   state.filteredRooms = filtered;
 
   if (filtered.length === 0) {
+    renderRoomPagination(0);
     grid.innerHTML = `
       <div class="col-span-full py-16 text-center text-slate-400 glass-card rounded-2xl p-8">
         <i data-lucide="bed-double" class="w-12 h-12 text-amber-500/50 mx-auto mb-3"></i>
@@ -478,7 +547,12 @@ function filterAndRenderRooms() {
     return;
   }
 
-  grid.innerHTML = filtered.map(room => {
+  const pageCount = Math.max(1, Math.ceil(filtered.length / ROOM_PAGE_SIZE));
+  state.roomPage = Math.min(pageCount, Math.max(1, state.roomPage));
+  const firstIndex = (state.roomPage - 1) * ROOM_PAGE_SIZE;
+  renderRoomPagination(filtered.length);
+
+  grid.innerHTML = filtered.slice(firstIndex, firstIndex + ROOM_PAGE_SIZE).map(room => {
     const formattedPrice = formatCurrency(room.price, state.currency);
     const primaryAmenities = room.amenities.slice(0, 3);
     const labels = {
@@ -1733,6 +1807,7 @@ function initEventListeners() {
       tab.classList.remove('text-slate-400', 'hover:text-white');
 
       state.selectedCategory = tab.dataset.category;
+      state.roomPage = 1;
       filterAndRenderRooms();
   });
 
