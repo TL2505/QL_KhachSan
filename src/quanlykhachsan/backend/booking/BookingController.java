@@ -137,7 +137,7 @@ public class BookingController implements HttpHandler {
                 var checkOutTime=parseBookingTime(req.getCheckOutTime(),java.time.LocalTime.NOON);
                 var stay=quanlykhachsan.backend.room.StayWindow.resolve(rentalType,checkIn.atTime(checkInTime),checkOut.atTime(checkOutTime));
                 var room=RoomAllocationService.findRoom(roomId);if(room==null)throw new IllegalArgumentException("Unknown room");
-                var request=new PublicBookingService.Request(null,null,null,roomId,room.version(),stay.checkIn().toLocalDate(),stay.checkOut().toLocalDate(),null,1,null,stay.rentalType(),stay.checkIn().toLocalTime(),stay.checkOut().toLocalTime());
+                var request=new PublicBookingService.Request(null,null,null,roomId,room.version(),stay.checkIn().toLocalDate(),stay.checkOut().toLocalDate(),req.getVoucherCode(),1,null,stay.rentalType(),stay.checkIn().toLocalTime(),stay.checkOut().toLocalTime(),req.getPaymentChoice());
                 var result=new PublicBookingService().reserve(exchange.getRequestHeaders().getFirst("Idempotency-Key"),request,customerId,"Web");
                 ApiResponseUtil.write(exchange,result.status(),result.body());
             }

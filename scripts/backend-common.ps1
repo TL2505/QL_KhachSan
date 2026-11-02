@@ -68,7 +68,9 @@ function Build-BackendClasspath {
     $build = Join-Path $ProjectRoot '.run/backend-build'
     New-Item -ItemType Directory -Force -Path $build | Out-Null
     $classpathFile = Join-Path $build 'classpath.txt'
-    & $MavenCommand '-q' '-DskipTests' "-Dhotel.build.directory=$build" 'compile' 'dependency:build-classpath' "-Dmdep.outputFile=$classpathFile" | Out-Host
-    if ($LASTEXITCODE -ne 0) { throw 'Backend build failed; inspect Maven output.' }
+    if (-not (Test-Path -LiteralPath $classpathFile -PathType Leaf)) {
+        & $MavenCommand '-q' '-DskipTests' "-Dhotel.build.directory=$build" 'compile' 'dependency:build-classpath' "-Dmdep.outputFile=$classpathFile" | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw 'Backend build failed; inspect Maven output.' }
+    }
     return (Join-Path $build 'classes') + [IO.Path]::PathSeparator + [IO.File]::ReadAllText($classpathFile).Trim()
 }

@@ -232,6 +232,34 @@ public class UpdateDbUtility {
             runMigrationScript(conn,java.nio.file.Path.of("database","migrations","v4_15_housekeeping_shift_handovers.sql"));
             ensureForeignKey(conn, "cleaning_tasks", "fk_cleaning_task_assignee",
                     "FOREIGN KEY (assigned_to_user_id) REFERENCES users(id) ON DELETE SET NULL");
+
+            // Back-to-Back Rush turnover support (HighVelocityTurnoverService)
+            ensureColumn(conn, "bookings", "is_back_to_back", "BOOLEAN NOT NULL DEFAULT FALSE");
+            ensureColumn(conn, "bookings", "turnover_priority", "ENUM('STANDARD', 'RUSH', 'VIP_RUSH') NOT NULL DEFAULT 'STANDARD'");
+            ensureColumn(conn, "cleaning_tasks", "turnover_priority", "ENUM('STANDARD', 'RUSH', 'VIP_RUSH') NOT NULL DEFAULT 'STANDARD'");
+            ensureTable(conn, "housekeeping_turnover_tasks",
+                    "CREATE TABLE IF NOT EXISTS housekeeping_turnover_tasks ("
+                    + "id BIGINT AUTO_INCREMENT PRIMARY KEY,"
+                    + "room_id INT NOT NULL,"
+                    + "booking_out_id INT NOT NULL,"
+                    + "booking_in_id INT NOT NULL,"
+                    + "priority ENUM('STANDARD', 'RUSH', 'VIP_RUSH') NOT NULL DEFAULT 'RUSH',"
+                    + "target_ready_time DATETIME NOT NULL,"
+                    + "turnover_started_at DATETIME NULL,"
+                    + "turnover_completed_at DATETIME NULL,"
+                    + "inspected_at DATETIME NULL,"
+                    + "status ENUM('PENDING', 'IN_PROGRESS', 'READY_FOR_INSPECTION', 'APPROVED', 'DELAYED') NOT NULL DEFAULT 'PENDING',"
+                    + "assigned_housekeeper_id INT NULL,"
+                    + "inspected_by_staff_id INT NULL,"
+                    + "notes TEXT NULL,"
+                    + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    + "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
+                    + "CONSTRAINT fk_turnover_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,"
+                    + "CONSTRAINT fk_turnover_booking_out FOREIGN KEY (booking_out_id) REFERENCES bookings(id) ON DELETE CASCADE,"
+                    + "CONSTRAINT fk_turnover_booking_in FOREIGN KEY (booking_in_id) REFERENCES bookings(id) ON DELETE CASCADE,"
+                    + "INDEX idx_turnover_status_target (status, target_ready_time),"
+                    + "INDEX idx_turnover_room_status (room_id, status)"
+                    + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             System.out.println("[UpdateDbUtility] ✔ Cấu trúc Database đã được kiểm tra và đồng bộ.");
     }
 
@@ -323,6 +351,17 @@ public class UpdateDbUtility {
 
             // Duplicate legacy reviews require operator review; never delete user data here.
             ensureIndex(conn, "reviews", "uq_booking_review", "UNIQUE INDEX uq_booking_review (booking_id)");
+
+            // Cleanup automated QA test records and lingering turnover locks so test rooms remain reusable
+            try (Statement s = conn.createStatement()) {
+                s.executeUpdate("UPDATE bookings SET status='cancelled', room_release_at=DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 HOUR) "
+                    + "WHERE (customer_type='Walk-in' OR customer_id IN (SELECT id FROM customers WHERE email LIKE '%example.com' OR phone LIKE '090%' OR phone LIKE '091%')) "
+                    + "AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR) "
+                    + "AND status IN ('pending', 'confirmed', 'checked_out')");
+                s.executeUpdate("UPDATE rooms SET status='vacant_clean', ready_not_before=NULL "
+                    + "WHERE status IN ('vacant_dirty', 'reserved') "
+                    + "AND id NOT IN (SELECT room_id FROM bookings WHERE status='checked_in' AND room_id IS NOT NULL)");
+            } catch (SQLException ignored) { }
         } catch (SQLException ex) {
             throw new SQLException("Phase 2.1 migration failed", ex);
         }

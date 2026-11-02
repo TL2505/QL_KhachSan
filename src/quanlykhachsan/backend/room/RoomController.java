@@ -344,22 +344,22 @@ public class RoomController implements HttpHandler {
     private void handleSearch(HttpExchange exchange) throws IOException {
         try {
             String query = exchange.getRequestURI().getQuery();
-            if (query == null) {
-                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu thông tin tìm kiếm"));
-                return;
-            }
-
             String checkInStr = null, checkOutStr = null;
-            for (String param : query.split("&")) {
-                String[] pair = param.split("=");
-                if (pair.length < 2) continue;
-                if ("checkIn".equals(pair[0]) || "checkInDate".equals(pair[0]) || "check_in".equals(pair[0])) checkInStr = pair[1];
-                if ("checkOut".equals(pair[0]) || "checkOutDate".equals(pair[0]) || "check_out".equals(pair[0])) checkOutStr = pair[1];
+            if (query != null && !query.trim().isEmpty()) {
+                for (String param : query.split("&")) {
+                    String[] pair = param.split("=");
+                    if (pair.length < 2) continue;
+                    if ("checkIn".equals(pair[0]) || "checkInDate".equals(pair[0]) || "check_in".equals(pair[0])) checkInStr = pair[1];
+                    if ("checkOut".equals(pair[0]) || "checkOutDate".equals(pair[0]) || "check_out".equals(pair[0])) checkOutStr = pair[1];
+                }
             }
 
-            if (checkInStr == null || checkOutStr == null) {
-                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Thiếu ngày nhận hoặc trả phòng"));
-                return;
+            java.time.LocalDate today = java.time.LocalDate.now();
+            if (checkInStr == null || checkInStr.trim().isEmpty()) {
+                checkInStr = today.toString();
+            }
+            if (checkOutStr == null || checkOutStr.trim().isEmpty()) {
+                checkOutStr = today.plusDays(1).toString();
             }
 
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
@@ -378,8 +378,11 @@ public class RoomController implements HttpHandler {
 
             List<Room> availableRooms = roomService.findAvailableRooms(checkIn, checkOut);
             List<RoomResponse> dtoList = new java.util.ArrayList<>();
+            var lockManager = quanlykhachsan.backend.service.RoomLockManager.getInstance();
             for (Room r : availableRooms) {
-                dtoList.add(RoomMapper.toRoomResponse(r));
+                if (!lockManager.isLocked(r.getId())) {
+                    dtoList.add(RoomMapper.toRoomResponse(r));
+                }
             }
             ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(dtoList));
         } catch (Exception e) {

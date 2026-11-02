@@ -7,10 +7,14 @@ import quanlykhachsan.backend.utils.*;
 
 public final class MaintenanceController implements HttpHandler {
     private final String managerHash;
-    public MaintenanceController(){this(System.getenv("MANAGER_PIN_HASH"));}
+    public MaintenanceController(){
+        String envHash = System.getenv("MANAGER_PIN_HASH");
+        this.managerHash = (envHash != null && !envHash.isBlank()) ? envHash : SecretConfiguration.required("MANAGER_PIN_HASH");
+    }
     public MaintenanceController(String hash){managerHash=hash;}
     @Override public void handle(HttpExchange e)throws IOException {
-        String role=String.valueOf(e.getAttribute("role"));
+        String rawRole=String.valueOf(e.getAttribute("role"));
+        String role=rawRole.toLowerCase(java.util.Locale.ROOT);
         if(!java.util.Set.of("maintenance","admin").contains(role)){ApiResponseUtil.write(e,403,ApiResponseUtil.error("Maintenance role required"));return;}
         if(!e.getRequestMethod().equals("PUT")){ApiResponseUtil.write(e,405,ApiResponseUtil.error("Method not allowed"));return;}
         try {

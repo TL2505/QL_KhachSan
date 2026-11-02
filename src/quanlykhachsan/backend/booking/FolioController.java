@@ -26,7 +26,7 @@ import quanlykhachsan.backend.utils.SecurityUtil;
 
 /** Read folio summaries and settle folios using idempotent payment requests. */
 public final class FolioController implements HttpHandler {
-    private static final Pattern PAYMENT_PATH = Pattern.compile("/api/v1/folios/(\\d+)/pay");
+    private static final Pattern PAYMENT_PATH = Pattern.compile("/api/v1/folios/(\\d+)/(?:pay|payments)");
     private static final Pattern SPLIT_PATH = Pattern.compile("/api/v1/folios/(\\d+)/split");
     private static final Pattern ROUTING_PATH = Pattern.compile("/api/v1/folios/(\\d+)/routing");
     private static final Pattern BOOKING_FOLIOS_PATH = Pattern.compile("/api/v1/folios/booking/(\\d+)");

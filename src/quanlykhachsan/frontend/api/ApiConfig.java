@@ -22,7 +22,7 @@ public final class ApiConfig {
     public static final String DEFAULT_API_BASE_URL = "http://localhost:8081/api/v1";
     public static final String LOCALHOST_IP = "127.0.0.1";
     public static final String LOCALHOST_API_BASE_URL = "http://localhost:8081/api/v1";
-    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true";
+    public static final String DEFAULT_JDBC_URL = "jdbc:mysql://localhost:3306/hotel_prod_db?useSSL=false&serverTimezone=UTC";
     public static final String LOCALHOST_JDBC_URL = DEFAULT_JDBC_URL;
 
     private static final Properties PROPS = loadProperties();
@@ -184,13 +184,6 @@ public final class ApiConfig {
 
         int port = jdbcUri.getPort() > 0 ? jdbcUri.getPort() : DEFAULT_DB_PORT;
         if (tcpProbe.test(host, port)) return jdbcUrl;
-
-        if (tcpProbe.test("127.0.0.1", port)) {
-            System.err.printf(
-                "[ApiConfig] DB host %s:%d is unreachable; using 127.0.0.1:%d fallback.%n",
-                host, port, port);
-            return jdbcUrlWithHost(jdbcUri, "127.0.0.1");
-        }
 
         if (tcpProbe.test("localhost", port)) {
             System.err.printf(

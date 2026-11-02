@@ -89,6 +89,9 @@ public class AuthController implements HttpHandler {
                 } else if (registerRequest.getPassword() == null || registerRequest.getPassword().isEmpty()) {
                     statusCode = 400;
                     response = AuthMapper.fieldError("Vui lòng kiểm tra thông tin đăng ký.", "password", "Vui lòng nhập mật khẩu.");
+                } else if (registerRequest.getPassword().length() < 8) {
+                    statusCode = 400;
+                    response = AuthMapper.fieldError("Vui lòng kiểm tra thông tin đăng ký.", "password", "Mật khẩu phải chứa ít nhất 8 ký tự.");
                 } else {
                     User newUser = new User();
                     newUser.setUsername(registerRequest.getUsername());

@@ -63,8 +63,8 @@ final class AdminBookingStatusService {
                 if (booking == null) { connection.rollback(); return new Result(404, "Không tìm thấy đơn đặt phòng"); }
                 if (!"confirmed".equals(booking.status())) { connection.rollback(); return new Result(409, "Chỉ đơn đã xác nhận mới được nhận phòng"); }
                 java.time.LocalDateTime now=java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
-                if (now.isBefore(booking.checkIn()) || !now.isBefore(booking.checkOut())) {
-                    connection.rollback(); return new Result(409, "Chưa đến giờ nhận phòng hoặc đơn đã quá giờ lưu trú");
+                if (now.toLocalDate().isBefore(booking.checkIn().toLocalDate()) || !now.isBefore(booking.checkOut())) {
+                    connection.rollback(); return new Result(409, "Chưa đến ngày nhận phòng hoặc đơn đã quá giờ lưu trú");
                 }
                 try(PreparedStatement roomCheck=connection.prepareStatement(
                         "SELECT r.status,r.ready_not_before,EXISTS(SELECT 1 FROM cleaning_tasks t WHERE t.room_id=r.id AND t.status IN ('pending','in_progress')) AS active_task FROM rooms r WHERE r.id=? FOR UPDATE")) {

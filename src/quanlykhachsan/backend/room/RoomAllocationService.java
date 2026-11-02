@@ -92,9 +92,12 @@ public final class RoomAllocationService {
         if (guestCount < 1 || guestCount > capacity) throw new IllegalArgumentException("Guest count exceeds room capacity");
         if ("out_of_order".equals(status) || "out_of_service".equals(status)) throw new RoomUnavailableException();
         LocalDateTime newReleaseAt = stay.releaseAt(bufferMinutes);
-        try (PreparedStatement query = connection.prepareStatement(
-                "SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in','checked_out') "
-              + "AND check_in_date<? AND room_release_at>? LIMIT 1 FOR UPDATE")) {
+        String conflictSql = "vacant_dirty".equals(status)
+                ? "SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in','checked_out') "
+                  + "AND check_in_date<? AND room_release_at>? LIMIT 1 FOR UPDATE"
+                : "SELECT id FROM bookings WHERE room_id=? AND status IN ('pending','confirmed','checked_in') "
+                  + "AND check_in_date<? AND room_release_at>? LIMIT 1 FOR UPDATE";
+        try (PreparedStatement query = connection.prepareStatement(conflictSql)) {
             query.setInt(1, roomId);
             query.setObject(2, newReleaseAt);
             query.setObject(3, stay.checkIn());

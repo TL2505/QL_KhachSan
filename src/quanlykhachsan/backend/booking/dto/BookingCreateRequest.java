@@ -8,6 +8,8 @@ public class BookingCreateRequest {
     private String rentalType;
     private String checkInTime;
     private String checkOutTime;
+    private String paymentChoice;
+    private String voucherCode;
 
     public Integer getCustomerId() { return customerId; }
     public void setCustomerId(Integer customerId) { this.customerId = customerId; }
@@ -23,4 +25,8 @@ public class BookingCreateRequest {
     public void setCheckInTime(String checkInTime) { this.checkInTime = checkInTime; }
     public String getCheckOutTime() { return checkOutTime; }
     public void setCheckOutTime(String checkOutTime) { this.checkOutTime = checkOutTime; }
+    public String getPaymentChoice() { return paymentChoice; }
+    public void setPaymentChoice(String paymentChoice) { this.paymentChoice = paymentChoice; }
+    public String getVoucherCode() { return voucherCode; }
+    public void setVoucherCode(String voucherCode) { this.voucherCode = voucherCode; }
 }

@@ -51,9 +51,12 @@ public class UserController implements HttpHandler {
             return;
         }
 
-        if (legacyPath.equals("/api/users/update-profile") || legacyPath.equals("/api/users/change-password") || legacyPath.equals("/api/auth/change-password")) {
-            new quanlykhachsan.backend.auth.AccountSecurityController().handleAction(exchange,
-                    legacyPath.endsWith("update-profile") ? "profile" : "password/confirm");
+        if (legacyPath.equals("/api/users/update-profile")) {
+            new quanlykhachsan.backend.auth.AccountSecurityController().handleAction(exchange, "profile");
+            return;
+        }
+        if (legacyPath.equals("/api/users/change-password") || legacyPath.equals("/api/auth/change-password")) {
+            handleChangePassword(exchange);
             return;
         }
 
@@ -243,7 +246,11 @@ public class UserController implements HttpHandler {
             existingUser.setEmail(req.getEmail());
             existingUser.setPhone(req.getPhone());
             existingUser.setRoleId(req.getRoleId());
-            existingUser.setStatus(req.getStatus());
+            String status = req.getStatus();
+            if (status != null && (status.equalsIgnoreCase("disabled") || status.equalsIgnoreCase("suspended") || status.equalsIgnoreCase("locked"))) {
+                status = "inactive";
+            }
+            existingUser.setStatus(status);
 
             if (req.getPassword() != null && !req.getPassword().trim().isEmpty()) {
                 existingUser.setPassword(SecurityUtil.hashPassword(req.getPassword()));
@@ -341,6 +348,104 @@ public class UserController implements HttpHandler {
             ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error(userMsg));
         } catch (Exception e) {
             ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi hệ thống: " + e.getMessage()));
+        }
+    }
+
+    private void handleChangePassword(HttpExchange exchange) throws IOException {
+        String method = exchange.getRequestMethod();
+        if (!"POST".equalsIgnoreCase(method) && !"PUT".equalsIgnoreCase(method)) {
+            ApiResponseUtil.write(exchange, 405, ApiResponseUtil.error("Method Not Allowed"));
+            return;
+        }
+        InputStream is = exchange.getRequestBody();
+        String bodyStr = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        JsonObject reqObj = null;
+        try {
+            reqObj = gson.fromJson(bodyStr, JsonObject.class);
+        } catch (Exception ignored) {}
+
+        if (reqObj != null && reqObj.has("challengeId")) {
+            Object identity = exchange.getAttribute("userId");
+            if (!(identity instanceof Number id) || id.intValue() <= 0) {
+                ApiResponseUtil.write(exchange, 401, ApiResponseUtil.error("Vui lòng đăng nhập lại."));
+                return;
+            }
+            int userId = ((Number) identity).intValue();
+            try {
+                String challengeId = reqObj.get("challengeId").getAsString();
+                String code = reqObj.get("code").getAsString();
+                String newPassword = reqObj.get("newPassword").getAsString();
+                new quanlykhachsan.backend.auth.AccountSecurityService().changePassword(userId, challengeId, code, newPassword);
+                String auth = exchange.getRequestHeaders().getFirst("Authorization");
+                if (auth != null && auth.startsWith("Bearer ")) {
+                    String token = auth.substring(7).trim();
+                    quanlykhachsan.backend.auth.TokenBlacklistService.shared().revoke(token,
+                        quanlykhachsan.backend.utils.JwtTokenUtil.parseClaims(token).getExpiration().toInstant());
+                }
+                ApiResponseUtil.write(exchange, 200, ApiResponseUtil.successWithData(java.util.Map.of("passwordChanged", true, "requiresLogin", true)));
+            } catch (quanlykhachsan.backend.auth.AccountSecurityService.Failure f) {
+                ApiResponseUtil.write(exchange, f.status, ApiResponseUtil.error(f.getMessage()));
+            } catch (Exception ex) {
+                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error(ex.getMessage()));
+            }
+            return;
+        }
+
+        if (reqObj == null) {
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Dữ liệu không hợp lệ."));
+            return;
+        }
+        String oldPassword = reqObj.has("oldPassword") && !reqObj.get("oldPassword").isJsonNull() ? reqObj.get("oldPassword").getAsString()
+                : reqObj.has("currentPassword") && !reqObj.get("currentPassword").isJsonNull() ? reqObj.get("currentPassword").getAsString() : null;
+        String newPassword = reqObj.has("newPassword") && !reqObj.get("newPassword").isJsonNull() ? reqObj.get("newPassword").getAsString() : null;
+        String username = reqObj.has("username") && !reqObj.get("username").isJsonNull() ? reqObj.get("username").getAsString() : null;
+
+        if (username == null || username.isBlank()) {
+            Object uAttr = exchange.getAttribute("username");
+            if (uAttr != null) username = uAttr.toString();
+        }
+        if (username == null || username.isBlank()) {
+            Object idAttr = exchange.getAttribute("userId");
+            if (idAttr instanceof Number num) {
+                User u = userDAO.selectUser().stream().filter(usr -> usr.getId() == num.intValue()).findFirst().orElse(null);
+                if (u != null) username = u.getUsername();
+            }
+        }
+
+        if (username == null || username.isBlank()) {
+            ApiResponseUtil.write(exchange, 401, ApiResponseUtil.error("Vui lòng đăng nhập lại."));
+            return;
+        }
+        if (oldPassword == null || oldPassword.isBlank()) {
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Vui lòng nhập mật khẩu hiện tại."));
+            return;
+        }
+        if (newPassword == null || newPassword.length() < 8) {
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Mật khẩu mới phải có ít nhất 8 ký tự."));
+            return;
+        }
+        if (oldPassword.equals(newPassword)) {
+            ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Mật khẩu mới phải khác mật khẩu hiện tại."));
+            return;
+        }
+
+        try {
+            boolean success = new quanlykhachsan.backend.auth.AuthService().changePassword(username, oldPassword, newPassword);
+            if (success) {
+                String auth = exchange.getRequestHeaders().getFirst("Authorization");
+                if (auth != null && auth.startsWith("Bearer ")) {
+                    String token = auth.substring(7).trim();
+                    try {
+                        quanlykhachsan.backend.auth.TokenBlacklistService.shared().revoke(token,
+                            quanlykhachsan.backend.utils.JwtTokenUtil.parseClaims(token).getExpiration().toInstant());
+                    } catch (Exception ignored) {}
+                }
+                ApiResponseUtil.write(exchange, 200, ApiResponseUtil.success("Đổi mật khẩu thành công!"));
+            } else {
+                ApiResponseUtil.write(exchange, 400, ApiResponseUtil.error("Mật khẩu hiện tại không chính xác."));
+            }
+        } catch (Exception ex) {
+            ApiResponseUtil.write(exchange, 500, ApiResponseUtil.error("Lỗi hệ thống: " + ex.getMessage()));
         }
     }
 }

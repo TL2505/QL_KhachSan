@@ -208,7 +208,7 @@ public class RoomDAOImpl implements RoomDAO {
         String query = "SELECT r.*, t.name AS type_name FROM rooms r JOIN room_types t ON t.id=r.room_type_id " +
                        "WHERE r.status NOT IN ('out_of_order','out_of_service') " +
                        "AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.room_id=r.id " +
-                       "AND b.status IN ('confirmed','checked_in','pending','checked_out') " +
+                       "AND (b.status IN ('confirmed','checked_in','pending') OR (b.status='checked_out' AND r.status='vacant_dirty')) " +
                        "AND b.check_in_date<DATE_ADD(?, INTERVAL r.buffer_daily MINUTE) AND b.room_release_at>?)";
         try (Connection con = DBconn.getConnection(); 
              PreparedStatement ps = con.prepareStatement(query)) {
@@ -223,6 +223,7 @@ public class RoomDAOImpl implements RoomDAO {
                     r.setImageUrl(rs.getString("image_url"));
                     r.setPrice(rs.getDouble("price"));
                     r.setStatus(rs.getString("status"));
+                    r.setVersion(rs.getInt("version"));
                     r.setTypeName(rs.getString("type_name"));
                     list.add(r);
                 }

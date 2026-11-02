@@ -41,7 +41,7 @@ public final class SecretConfiguration {
             case "JWT_SECRET" -> "AureliaDevOnlyJwtSigningSecretChangeBeforeProduction2026";
             case "AES_VAULT_KEY" -> quanlykhachsan.backend.security.AesGcmVaultEngine.FALLBACK_AES_VAULT_KEY_BASE64;
             case "HMAC_IDENTITY_KEY" -> "YXVyZWxpYV9kZWZhdWx0X2Rldl9obWFjX3NlY3JldF8=";
-            case "MANAGER_PIN_HASH" -> "$2a$10$w850cQW3t63D4H7y0x52E.rW4wF1bK7T9yJ4v5g0m2L7p1X9y3K2W";
+            case "MANAGER_PIN_HASH" -> "$2a$10$kJg03gGhJwZ5nFQF6yVcCuVvHjKm57jeQwQO4dky2fSBF/rFz0Sr6";
             case "HOTEL_VAT_RATE" -> "0.08";
             case "BANK_BIN" -> "970422";
             case "BANK_ACCOUNT_NUMBER" -> "118000000000";
